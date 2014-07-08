@@ -30,7 +30,8 @@ class LBaaSQuotaExtensionTestCase(
         super(LBaaSQuotaExtensionTestCase, self).setUp()
         cfg.CONF.set_override(
             'quota_items',
-            ['vip', 'pool', 'member', 'health_monitor', 'extra1'],
+            ['vip', 'pool', 'member', 'health_monitor', 'extra1',
+             'loadbalancer', 'listener', 'healthmonitor'],
             group='QUOTAS')
         quota.register_resources_from_config()
 
@@ -62,6 +63,9 @@ class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
         self.assertEqual(-1, quota['quota']['member'])
         self.assertEqual(-1, quota['quota']['health_monitor'])
         self.assertEqual(-1, quota['quota']['extra1'])
+        self.assertEqual(10, quota['quota']['loadbalancer'])
+        self.assertEqual(-1, quota['quota']['listener'])
+        self.assertEqual(-1, quota['quota']['healthmonitor'])
 
     def test_show_quotas_with_admin(self):
         tenant_id = 'tenant_id1'
@@ -75,6 +79,9 @@ class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
         self.assertEqual(10, quota['quota']['pool'])
         self.assertEqual(-1, quota['quota']['member'])
         self.assertEqual(-1, quota['quota']['health_monitor'])
+        self.assertEqual(10, quota['quota']['loadbalancer'])
+        self.assertEqual(-1, quota['quota']['listener'])
+        self.assertEqual(-1, quota['quota']['healthmonitor'])
 
     def test_show_quotas_with_owner_tenant(self):
         tenant_id = 'tenant_id1'
@@ -88,12 +95,20 @@ class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
         self.assertEqual(10, quota['quota']['pool'])
         self.assertEqual(-1, quota['quota']['member'])
         self.assertEqual(-1, quota['quota']['health_monitor'])
+        self.assertEqual(10, quota['quota']['loadbalancer'])
+        self.assertEqual(-1, quota['quota']['listener'])
+        self.assertEqual(-1, quota['quota']['healthmonitor'])
 
     def test_update_quotas_to_unlimited(self):
         tenant_id = 'tenant_id1'
         env = {'neutron.context': context.Context('', tenant_id,
                                                   is_admin=True)}
         quotas = {'quota': {'pool': -1}}
+        res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
+                           self.serialize(quotas), extra_environ=env,
+                           expect_errors=False)
+        self.assertEqual(200, res.status_int)
+        quotas = {'quota': {'loadbalancer': -1}}
         res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
                            self.serialize(quotas), extra_environ=env,
                            expect_errors=False)
@@ -108,12 +123,21 @@ class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
                            self.serialize(quotas), extra_environ=env,
                            expect_errors=False)
         self.assertEqual(200, res.status_int)
+        quotas = {'quota': {'loadbalancer': 120}}
+        res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
+                           self.serialize(quotas), extra_environ=env,
+                           expect_errors=False)
+        self.assertEqual(200, res.status_int)
 
     def test_update_quotas_with_admin(self):
         tenant_id = 'tenant_id1'
         env = {'neutron.context': context.Context('', tenant_id + '2',
                                                   is_admin=True)}
         quotas = {'quota': {'pool': 100}}
+        res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
+                           self.serialize(quotas), extra_environ=env)
+        self.assertEqual(200, res.status_int)
+        quotas = {'quota': {'loadbalancer': 100}}
         res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
                            self.serialize(quotas), extra_environ=env)
         self.assertEqual(200, res.status_int)
@@ -125,6 +149,9 @@ class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
         self.assertEqual(100, quota['quota']['pool'])
         self.assertEqual(-1, quota['quota']['member'])
         self.assertEqual(-1, quota['quota']['health_monitor'])
+        self.assertEqual(100, quota['quota']['loadbalancer'])
+        self.assertEqual(-1, quota['quota']['listener'])
+        self.assertEqual(-1, quota['quota']['healthmonitor'])
 
 
 class LBaaSQuotaExtensionDbTestCaseXML(LBaaSQuotaExtensionDbTestCase):
@@ -152,10 +179,18 @@ class LBaaSQuotaExtensionCfgTestCase(
         self.assertEqual(-1, quota['quota']['member'])
         self.assertEqual(-1, quota['quota']['health_monitor'])
         self.assertEqual(-1, quota['quota']['extra1'])
+        self.assertEqual(10, quota['quota']['loadbalancer'])
+        self.assertEqual(-1, quota['quota']['listener'])
+        self.assertEqual(-1, quota['quota']['healthmonitor'])
 
     def test_update_quotas_forbidden(self):
         tenant_id = 'tenant_id1'
         quotas = {'quota': {'pool': 100}}
+        res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
+                           self.serialize(quotas),
+                           expect_errors=True)
+        self.assertEqual(403, res.status_int)
+        quotas = {'quota': {'loadbalancer': 100}}
         res = self.api.put(_get_path('quotas', id=tenant_id, fmt=self.fmt),
                            self.serialize(quotas),
                            expect_errors=True)
