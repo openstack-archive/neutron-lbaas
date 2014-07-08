@@ -56,30 +56,26 @@ class BaseStatsMixin(object):
 class BaseStatusUpdateMixin(object):
 
     # Status update helpers
-    # Note: You must set self.model_class to an appropriate neutron model
+    # Note: You must set model_class to an appropriate neutron model
     # in your base manager class.
 
     def active(self, context, model_id):
-        if self.model_class is not None:
-            self.driver.plugin.update_status(context, self.model_class,
-                                             model_id, constants.ACTIVE)
+        self.driver.plugin.db.update_status(context, self.model_class,
+                                            model_id, constants.ACTIVE)
 
     def failed(self, context, model_id):
-        if self.model_class is not None:
-            self.driver.plugin.update_status(context, self.model_class,
-                                             model_id, constants.ERROR)
+        self.driver.plugin.db.update_status(context, self.model_class,
+                                            model_id, constants.ERROR)
+
+    def defer(self, context, model_id):
+        self.driver.plugin.db.update_status(context, self.model_class,
+                                            model_id, constants.DEFERRED)
 
 
-class BaseHealthMonitorStatusUpdateMixin(object):
+class BaseDeleteHelperMixin(object):
 
-    def active(self, context, health_monitor_id, pool_id):
-        self.driver.plugin.update_pool_health_monitor(context,
-                                                      health_monitor_id,
-                                                      pool_id,
-                                                      constants.ACTIVE)
+    # DB delete helper
+    # Must define appropriate db delete function
 
-    def failed(self, context, health_monitor_id, pool_id):
-        self.driver.plugin.update_pool_health_monitor(context,
-                                                      health_monitor_id,
-                                                      pool_id,
-                                                      constants.ERROR)
+    def db_delete(self, context, model_id):
+        self.db_delete_method(context, model_id)
