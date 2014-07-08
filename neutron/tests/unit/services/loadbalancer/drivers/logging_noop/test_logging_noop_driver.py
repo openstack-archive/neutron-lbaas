@@ -25,6 +25,9 @@ class FakeModel(object):
     def __init__(self, id):
         self.id = id
 
+    def attached_to_loadbalancer(self):
+        return True
+
 
 def patch_manager(func):
     @mock.patch(log_path)
@@ -80,18 +83,10 @@ class ManagerTestWithUpdates(ManagerTest):
     @patch_manager
     def create(self, model):
         self.manager.create(self.parent.context, model)
-        if self.manager.model_class is not None:
-            self.parent.assertEqual(
-                             str(self.parent.driver.plugin.mock_calls[0])[:18],
-                             "call.update_status")
 
     @patch_manager
     def update(self, old_model, model):
         self.manager.update(self.parent.context, old_model, model)
-        if self.manager.model_class is not None:
-            self.parent.assertEqual(
-                             str(self.parent.driver.plugin.mock_calls[0])[:18],
-                             "call.update_status")
 
     @patch_manager
     def delete(self, model):
@@ -129,20 +124,21 @@ class TestLoggingNoopLoadBalancerDriver(
         self.context = context.get_admin_context()
         self.plugin = mock.Mock()
         self.driver = driver.LoggingNoopLoadBalancerDriver(self.plugin)
+        self.fakemodel = mock.Mock()
+        self.fakemodel.id = 'name-001'
 
     def test_load_balancer_ops(self):
         LoadBalancerManagerTest(self, self.driver.load_balancer,
-                                FakeModel("loadbalancer-001"))
+                                self.fakemodel)
 
     def test_listener_ops(self):
-        ManagerTest(self, self.driver.listener, FakeModel("listener-001"))
+        ManagerTest(self, self.driver.listener, self.fakemodel)
 
     def test_pool_ops(self):
-        ManagerTestWithUpdates(self, self.driver.pool, FakeModel("pool-001"))
+        ManagerTestWithUpdates(self, self.driver.pool, self.fakemodel)
 
     def test_member_ops(self):
-        ManagerTestWithUpdates(self, self.driver.member,
-                               FakeModel("member-001"))
+        ManagerTestWithUpdates(self, self.driver.member, self.fakemodel)
 
     def test_health_monitor_ops(self):
-        ManagerTest(self, self.driver.health_monitor, FakeModel("hm-001"))
+        ManagerTest(self, self.driver.health_monitor, self.fakemodel)
