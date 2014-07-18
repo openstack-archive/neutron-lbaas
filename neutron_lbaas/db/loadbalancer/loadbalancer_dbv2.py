@@ -13,17 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-from oslo_db import exception
-from oslo_utils import excutils
-from sqlalchemy import orm
-from sqlalchemy.orm import exc
-
 from neutron.api.v2 import attributes
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
+from oslo_db import exception
+from oslo_utils import excutils
+from sqlalchemy import orm
+from sqlalchemy.orm import exc
 
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.extensions import loadbalancerv2
