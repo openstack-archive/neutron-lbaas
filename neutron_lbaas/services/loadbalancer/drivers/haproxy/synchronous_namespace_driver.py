@@ -96,6 +96,11 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
         self.vif_driver = vif_driver
 
         # instantiate managers here
+        self.load_balancer = LoadBalancerManager(self)
+        self.listener = ListenerManager(self)
+        self.pool = PoolManager(self)
+        self.member = MemberManager(self)
+        self.health_monitor = HealthMonitorManager(self)
 
         self.admin_ctx = context.get_admin_context()
         self.deployed_loadbalancer_ids = set()
@@ -429,3 +434,186 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
             LOG.warn(_LW('Stats socket not found for load balancer %s'),
                      loadbalancer.id)
             return {}
+
+
+class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
+
+    def refresh(self, context, loadbalancer):
+        super(LoadBalancerManager, self).refresh(context, loadbalancer)
+        if not self.deployable(loadbalancer):
+            #TODO(brandon-logan): Ensure there is a way to sync the change
+            #later.  Periodic task perhaps.
+            return
+
+        if self.driver.exists(loadbalancer):
+            self.driver.update_instance(loadbalancer)
+        else:
+            self.driver.create_instance(context, loadbalancer)
+
+    def delete(self, context, loadbalancer):
+        super(LoadBalancerManager, self).delete(context, loadbalancer)
+        self.db_delete(context, loadbalancer.id)
+        self.driver.delete_instance(loadbalancer)
+
+    def create(self, context, loadbalancer):
+        super(LoadBalancerManager, self).create(context, loadbalancer)
+        # loadbalancer has no listeners then just set it to ACTIVE
+        if not loadbalancer.listeners:
+            self.active(context, loadbalancer.id)
+            return
+
+        self.refresh(context, loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, loadbalancer)
+
+    def stats(self, context, loadbalancer):
+        super(LoadBalancerManager, self).stats(context, loadbalancer)
+        return self.driver.get_stats(loadbalancer)
+
+    def update(self, context, old_loadbalancer, loadbalancer):
+        super(LoadBalancerManager, self).update(context, old_loadbalancer,
+                                                loadbalancer)
+        self.refresh(context, loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, loadbalancer)
+
+    def deployable(self, loadbalancer):
+        if not loadbalancer:
+            return False
+        acceptable_listeners = [
+            listener for listener in loadbalancer.listeners
+            if (listener.status != constants.PENDING_DELETE and
+                listener.admin_state_up)]
+        return (acceptable_listeners and
+                loadbalancer.status != constants.PENDING_DELETE)
+
+
+class ListenerManager(driver_base.BaseListenerManager):
+
+    def _remove_listener(self, loadbalancer, listener_id):
+        index_to_remove = None
+        for index, listener in enumerate(loadbalancer.listeners):
+            if listener.id == listener_id:
+                index_to_remove = index
+        loadbalancer.listeners.pop(index_to_remove)
+
+    def update(self, context, old_listener, new_listener):
+        super(ListenerManager, self).update(context, old_listener,
+                                            new_listener)
+        if new_listener.attached_to_loadbalancer():
+            self.driver.load_balancer.refresh(context,
+                                              new_listener.loadbalancer)
+        else:
+            # Remove because haproxy will throw error without full frontend
+            # configuration
+            self.driver.delete_instance(old_listener.loadbalancer,
+                                        cleanup_namespace=True)
+        if new_listener.attached_to_loadbalancer():
+            # Always activate listener and its children if attached to
+            # loadbalancer
+            self.driver.plugin.activate_linked_entities(context, new_listener)
+        elif old_listener.attached_to_loadbalancer():
+            # If listener has just been detached from loadbalancer
+            # defer listener and its children
+            self.driver.plugin.defer_listener(context, new_listener)
+
+        if not new_listener.default_pool and old_listener.default_pool:
+            # if listener's pool has been detached then defer the pool
+            # and its children
+            self.driver.plugin.defer_pool(context, old_listener.default_pool)
+
+    def create(self, context, listener):
+        super(ListenerManager, self).create(context, listener)
+        self.driver.load_balancer.refresh(context, listener.loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, listener)
+
+    def delete(self, context, obj):
+        super(ListenerManager, self).delete(context, obj)
+        self.db_delete(context, obj.id)
+        loadbalancer = obj.loadbalancer
+        self._remove_listener(loadbalancer, obj.id)
+        if len(loadbalancer.listeners) > 0:
+            self.driver.load_balancer.refresh(context, loadbalancer)
+        else:
+            # delete instance because haproxy will throw error if port is
+            # missing in frontend
+            self.driver.delete_instance(loadbalancer)
+        if obj.default_pool:
+            self.driver.plugin.defer_pool(context, obj.default_pool)
+
+
+class PoolManager(driver_base.BasePoolManager):
+
+    def update(self, context, obj_old, obj):
+        super(PoolManager, self).update(context, obj_old, obj)
+        self.driver.load_balancer.refresh(context, obj.listener.loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, obj)
+        if not obj.healthmonitor and obj_old.healthmonitor:
+            self.driver.plugin.defer_healthmonitor(context,
+                                                   obj_old.healthmonitor)
+
+    def create(self, context, obj):
+        super(PoolManager, self).delete(context, obj)
+        self.driver.load_balancer.refresh(context, obj.listener.loadbalancer)
+        # This shouldn't be called since a pool cannot be created and linked
+        # to a loadbalancer at the same time
+        self.driver.plugin.activate_linked_entities(context, obj)
+
+    def delete(self, context, obj):
+        super(PoolManager, self).delete(context, obj)
+        self.db_delete(context, obj.id)
+        loadbalancer = obj.listener.loadbalancer
+        obj.listener.default_pool = None
+        # just refresh because haproxy is fine if only frontend is listed
+        self.driver.load_balancer.refresh(context, loadbalancer)
+        if obj.healthmonitor:
+            self.driver.plugin.defer_healthmonitor(context, obj.healthmonitor)
+
+
+class MemberManager(driver_base.BaseMemberManager):
+
+    def _remove_member(self, pool, member_id):
+        index_to_remove = None
+        for index, member in enumerate(pool.members):
+            if member.id == member_id:
+                index_to_remove = index
+        pool.members.pop(index_to_remove)
+
+    def update(self, context, obj_old, obj):
+        super(MemberManager, self).update(context, obj_old, obj)
+        self.driver.load_balancer.refresh(context,
+                                          obj.pool.listener.loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, obj)
+
+    def create(self, context, obj):
+        super(MemberManager, self).create(context, obj)
+        self.driver.load_balancer.refresh(context,
+                                          obj.pool.listener.loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, obj)
+
+    def delete(self, context, obj):
+        super(MemberManager, self).delete(context, obj)
+        loadbalancer = obj.pool.listener.loadbalancer
+        self._remove_member(obj.pool, obj.id)
+        self.driver.load_balancer.refresh(context, loadbalancer)
+        self.db_delete(context, obj.id)
+
+
+class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
+
+    def update(self, context, obj_old, obj):
+        super(HealthMonitorManager, self).update(context, obj_old, obj)
+        self.driver.load_balancer.refresh(context,
+                                          obj.pool.listener.loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, obj)
+
+    def create(self, context, obj):
+        super(HealthMonitorManager, self).create(context, obj)
+        self.driver.load_balancer.refresh(context,
+                                          obj.pool.listener.loadbalancer)
+        self.driver.plugin.activate_linked_entities(context, obj)
+
+    def delete(self, context, obj):
+        super(HealthMonitorManager, self).delete(context, obj)
+        loadbalancer = obj.pool.listener.loadbalancer
+        obj.pool.healthmonitor = None
+        self.driver.load_balancer.refresh(context, loadbalancer)
+        self.db_delete(context, obj.id)
