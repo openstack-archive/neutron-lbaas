@@ -253,7 +253,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                     name=models.LoadBalancer.NAME, id=lb_id)
         if pool_id:
             pool = self._get_resource(context, models.PoolV2, pool_id)
-            if pool.protocol != listener.get('protocol'):
+            if ((pool.protocol, listener.get('protocol'))
+                not in lb_const.LISTENER_POOL_COMPATIBLE_PROTOCOLS):
                 raise loadbalancerv2.ListenerPoolProtocolMismatch(
                     listener_proto=listener['protocol'],
                     pool_proto=pool.protocol)
@@ -278,8 +279,15 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 for id in ['loadbalancer_id', 'default_pool_id']:
                     if listener.get(id) == attributes.ATTR_NOT_SPECIFIED:
                         listener[id] = None
+
                 self._validate_listener_data(context, listener)
+
+                sni_container_ids = listener.pop('sni_container_ids')
                 listener_db_entry = models.Listener(**listener)
+                for container_id in sni_container_ids:
+                    sni = models.SNI(listener_id=listener_db_entry.id,
+                                     tls_container_id=container_id)
+                    listener_db_entry.sni_containers.append(sni)
                 context.session.add(listener_db_entry)
         except exception.DBDuplicateEntry:
             raise loadbalancerv2.LoadBalancerListenerProtocolPortExists(
@@ -288,15 +296,26 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         context.session.refresh(listener_db_entry.loadbalancer)
         return data_models.Listener.from_sqlalchemy_model(listener_db_entry)
 
-    def update_listener(self, context, id, listener):
+    def update_listener(self, context, id, listener,
+                        tls_containers_changed=False):
         with context.session.begin(subtransactions=True):
             listener_db = self._get_resource(context, models.Listener, id)
+
             if not listener.get('protocol'):
                 # User did not intend to change the protocol so we will just
                 # use the same protocol already stored so the validation knows
                 listener['protocol'] = listener_db.protocol
             self._validate_listener_data(context, listener)
+
+            if tls_containers_changed:
+                listener_db.sni_containers = []
+                for container_id in listener['sni_container_ids']:
+                    sni = models.SNI(listener_id=id,
+                                     tls_container_id=container_id)
+                    listener_db.sni_containers.append(sni)
+
             listener_db.update(listener)
+
         context.session.refresh(listener_db)
         return data_models.Listener.from_sqlalchemy_model(listener_db)
 

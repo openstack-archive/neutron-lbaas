@@ -28,6 +28,7 @@ and also converting to dictionaries.
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.db import servicetype_db
+from sqlalchemy.ext import orderinglist
 from sqlalchemy.orm import collections
 
 from neutron_lbaas.db.loadbalancer import models
@@ -78,7 +79,8 @@ class BaseDataModel(object):
                                 data_class.from_sqlalchemy_model(
                                     attr, calling_class=cls))
             # Handles 1:M or M:M relationships
-            elif isinstance(attr, collections.InstrumentedList):
+            elif (isinstance(attr, collections.InstrumentedList) or
+                 isinstance(attr, orderinglist.OrderingList)):
                 for item in attr:
                     if hasattr(instance, attr_name):
                         data_class = SA_MODEL_TO_DATA_MODEL_MAP[item.__class__]
@@ -99,6 +101,8 @@ class BaseDataModel(object):
         elif isinstance(self, Listener):
             lb = self.loadbalancer
         elif isinstance(self, Pool):
+            lb = self.listener.loadbalancer
+        elif isinstance(self, SNI):
             lb = self.listener.loadbalancer
         else:
             # Pool Member or Health Monitor
@@ -392,10 +396,27 @@ class Member(BaseDataModel):
         return Member(**model_dict)
 
 
+class SNI(BaseDataModel):
+
+    def __init__(self, listener_id=None, tls_container_id=None,
+                 position=None, listener=None):
+        self.listener_id = listener_id
+        self.tls_container_id = tls_container_id
+        self.position = position
+        self.listener = listener
+
+    def attached_to_loadbalancer(self):
+        return bool(self.listener and self.listener.loadbalancer)
+
+    def to_api_dict(self):
+        return super(SNI, self).to_dict(listener=False)
+
+
 class Listener(BaseDataModel):
 
     def __init__(self, id=None, tenant_id=None, name=None, description=None,
                  default_pool_id=None, loadbalancer_id=None, protocol=None,
+                 default_tls_container_id=None, sni_containers=None,
                  protocol_port=None, connection_limit=None,
                  admin_state_up=None, provisioning_status=None,
                  operating_status=None, default_pool=None, loadbalancer=None):
@@ -406,6 +427,8 @@ class Listener(BaseDataModel):
         self.default_pool_id = default_pool_id
         self.loadbalancer_id = loadbalancer_id
         self.protocol = protocol
+        self.default_tls_container_id = default_tls_container_id
+        self.sni_containers = sni_containers or []
         self.protocol_port = protocol_port
         self.connection_limit = connection_limit
         self.admin_state_up = admin_state_up
@@ -420,12 +443,15 @@ class Listener(BaseDataModel):
     def to_api_dict(self):
         ret_dict = super(Listener, self).to_dict(
             loadbalancer=False, loadbalancer_id=False, default_pool=False,
-            operating_status=False, provisioning_status=False)
+            operating_status=False, provisioning_status=False,
+            sni_containers=False)
         # NOTE(blogan): Returning a list to future proof for M:N objects
         # that are not yet implemented.
         ret_dict['loadbalancers'] = []
         if self.loadbalancer:
             ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
+        ret_dict['sni_container_ids'] = [container.tls_container_id
+            for container in self.sni_containers]
         return ret_dict
 
     @classmethod
@@ -493,6 +519,7 @@ SA_MODEL_TO_DATA_MODEL_MAP = {
     models.LoadBalancer: LoadBalancer,
     models.HealthMonitorV2: HealthMonitor,
     models.Listener: Listener,
+    models.SNI: SNI,
     models.PoolV2: Pool,
     models.MemberV2: Member,
     models.LoadBalancerStatistics: LoadBalancerStatistics,
@@ -506,6 +533,7 @@ DATA_MODEL_TO_SA_MODEL_MAP = {
     LoadBalancer: models.LoadBalancer,
     HealthMonitor: models.HealthMonitorV2,
     Listener: models.Listener,
+    SNI: models.SNI,
     Pool: models.PoolV2,
     Member: models.MemberV2,
     LoadBalancerStatistics: models.LoadBalancerStatistics,
