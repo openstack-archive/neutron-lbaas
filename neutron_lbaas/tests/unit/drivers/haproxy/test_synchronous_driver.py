@@ -323,7 +323,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
 
             mock_save.assert_called_once_with('haproxy.conf',
                                               self._sample_in_loadbalancer(),
-                                              'haproxy_stats.sock', 'nogroup')
+                                              'haproxy_stats.sock', 'nogroup',
+                                              '')  # state_path is empty
             cmd = ['haproxy', '-f', 'haproxy.conf', '-p', 'haproxy.pid']
             ns_name = ''.join([sync_driver.NS_PREFIX,
                               self._sample_in_loadbalancer().id])
