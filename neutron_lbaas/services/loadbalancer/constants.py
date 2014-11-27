@@ -54,5 +54,7 @@ STATS_HEALTH = 'health'
 STATS_FAILED_CHECKS = 'failed_checks'
 
 # Constants to extend status strings in neutron.plugins.common.constants
-# Status if an entity is not linked to a load balancer
-DEFERRED = "DEFERRED"
+ONLINE = 'ONLINE'
+OFFLINE = 'OFFLINE'
+DEGRADED = 'DEGRADED'
+OPERATING_STATUSES = (ONLINE, OFFLINE, DEGRADED)

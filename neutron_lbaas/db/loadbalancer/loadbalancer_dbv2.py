@@ -1,5 +1,5 @@
 #
-# Copyright 2014 OpenStack Foundation.  All rights reserved
+# Copyright 2014-2015 Rackspace.  All rights reserved
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -16,10 +16,11 @@
 from neutron.api.v2 import attributes
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
-from neutron.openstack.common import uuidutils
+from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from oslo_db import exception
 from oslo_utils import excutils
+from oslo_utils import uuidutils
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
@@ -27,6 +28,9 @@ from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
+
+
+LOG = logging.getLogger(__name__)
 
 
 class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
@@ -133,7 +137,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
             context, model_dict)
 
     def assert_modification_allowed(self, obj):
-        status = getattr(obj, 'status', None)
+        status = getattr(obj, 'provisioning_status', None)
         if status in [constants.PENDING_DELETE, constants.PENDING_UPDATE,
                       constants.PENDING_CREATE]:
             id = getattr(obj, 'id', None)
@@ -141,12 +145,35 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
 
     def test_and_set_status(self, context, model, id, status):
         with context.session.begin(subtransactions=True):
-            model_db = self._get_resource(context, model, id, for_update=True)
-            self.assert_modification_allowed(model_db)
-            if model_db.status != status:
-                model_db.status = status
+            db_lb_child = None
+            if model == models.LoadBalancer:
+                db_lb = self._get_resource(context, model, id, for_update=True)
+            else:
+                db_lb_child = self._get_resource(context, model, id)
+                db_lb = self._get_resource(context, models.LoadBalancer,
+                                           db_lb_child.root_loadbalancer.id)
+            # This method will raise an exception if modification is not
+            # allowed.
+            self.assert_modification_allowed(db_lb)
 
-    def update_status(self, context, model, id, status):
+            # if the model passed in is not a load balancer then we will
+            # set its root load balancer's provisioning status to
+            # PENDING_UPDATE and the model's status to the status passed in
+            # Otherwise we are just setting the load balancer's provisioning
+            # status to the status passed in
+            if db_lb_child:
+                db_lb.provisioning_status = constants.PENDING_UPDATE
+                db_lb_child.provisioning_status = status
+            else:
+                db_lb.provisioning_status = status
+
+    def update_loadbalancer_provisioning_status(self, context, lb_id,
+                                                status=constants.ACTIVE):
+        self.update_status(context, models.LoadBalancer, lb_id,
+                           provisioning_status=status)
+
+    def update_status(self, context, model, id, provisioning_status=None,
+                      operating_status=None):
         with context.session.begin(subtransactions=True):
             if issubclass(model, models.LoadBalancer):
                 try:
@@ -159,14 +186,19 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
                         name=models.LoadBalancer.NAME, id=id)
             else:
                 model_db = self._get_resource(context, model, id)
-            if model_db.status != status:
-                model_db.status = status
+            if provisioning_status and (model_db.provisioning_status !=
+                                        provisioning_status):
+                model_db.provisioning_status = provisioning_status
+            if operating_status and (model_db.operating_status !=
+                                     operating_status):
+                model_db.operating_status = operating_status
 
     def create_loadbalancer(self, context, loadbalancer):
         with context.session.begin(subtransactions=True):
             self._load_id_and_tenant_id(context, loadbalancer)
             vip_address = loadbalancer.pop('vip_address')
-            loadbalancer['status'] = constants.PENDING_CREATE
+            loadbalancer['provisioning_status'] = constants.PENDING_CREATE
+            loadbalancer['operating_status'] = lb_const.OFFLINE
             lb_db = models.LoadBalancer(**loadbalancer)
             context.session.add(lb_db)
             context.session.flush()
@@ -235,7 +267,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
         try:
             with context.session.begin(subtransactions=True):
                 self._load_id_and_tenant_id(context, listener)
-                listener['status'] = constants.PENDING_CREATE
+                listener['provisioning_status'] = constants.PENDING_CREATE
+                listener['operating_status'] = lb_const.OFFLINE
                 # Check for unspecified loadbalancer_id and listener_id and
                 # set to None
                 for id in ['loadbalancer_id', 'default_pool_id']:
@@ -253,14 +286,6 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
     def update_listener(self, context, id, listener):
         with context.session.begin(subtransactions=True):
             listener_db = self._get_resource(context, models.Listener, id)
-            # Do not allow changing loadbalancer ids
-            if listener_db.loadbalancer_id and listener.get('loadbalancer_id'):
-                raise loadbalancerv2.AttributeIDImmutable(
-                    attribute='loadbalancer_id')
-            # Do not allow changing pool ids
-            if listener_db.default_pool_id and listener.get('default_pool_id'):
-                raise loadbalancerv2.AttributeIDImmutable(
-                    attribute='default_pool_id')
             if not listener.get('protocol'):
                 # User did not intend to change the protocol so we will just
                 # use the same protocol already stored so the validation knows
@@ -319,25 +344,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
     def create_pool(self, context, pool):
         with context.session.begin(subtransactions=True):
             self._load_id_and_tenant_id(context, pool)
-            pool['status'] = constants.PENDING_CREATE
-            if pool['healthmonitor_id'] == attributes.ATTR_NOT_SPECIFIED:
-                pool['healthmonitor_id'] = None
-            hm_id = pool['healthmonitor_id']
-            if hm_id:
-                if not self._resource_exists(context, models.HealthMonitorV2,
-                                             hm_id):
-                    raise loadbalancerv2.EntityNotFound(
-                        name=models.HealthMonitorV2.NAME, id=hm_id)
-
-                filters = {'healthmonitor_id': [hm_id]}
-                hmpools = self._get_resources(context,
-                                              models.PoolV2,
-                                              filters=filters)
-                if hmpools:
-                    raise loadbalancerv2.EntityInUse(
-                        entity_using=models.PoolV2.NAME,
-                        id=hmpools[0].id,
-                        entity_in_use=models.HealthMonitorV2.NAME)
+            pool['provisioning_status'] = constants.PENDING_CREATE
+            pool['operating_status'] = lb_const.OFFLINE
 
             session_info = pool.pop('session_persistence')
             pool_db = models.PoolV2(**pool)
@@ -349,6 +357,14 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
 
             context.session.add(pool_db)
         return data_models.Pool.from_sqlalchemy_model(pool_db)
+
+    def create_pool_and_add_to_listener(self, context, pool, listener_id):
+        with context.session.begin(subtransactions=True):
+            db_pool = self.create_pool(context, pool)
+            self.update_listener(context, listener_id,
+                                 {'default_pool_id': db_pool.id})
+            db_pool = self.get_pool(context, db_pool.id)
+        return data_models.Pool.from_sqlalchemy_model(db_pool)
 
     def update_pool(self, context, id, pool):
         with context.session.begin(subtransactions=True):
@@ -386,6 +402,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
     def delete_pool(self, context, id):
         with context.session.begin(subtransactions=True):
             pool_db = self._get_resource(context, models.PoolV2, id)
+            self.update_listener(context, pool_db.listener.id,
+                                 {'default_pool_id': None})
             context.session.delete(pool_db)
 
     def get_pools(self, context, filters=None):
@@ -400,12 +418,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
     def create_pool_member(self, context, member, pool_id):
         try:
             with context.session.begin(subtransactions=True):
-                if not self._resource_exists(context, models.PoolV2, pool_id):
-                    raise loadbalancerv2.EntityNotFound(
-                        name=models.PoolV2.NAME, id=pool_id)
                 self._load_id_and_tenant_id(context, member)
                 member['pool_id'] = pool_id
-                member['status'] = constants.PENDING_CREATE
+                member['provisioning_status'] = constants.PENDING_CREATE
+                member['operating_status'] = lb_const.OFFLINE
                 member_db = models.MemberV2(**member)
                 context.session.add(member_db)
         except exception.DBDuplicateEntry:
@@ -414,40 +430,27 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
                                               pool=pool_id)
         return data_models.Member.from_sqlalchemy_model(member_db)
 
-    def update_pool_member(self, context, id, member, pool_id):
+    def update_pool_member(self, context, id, member):
         with context.session.begin(subtransactions=True):
-            if not self._resource_exists(context, models.PoolV2, pool_id):
-                raise loadbalancerv2.MemberNotFoundForPool(pool_id=pool_id,
-                                                           member_id=id)
             member_db = self._get_resource(context, models.MemberV2, id)
             member_db.update(member)
         context.session.refresh(member_db)
         return data_models.Member.from_sqlalchemy_model(member_db)
 
-    def delete_pool_member(self, context, id, pool_id):
+    def delete_pool_member(self, context, id):
         with context.session.begin(subtransactions=True):
-            if not self._resource_exists(context, models.PoolV2, pool_id):
-                raise loadbalancerv2.MemberNotFoundForPool(pool_id=pool_id,
-                                                           member_id=id)
             member_db = self._get_resource(context, models.MemberV2, id)
             context.session.delete(member_db)
 
-    def get_pool_members(self, context, pool_id, filters=None):
+    def get_pool_members(self, context, filters=None):
         filters = filters or {}
-        filters.update({'pool_id': [pool_id]})
         member_dbs = self._get_resources(context, models.MemberV2,
                                          filters=filters)
         return [data_models.Member.from_sqlalchemy_model(member_db)
                 for member_db in member_dbs]
 
-    def get_pool_member(self, context, id, pool_id, filters=None):
-        # NOTE(blogan): filters parameter is needed because neutron's extension
-        # code calls this method with that parameter even though we do not
-        # need it
+    def get_pool_member(self, context, id):
         member_db = self._get_resource(context, models.MemberV2, id)
-        if member_db.pool_id != pool_id:
-            raise loadbalancerv2.MemberNotFoundForPool(member_id=id,
-                                                       pool_id=pool_id)
         return data_models.Member.from_sqlalchemy_model(member_db)
 
     def delete_member(self, context, id):
@@ -455,10 +458,18 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
             member_db = self._get_resource(context, models.MemberV2, id)
             context.session.delete(member_db)
 
+    def create_healthmonitor_on_pool(self, context, pool_id, healthmonitor):
+        with context.session.begin(subtransactions=True):
+            hm_dm = self.create_healthmonitor(context, healthmonitor)
+            self.update_pool(context, pool_id, {'healthmonitor_id': hm_dm.id})
+            hm_db = self._get_resource(context, models.HealthMonitorV2,
+                                       hm_dm.id)
+        return data_models.HealthMonitor.from_sqlalchemy_model(hm_db)
+
     def create_healthmonitor(self, context, healthmonitor):
         with context.session.begin(subtransactions=True):
             self._load_id_and_tenant_id(context, healthmonitor)
-            healthmonitor['status'] = constants.PENDING_CREATE
+            healthmonitor['provisioning_status'] = constants.PENDING_CREATE
             hm_db_entry = models.HealthMonitorV2(**healthmonitor)
             context.session.add(hm_db_entry)
         return data_models.HealthMonitor.from_sqlalchemy_model(hm_db_entry)
@@ -481,6 +492,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
         return data_models.HealthMonitor.from_sqlalchemy_model(hm_db)
 
     def get_healthmonitors(self, context, filters=None):
+        filters = filters or {}
         hm_dbs = self._get_resources(context, models.HealthMonitorV2,
                                      filters=filters)
         return [data_models.HealthMonitor.from_sqlalchemy_model(hm_db)

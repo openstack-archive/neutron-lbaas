@@ -478,7 +478,7 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                  'admin_state_up': True,
                                  'vip_address': '127.0.0.1'}}
         return_value = copy.copy(data['loadbalancer'])
-        return_value.update({'status': 'ACTIVE', 'id': lb_id})
+        return_value.update({'id': lb_id})
 
         instance = self.plugin.return_value
         instance.create_loadbalancer.return_value = return_value
@@ -486,6 +486,7 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.api.post(_get_path('lbaas/loadbalancers', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/{0}'.format(self.fmt))
+        data['loadbalancer'].update({'provider': attr.ATTR_NOT_SPECIFIED})
         instance.create_loadbalancer.assert_called_with(mock.ANY,
                                                         loadbalancer=data)
 
@@ -517,7 +518,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'name': 'lb1',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': lb_id}
 
         instance = self.plugin.return_value
@@ -540,7 +540,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'name': 'lb1',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': lb_id}
 
         instance = self.plugin.return_value
@@ -569,10 +568,10 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                              'protocol_port': 80,
                              'connection_limit': 100,
                              'admin_state_up': True,
-                             'loadbalancer_id': _uuid(),
-                             'default_pool_id': _uuid()}}
+                             'loadbalancer_id': _uuid()}}
         return_value = copy.copy(data['listener'])
-        return_value.update({'status': 'ACTIVE', 'id': listener_id})
+        return_value.update({'id': listener_id})
+        del return_value['loadbalancer_id']
 
         instance = self.plugin.return_value
         instance.create_listener.return_value = return_value
@@ -610,7 +609,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'name': 'listener1',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': listener_id}
 
         instance = self.plugin.return_value
@@ -633,7 +631,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'name': 'listener1',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': listener_id}
 
         instance = self.plugin.return_value
@@ -655,25 +652,24 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
 
     def test_pool_create(self):
         pool_id = _uuid()
-        hm_id = _uuid()
         data = {'pool': {'name': 'pool1',
                          'description': 'descr_pool1',
                          'protocol': 'HTTP',
                          'lb_algorithm': 'ROUND_ROBIN',
-                         'healthmonitor_id': hm_id,
                          'admin_state_up': True,
                          'tenant_id': _uuid(),
+                         'listener_id': _uuid(),
                          'session_persistence': {}}}
         return_value = copy.copy(data['pool'])
-        return_value.update({'status': "ACTIVE", 'id': pool_id})
+        return_value.update({'id': pool_id})
+        del return_value['listener_id']
 
         instance = self.plugin.return_value
         instance.create_pool.return_value = return_value
         res = self.api.post(_get_path('lbaas/pools', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt)
-        instance.create_pool.assert_called_with(mock.ANY,
-                                                pool=data)
+        instance.create_pool.assert_called_with(mock.ANY, pool=data)
         self.assertEqual(res.status_int, exc.HTTPCreated.code)
         res = self.deserialize(res)
         self.assertIn('pool', res)
@@ -701,7 +697,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'name': 'pool1',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': pool_id}
 
         instance = self.plugin.return_value
@@ -723,7 +718,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'name': 'pool1',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': pool_id}
 
         instance = self.plugin.return_value
@@ -752,7 +746,7 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                            'admin_state_up': True,
                            'tenant_id': _uuid()}}
         return_value = copy.copy(data['member'])
-        return_value.update({'status': "ACTIVE", 'id': member_id})
+        return_value.update({'id': member_id})
 
         instance = self.plugin.return_value
         instance.create_pool_member.return_value = return_value
@@ -789,15 +783,10 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         self.assertEqual(res.status_int, exc.HTTPOk.code)
 
     def test_pool_member_update(self):
-        self.skipTest('mock autospec bug causes false negative.'
-                      'Similar bug: '
-                      'https://code.google.com/p/mock/issues/detail?id=224')
-
         member_id = _uuid()
         update_data = {'member': {'admin_state_up': False}}
         return_value = {'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': member_id}
 
         instance = self.plugin.return_value
@@ -806,14 +795,11 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.api.put(_get_path('lbaas/pools/pid1/members',
                                      id=member_id,
                                      fmt=self.fmt),
-                           self.serialize(update_data),
-                           content_type='application/%s'
-                                        % self.fmt)
+                           self.serialize(update_data))
 
-        instance.update_pool_member.assert_called_with(mock.ANY,
-                                                       member_id,
-                                                       member=update_data,
-                                                       pool_id='pid1')
+        instance.update_pool_member.assert_called_with(
+            mock.ANY, member_id, pool_id='pid1',
+            member=update_data)
         self.assertEqual(res.status_int, exc.HTTPOk.code)
         res = self.deserialize(res)
         self.assertIn('member', res)
@@ -823,7 +809,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         member_id = _uuid()
         return_value = {'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': member_id}
 
         instance = self.plugin.return_value
@@ -862,9 +847,11 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                   'url_path': '/path',
                                   'expected_codes': '200-300',
                                   'admin_state_up': True,
-                                  'tenant_id': _uuid()}}
+                                  'tenant_id': _uuid(),
+                                  'pool_id': _uuid()}}
         return_value = copy.copy(data['healthmonitor'])
-        return_value.update({'status': "ACTIVE", 'id': health_monitor_id})
+        return_value.update({'id': health_monitor_id})
+        del return_value['pool_id']
 
         instance = self.plugin.return_value
         instance.create_healthmonitor.return_value = return_value
@@ -872,8 +859,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                       fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt)
-        instance.create_healthmonitor.assert_called_with(mock.ANY,
-                                                         healthmonitor=data)
+        instance.create_healthmonitor.assert_called_with(
+            mock.ANY, healthmonitor=data)
         self.assertEqual(res.status_int, exc.HTTPCreated.code)
         res = self.deserialize(res)
         self.assertIn('healthmonitor', res)
@@ -888,7 +875,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                   'url_path': '/path',
                                   'expected_codes': '200-300',
                                   'admin_state_up': True,
-                                  'tenant_id': _uuid()}}
+                                  'tenant_id': _uuid(),
+                                  'pool_id': _uuid()}}
         res = self.api.post(_get_path('lbaas/healthmonitors',
                                       fmt=self.fmt),
                             self.serialize(data),
@@ -918,7 +906,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'type': 'HTTP',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': health_monitor_id}
 
         instance = self.plugin.return_value
@@ -941,7 +928,6 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'type': 'HTTP',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'status': "ACTIVE",
                         'id': health_monitor_id}
 
         instance = self.plugin.return_value
@@ -959,7 +945,14 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         self.assertEqual(res['healthmonitor'], return_value)
 
     def test_health_monitor_delete(self):
-        self._test_entity_delete('healthmonitor')
+        entity_id = _uuid()
+        res = self.api.delete(
+            test_api_v2._get_path('lbaas/healthmonitors',
+                                  id=entity_id, fmt=self.fmt))
+        delete_entity = getattr(self.plugin.return_value,
+                                "delete_healthmonitor")
+        delete_entity.assert_called_with(mock.ANY, entity_id)
+        self.assertEqual(res.status_int, exc.HTTPNoContent.code)
 
     def test_load_balancer_stats(self):
         load_balancer_id = _uuid()
@@ -977,3 +970,18 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('stats', res)
         self.assertEqual(res['stats'], stats['stats'])
+
+    def test_load_balancer_statuses(self):
+        load_balancer_id = _uuid()
+
+        statuses = {'statuses': {'loadbalancer': {}}}
+        instance = self.plugin.return_value
+        instance.statuses.return_value = statuses
+        path = _get_path('lbaas/loadbalancers', id=load_balancer_id,
+                         action="statuses", fmt=self.fmt)
+        res = self.api.get(path)
+        instance.statuses.assert_called_with(mock.ANY, load_balancer_id)
+        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        res = self.deserialize(res)
+        self.assertIn('statuses', res)
+        self.assertEqual(res['statuses'], statuses['statuses'])

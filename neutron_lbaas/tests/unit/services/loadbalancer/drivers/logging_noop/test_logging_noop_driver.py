@@ -15,6 +15,7 @@
 import mock
 from neutron import context
 
+from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.services.loadbalancer.drivers.logging_noop import driver
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
@@ -120,26 +121,40 @@ class LoadBalancerManagerTest(ManagerTestWithUpdates):
 class TestLoggingNoopLoadBalancerDriver(
         test_db_loadbalancer.LoadBalancerPluginDbTestCase):
 
+    def _create_fake_models(self):
+        id = 'name-001'
+        lb = data_models.LoadBalancer(id=id)
+        listener = data_models.Listener(id=id, loadbalancer=lb)
+        pool = data_models.Pool(id=id, listener=listener)
+        member = data_models.Member(id=id, pool=pool)
+        hm = data_models.HealthMonitor(id=id, pool=pool)
+        lb.listeners = [listener]
+        listener.default_pool = pool
+        pool.members = [member]
+        pool.healthmonitor = hm
+        return lb
+
     def setUp(self):
         super(TestLoggingNoopLoadBalancerDriver, self).setUp()
         self.context = context.get_admin_context()
         self.plugin = mock.Mock()
         self.driver = driver.LoggingNoopLoadBalancerDriver(self.plugin)
-        self.fakemodel = mock.Mock()
-        self.fakemodel.id = 'name-001'
+        self.lb = self._create_fake_models()
 
     def test_load_balancer_ops(self):
-        LoadBalancerManagerTest(self, self.driver.load_balancer,
-                                self.fakemodel)
+        LoadBalancerManagerTest(self, self.driver.load_balancer, self.lb)
 
     def test_listener_ops(self):
-        ManagerTest(self, self.driver.listener, self.fakemodel)
+        ManagerTest(self, self.driver.listener, self.lb.listeners[0])
 
     def test_pool_ops(self):
-        ManagerTestWithUpdates(self, self.driver.pool, self.fakemodel)
+        ManagerTestWithUpdates(self, self.driver.pool,
+                               self.lb.listeners[0].default_pool)
 
     def test_member_ops(self):
-        ManagerTestWithUpdates(self, self.driver.member, self.fakemodel)
+        ManagerTestWithUpdates(self, self.driver.member,
+                               self.lb.listeners[0].default_pool.members[0])
 
     def test_health_monitor_ops(self):
-        ManagerTest(self, self.driver.health_monitor, self.fakemodel)
+        ManagerTest(self, self.driver.health_monitor,
+                    self.lb.listeners[0].default_pool.healthmonitor)

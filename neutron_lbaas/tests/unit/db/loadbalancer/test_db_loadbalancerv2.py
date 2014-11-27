@@ -56,7 +56,7 @@ class LbaasTestMixin(object):
     )
 
     def _get_loadbalancer_optional_args(self):
-        return ('description', 'vip_address', 'admin_state_up', 'name')
+        return 'description', 'vip_address', 'admin_state_up', 'name'
 
     def _create_loadbalancer(self, fmt, subnet_id,
                              expected_res_status=None, **kwargs):
@@ -75,13 +75,13 @@ class LbaasTestMixin(object):
         return lb_res
 
     def _get_listener_optional_args(self):
-        return ('name', 'description', 'default_pool_id', 'loadbalancer_id',
-                'connection_limit', 'admin_state_up')
+        return 'name', 'description', 'connection_limit', 'admin_state_up'
 
-    def _create_listener(self, fmt, protocol, protocol_port,
+    def _create_listener(self, fmt, protocol, protocol_port, loadbalancer_id,
                          expected_res_status=None, **kwargs):
         data = {'listener': {'protocol': protocol,
                              'protocol_port': protocol_port,
+                             'loadbalancer_id': loadbalancer_id,
                              'tenant_id': self._tenant_id}}
         args = self._get_listener_optional_args()
         for arg in args:
@@ -96,13 +96,13 @@ class LbaasTestMixin(object):
         return listener_res
 
     def _get_pool_optional_args(self):
-        return ('name', 'description', 'healthmonitor_id', 'admin_state_up',
-                'session_persistence')
+        return 'name', 'description', 'admin_state_up', 'session_persistence'
 
-    def _create_pool(self, fmt, protocol, lb_algorithm,
+    def _create_pool(self, fmt, protocol, lb_algorithm, listener_id,
                      expected_res_status=None, **kwargs):
         data = {'pool': {'protocol': protocol,
                          'lb_algorithm': lb_algorithm,
+                         'listener_id': listener_id,
                          'tenant_id': self._tenant_id}}
 
         args = self._get_pool_optional_args()
@@ -118,7 +118,7 @@ class LbaasTestMixin(object):
         return pool_res
 
     def _get_member_optional_args(self):
-        return ('weight', 'admin_state_up')
+        return 'weight', 'admin_state_up'
 
     def _create_member(self, fmt, pool_id, address, protocol_port, subnet_id,
                        expected_res_status=None, **kwargs):
@@ -147,12 +147,13 @@ class LbaasTestMixin(object):
         return ('weight', 'admin_state_up', 'expected_codes', 'url_path',
                 'http_method')
 
-    def _create_healthmonitor(self, fmt, type, delay, timeout, max_retries,
-                              expected_res_status=None, **kwargs):
+    def _create_healthmonitor(self, fmt, pool_id, type, delay, timeout,
+                              max_retries, expected_res_status=None, **kwargs):
         data = {'healthmonitor': {'type': type,
                                   'delay': delay,
                                   'timeout': timeout,
                                   'max_retries': max_retries,
+                                  'pool_id': pool_id,
                                   'tenant_id': self._tenant_id}}
 
         args = self._get_healthmonitor_optional_args()
@@ -160,7 +161,7 @@ class LbaasTestMixin(object):
             if arg in kwargs and kwargs[arg] is not None:
                 data['healthmonitor'][arg] = kwargs[arg]
 
-        hm_req = self.new_create_request('healthmonitors', data, fmt)
+        hm_req = self.new_create_request('healthmonitors', data, fmt=fmt)
         hm_res = hm_req.get_response(self.ext_api)
         if expected_res_status:
             self.assertEqual(hm_res.status_int, expected_res_status)
@@ -184,22 +185,16 @@ class LbaasTestMixin(object):
             lb = self.deserialize(fmt or self.fmt, res)
             yield lb
             if not no_delete:
-                self.plugin.db.update_status(context.get_admin_context(),
-                                             models.LoadBalancer,
-                                             lb['loadbalancer']['id'],
-                                             constants.ACTIVE)
                 self._delete('loadbalancers', lb['loadbalancer']['id'])
 
     @contextlib.contextmanager
-    def listener(self, fmt=None, protocol='HTTP', protocol_port=80,
-                 no_delete=False, **kwargs):
+    def listener(self, fmt=None, protocol='HTTP', loadbalancer_id=None,
+                 protocol_port=80, no_delete=False, **kwargs):
         if not fmt:
             fmt = self.fmt
 
-        res = self._create_listener(fmt,
-                                    protocol=protocol,
-                                    protocol_port=protocol_port,
-                                    **kwargs)
+        res = self._create_listener(fmt, protocol, protocol_port,
+                                    loadbalancer_id, **kwargs)
         if res.status_int >= webob.exc.HTTPClientError.code:
             raise webob.exc.HTTPClientError(
                 explanation=_("Unexpected error code: %s") % res.status_int
@@ -208,21 +203,18 @@ class LbaasTestMixin(object):
         listener = self.deserialize(fmt or self.fmt, res)
         yield listener
         if not no_delete:
-            self.plugin.db.update_status(context.get_admin_context(),
-                                         models.Listener,
-                                         listener['listener']['id'],
-                                         constants.ACTIVE)
             self._delete('listeners', listener['listener']['id'])
 
     @contextlib.contextmanager
-    def pool(self, fmt=None, protocol='TCP', lb_algorithm='ROUND_ROBIN',
-             no_delete=False, **kwargs):
+    def pool(self, fmt=None, protocol='HTTP', lb_algorithm='ROUND_ROBIN',
+             no_delete=False, listener_id='listenerID1', **kwargs):
         if not fmt:
             fmt = self.fmt
 
         res = self._create_pool(fmt,
                                 protocol=protocol,
                                 lb_algorithm=lb_algorithm,
+                                listener_id=listener_id,
                                 **kwargs)
         if res.status_int >= webob.exc.HTTPClientError.code:
             raise webob.exc.HTTPClientError(
@@ -232,10 +224,6 @@ class LbaasTestMixin(object):
         pool = self.deserialize(fmt or self.fmt, res)
         yield pool
         if not no_delete:
-            self.plugin.db.update_status(context.get_admin_context(),
-                                         models.PoolV2,
-                                         pool['pool']['id'],
-                                         constants.ACTIVE)
             self._delete('pools', pool['pool']['id'])
 
     @contextlib.contextmanager
@@ -244,6 +232,7 @@ class LbaasTestMixin(object):
                **kwargs):
         if not fmt:
             fmt = self.fmt
+        subnet = subnet or self.test_subnet
         with test_db_plugin.optional_ctx(subnet, self.subnet) as tmp_subnet:
             res = self._create_member(fmt,
                                       pool_id=pool_id,
@@ -259,10 +248,6 @@ class LbaasTestMixin(object):
             member = self.deserialize(fmt or self.fmt, res)
         yield member
         if not no_delete:
-            self.plugin.db.update_status(context.get_admin_context(),
-                                         models.MemberV2,
-                                         member['member']['id'],
-                                         constants.ACTIVE)
             del_req = self.new_delete_request(
                 'pools',
                 fmt=fmt,
@@ -274,12 +259,13 @@ class LbaasTestMixin(object):
                              webob.exc.HTTPNoContent.code)
 
     @contextlib.contextmanager
-    def healthmonitor(self, fmt=None, type='TCP', delay=1, timeout=1,
-                      max_retries=1, no_delete=False, **kwargs):
+    def healthmonitor(self, fmt=None, pool_id='pool1id', type='TCP', delay=1,
+                      timeout=1, max_retries=1, no_delete=False, **kwargs):
         if not fmt:
             fmt = self.fmt
 
         res = self._create_healthmonitor(fmt,
+                                         pool_id=pool_id,
                                          type=type,
                                          delay=delay,
                                          timeout=timeout,
@@ -293,12 +279,11 @@ class LbaasTestMixin(object):
         healthmonitor = self.deserialize(fmt or self.fmt, res)
         yield healthmonitor
         if not no_delete:
-            self.plugin.db.update_status(context.get_admin_context(),
-                                         models.HealthMonitorV2,
-                                         healthmonitor['healthmonitor']['id'],
-                                         constants.ACTIVE)
-            self._delete('healthmonitors',
-                         healthmonitor['healthmonitor']['id'])
+            del_req = self.new_delete_request(
+                'healthmonitors', fmt=fmt,
+                id=healthmonitor['healthmonitor']['id'])
+            del_res = del_req.get_response(self.ext_api)
+            self.assertEqual(del_res.status_int, webob.exc.HTTPNoContent.code)
 
 
 class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
@@ -312,7 +297,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
         cfg.CONF.set_override('service_provider',
                               [lbaas_provider],
                               'service_providers')
-        #force service type manager to reload configuration:
+        # force service type manager to reload configuration:
         sdb.ServiceTypeManager._instance = None
 
         # removing service-type because it resides in neutron and tests
@@ -341,13 +326,98 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
 
         self._subnet_id = _subnet_id
 
+    def _update_loadbalancer_api(self, lb_id, data):
+        req = self.new_update_request('loadbalancers', data, lb_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, req.get_response(self.ext_api))
+        return resp, body
+
+    def _delete_loadbalancer_api(self, lb_id):
+        req = self.new_delete_request('loadbalancers', lb_id)
+        resp = req.get_response(self.ext_api)
+        return resp
+
+    def _get_loadbalancer_api(self, lb_id):
+        req = self.new_show_request('loadbalancers', lb_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _list_loadbalancers_api(self):
+        req = self.new_list_request('loadbalancers')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _get_loadbalancer_stats_api(self, lb_id):
+        req = self.new_show_request('loadbalancers', lb_id,
+                                    subresource='stats')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _get_loadbalancer_statuses_api(self, lb_id):
+        req = self.new_show_request('loadbalancers', lb_id,
+                                    subresource='statuses')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _validate_statuses(self, lb_id, listener_id=None, pool_id=None,
+                           member_id=None, hm_id=None):
+        resp, body = self._get_loadbalancer_statuses_api(lb_id)
+        lb_statuses = body['statuses']['loadbalancer']
+        self.assertEqual(constants.ACTIVE,
+                         lb_statuses['provisioning_status'])
+        self.assertEqual(lb_const.ONLINE,
+                         lb_statuses['operating_status'])
+        if listener_id:
+            listener_statuses = None
+            for listener in lb_statuses['listeners']:
+                if listener['id'] == listener_id:
+                    listener_statuses = listener
+            self.assertIsNotNone(listener_statuses)
+            self.assertEqual(constants.ACTIVE,
+                             listener_statuses['provisioning_status'])
+            self.assertEqual(lb_const.ONLINE,
+                             listener_statuses['operating_status'])
+            if pool_id:
+                pool_statuses = None
+                for pool in listener_statuses['pools']:
+                    if pool['id'] == pool_id:
+                        pool_statuses = pool
+                self.assertIsNotNone(pool_statuses)
+                self.assertEqual(constants.ACTIVE,
+                                 pool_statuses['provisioning_status'])
+                self.assertEqual(lb_const.ONLINE,
+                                 pool_statuses['operating_status'])
+                if member_id:
+                    member_statuses = None
+                    for member in pool_statuses['members']:
+                        if member['id'] == member_id:
+                            member_statuses = member
+                    self.assertIsNotNone(member_statuses)
+                    self.assertEqual(constants.ACTIVE,
+                                     member_statuses['provisioning_status'])
+                    self.assertEqual(lb_const.ONLINE,
+                                     member_statuses['operating_status'])
+                if hm_id:
+                    hm_status = pool_statuses['healthmonitor']
+                    self.assertEqual(constants.ACTIVE,
+                                     hm_status['provisioning_status'])
+
+
+class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
+
     def test_create_loadbalancer(self, **extras):
         expected = {
             'name': 'vip1',
             'description': '',
             'admin_state_up': True,
-            'status': 'ACTIVE',
-            'tenant_id': self._tenant_id
+            'provisioning_status': constants.ACTIVE,
+            'operating_status': lb_const.ONLINE,
+            'tenant_id': self._tenant_id,
+            'listeners': []
         }
 
         expected.update(extras)
@@ -357,6 +427,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             name = expected['name']
 
             with self.loadbalancer(name=name, subnet=subnet, **extras) as lb:
+                lb_id = lb['loadbalancer']['id']
                 for k in ('id', 'vip_address', 'vip_subnet_id'):
                     self.assertTrue(lb['loadbalancer'].get(k, None))
 
@@ -364,6 +435,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                               for k, v in lb['loadbalancer'].items()
                               if k in expected)
                 self.assertEqual(actual, expected)
+                self._validate_statuses(lb_id)
             return lb
 
     def test_create_loadbalancer_with_vip_address(self):
@@ -379,7 +451,9 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
         expected_values = {'name': name,
                            'description': description,
                            'admin_state_up': False,
-                           'status': constants.ACTIVE}
+                           'provisioning_status': constants.ACTIVE,
+                           'operating_status': lb_const.ONLINE,
+                           'listeners': []}
         with self.subnet() as subnet:
             expected_values['vip_subnet_id'] = subnet['subnet']['id']
             with self.loadbalancer(subnet=subnet) as loadbalancer:
@@ -387,22 +461,20 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                 data = {'loadbalancer': {'name': name,
                                          'description': description,
                                          'admin_state_up': False}}
-                req = self.new_update_request('loadbalancers', data,
-                                              loadbalancer_id)
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
+                resp, res = self._update_loadbalancer_api(loadbalancer_id,
+                                                          data)
                 for k in expected_values:
                     self.assertEqual(res['loadbalancer'][k],
                                      expected_values[k])
+                self._validate_statuses(loadbalancer_id)
 
     def test_delete_loadbalancer(self):
         with self.subnet() as subnet:
             with self.loadbalancer(subnet=subnet,
                                    no_delete=True) as loadbalancer:
                 loadbalancer_id = loadbalancer['loadbalancer']['id']
-                req = self.new_delete_request('loadbalancers', loadbalancer_id)
-                res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, webob.exc.HTTPNoContent.code)
+                resp = self._delete_loadbalancer_api(loadbalancer_id)
+                self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
 
     def test_delete_loadbalancer_when_loadbalancer_in_use(self):
         with self.subnet() as subnet:
@@ -413,6 +485,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                     self.assertRaises(loadbalancerv2.EntityInUse,
                                       self.plugin.delete_loadbalancer,
                                       ctx, lb_id)
+                    self._validate_statuses(lb_id)
 
     def test_show_loadbalancer(self):
         name = 'lb_show'
@@ -422,7 +495,9 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                            'description': description,
                            'vip_address': '10.0.0.10',
                            'admin_state_up': True,
-                           'status': constants.ACTIVE}
+                           'provisioning_status': constants.ACTIVE,
+                           'operating_status': lb_const.ONLINE,
+                           'listeners': []}
         with self.subnet() as subnet:
             vip_subnet_id = subnet['subnet']['id']
             expected_values['vip_subnet_id'] = vip_subnet_id
@@ -431,11 +506,9 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                    vip_address=vip_address) as lb:
                 lb_id = lb['loadbalancer']['id']
                 expected_values['id'] = lb_id
-                req = self.new_show_request('loadbalancers', lb_id)
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
+                resp, body = self._get_loadbalancer_api(lb_id)
                 for k in expected_values:
-                    self.assertEqual(res['loadbalancer'][k],
+                    self.assertEqual(body['loadbalancer'][k],
                                      expected_values[k])
 
     def test_list_loadbalancers(self):
@@ -446,7 +519,9 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                            'description': description,
                            'vip_address': '10.0.0.10',
                            'admin_state_up': True,
-                           'status': constants.ACTIVE}
+                           'provisioning_status': constants.ACTIVE,
+                           'operating_status': lb_const.ONLINE,
+                           'listeners': []}
         with self.subnet() as subnet:
             vip_subnet_id = subnet['subnet']['id']
             expected_values['vip_subnet_id'] = vip_subnet_id
@@ -455,12 +530,10 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                    vip_address=vip_address) as lb:
                 lb_id = lb['loadbalancer']['id']
                 expected_values['id'] = lb_id
-                req = self.new_list_request('loadbalancers')
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
-                self.assertEqual(len(res['loadbalancers']), 1)
+                resp, body = self._list_loadbalancers_api()
+                self.assertEqual(len(body['loadbalancers']), 1)
                 for k in expected_values:
-                    self.assertEqual(res['loadbalancers'][0][k],
+                    self.assertEqual(body['loadbalancers'][0][k],
                                      expected_values[k])
 
     def test_list_loadbalancers_with_sort_emulated(self):
@@ -504,11 +577,91 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
         with self.subnet() as subnet:
             with self.loadbalancer(subnet=subnet) as lb:
                 lb_id = lb['loadbalancer']['id']
-                req = self.new_show_request('loadbalancers', lb_id,
-                                            subresource='stats')
-                res = self.deserialize(self.fmt,
-                                       req.get_response(self.ext_api))
-                self.assertEqual(res, expected_values)
+                resp, body = self._get_loadbalancer_stats_api(lb_id)
+                self.assertEqual(body, expected_values)
+
+    def test_show_loadbalancer_with_listeners(self):
+        name = 'lb_show'
+        description = 'lb_show description'
+        vip_address = '10.0.0.10'
+        expected_values = {'name': name,
+                           'description': description,
+                           'vip_address': '10.0.0.10',
+                           'admin_state_up': True,
+                           'provisioning_status': constants.ACTIVE,
+                           'operating_status': lb_const.ONLINE,
+                           'listeners': []}
+        with self.subnet() as subnet:
+            vip_subnet_id = subnet['subnet']['id']
+            expected_values['vip_subnet_id'] = vip_subnet_id
+            with self.loadbalancer(subnet=subnet, name=name,
+                                   description=description,
+                                   vip_address=vip_address) as lb:
+                lb_id = lb['loadbalancer']['id']
+                expected_values['id'] = lb_id
+                with self.listener(loadbalancer_id=lb_id,
+                                   protocol_port=80) as listener1:
+                    listener1_id = listener1['listener']['id']
+                    expected_values['listeners'].append({'id': listener1_id})
+                    with self.listener(loadbalancer_id=lb_id,
+                                       protocol_port=81) as listener2:
+                        listener2_id = listener2['listener']['id']
+                        expected_values['listeners'].append(
+                            {'id': listener2_id})
+                        resp, body = self._get_loadbalancer_api(lb_id)
+                        for k in expected_values:
+                            self.assertEqual(body['loadbalancer'][k],
+                                             expected_values[k])
+
+
+class ListenerTestBase(LbaasPluginDbTestCase):
+    def setUp(self):
+        super(ListenerTestBase, self).setUp()
+        network = self._make_network(self.fmt, 'test-net', True)
+        self.test_subnet = self._make_subnet(
+            self.fmt, network, gateway=attributes.ATTR_NOT_SPECIFIED,
+            cidr='10.0.0.0/24')
+        self.test_subnet_id = self.test_subnet['subnet']['id']
+        lb_res = self._create_loadbalancer(
+            self.fmt, subnet_id=self.test_subnet_id)
+        self.lb = self.deserialize(self.fmt, lb_res)
+        self.lb_id = self.lb['loadbalancer']['id']
+
+    def tearDown(self):
+        self._delete_loadbalancer_api(self.lb_id)
+        super(ListenerTestBase, self).tearDown()
+
+    def _create_listener_api(self, data):
+        req = self.new_create_request("listeners", data, self.fmt)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _update_listener_api(self, listener_id, data):
+        req = self.new_update_request('listeners', data, listener_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, req.get_response(self.ext_api))
+        return resp, body
+
+    def _delete_listener_api(self, listener_id):
+        req = self.new_delete_request('listeners', listener_id)
+        resp = req.get_response(self.ext_api)
+        return resp
+
+    def _get_listener_api(self, listener_id):
+        req = self.new_show_request('listeners', listener_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _list_listeners_api(self):
+        req = self.new_list_request('listeners')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+
+class LbaasListenerTests(ListenerTestBase):
 
     def test_create_listener(self, **extras):
         expected = {
@@ -516,67 +669,34 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             'protocol_port': 80,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'status': lb_const.DEFERRED
+            'default_pool_id': None,
+            'loadbalancers': [{'id': self.lb_id}]
         }
 
         expected.update(extras)
 
-        with self.listener() as listener:
-            self.assertTrue(listener['listener'].get('id'))
-
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener'].get('id')
+            self.assertTrue(listener_id)
             actual = {}
             for k, v in listener['listener'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(actual, expected)
+            self._validate_statuses(self.lb_id, listener_id)
         return listener
 
     def test_create_listener_same_port_same_load_balancer(self):
-        with self.subnet() as subnet:
-            with self.loadbalancer(subnet=subnet) as lb:
-                lb_id = lb['loadbalancer']['id']
-                with self.listener(loadbalancer_id=lb_id,
-                                   protocol_port=80):
-                    self._create_listener(self.fmt, 'HTTP', 80,
-                                          loadbalancer_id=lb_id,
-                                          expected_res_status=409)
-
-    def test_create_listener_with_pool_protocol_mismatch(self):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            self._create_listener(self.fmt, 'TCP', 80,
-                                  expected_res_status=409,
-                                  default_pool_id=pool_id)
+        with self.listener(loadbalancer_id=self.lb_id,
+                           protocol_port=80):
+            self._create_listener(self.fmt, 'HTTP', 80,
+                                  loadbalancer_id=self.lb_id,
+                                  expected_res_status=409)
 
     def test_create_listener_loadbalancer_id_does_not_exist(self):
         self._create_listener(self.fmt, 'HTTP', 80,
                               loadbalancer_id=uuidutils.generate_uuid(),
                               expected_res_status=404)
-
-    def test_create_listener_pool_id_does_not_exist(self):
-        self._create_listener(self.fmt, 'HTTP', 80,
-                              default_pool_id=uuidutils.generate_uuid(),
-                              expected_res_status=404)
-
-    def test_create_pool_id_on_listener_already_exists_on_another(self):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            with self.listener(default_pool_id=pool_id,
-                               protocol_port=80):
-                ctx = context.get_admin_context()
-                listener_data = {
-                    'listener': {
-                        'default_pool_id': pool_id,
-                        'protocol': 'HTTP',
-                        'protocol_port': 81,
-                        'tenant_id': self._tenant_id,
-                        'admin_state_up': True,
-                        'loadbalancer_id': attributes.ATTR_NOT_SPECIFIED}}
-                self.assertRaises(
-                    loadbalancerv2.EntityInUse,
-                    self.plugin.create_listener,
-                    ctx,
-                    listener_data)
 
     def test_update_listener(self):
         name = 'new_listener'
@@ -586,162 +706,26 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                            'connection_limit': 100,
                            'admin_state_up': False,
                            'tenant_id': self._tenant_id,
-                           'status': lb_const.DEFERRED,
-                           'loadbalancer_id': None,
-                           'default_pool_id': None}
+                           'loadbalancers': [{'id': self.lb_id}]}
 
-        with self.listener(name=name) as listener:
+        with self.listener(name=name, loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
             data = {'listener': {'name': name,
                                  'connection_limit': 100,
                                  'admin_state_up': False}}
-            req = self.new_update_request('listeners', data, listener_id)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+            resp, body = self._update_listener_api(listener_id, data)
             for k in expected_values:
-                self.assertEqual(res['listener'][k], expected_values[k])
-
-    def test_cannot_update_loadbalancer_id_on_listener_lb_id_exists(self):
-        with self.subnet() as subnet:
-            with self.loadbalancer(subnet=subnet) as lb1:
-                lb1_id = lb1['loadbalancer']['id']
-                with self.loadbalancer(subnet=subnet) as lb2:
-                    lb2_id = lb2['loadbalancer']['id']
-                    with self.listener(loadbalancer_id=lb1_id,
-                                       protocol_port=80) as listener1:
-                        ctx = context.get_admin_context()
-                        listener_id = listener1['listener']['id']
-                        self.assertRaises(
-                            loadbalancerv2.AttributeIDImmutable,
-                            self.plugin.update_listener,
-                            ctx,
-                            listener_id,
-                            {'listener': {'loadbalancer_id': lb2_id}})
-                        listener = self.plugin.get_listener(ctx, listener_id)
-                        self.assertEqual(constants.ACTIVE,
-                                         listener['status'])
-
-    def test_update_loadbalancer_id_on_listener_lb_id_does_not_exist(self):
-        with self.subnet() as subnet:
-            with self.loadbalancer(subnet=subnet) as lb1:
-                lb1_id = lb1['loadbalancer']['id']
-                with self.listener(loadbalancer_id=lb1_id,
-                                   protocol_port=80) as listener1:
-                    ctx = context.get_admin_context()
-                    listener_id = listener1['listener']['id']
-                    self.plugin.update_listener(
-                        ctx, listener_id,
-                        {'listener': {'loadbalancer_id': None}})
-                    self.assertRaises(
-                        loadbalancerv2.EntityNotFound,
-                        self.plugin.update_listener,
-                        ctx,
-                        listener_id,
-                        {'listener': {'loadbalancer_id': 'WRONG_UUID'}})
-                    listener = self.plugin.get_listener(ctx, listener_id)
-                    self.assertEqual(lb_const.DEFERRED, listener['status'])
-
-    def test_update_loadbalancer_id_on_listener_lb_id_is_none(self):
-        with self.subnet() as subnet:
-            with self.loadbalancer(subnet=subnet) as lb1:
-                lb1_id = lb1['loadbalancer']['id']
-                with self.listener(loadbalancer_id=lb1_id,
-                                   protocol_port=80) as listener1:
-                    listener_id = listener1['listener']['id']
-                    ctx = context.get_admin_context()
-                    self.plugin.update_listener(
-                        ctx, listener_id,
-                        {'listener': {'loadbalancer_id': None}})
-                    self.plugin.update_listener(
-                        ctx, listener_id,
-                        {'listener': {'loadbalancer_id': lb1_id}})
-                    listener = self.plugin.get_listener(ctx, listener_id)
-                    self.assertEqual(constants.ACTIVE, listener['status'])
-
-    def test_update_pool_id_on_listener_pool_id_exists(self):
-        with self.pool(protocol='HTTP') as pool1:
-            pool1_id = pool1['pool']['id']
-            with self.pool(protocol='HTTP') as pool2:
-                pool2_id = pool2['pool']['id']
-                with self.listener(default_pool_id=pool1_id,
-                                   protocol_port=80) as listener1:
-                    ctx = context.get_admin_context()
-                    listener_id = listener1['listener']['id']
-                    self.assertRaises(
-                        loadbalancerv2.AttributeIDImmutable,
-                        self.plugin.update_listener,
-                        ctx,
-                        listener_id,
-                        {'listener': {'default_pool_id': pool2_id}})
-                    listener = self.plugin.get_listener(ctx, listener_id)
-                    self.assertEqual(lb_const.DEFERRED, listener['status'])
-
-    def test_update_pool_id_on_listener_pool_id_is_none(self):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            with self.listener(default_pool_id=pool_id,
-                               protocol_port=80) as listener1:
-                listener_id = listener1['listener']['id']
-                ctx = context.get_admin_context()
-                self.plugin.update_listener(
-                    ctx, listener_id,
-                    {'listener': {'default_pool_id': None}})
-                self.plugin.update_listener(
-                    ctx, listener_id,
-                    {'listener': {'default_pool_id': pool_id}})
-
-    def test_update_pool_id_on_listener_pool_id_does_not_exist(self):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            with self.listener(default_pool_id=pool_id,
-                               protocol_port=80) as listener1:
-                ctx = context.get_admin_context()
-                listener_id = listener1['listener']['id']
-                self.plugin.update_listener(
-                    ctx, listener_id,
-                    {'listener': {'default_pool_id': None}})
-                self.assertRaises(
-                    loadbalancerv2.EntityNotFound,
-                    self.plugin.update_listener,
-                    ctx,
-                    listener_id,
-                    {'listener': {'default_pool_id': 'WRONG_UUID'}})
-
-    def test_update_pool_id_on_listener_already_exists_on_another(self):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            with self.listener(default_pool_id=pool_id,
-                               protocol_port=80):
-                with self.listener(protocol_port=80) as listener2:
-                    ctx = context.get_admin_context()
-                    listener_id = listener2['listener']['id']
-                    self.assertRaises(
-                        loadbalancerv2.EntityInUse,
-                        self.plugin.update_listener,
-                        ctx,
-                        listener_id,
-                        {'listener': {'default_pool_id': pool_id}})
-                    listener = self.plugin.get_listener(ctx, listener_id)
-                    self.assertEqual(lb_const.DEFERRED, listener['status'])
-
-    def test_update_listener_protocol_mismatch(self):
-        with self.listener(protocol_port=80) as listener:
-            listener_id = listener['listener']['id']
-            with self.pool() as pool:
-                pool_id = pool['pool']['id']
-                ctx = context.get_admin_context()
-                self.assertRaises(loadbalancerv2.ListenerPoolProtocolMismatch,
-                                  self.plugin.update_listener,
-                                  ctx, listener_id,
-                                  {'listener': {'default_pool_id': pool_id}})
-                listener = self.plugin.get_listener(ctx, listener_id)
-                self.assertEqual(lb_const.DEFERRED, listener['status'])
+                self.assertEqual(body['listener'][k], expected_values[k])
+            self._validate_statuses(self.lb_id, listener_id)
 
     def test_delete_listener(self):
-        with self.listener(no_delete=True) as listener:
+        with self.listener(no_delete=True,
+                           loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            req = self.new_delete_request('listeners', listener_id)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPNoContent.code)
+            resp = self._delete_listener_api(listener_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+            resp, body = self._get_loadbalancer_api(self.lb_id)
+            self.assertEqual(0, len(body['loadbalancer']['listeners']))
 
     def test_show_listener(self):
         name = 'show_listener'
@@ -751,16 +735,14 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                            'connection_limit': -1,
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
-                           'status': lb_const.DEFERRED,
-                           'loadbalancer_id': None,
-                           'default_pool_id': None}
+                           'default_pool_id': None,
+                           'loadbalancers': [{'id': self.lb_id}]}
 
-        with self.listener(name=name) as listener:
+        with self.listener(name=name, loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            req = self.new_show_request('listeners', listener_id)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+            resp, body = self._get_listener_api(listener_id)
             for k in expected_values:
-                self.assertEqual(res['listener'][k], expected_values[k])
+                self.assertEqual(body['listener'][k], expected_values[k])
 
     def test_list_listeners(self):
         name = 'list_listeners'
@@ -770,36 +752,51 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                            'connection_limit': -1,
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
-                           'status': lb_const.DEFERRED,
-                           'loadbalancer_id': None,
-                           'default_pool_id': None}
+                           'loadbalancers': [{'id': self.lb_id}]}
 
-        with self.listener(name=name) as listener:
+        with self.listener(name=name, loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
             expected_values['id'] = listener_id
-            req = self.new_list_request('listeners')
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
-            listener_list = res['listeners']
+            resp, body = self._list_listeners_api()
+            listener_list = body['listeners']
             self.assertEqual(len(listener_list), 1)
             for k in expected_values:
                 self.assertEqual(listener_list[0][k], expected_values[k])
 
+    def test_cannot_delete_listener_with_pool(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            ctx = context.get_admin_context()
+            with self.pool(listener_id=listener_id):
+                self.assertRaises(
+                    loadbalancerv2.EntityInUse,
+                    self.plugin.delete_listener,
+                    ctx,
+                    listener_id)
+            self._validate_statuses(self.lb_id, listener_id)
+
     def test_list_listeners_with_sort_emulated(self):
-        with self.listener(name='listener1', protocol_port=81) as listener1:
+        with self.listener(name='listener1', protocol_port=81,
+                           loadbalancer_id=self.lb_id) as listener1:
             with self.listener(name='listener2',
-                               protocol_port=82) as listener2:
+                               protocol_port=82,
+                               loadbalancer_id=self.lb_id) as listener2:
                 with self.listener(name='listener3',
-                                   protocol_port=82) as listener3:
+                                   protocol_port=83,
+                                   loadbalancer_id=self.lb_id) as listener3:
                     self._test_list_with_sort(
                         'listener',
-                        (listener1, listener3, listener2),
+                        (listener1, listener2, listener3),
                         [('protocol_port', 'asc'), ('name', 'desc')]
                     )
 
     def test_list_listeners_with_pagination_emulated(self):
-        with self.listener(name='listener1') as listener1:
-            with self.listener(name='listener2') as listener2:
-                with self.listener(name='listener3') as listener3:
+        with self.listener(name='listener1', protocol_port=80,
+                           loadbalancer_id=self.lb_id) as listener1:
+            with self.listener(name='listener2', protocol_port=81,
+                               loadbalancer_id=self.lb_id) as listener2:
+                with self.listener(name='listener3', protocol_port=82,
+                                   loadbalancer_id=self.lb_id) as listener3:
                     self._test_list_with_pagination(
                         'listener',
                         (listener1, listener2, listener3),
@@ -807,136 +804,114 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                     )
 
     def test_list_listeners_with_pagination_reverse_emulated(self):
-        with self.listener(name='listener1') as listener1:
-            with self.listener(name='listener2') as listener2:
-                with self.listener(name='listener3') as listener3:
+        with self.listener(name='listener1', protocol_port=80,
+                           loadbalancer_id=self.lb_id) as listener1:
+            with self.listener(name='listener2', protocol_port=81,
+                               loadbalancer_id=self.lb_id) as listener2:
+                with self.listener(name='listener3', protocol_port=82,
+                                   loadbalancer_id=self.lb_id) as listener3:
                     self._test_list_with_pagination(
                         'listener',
                         (listener3, listener2, listener1),
                         ('name', 'desc'), 2, 2
                     )
 
-    def test_create_listener_pool(self, **extras):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            expected = {
-                'protocol': 'HTTP',
-                'protocol_port': 80,
-                'admin_state_up': True,
-                'tenant_id': self._tenant_id,
-                'default_pool_id': pool_id,
-                'status': lb_const.DEFERRED
-            }
 
-            expected.update(extras)
+class PoolTestBase(ListenerTestBase):
 
-            with self.listener(default_pool_id=pool_id) as listener:
-                self.assertTrue(listener['listener'].get('id'))
+    def setUp(self):
+        super(PoolTestBase, self).setUp()
+        listener_res = self._create_listener(self.fmt, lb_const.PROTOCOL_HTTP,
+                                             80, self.lb_id)
+        self.def_listener = self.deserialize(self.fmt, listener_res)
+        self.listener_id = self.def_listener['listener']['id']
 
-                actual = {}
-                for k, v in listener['listener'].items():
-                    if k in expected:
-                        actual[k] = v
-                self.assertEqual(expected, actual)
-            return listener
+    def tearDown(self):
+        self._delete_listener_api(self.listener_id)
+        super(PoolTestBase, self).tearDown()
 
-    def test_update_listener_pool(self, **extras):
-        with self.pool(protocol='HTTP') as pool:
-            pool_id = pool['pool']['id']
-            expected = {
-                'protocol': 'HTTP',
-                'protocol_port': 80,
-                'admin_state_up': True,
-                'tenant_id': self._tenant_id,
-                'default_pool_id': pool_id,
-                'status': lb_const.DEFERRED
-            }
+    def _create_pool_api(self, data):
+        req = self.new_create_request("pools", data, self.fmt)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
 
-            expected.update(extras)
+    def _update_pool_api(self, pool_id, data):
+        req = self.new_update_request('pools', data, pool_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
 
-            with self.listener(default_pool_id=pool_id) as listener:
-                self.assertTrue(listener['listener'].get('id'))
+    def _delete_pool_api(self, pool_id):
+        req = self.new_delete_request('pools', pool_id)
+        resp = req.get_response(self.ext_api)
+        return resp
 
-                actual = {}
-                for k, v in listener['listener'].items():
-                    if k in expected:
-                        actual[k] = v
-                self.assertEqual(expected, actual)
+    def _get_pool_api(self, pool_id):
+        req = self.new_show_request('pools', pool_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
 
-                data = {'listener': {
-                    'name': 'updated_name'
-                }}
+    def _list_pools_api(self):
+        req = self.new_list_request('pools')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
 
-                expected2 = {
-                    'name': 'updated_name',
-                    'protocol': 'HTTP',
-                    'protocol_port': 80,
-                    'admin_state_up': True,
-                    'tenant_id': self._tenant_id,
-                    'default_pool_id': pool['pool']['id'],
-                    'status': lb_const.DEFERRED
-                }
 
-                req = self.new_update_request('listeners', data,
-                                              listener['listener']['id'],
-                                              fmt=self.fmt)
-                res = self.deserialize(
-                    self.fmt, req.get_response(self.ext_api))
-                actual2 = {}
-                for k, v in res['listener'].items():
-                    if k in expected2:
-                        actual2[k] = v
-                self.assertEqual(expected2, actual2)
-            return listener
+class LbaasPoolTests(PoolTestBase):
 
     def test_create_pool(self, **extras):
         expected = {
             'name': '',
             'description': '',
-            'protocol': 'TCP',
+            'protocol': 'HTTP',
             'lb_algorithm': 'ROUND_ROBIN',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'listeners': [{'id': self.listener_id}],
             'healthmonitor_id': None,
-            'status': lb_const.DEFERRED
+            'members': []
         }
 
         expected.update(extras)
 
-        with self.pool(**extras) as pool:
+        with self.pool(listener_id=self.listener_id, **extras) as pool:
+            pool_id = pool['pool'].get('id')
             if 'session_persistence' in expected:
                 if not expected['session_persistence'].get('cookie_name'):
                     expected['session_persistence']['cookie_name'] = None
-            self.assertTrue(pool['pool'].get('id'))
+            self.assertTrue(pool_id)
 
             actual = {}
             for k, v in pool['pool'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(actual, expected)
+            self._validate_statuses(self.lb_id, self.listener_id, pool_id)
         return pool
 
     def test_show_pool(self, **extras):
         expected = {
             'name': '',
             'description': '',
-            'protocol': 'TCP',
+            'protocol': 'HTTP',
             'lb_algorithm': 'ROUND_ROBIN',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'listeners': [{'id': self.listener_id}],
             'healthmonitor_id': None,
-            'status': lb_const.DEFERRED
+            'members': []
         }
 
         expected.update(extras)
 
-        with self.pool() as pool:
-            req = self.new_show_request('pools',
-                                        pool['pool']['id'],
-                                        fmt=self.fmt)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+        with self.pool(listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
+            resp, body = self._get_pool_api(pool_id)
             actual = {}
-            for k, v in res['pool'].items():
+            for k, v in body['pool'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
@@ -946,66 +921,84 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
         expected = {
             'name': '',
             'description': '',
-            'protocol': 'TCP',
+            'protocol': 'HTTP',
             'lb_algorithm': 'LEAST_CONNECTIONS',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'listeners': [{'id': self.listener_id}],
             'healthmonitor_id': None,
-            'status': lb_const.DEFERRED
+            'members': []
         }
 
         expected.update(extras)
 
-        with self.pool() as pool:
-            self.assertTrue(pool['pool'].get('id'))
+        with self.pool(listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
+            self.assertTrue(pool_id)
             data = {'pool': {'lb_algorithm': 'LEAST_CONNECTIONS'}}
-            req = self.new_update_request("pools", data,
-                                          pool['pool']['id'],
-                                          self.fmt)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+            resp, body = self._update_pool_api(pool_id, data)
             actual = {}
-            for k, v in res['pool'].items():
+            for k, v in body['pool'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, self.listener_id, pool_id)
 
         return pool
 
     def test_delete_pool(self):
-        with self.pool(no_delete=True) as pool:
+        with self.pool(no_delete=True, listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
             ctx = context.get_admin_context()
             qry = ctx.session.query(models.PoolV2)
-            qry = qry.filter_by(id=pool['pool']['id'])
+            qry = qry.filter_by(id=pool_id)
             self.assertIsNotNone(qry.first())
 
-            req = self.new_delete_request('pools',
-                                          pool['pool']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPNoContent.code)
+            resp = self._delete_pool_api(pool_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
             qry = ctx.session.query(models.PoolV2)
             qry = qry.filter_by(id=pool['pool']['id'])
             self.assertIsNone(qry.first())
 
-    def test_create_pool_healthmonitor_does_not_exist(self):
-        self._create_pool(self.fmt, 'HTTP', 'ROUND_ROBIN',
-                          healthmonitor_id=uuidutils.generate_uuid(),
-                          expected_res_status=404)
-
-    def test_create_pool_healthmonitor_exists_on_another(self):
-        with self.healthmonitor() as hm:
-            hm_id = hm['healthmonitor']['id']
-            with self.pool(healthmonitor_id=hm_id):
+    def test_delete_pool_and_members(self):
+        with self.pool(listener_id=self.listener_id, no_delete=True) as pool:
+            pool_id = pool['pool']['id']
+            with self.member(pool_id=pool_id, no_delete=True) as member:
+                member_id = member['member']['id']
                 ctx = context.get_admin_context()
-                pool_data = {'pool': {'tenant_id': self._tenant_id,
-                                      'healthmonitor_id': hm_id,
-                                      'protocol': 'HTTP',
-                                      'name': '',
-                                      'description': '',
-                                      'lb_algorithm': 'ROUND_ROBIN',
-                                      'admin_state_up': True}}
-                self.assertRaises(loadbalancerv2.EntityInUse,
-                                  self.plugin.create_pool,
-                                  ctx, pool_data)
+                # this will only set status, it requires driver to delete
+                # from db.  Since the LoggingNoopDriver is being used it
+                # should delete from db
+                self.plugin.delete_pool(ctx, pool_id)
+                # verify member got deleted as well
+                self.assertRaises(
+                    loadbalancerv2.EntityNotFound,
+                    self.plugin.db.get_pool_member,
+                    ctx, member_id)
+
+    def test_cannot_add_multiple_pools_to_listener(self):
+        with self.pool(listener_id=self.listener_id):
+            data = {'pool': {'name': '',
+                             'description': '',
+                             'protocol': 'HTTP',
+                             'lb_algorithm': 'ROUND_ROBIN',
+                             'admin_state_up': True,
+                             'tenant_id': self._tenant_id,
+                             'listener_id': self.listener_id}}
+            resp, body = self._create_pool_api(data)
+            self.assertEqual(resp.status_int, webob.exc.HTTPConflict.code)
+
+    def test_create_pool_with_pool_protocol_mismatch(self):
+        with self.listener(protocol=lb_const.PROTOCOL_HTTPS,
+                           loadbalancer_id=self.lb_id,
+                           protocol_port=443) as listener:
+            listener_id = listener['listener']['id']
+            data = {'pool': {'listener_id': listener_id,
+                             'protocol': lb_const.PROTOCOL_HTTP,
+                             'lb_algorithm': lb_const.LB_METHOD_ROUND_ROBIN,
+                             'tenant_id': self._tenant_id}}
+            resp, body = self._create_pool_api(data)
+            self.assertEqual(resp.status_int, webob.exc.HTTPConflict.code)
 
     def test_create_pool_with_protocol_invalid(self):
         data = {'pool': {
@@ -1016,10 +1009,8 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             'admin_state_up': True,
             'tenant_id': self._tenant_id
         }}
-        req = self.new_create_request("pools", data,
-                                      self.fmt)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+        resp, body = self._create_pool_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_create_pool_with_session_persistence(self):
         self.test_create_pool(session_persistence={'type': 'HTTP_COOKIE'})
@@ -1048,79 +1039,147 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
 
         update_info = {'pool': {'session_persistence': None}}
 
-        with self.pool(name=name, session_persistence=sp) as pool:
+        with self.pool(name=name, session_persistence=sp,
+                       listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
             sp['cookie_name'] = None
             # Ensure that pool has been created properly
             self.assertEqual(pool['pool']['session_persistence'],
                              sp)
 
             # Try resetting session_persistence
-            req = self.new_update_request('pools', update_info,
-                                          pool['pool']['id'])
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+            resp, body = self._update_pool_api(pool_id, update_info)
 
-            self.assertIsNone(res['pool'].get('session_persistence'))
+            self.assertIsNone(body['pool'].get('session_persistence'))
 
     def test_update_pool_with_protocol(self):
-        with self.pool() as pool:
+        with self.pool(listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
             data = {'pool': {'protocol': 'BLANK'}}
-            req = self.new_update_request("pools", data, pool['pool']['id'],
-                                          self.fmt)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
-
-    def test_update_pool_immutable_healthmonitor(self):
-        with self.healthmonitor() as hm:
-            hm_id = hm['healthmonitor']['id']
-            with self.pool(healthmonitor_id=hm_id) as pool:
-                pool_id = pool['pool']['id']
-                ctx = context.get_admin_context()
-                self.assertRaises(loadbalancerv2.AttributeIDImmutable,
-                                  self.plugin.update_pool,
-                                  ctx, pool_id,
-                                  {'pool': {'healthmonitor_id': hm_id}})
-                uppool = self.plugin.get_pool(ctx, pool_id)
-                self.assertEqual(lb_const.DEFERRED, uppool['status'])
-
-    def test_update_pool_healthmonitor_exists_on_another(self):
-        with self.healthmonitor() as hm:
-            hm_id = hm['healthmonitor']['id']
-            with self.pool(healthmonitor_id=hm_id):
-                with self.pool() as pool2:
-                    pool_id = pool2['pool']['id']
-                    ctx = context.get_admin_context()
-                    self.assertRaises(loadbalancerv2.EntityInUse,
-                                      self.plugin.update_pool,
-                                      ctx, pool_id,
-                                      {'pool': {'healthmonitor_id': hm_id}})
-                    uppool = self.plugin.get_pool(ctx, pool_id)
-                    self.assertEqual(lb_const.DEFERRED, uppool['status'])
+            resp, body = self._update_pool_api(pool_id, data)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_list_pools_with_sort_emulated(self):
-        with contextlib.nested(self.pool(protocol='HTTP'),
-                               self.pool(protocol='HTTPS'),
-                               self.pool(protocol='TCP')
-                               ) as (p1, p2, p3):
-            self._test_list_with_sort('pool', (p3, p2, p1),
-                                      [('protocol', 'desc')])
+        with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=81,
+                                             protocol=lb_const.PROTOCOL_HTTPS),
+                               self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=82,
+                                             protocol=lb_const.PROTOCOL_TCP),
+                               self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=83,
+                                             protocol=lb_const.PROTOCOL_HTTP)
+                               ) as (l1, l2, l3):
+            with contextlib.nested(self.pool(listener_id=l1['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_HTTPS),
+                                   self.pool(listener_id=l2['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_TCP),
+                                   self.pool(listener_id=l3['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_HTTP)
+                                   ) as (p1, p2, p3):
+                self._test_list_with_sort('pool', (p2, p1, p3),
+                                          [('protocol', 'desc')])
 
     def test_list_pools_with_pagination_emulated(self):
-        with contextlib.nested(self.pool(protocol='HTTP'),
-                               self.pool(protocol='HTTPS'),
-                               self.pool(protocol='TCP')
-                               ) as (p1, p2, p3):
-            self._test_list_with_pagination('pool',
-                                            (p1, p2, p3),
-                                            ('protocol', 'asc'), 2, 2)
+        with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=81,
+                                             protocol=lb_const.PROTOCOL_HTTPS),
+                               self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=82,
+                                             protocol=lb_const.PROTOCOL_TCP),
+                               self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=83,
+                                             protocol=lb_const.PROTOCOL_HTTP)
+                               ) as (l1, l2, l3):
+            with contextlib.nested(self.pool(listener_id=l1['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_HTTPS),
+                                   self.pool(listener_id=l2['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_TCP),
+                                   self.pool(listener_id=l3['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_HTTP)
+                                   ) as (p1, p2, p3):
+                self._test_list_with_pagination('pool',
+                                                (p3, p1, p2),
+                                                ('protocol', 'asc'), 2, 2)
 
     def test_list_pools_with_pagination_reverse_emulated(self):
-        with contextlib.nested(self.pool(name='p1'),
-                               self.pool(name='p2'),
-                               self.pool(name='p3')
-                               ) as (p1, p2, p3):
-            self._test_list_with_pagination_reverse('pool',
-                                                    (p1, p2, p3),
-                                                    ('name', 'asc'), 2, 2)
+        with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=81,
+                                             protocol=lb_const.PROTOCOL_HTTPS),
+                               self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=82,
+                                             protocol=lb_const.PROTOCOL_TCP),
+                               self.listener(loadbalancer_id=self.lb_id,
+                                             protocol_port=83,
+                                             protocol=lb_const.PROTOCOL_HTTP)
+                               ) as (l1, l2, l3):
+            with contextlib.nested(self.pool(listener_id=l1['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_HTTPS),
+                                   self.pool(listener_id=l2['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_TCP),
+                                   self.pool(listener_id=l3['listener']['id'],
+                                             protocol=lb_const.PROTOCOL_HTTP)
+                                   ) as (p1, p2, p3):
+                self._test_list_with_pagination_reverse('pool',
+                                                        (p3, p1, p2),
+                                                        ('protocol', 'asc'),
+                                                        2, 2)
+
+    def test_get_listener_shows_default_pool(self):
+        with self.pool(listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
+            resp, body = self._get_listener_api(self.listener_id)
+            self.assertEqual(pool_id, body['listener']['default_pool_id'])
+
+
+class MemberTestBase(PoolTestBase):
+    def setUp(self):
+        super(MemberTestBase, self).setUp()
+        pool_res = self._create_pool(self.fmt, lb_const.PROTOCOL_HTTP,
+                                     lb_const.LB_METHOD_ROUND_ROBIN,
+                                     self.listener_id)
+        self.pool = self.deserialize(self.fmt, pool_res)
+        self.pool_id = self.pool['pool']['id']
+
+    def tearDown(self):
+        self._delete('pools', self.pool_id)
+        super(MemberTestBase, self).tearDown()
+
+    def _create_member_api(self, pool_id, data):
+        req = self.new_create_request("pools", data, self.fmt, id=pool_id,
+                                      subresource='members')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _update_member_api(self, pool_id, member_id, data):
+        req = self.new_update_request('pools', data, pool_id,
+                                      subresource='members', sub_id=member_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _delete_member_api(self, pool_id, member_id):
+        req = self.new_delete_request('pools', pool_id, subresource='members',
+                                      sub_id=member_id)
+        resp = req.get_response(self.ext_api)
+        return resp
+
+    def _get_member_api(self, pool_id, member_id):
+        req = self.new_show_request('pools', pool_id, subresource='members',
+                                    sub_id=member_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _list_members_api(self, pool_id):
+        req = self.new_list_request('pools', id=pool_id, subresource='members')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+
+class LbaasMemberTests(MemberTestBase):
 
     def test_create_member(self, **extras):
         expected = {
@@ -1129,195 +1188,195 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             'weight': 1,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'status': lb_const.DEFERRED,
             'subnet_id': ''
         }
 
         expected.update(extras)
 
-        with self.subnet() as subnet:
-            expected['subnet_id'] = subnet['subnet']['id']
-            with self.pool() as pool:
-                pool_id = pool['pool']['id']
-                with self.member(pool_id=pool_id,
-                                 subnet=subnet) as member:
-                    self.assertTrue(member['member'].get('id'))
+        expected['subnet_id'] = self.test_subnet_id
+        with self.member(pool_id=self.pool_id) as member:
+            member_id = member['member'].get('id')
+            self.assertTrue(member_id)
 
-                    actual = {}
-                    for k, v in member['member'].items():
-                        if k in expected:
-                            actual[k] = v
-                    self.assertEqual(actual, expected)
+            actual = {}
+            for k, v in member['member'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(actual, expected)
+            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+                                    member_id)
         return member
 
     def test_create_member_with_existing_address_port_pool_combination(self):
-        with self.subnet() as subnet:
-            with self.pool() as pool:
-                with self.member(pool_id=pool['pool']['id'],
-                                 subnet=subnet) as member1:
-                    member1 = member1['member']
-                    member_data = {
-                        'address': member1['address'],
-                        'protocol_port': member1['protocol_port'],
-                        'weight': 1,
-                        'subnet_id': member1['subnet_id'],
-                        'admin_state_up': True,
-                        'tenant_id': member1['tenant_id']
-                    }
-                    self.assertRaises(
-                        loadbalancerv2.MemberExists,
-                        self.plugin.create_pool_member,
-                        context.get_admin_context(),
-                        {'member': member_data},
-                        pool['pool']['id'])
+        with self.member(pool_id=self.pool_id) as member1:
+            member1 = member1['member']
+            member_data = {
+                'address': member1['address'],
+                'protocol_port': member1['protocol_port'],
+                'weight': 1,
+                'subnet_id': member1['subnet_id'],
+                'admin_state_up': True,
+                'tenant_id': member1['tenant_id']
+            }
+            self.assertRaises(
+                loadbalancerv2.MemberExists,
+                self.plugin.create_pool_member,
+                context.get_admin_context(),
+                self.pool_id,
+                {'member': member_data})
 
     def test_update_member(self):
-        with self.pool() as pool:
-            keys = [('address', "127.0.0.1"),
-                    ('tenant_id', self._tenant_id),
-                    ('protocol_port', 80),
-                    ('weight', 10),
-                    ('admin_state_up', False),
-                    ('status', lb_const.DEFERRED)]
-            pool_id = pool['pool']['id']
-            with self.member(pool_id=pool_id) as member:
-                req = self.new_show_request('pools',
-                                            pool['pool']['id'],
-                                            fmt=self.fmt)
-                pool1_update = self.deserialize(
-                    self.fmt,
-                    req.get_response(self.ext_api)
-                )
-                self.assertEqual(
-                    len(pool1_update['pool']['members']), 1)
-
-                data = {'member': {'weight': 10,
-                                   'admin_state_up': False}}
-                req = self.new_update_request(
-                    'pools',
-                    data,
-                    pool1_update['pool']['id'],
-                    subresource='members',
-                    sub_id=member['member']['id'])
-                res = self.deserialize(
-                    self.fmt,
-                    req.get_response(self.ext_api)
-                )
-                for k, v in keys:
-                    self.assertEqual(res['member'][k], v)
-
-                req = self.new_show_request('pools',
-                                            pool['pool']['id'],
-                                            fmt=self.fmt)
-                pool1_update = self.deserialize(
-                    self.fmt,
-                    req.get_response(self.ext_api)
-                )
-
-                self.assertEqual(
-                    len(pool1_update['pool']['members']), 1)
+        keys = [('address', "127.0.0.1"),
+                ('tenant_id', self._tenant_id),
+                ('protocol_port', 80),
+                ('weight', 10),
+                ('admin_state_up', False)]
+        with self.member(pool_id=self.pool_id) as member:
+            member_id = member['member']['id']
+            resp, pool1_update = self._get_pool_api(self.pool_id)
+            self.assertEqual(len(pool1_update['pool']['members']), 1)
+            data = {'member': {'weight': 10, 'admin_state_up': False}}
+            resp, body = self._update_member_api(self.pool_id, member_id, data)
+            for k, v in keys:
+                self.assertEqual(body['member'][k], v)
+            resp, pool1_update = self._get_pool_api(self.pool_id)
+            self.assertEqual(len(pool1_update['pool']['members']), 1)
+            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+                                    member_id)
 
     def test_delete_member(self):
-        with self.pool() as pool:
-            pool_id = pool['pool']['id']
-            with self.member(pool_id=pool_id,
-                             no_delete=True) as member:
-                req = self.new_delete_request('pools',
-                                              pool_id,
-                                              subresource='members',
-                                              sub_id=member['member']['id'])
-                res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, webob.exc.HTTPNoContent.code)
-
-                req = self.new_show_request('pools',
-                                            pool_id,
-                                            fmt=self.fmt)
-                pool_update = self.deserialize(
-                    self.fmt,
-                    req.get_response(self.ext_api)
-                )
-                self.assertEqual(len(pool_update['pool']['members']), 0)
+        with self.member(pool_id=self.pool_id, no_delete=True) as member:
+            member_id = member['member']['id']
+            resp = self._delete_member_api(self.pool_id, member_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+            resp, pool_update = self._get_pool_api(self.pool_id)
+            self.assertEqual(len(pool_update['pool']['members']), 0)
 
     def test_show_member(self):
-        with self.pool() as pool:
-            keys = [('address', "127.0.0.1"),
-                    ('tenant_id', self._tenant_id),
-                    ('protocol_port', 80),
-                    ('weight', 1),
-                    ('admin_state_up', True),
-                    ('status', lb_const.DEFERRED)]
-            pool_id = pool['pool']['id']
-            with self.member(pool_id=pool_id) as member:
-                req = self.new_show_request('pools',
-                                            pool_id,
-                                            subresource='members',
-                                            sub_id=member['member']['id'],
-                                            fmt=self.fmt)
-                res = self.deserialize(
-                    self.fmt,
-                    req.get_response(self.ext_api)
-                )
-                for k, v in keys:
-                    self.assertEqual(res['member'][k], v)
+        keys = [('address', "127.0.0.1"),
+                ('tenant_id', self._tenant_id),
+                ('protocol_port', 80),
+                ('weight', 1),
+                ('admin_state_up', True)]
+        with self.member(pool_id=self.pool_id) as member:
+            member_id = member['member']['id']
+            resp, body = self._get_member_api(self.pool_id, member_id)
+            for k, v in keys:
+                self.assertEqual(body['member'][k], v)
 
     def test_list_members(self):
-        with self.pool() as pool:
-            pool_id = pool['pool']['id']
-            with self.member(pool_id=pool_id, protocol_port=81):
-                req = self.new_list_request('pools', id=pool_id,
-                                            subresource='members',
-                                            fmt=self.fmt)
-                res = req.get_response(self.ext_api)
-                res = self.deserialize(self.fmt, res)
-                self.assertEqual(len(res['members']), 1)
+        with self.member(pool_id=self.pool_id, protocol_port=81):
+            resp, body = self._list_members_api(self.pool_id)
+            self.assertEqual(len(body['members']), 1)
 
     def test_list_members_with_sort_emulated(self):
-        with self.pool() as pool:
-            pool_id = pool['pool']['id']
-            with self.subnet() as subnet:
-                with self.member(pool_id=pool_id, protocol_port=81,
-                                 subnet=subnet) as m1:
-                    with self.member(pool_id=pool_id, protocol_port=82,
-                                     subnet=subnet) as m2:
-                        with self.member(pool_id=pool_id, protocol_port=83,
-                                         subnet=subnet) as m3:
-                            self._test_list_with_sort(
-                                'pool', (m3, m2, m1),
-                                [('protocol_port', 'desc')],
-                                id=pool_id,
-                                subresource='member')
+        with self.member(pool_id=self.pool_id, protocol_port=81) as m1:
+            with self.member(pool_id=self.pool_id, protocol_port=82) as m2:
+                with self.member(pool_id=self.pool_id, protocol_port=83) as m3:
+                    self._test_list_with_sort(
+                        'pool', (m3, m2, m1),
+                        [('protocol_port', 'desc')],
+                        id=self.pool_id,
+                        subresource='member')
 
     def test_list_members_with_pagination_emulated(self):
-        with self.pool() as pool:
-            pool_id = pool['pool']['id']
-            with self.subnet() as subnet:
-                with self.member(pool_id=pool_id, protocol_port=81,
-                                 subnet=subnet) as m1:
-                    with self.member(pool_id=pool_id, protocol_port=82,
-                                     subnet=subnet) as m2:
-                        with self.member(pool_id=pool_id, protocol_port=83,
-                                         subnet=subnet) as m3:
-                            self._test_list_with_pagination(
-                                'pool', (m1, m2, m3), ('protocol_port', 'asc'),
-                                2, 2,
-                                id=pool_id, subresource='member'
-                            )
+        with self.member(pool_id=self.pool_id, protocol_port=81) as m1:
+            with self.member(pool_id=self.pool_id, protocol_port=82) as m2:
+                with self.member(pool_id=self.pool_id, protocol_port=83) as m3:
+                    self._test_list_with_pagination(
+                        'pool', (m1, m2, m3), ('protocol_port', 'asc'),
+                        2, 2,
+                        id=self.pool_id, subresource='member'
+                    )
 
     def test_list_members_with_pagination_reverse_emulated(self):
-        with self.pool() as pool:
-            pool_id = pool['pool']['id']
-            with self.subnet() as subnet:
-                with self.member(pool_id=pool_id, protocol_port=81,
-                                 subnet=subnet) as m1:
-                    with self.member(pool_id=pool_id, protocol_port=82,
-                                     subnet=subnet) as m2:
-                        with self.member(pool_id=pool_id, protocol_port=83,
-                                         subnet=subnet) as m3:
-                            self._test_list_with_pagination_reverse(
-                                'pool', (m1, m2, m3), ('protocol_port', 'asc'),
-                                2, 2,
-                                id=pool_id, subresource='member'
-                            )
+        with self.member(pool_id=self.pool_id, protocol_port=81) as m1:
+            with self.member(pool_id=self.pool_id, protocol_port=82) as m2:
+                with self.member(pool_id=self.pool_id, protocol_port=83) as m3:
+                    self._test_list_with_pagination_reverse(
+                        'pool', (m1, m2, m3), ('protocol_port', 'asc'),
+                        2, 2,
+                        id=self.pool_id, subresource='member'
+                    )
+
+    def test_list_members_invalid_pool_id(self):
+        resp, body = self._list_members_api('WRONG_POOL_ID')
+        self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+        resp, body = self._list_members_api(self.pool_id)
+        self.assertEqual(resp.status_int, webob.exc.HTTPOk.code)
+
+    def test_get_member_invalid_pool_id(self):
+        with self.member(pool_id=self.pool_id) as member:
+            member_id = member['member']['id']
+            resp, body = self._get_member_api('WRONG_POOL_ID', member_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+            resp, body = self._get_member_api(self.pool_id, member_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPOk.code)
+
+    def test_create_member_invalid_pool_id(self):
+        data = {'member': {'address': '127.0.0.1',
+                           'protocol_port': 80,
+                           'weight': 1,
+                           'admin_state_up': True,
+                           'tenant_id': self._tenant_id,
+                           'subnet_id': self.test_subnet_id}}
+        resp, body = self._create_member_api('WRONG_POOL_ID', data)
+        self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+
+    def test_update_member_invalid_pool_id(self):
+        with self.member(pool_id=self.pool_id) as member:
+            member_id = member['member']['id']
+            data = {'member': {'weight': 1}}
+            resp, body = self._update_member_api(
+                'WRONG_POOL_ID', member_id, data)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+
+    def test_delete_member_invalid_pool_id(self):
+        with self.member(pool_id=self.pool_id) as member:
+            member_id = member['member']['id']
+            resp = self._delete_member_api('WRONG_POOL_ID', member_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+
+    def test_get_pool_shows_members(self):
+        with self.member(pool_id=self.pool_id) as member:
+            expected = {'id': member['member']['id']}
+            resp, body = self._get_pool_api(self.pool_id)
+            self.assertIn(expected, body['pool']['members'])
+
+
+class HealthMonitorTestBase(MemberTestBase):
+
+    def _create_healthmonitor_api(self, data):
+        req = self.new_create_request("healthmonitors", data, self.fmt)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _update_healthmonitor_api(self, hm_id, data):
+        req = self.new_update_request('healthmonitors', data, hm_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _delete_healthmonitor_api(self, hm_id):
+        req = self.new_delete_request('healthmonitors', hm_id)
+        resp = req.get_response(self.ext_api)
+        return resp
+
+    def _get_healthmonitor_api(self, hm_id):
+        req = self.new_show_request('healthmonitors', hm_id)
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+    def _list_healthmonitors_api(self):
+        req = self.new_list_request('healthmonitors')
+        resp = req.get_response(self.ext_api)
+        body = self.deserialize(self.fmt, resp)
+        return resp, body
+
+
+class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_create_healthmonitor(self, **extras):
         expected = {
@@ -1330,19 +1389,22 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'status': lb_const.DEFERRED
+            'pools': [{'id': self.pool_id}]
         }
 
         expected.update(extras)
 
-        with self.healthmonitor() as healthmonitor:
-            self.assertTrue(healthmonitor['healthmonitor'].get('id'))
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor'].get('id')
+            self.assertTrue(hm_id)
 
             actual = {}
             for k, v in healthmonitor['healthmonitor'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+                                    hm_id=hm_id)
         return healthmonitor
 
     def test_show_healthmonitor(self, **extras):
@@ -1356,18 +1418,16 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'status': lb_const.DEFERRED
+            'pools': [{'id': self.pool_id}]
         }
 
         expected.update(extras)
 
-        with self.healthmonitor() as healthmonitor:
-            req = self.new_show_request('healthmonitors',
-                                        healthmonitor['healthmonitor']['id'],
-                                        fmt=self.fmt)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            resp, body = self._get_healthmonitor_api(hm_id)
             actual = {}
-            for k, v in res['healthmonitor'].items():
+            for k, v in body['healthmonitor'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
@@ -1385,43 +1445,35 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             'expected_codes': '200,404',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'status': lb_const.DEFERRED
+            'pools': [{'id': self.pool_id}]
         }
 
         expected.update(extras)
 
-        with self.healthmonitor() as healthmonitor:
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'delay': 30,
                                       'timeout': 10,
                                       'max_retries': 4,
                                       'expected_codes': '200,404',
                                       'url_path': '/index.html'}}
-            req = self.new_update_request("healthmonitors", data,
-                                          healthmonitor['healthmonitor']['id'],
-                                          self.fmt)
-            res = self.deserialize(self.fmt, req.get_response(self.ext_api))
+            resp, body = self._update_healthmonitor_api(hm_id, data)
             actual = {}
-            for k, v in res['healthmonitor'].items():
+            for k, v in body['healthmonitor'].items():
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+                                    hm_id=hm_id)
 
         return healthmonitor
 
     def test_delete_healthmonitor(self):
-        with self.healthmonitor(no_delete=True) as monitor:
-            ctx = context.get_admin_context()
-            qry = ctx.session.query(models.HealthMonitorV2)
-            qry = qry.filter_by(id=monitor['healthmonitor']['id'])
-            self.assertIsNotNone(qry.first())
-
-            req = self.new_delete_request('healthmonitors',
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPNoContent.code)
-            qry = ctx.session.query(models.HealthMonitorV2)
-            qry = qry.filter_by(id=monitor['healthmonitor']['id'])
-            self.assertIsNone(qry.first())
+        with self.healthmonitor(pool_id=self.pool_id,
+                                no_delete=True) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            resp = self._delete_healthmonitor_api(hm_id)
+            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
 
     def test_create_health_monitor_with_timeout_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -1429,22 +1481,20 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                   'timeout': -1,
                                   'max_retries': 2,
                                   'admin_state_up': True,
-                                  'tenant_id': self._tenant_id}}
-        req = self.new_create_request('healthmonitors', data, self.fmt)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_update_health_monitor_with_timeout_invalid(self):
-        with self.healthmonitor() as monitor:
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'delay': 10,
                                       'timeout': -1,
                                       'max_retries': 2,
                                       'admin_state_up': False}}
-            req = self.new_update_request("healthmonitors",
-                                          data,
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+            resp, body = self._update_healthmonitor_api(hm_id, data)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_create_health_monitor_with_delay_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -1452,22 +1502,20 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                   'timeout': 1,
                                   'max_retries': 2,
                                   'admin_state_up': True,
-                                  'tenant_id': self._tenant_id}}
-        req = self.new_create_request('healthmonitors', data, self.fmt)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_update_health_monitor_with_delay_invalid(self):
-        with self.healthmonitor() as monitor:
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'delay': -1,
                                       'timeout': 1,
                                       'max_retries': 2,
                                       'admin_state_up': False}}
-            req = self.new_update_request("healthmonitors",
-                                          data,
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+            resp, body = self._update_healthmonitor_api(hm_id, data)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_create_health_monitor_with_max_retries_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -1475,22 +1523,20 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                   'timeout': 1,
                                   'max_retries': 20,
                                   'admin_state_up': True,
-                                  'tenant_id': self._tenant_id}}
-        req = self.new_create_request('healthmonitors', data, self.fmt)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_update_health_monitor_with_max_retries_invalid(self):
-        with self.healthmonitor() as monitor:
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'delay': 1,
                                       'timeout': 1,
                                       'max_retries': 20,
                                       'admin_state_up': False}}
-            req = self.new_update_request("healthmonitors",
-                                          data,
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+            resp, body = self._update_healthmonitor_api(hm_id, data)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_create_health_monitor_with_http_method_invalid(self):
         data = {'healthmonitor': {'type': 1,
@@ -1498,23 +1544,21 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                   'timeout': 1,
                                   'max_retries': 2,
                                   'admin_state_up': True,
-                                  'tenant_id': self._tenant_id}}
-        req = self.new_create_request('healthmonitors', data, self.fmt)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_update_health_monitor_with_http_method_invalid(self):
-        with self.healthmonitor() as monitor:
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'type': 1,
                                       'delay': 1,
                                       'timeout': 1,
                                       'max_retries': 2,
                                       'admin_state_up': False}}
-            req = self.new_update_request("healthmonitors",
-                                          data,
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+            resp, body = self._update_healthmonitor_api(hm_id, data)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_create_health_monitor_with_url_path_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -1523,312 +1567,85 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                   'timeout': 1,
                                   'max_retries': 2,
                                   'admin_state_up': True,
-                                  'tenant_id': self._tenant_id}}
-        req = self.new_create_request('healthmonitors', data, self.fmt)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
     def test_update_health_monitor_with_url_path_invalid(self):
-        with self.healthmonitor() as monitor:
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'url_path': 1,
                                       'delay': 1,
                                       'timeout': 1,
                                       'max_retries': 2,
                                       'admin_state_up': False}}
-            req = self.new_update_request("healthmonitors",
-                                          data,
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPBadRequest.code, res.status_int)
+            resp, body = self._update_healthmonitor_api(hm_id, data)
+            self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
-    def test_add_healthmonitor_to_pool(self):
-        with self.healthmonitor(type='HTTP') as monitor:
-            hm_id = monitor['healthmonitor']['id']
-            data = {'pool': {'protocol': 'HTTP',
-                             'healthmonitor_id': hm_id,
-                             'lb_algorithm': 'ROUND_ROBIN',
-                             'tenant_id': self._tenant_id}
-                    }
-            req = self.new_create_request(
-                'pools',
-                data,
-                fmt=self.fmt,)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPCreated.code)
+    def test_create_healthmonitor_invalid_pool_id(self):
+        data = {'healthmonitor': {'type': lb_const.HEALTH_MONITOR_TCP,
+                                  'delay': 1,
+                                  'timeout': 1,
+                                  'max_retries': 1,
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': uuidutils.generate_uuid()}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
 
-            ctx = context.get_admin_context()
+    def test_only_one_healthmonitor_per_pool(self):
+        with self.healthmonitor(pool_id=self.pool_id):
+            data = {'healthmonitor': {'type': lb_const.HEALTH_MONITOR_TCP,
+                                      'delay': 1,
+                                      'timeout': 1,
+                                      'max_retries': 1,
+                                      'tenant_id': self._tenant_id,
+                                      'pool_id': self.pool_id}}
+            resp, body = self._create_healthmonitor_api(data)
+            self.assertEqual(resp.status_int, webob.exc.HTTPConflict.code)
 
-            # check if we actually have corresponding Pool associations
-            qry = ctx.session.query(models.PoolV2)
-            qry = qry.filter_by(
-                healthmonitor_id=monitor['healthmonitor']['id'])
-            self.assertTrue(qry.all())
+    def test_get_healthmonitor(self):
+        expected = {
+            'type': 'TCP',
+            'delay': 1,
+            'timeout': 1,
+            'max_retries': 1,
+            'http_method': 'GET',
+            'url_path': '/',
+            'expected_codes': '200',
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'pools': [{'id': self.pool_id}]
+        }
 
-    def test_add_shared_healthmonitor_to_pool(self):
-        with self.healthmonitor(type='HTTP') as monitor:
-            data = {'pool': {'protocol': 'HTTP',
-                             'healthmonitor_id':
-                                 monitor['healthmonitor']['id'],
-                             'lb_algorithm': 'ROUND_ROBIN',
-                             'tenant_id': self._tenant_id}
-                    }
-            req = self.new_create_request(
-                'pools',
-                data,
-                fmt=self.fmt,)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPCreated.code)
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            expected['id'] = hm_id
+            resp, body = self._get_healthmonitor_api(hm_id)
+            self.assertEqual(expected, body['healthmonitor'])
 
-            ctx = context.get_admin_context()
+    def test_list_healthmonitors(self):
+        expected = {
+            'type': 'TCP',
+            'delay': 1,
+            'timeout': 1,
+            'max_retries': 1,
+            'http_method': 'GET',
+            'url_path': '/',
+            'expected_codes': '200',
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'pools': [{'id': self.pool_id}]
+        }
 
-            # check if we actually have corresponding Pool associations
-            qry = ctx.session.query(models.PoolV2)
-            qry = qry.filter_by(
-                healthmonitor_id=monitor['healthmonitor']['id'])
-            self.assertTrue(qry.all())
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            expected['id'] = hm_id
+            resp, body = self._list_healthmonitors_api()
+            self.assertEqual([expected], body['healthmonitors'])
 
-            req = self.new_create_request(
-                'pools',
-                data,
-                fmt=self.fmt,)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPConflict.code)
-
-    def test_update_healthmonitor_to_pool(self):
-        with self.healthmonitor(type='HTTP') as monitor:
-            hm_id = monitor['healthmonitor']['id']
-            with self.pool() as pool:
-                data = {'pool': {'healthmonitor_id': hm_id}}
-                req = self.new_update_request(
-                    'pools',
-                    data,
-                    pool['pool']['id'],
-                    fmt=self.fmt,)
-                res = req.get_response(self.ext_api)
-                self.assertEqual(res.status_int, webob.exc.HTTPOk.code)
-
-                ctx = context.get_admin_context()
-
-                # check if we actually have corresponding Pool associations
-                qry = ctx.session.query(models.PoolV2)
-                qry = qry.filter_by(
-                    healthmonitor_id=monitor['healthmonitor']['id'])
-                self.assertTrue(qry.all())
-
-    def test_delete_healthmonitor_with_associations_allowed(self):
-        with self.healthmonitor(type='HTTP', no_delete=True) as monitor:
-            hm_id = monitor['healthmonitor']['id']
-            data = {'pool': {'protocol': 'HTTP',
-                             'healthmonitor_id': hm_id,
-                             'lb_algorithm': 'ROUND_ROBIN',
-                             'tenant_id': self._tenant_id}
-                    }
-            req = self.new_create_request(
-                'pools',
-                data,
-                fmt=self.fmt,)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPCreated.code)
-
-            ctx = context.get_admin_context()
-
-            # check if we actually have corresponding Pool associations
-            qry = ctx.session.query(models.PoolV2)
-            qry = qry.filter_by(
-                healthmonitor_id=monitor['healthmonitor']['id'])
-            self.assertTrue(qry.all())
-            # try to delete the HealthMonitor instance
-            req = self.new_delete_request('healthmonitors',
-                                          monitor['healthmonitor']['id'])
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPNoContent.code)
-
-            qry = ctx.session.query(models.HealthMonitorV2)
-            qry = qry.filter_by(id=monitor['healthmonitor']['id'])
-            self.assertIsNone(qry.first())
-            # check if all corresponding Pool associations are deleted
-            qry = ctx.session.query(models.PoolV2)
-            qry = qry.filter_by(
-                healthmonitor_id=monitor['healthmonitor']['id'])
-            self.assertEqual([], qry.all())
-
-    def test_add_healthmonitor_to_pool_invalid_monitor_id(self):
-        data = {'pool': {'protocol': 'HTTP',
-                         'healthmonitor_id': 'notanid',
-                         'lb_algorithm': 'ROUND_ROBIN',
-                         'tenant_id': self._tenant_id}
-                }
-        req = self.new_create_request(
-            'pools',
-            data,
-            fmt=self.fmt,)
-        res = req.get_response(self.ext_api)
-        self.assertEqual(res.status_int, webob.exc.HTTPNotFound.code)
-
-    def test_update_healthmonitor_to_pool_invalid_monitor_id(self):
-        with self.pool() as pool:
-            data = {'pool': {'healthmonitor_id': 'notanid'}}
-            req = self.new_update_request(
-                'pools',
-                data,
-                pool['pool']['id'],
-                fmt=self.fmt,)
-            res = req.get_response(self.ext_api)
-            self.assertEqual(res.status_int, webob.exc.HTTPNotFound.code)
-
-    def _create_loadbalancer_tree(self):
-        res = self._create_network(self.fmt, 'network1', True)
-        network = self.deserialize(self.fmt, res)
-        network_id = network['network']['id']
-        res = self._create_subnet(self.fmt, network_id, '10.0.0.0/24')
-        subnet = self.deserialize(self.fmt, res)
-        subnet_id = subnet['subnet']['id']
-        res = self._create_healthmonitor(self.fmt, 'HTTP', 1, 1, 1)
-        hm = self.deserialize(self.fmt, res)
-        hm_id = hm['healthmonitor']['id']
-        res = self._create_pool(self.fmt, 'HTTP', 'ROUND_ROBIN',
-                                healthmonitor_id=hm_id)
-        pool = self.deserialize(self.fmt, res)
-        pool_id = pool['pool']['id']
-        res = self._create_member(self.fmt, pool_id, '10.0.0.2', 80, subnet_id)
-        member = self.deserialize(self.fmt, res)
-        member_id = member['member']['id']
-        res = self._create_loadbalancer(self.fmt, subnet_id)
-        lb = self.deserialize(self.fmt, res)
-        lb_id = lb['loadbalancer']['id']
-        res = self._create_listener(self.fmt, 'HTTP', 80,
-                                    default_pool_id=pool_id,
-                                    loadbalancer_id=lb_id)
-        listener = self.deserialize(self.fmt, res)
-        listener_id = listener['listener']['id']
-        return lb_id, listener_id, pool_id, hm_id, member_id
-
-    def _verify_entities_are_status(self, status, listener_id=None,
-                                    lb_id=None, member_id=None,
-                                    pool_id=None, hm_id=None):
-        ctx = context.get_admin_context()
-        if listener_id:
-            ret_listener = self.plugin.get_listener(ctx, listener_id)
-            self.assertEqual(status, ret_listener['status'])
-        if lb_id:
-            ret_lb = self.plugin.get_loadbalancer(ctx, lb_id)
-            self.assertEqual(status, ret_lb['status'])
-        if member_id:
-            ret_member = self.plugin.get_pool_member(ctx, member_id, pool_id)
-            self.assertEqual(status, ret_member['status'])
-        if pool_id:
-            ret_pool = self.plugin.get_pool(ctx, pool_id)
-            self.assertEqual(status, ret_pool['status'])
-        if hm_id:
-            ret_hm = self.plugin.get_healthmonitor(ctx, hm_id)
-            self.assertEqual(status, ret_hm['status'])
-
-    def _verify_entities_are_deleted(self, listener_id=None, lb_id=None,
-                                     member_id=None, pool_id=None,
-                                     hm_id=None):
-        ctx = context.get_admin_context()
-        if listener_id:
-            self.assertRaises(loadbalancerv2.EntityNotFound,
-                              self.plugin.get_listener,
-                              ctx, listener_id)
-        if lb_id:
-            self.assertRaises(loadbalancerv2.EntityNotFound,
-                              self.plugin.get_loadbalancer,
-                              ctx, lb_id)
-        if pool_id:
-            self.assertRaises(loadbalancerv2.EntityNotFound,
-                              self.plugin.get_pool,
-                              ctx, pool_id)
-        if member_id:
-            self.assertRaises(loadbalancerv2.EntityNotFound,
-                              self.plugin.get_pool_member,
-                              ctx, member_id, pool_id)
-        if hm_id:
-            self.assertRaises(loadbalancerv2.EntityNotFound,
-                              self.plugin.get_healthmonitor,
-                              ctx, hm_id)
-
-    def test_loadbalancer_tree_status_delete_listener(self):
-        (lb_id, listener_id,
-         pool_id, hm_id, member_id) = self._create_loadbalancer_tree()
-        self._verify_entities_are_status(
-            constants.ACTIVE,
-            listener_id=listener_id, lb_id=lb_id,
-            member_id=member_id, pool_id=pool_id,
-            hm_id=hm_id)
-        self.plugin.delete_listener(context.get_admin_context(), listener_id)
-        self._verify_entities_are_deleted(listener_id=listener_id)
-        self._verify_entities_are_status(
-            lb_const.DEFERRED, pool_id=pool_id,
-            hm_id=hm_id, member_id=member_id)
-        self._verify_entities_are_status(
-            constants.ACTIVE, lb_id=lb_id)
-
-    def test_loadbalancer_tree_status_delete_pool(self):
-        (lb_id, listener_id,
-         pool_id, hm_id, member_id) = self._create_loadbalancer_tree()
-        self._verify_entities_are_status(
-            constants.ACTIVE,
-            listener_id=listener_id, lb_id=lb_id,
-            member_id=member_id, pool_id=pool_id,
-            hm_id=hm_id)
-        self.plugin.delete_pool(context.get_admin_context(), pool_id)
-        self._verify_entities_are_deleted(pool_id=pool_id)
-        self._verify_entities_are_deleted(member_id=member_id, pool_id=pool_id)
-        self._verify_entities_are_status(lb_const.DEFERRED, hm_id=hm_id)
-        self._verify_entities_are_status(
-            constants.ACTIVE, lb_id=lb_id, listener_id=listener_id)
-
-    def test_loadbalancer_tree_status_disassociate_loadbalancer(self):
-        (lb_id, listener_id,
-         pool_id, hm_id, member_id) = self._create_loadbalancer_tree()
-        self._verify_entities_are_status(
-            constants.ACTIVE, listener_id=listener_id, lb_id=lb_id,
-            member_id=member_id, pool_id=pool_id, hm_id=hm_id)
-        self.plugin.update_listener(context.get_admin_context(), listener_id,
-                                    {'listener': {'loadbalancer_id': None}})
-        self._verify_entities_are_status(
-            lb_const.DEFERRED, listener_id=listener_id, pool_id=pool_id,
-            hm_id=hm_id, member_id=member_id)
-        self._verify_entities_are_status(constants.ACTIVE, lb_id=lb_id)
-
-    def test_loadbalancer_tree_status_disassociate_pool(self):
-        (lb_id, listener_id,
-         pool_id, hm_id, member_id) = self._create_loadbalancer_tree()
-        self._verify_entities_are_status(
-            constants.ACTIVE, listener_id=listener_id, lb_id=lb_id,
-            member_id=member_id, pool_id=pool_id, hm_id=hm_id)
-        self.plugin.update_listener(context.get_admin_context(), listener_id,
-                                    {'listener': {'default_pool_id': None}})
-        self._verify_entities_are_status(lb_const.DEFERRED, pool_id=pool_id,
-                                         hm_id=hm_id, member_id=member_id)
-        self._verify_entities_are_status(
-            constants.ACTIVE, lb_id=lb_id, listener_id=listener_id)
-
-    def test_loadbalancer_tree_status_disassociate_pool_and_lb(self):
-        (lb_id, listener_id,
-         pool_id, hm_id, member_id) = self._create_loadbalancer_tree()
-        self._verify_entities_are_status(
-            constants.ACTIVE, listener_id=listener_id, lb_id=lb_id,
-            member_id=member_id, pool_id=pool_id, hm_id=hm_id)
-        self.plugin.update_listener(context.get_admin_context(), listener_id,
-                                    {'listener': {'default_pool_id': None,
-                                                  'loadbalancer_id': None}})
-        self._verify_entities_are_status(
-            lb_const.DEFERRED, pool_id=pool_id, hm_id=hm_id,
-            member_id=member_id, listener_id=listener_id)
-        self._verify_entities_are_status(
-            constants.ACTIVE, lb_id=lb_id)
-
-    def test_loadbalancer_tree_status_disassociate_healthmonitor(self):
-        (lb_id, listener_id,
-         pool_id, hm_id, member_id) = self._create_loadbalancer_tree()
-        self._verify_entities_are_status(
-            constants.ACTIVE, listener_id=listener_id, lb_id=lb_id,
-            member_id=member_id, pool_id=pool_id, hm_id=hm_id)
-        self.plugin.update_pool(context.get_admin_context(), pool_id,
-                                {'pool': {'healthmonitor_id': None}})
-        self._verify_entities_are_status(lb_const.DEFERRED, hm_id=hm_id)
-        self._verify_entities_are_status(constants.ACTIVE, lb_id=lb_id,
-                                         listener_id=listener_id,
-                                         pool_id=pool_id, member_id=member_id)
+    def test_get_pool_shows_healthmonitor_id(self):
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            resp, body = self._get_pool_api(self.pool_id)
+            self.assertEqual(hm_id, body['pool']['healthmonitor_id'])

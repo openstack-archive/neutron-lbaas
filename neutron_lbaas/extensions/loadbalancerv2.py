@@ -16,7 +16,7 @@
 
 import abc
 
-from oslo.config import cfg
+from oslo_config import cfg
 import six
 
 from neutron.api import extensions
@@ -79,6 +79,16 @@ class EntityInUse(nexception.InUse):
     message = _("%(entity_using)s %(id)s is using this %(entity_in_use)s")
 
 
+class OnePoolPerListener(nexception.InUse):
+    message = _("Only one pool per listener allowed.  Listener "
+                "%(listener_id)s is already using Pool %(pool_id)s.")
+
+
+class OneHealthMonitorPerPool(nexception.InUse):
+    message = _("Only one health monitor per pool allowed.  Pool %(pool_id)s"
+                " is already using Health Monitor %(hm_id)s.")
+
+
 class LoadBalancerListenerProtocolPortExists(nexception.Conflict):
     message = _("Load Balancer %(lb_id)s already has a listener with "
                 "protocol_port of %(protocol_port)s")
@@ -98,7 +108,8 @@ class StateInvalid(nexception.NeutronException):
 
 
 class MemberNotFoundForPool(nexception.NotFound):
-    message = _("Member %(member_id)s could not be found in pool %(pool_id)s")
+    message = _("Member %(member_id)s could not be found in pool "
+                "%(pool_id)s")
 
 
 class MemberExists(nexception.Conflict):
@@ -108,7 +119,7 @@ class MemberExists(nexception.Conflict):
 
 class MemberAddressTypeSubnetTypeMismatch(nexception.NeutronException):
     message = _("Member with address %(address)s and subnet %(subnet_id) "
-                " have mismatched IP versions")
+                "have mismatched IP versions")
 
 
 class DriverError(nexception.NeutronException):
@@ -116,7 +127,7 @@ class DriverError(nexception.NeutronException):
 
 
 class LBConfigurationUnsupported(nexception.NeutronException):
-    message = _("Load balancer %(load_balancer_id)s configuration is not"
+    message = _("Load balancer %(load_balancer_id)s configuration is not "
                 "supported by driver %(driver_name)s")
 
 
@@ -144,12 +155,19 @@ RESOURCE_ATTRIBUTE_MAP = {
                         'default': attr.ATTR_NOT_SPECIFIED,
                         'validate': {'type:ip_address_or_none': None},
                         'is_visible': True},
+        'provider': {'allow_post': True, 'allow_put': False,
+                     'validate': {'type:string': None},
+                     'is_visible': True, 'default': attr.ATTR_NOT_SPECIFIED},
+        'listeners': {'allow_post': False, 'allow_put': False,
+                      'is_visible': True},
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
                            'convert_to': attr.convert_to_boolean,
                            'is_visible': True},
-        'status': {'allow_post': False, 'allow_put': False,
-                   'is_visible': True}
+        'provisioning_status': {'allow_post': False, 'allow_put': False,
+                                'is_visible': True},
+        'operating_status': {'allow_post': False, 'allow_put': False,
+                             'is_visible': True}
     },
     'listeners': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -167,13 +185,13 @@ RESOURCE_ATTRIBUTE_MAP = {
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {'type:string': None},
                         'is_visible': True, 'default': ''},
-        'loadbalancer_id': {'allow_post': True, 'allow_put': True,
-                            'validate': {'type:uuid_or_none': None},
-                            'default': attr.ATTR_NOT_SPECIFIED,
-                            'is_visible': True},
-        'default_pool_id': {'allow_post': True, 'allow_put': True,
-                            'validate': {'type:uuid_or_none': None},
-                            'default': attr.ATTR_NOT_SPECIFIED,
+        'loadbalancer_id': {'allow_post': True, 'allow_put': False,
+                            'validate': {'type:uuid': None},
+                            'is_visible': False},
+        'loadbalancers': {'allow_post': False, 'allow_put': False,
+                          'is_visible': True},
+        'default_pool_id': {'allow_post': False, 'allow_put': False,
+                            'validate': {'type:uuid': None},
                             'is_visible': True},
         'connection_limit': {'allow_post': True, 'allow_put': True,
                              'default': -1,
@@ -189,9 +207,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
                            'convert_to': attr.convert_to_boolean,
-                           'is_visible': True},
-        'status': {'allow_post': False, 'allow_put': False,
-                   'is_visible': True}
+                           'is_visible': True}
     },
     'pools': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -208,19 +224,20 @@ RESOURCE_ATTRIBUTE_MAP = {
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {'type:string': None},
                         'is_visible': True, 'default': ''},
-        'healthmonitor_id': {'allow_post': True, 'allow_put': True,
-                             'validate': {'type:string_or_none': None},
-                             'is_visible': True,
-                             'default': attr.ATTR_NOT_SPECIFIED},
+        'listener_id': {'allow_post': True, 'allow_put': False,
+                        'validate': {'type:uuid': None},
+                        'is_visible': False},
+        'listeners': {'allow_post': False, 'allow_put': False,
+                      'is_visible': True},
+        'healthmonitor_id': {'allow_post': False, 'allow_put': False,
+                             'validate': {'type:uuid': None},
+                             'is_visible': True},
         'protocol': {'allow_post': True, 'allow_put': False,
                      'validate': {'type:values': SUPPORTED_PROTOCOLS},
                      'is_visible': True},
         'lb_algorithm': {'allow_post': True, 'allow_put': True,
                          'validate': {
                              'type:values': SUPPORTED_LB_ALGORITHMS},
-                         # TODO(brandon-logan) remove when old API is removed
-                         # because this is a required attribute)
-                         'default': attr.ATTR_NOT_SPECIFIED,
                          'is_visible': True},
         'session_persistence': {
             'allow_post': True, 'allow_put': True,
@@ -239,9 +256,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
                            'convert_to': attr.convert_to_boolean,
-                           'is_visible': True},
-        'status': {'allow_post': False, 'allow_put': False,
-                   'is_visible': True}
+                           'is_visible': True}
     },
     'healthmonitors': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -252,6 +267,11 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'validate': {'type:string': None},
                       'required_by_policy': True,
                       'is_visible': True},
+        'pool_id': {'allow_post': True, 'allow_put': False,
+                    'validate': {'type:uuid': None},
+                    'is_visible': False},
+        'pools': {'allow_post': False, 'allow_put': False,
+                  'is_visible': True},
         'type': {'allow_post': True, 'allow_put': False,
                  'validate': {
                      'type:values': SUPPORTED_HEALTH_MONITOR_TYPES},
@@ -288,9 +308,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
                            'convert_to': attr.convert_to_boolean,
-                           'is_visible': True},
-        'status': {'allow_post': False, 'allow_put': False,
-                   'is_visible': True}
+                           'is_visible': True}
     }
 }
 
@@ -323,8 +341,6 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                                'default': True,
                                'convert_to': attr.convert_to_boolean,
                                'is_visible': True},
-            'status': {'allow_post': False, 'allow_put': False,
-                       'is_visible': True},
             'subnet_id': {'allow_post': True, 'allow_put': False,
                           'validate': {'type:uuid': None},
                           'is_visible': True},
@@ -385,7 +401,7 @@ class Loadbalancerv2(extensions.ExtensionDescriptor):
     def get_resources(cls):
         plural_mappings = resource_helper.build_plural_mappings(
             {}, RESOURCE_ATTRIBUTE_MAP)
-        action_map = {'loadbalancer': {'stats': 'GET'}}
+        action_map = {'loadbalancer': {'stats': 'GET', 'statuses': 'GET'}}
         plural_mappings['members'] = 'member'
         attr.PLURALS.update(plural_mappings)
         resources = resource_helper.build_resource_info(
@@ -524,13 +540,11 @@ class LoadBalancerPluginBaseV2(service_base.ServicePluginBase):
         pass
 
     @abc.abstractmethod
-    def create_pool_member(self, context, member,
-                           pool_id):
+    def create_pool_member(self, context, pool_id, member):
         pass
 
     @abc.abstractmethod
-    def update_pool_member(self, context, member, id,
-                           pool_id):
+    def update_pool_member(self, context, id, pool_id, member):
         pass
 
     @abc.abstractmethod
@@ -563,4 +577,8 @@ class LoadBalancerPluginBaseV2(service_base.ServicePluginBase):
 
     @abc.abstractmethod
     def get_member(self, context, id, fields=None):
+        pass
+
+    @abc.abstractmethod
+    def statuses(self, context, loadbalancer_id):
         pass

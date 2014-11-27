@@ -17,8 +17,8 @@ from neutron_lbaas.services.loadbalancer.drivers import driver_mixins
 
 
 class NotImplementedManager(object):
-    """Helper class to make any subclass of LBAbstractDriver explode if it
-    is missing any of the required object managers.
+    """Helper class to make any subclass of LoadBalancerBaseDriver explode if
+    it is missing any of the required object managers.
     """
 
     def create(self, context, obj):
@@ -32,8 +32,8 @@ class NotImplementedManager(object):
 
 
 class LoadBalancerBaseDriver(object):
-    """LBaaSv2 object model drivers should subclass LBAbstractDriver, and
-    initialize the following manager classes to create, update, and delete
+    """LBaaSv2 object model drivers should subclass LoadBalancerBaseDriver,
+    and initialize the following manager classes to create, update, and delete
     the various load balancer objects.
     """
 
@@ -46,14 +46,9 @@ class LoadBalancerBaseDriver(object):
     def __init__(self, plugin):
         self.plugin = plugin
 
-    def activate_cascade(self, context, obj):
-        self.plugin.activate_linked_entities(context, obj)
-
 
 class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
                               driver_mixins.BaseStatsMixin,
-                              driver_mixins.BaseStatusUpdateMixin,
-                              driver_mixins.BaseDeleteHelperMixin,
                               driver_mixins.BaseManagerMixin):
     model_class = models.LoadBalancer
 
@@ -62,35 +57,23 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
         return self.driver.plugin.db.delete_loadbalancer
 
 
-class BaseListenerManager(driver_mixins.BaseStatusUpdateMixin,
-                          driver_mixins.BaseDeleteHelperMixin,
-                          driver_mixins.BaseManagerMixin):
+class BaseListenerManager(driver_mixins.BaseManagerMixin):
     model_class = models.Listener
 
     @property
     def db_delete_method(self):
         return self.driver.plugin.db.delete_listener
 
-    def defer_cascade(self, context, listener):
-        self.driver.plugin.defer_listener(context, listener)
 
-
-class BasePoolManager(driver_mixins.BaseStatusUpdateMixin,
-                      driver_mixins.BaseDeleteHelperMixin,
-                      driver_mixins.BaseManagerMixin):
+class BasePoolManager(driver_mixins.BaseManagerMixin):
     model_class = models.PoolV2
 
     @property
     def db_delete_method(self):
         return self.driver.plugin.db.delete_pool
 
-    def defer_cascade(self, context, pool):
-        self.driver.plugin.defer_pool(context, pool)
 
-
-class BaseMemberManager(driver_mixins.BaseStatusUpdateMixin,
-                        driver_mixins.BaseDeleteHelperMixin,
-                        driver_mixins.BaseManagerMixin):
+class BaseMemberManager(driver_mixins.BaseManagerMixin):
     model_class = models.MemberV2
 
     @property
@@ -98,9 +81,7 @@ class BaseMemberManager(driver_mixins.BaseStatusUpdateMixin,
         return self.driver.plugin.db.delete_member
 
 
-class BaseHealthMonitorManager(driver_mixins.BaseStatusUpdateMixin,
-                               driver_mixins.BaseDeleteHelperMixin,
-                               driver_mixins.BaseManagerMixin):
+class BaseHealthMonitorManager(driver_mixins.BaseManagerMixin):
     model_class = models.HealthMonitorV2
 
     @property

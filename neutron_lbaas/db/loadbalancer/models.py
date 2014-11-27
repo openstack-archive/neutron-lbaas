@@ -81,7 +81,12 @@ class MemberV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     weight = sa.Column(sa.Integer, nullable=True)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
     subnet_id = sa.Column(sa.String(36), nullable=True)
-    status = sa.Column(sa.String(16), nullable=False)
+    provisioning_status = sa.Column(sa.String(16), nullable=False)
+    operating_status = sa.Column(sa.String(16), nullable=False)
+
+    @property
+    def root_loadbalancer(self):
+        return self.pool.listener.loadbalancer
 
 
 class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
@@ -100,8 +105,12 @@ class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     http_method = sa.Column(sa.String(16), nullable=True)
     url_path = sa.Column(sa.String(255), nullable=True)
     expected_codes = sa.Column(sa.String(64), nullable=True)
-    status = sa.Column(sa.String(16), nullable=False)
+    provisioning_status = sa.Column(sa.String(16), nullable=False)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
+
+    @property
+    def root_loadbalancer(self):
+        return self.pool.listener.loadbalancer
 
 
 class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
@@ -124,7 +133,8 @@ class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
                                      name="lb_algorithmsv2"),
                              nullable=False)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
-    status = sa.Column(sa.String(16), nullable=False)
+    provisioning_status = sa.Column(sa.String(16), nullable=False)
+    operating_status = sa.Column(sa.String(16), nullable=False)
     members = orm.relationship(MemberV2,
                                backref=orm.backref("pool", uselist=False),
                                cascade="all, delete-orphan",
@@ -140,6 +150,10 @@ class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
         cascade="all, delete-orphan",
         lazy='joined')
 
+    @property
+    def root_loadbalancer(self):
+        return self.listener.loadbalancer
+
 
 class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     """Represents a v2 neutron load balancer."""
@@ -154,7 +168,8 @@ class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     vip_port_id = sa.Column(sa.String(36), sa.ForeignKey(
         'ports.id', name='fk_lbaas_loadbalancers_ports_id'))
     vip_address = sa.Column(sa.String(36))
-    status = sa.Column(sa.String(16), nullable=False)
+    provisioning_status = sa.Column(sa.String(16), nullable=False)
+    operating_status = sa.Column(sa.String(16), nullable=False)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
     vip_port = orm.relationship(models_v2.Port)
     stats = orm.relationship(
@@ -174,6 +189,10 @@ class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
         # balancer ID and should not be cleared out in this table
         viewonly=True
     )
+
+    @property
+    def root_loadbalancer(self):
+        return self
 
 
 class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
@@ -200,8 +219,13 @@ class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     protocol_port = sa.Column(sa.Integer, nullable=False)
     connection_limit = sa.Column(sa.Integer)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
-    status = sa.Column(sa.String(16), nullable=False)
+    provisioning_status = sa.Column(sa.String(16), nullable=False)
+    operating_status = sa.Column(sa.String(16), nullable=False)
     default_pool = orm.relationship(
         PoolV2, backref=orm.backref("listener", uselist=False), lazy='joined')
     loadbalancer = orm.relationship(
         LoadBalancer, backref=orm.backref("listeners"), lazy='joined')
+
+    @property
+    def root_loadbalancer(self):
+        return self.loadbalancer

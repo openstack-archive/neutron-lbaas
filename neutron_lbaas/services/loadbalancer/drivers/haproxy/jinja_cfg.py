@@ -49,7 +49,7 @@ STATS_MAP = {
 }
 
 MEMBER_STATUSES = plugin_constants.ACTIVE_PENDING_STATUSES + (
-    plugin_constants.INACTIVE, constants.DEFERRED)
+    plugin_constants.INACTIVE,)
 
 TEMPLATES_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), 'templates/'))

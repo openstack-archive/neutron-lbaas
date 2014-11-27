@@ -75,6 +75,20 @@ class BaseDataModel(object):
                 setattr(instance, attr_name, getattr(sa_model, attr_name))
         return instance
 
+    @property
+    def root_loadbalancer(self):
+        """Returns the loadbalancer this instance is attached to."""
+        if isinstance(self, LoadBalancer):
+            lb = self
+        elif isinstance(self, Listener):
+            lb = self.loadbalancer
+        elif isinstance(self, Pool):
+            lb = self.listener.loadbalancer
+        else:
+            # Pool Member or Health Monitor
+            lb = self.pool.listener.loadbalancer
+        return lb
+
 
 # NOTE(brandon-logan) IPAllocation, Port, and ProviderResourceAssociation are
 # defined here because there aren't any data_models defined in core neutron
@@ -153,7 +167,7 @@ class HealthMonitor(BaseDataModel):
 
     def __init__(self, id=None, tenant_id=None, type=None, delay=None,
                  timeout=None, max_retries=None, http_method=None,
-                 url_path=None, expected_codes=None, status=None,
+                 url_path=None, expected_codes=None, provisioning_status=None,
                  admin_state_up=None, pool=None):
         self.id = id
         self.tenant_id = tenant_id
@@ -164,7 +178,7 @@ class HealthMonitor(BaseDataModel):
         self.http_method = http_method
         self.url_path = url_path
         self.expected_codes = expected_codes
-        self.status = status
+        self.provisioning_status = provisioning_status
         self.admin_state_up = admin_state_up
         self.pool = pool
 
@@ -172,13 +186,25 @@ class HealthMonitor(BaseDataModel):
         return bool(self.pool and self.pool.listener and
                     self.pool.listener.loadbalancer)
 
+    def to_dict(self, pools=False):
+        ret_dict = super(HealthMonitor, self).to_dict()
+        if pools:
+            # NOTE(blogan): Returning a list to future proof for M:N objects
+            # that are not yet implemented.
+            pool_list = []
+            if self.pool:
+                pool_list = [self.pool.to_dict()]
+            ret_dict['pools'] = pool_list
+        return ret_dict
+
 
 class Pool(BaseDataModel):
 
     def __init__(self, id=None, tenant_id=None, name=None, description=None,
                  healthmonitor_id=None, protocol=None, lb_algorithm=None,
-                 admin_state_up=None, status=None, members=None,
-                 healthmonitor=None, sessionpersistence=None, listener=None):
+                 admin_state_up=None, operating_status=None,
+                 provisioning_status=None, members=None, healthmonitor=None,
+                 sessionpersistence=None, listener=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -187,7 +213,8 @@ class Pool(BaseDataModel):
         self.protocol = protocol
         self.lb_algorithm = lb_algorithm
         self.admin_state_up = admin_state_up
-        self.status = status
+        self.operating_status = operating_status
+        self.provisioning_status = provisioning_status
         self.members = members or []
         self.healthmonitor = healthmonitor
         self.sessionpersistence = sessionpersistence
@@ -196,11 +223,19 @@ class Pool(BaseDataModel):
     def attached_to_loadbalancer(self):
         return bool(self.listener and self.listener.loadbalancer)
 
-    def to_dict(self):
+    def to_dict(self, members=False, listeners=False):
         ret_dict = super(Pool, self).to_dict()
-        ret_dict['members'] = [member.to_dict() for member in self.members]
+        if members:
+            ret_dict['members'] = [member.to_dict() for member in self.members]
         if self.sessionpersistence:
             ret_dict['session_persistence'] = self.sessionpersistence.to_dict()
+        if listeners:
+            # NOTE(blogan): Returning a list to future proof for M:N objects
+            # that are not yet implemented.
+            listener_list = []
+            if self.listener:
+                listener_list = [self.listener.to_dict()]
+            ret_dict['listeners'] = listener_list
         return ret_dict
 
 
@@ -208,7 +243,8 @@ class Member(BaseDataModel):
 
     def __init__(self, id=None, tenant_id=None, pool_id=None, address=None,
                  protocol_port=None, weight=None, admin_state_up=None,
-                 subnet_id=None, status=None, pool=None):
+                 subnet_id=None, operating_status=None,
+                 provisioning_status=None, pool=None):
         self.id = id
         self.tenant_id = tenant_id
         self.pool_id = pool_id
@@ -217,7 +253,8 @@ class Member(BaseDataModel):
         self.weight = weight
         self.admin_state_up = admin_state_up
         self.subnet_id = subnet_id
-        self.status = status
+        self.operating_status = operating_status
+        self.provisioning_status = provisioning_status
         self.pool = pool
 
     def attached_to_loadbalancer(self):
@@ -230,8 +267,8 @@ class Listener(BaseDataModel):
     def __init__(self, id=None, tenant_id=None, name=None, description=None,
                  default_pool_id=None, loadbalancer_id=None, protocol=None,
                  protocol_port=None, connection_limit=None,
-                 admin_state_up=None, status=None, default_pool=None,
-                 loadbalancer=None):
+                 admin_state_up=None, provisioning_status=None,
+                 operating_status=None, default_pool=None, loadbalancer=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -242,20 +279,33 @@ class Listener(BaseDataModel):
         self.protocol_port = protocol_port
         self.connection_limit = connection_limit
         self.admin_state_up = admin_state_up
-        self.status = status
+        self.operating_status = operating_status
+        self.provisioning_status = provisioning_status
         self.default_pool = default_pool
         self.loadbalancer = loadbalancer
 
     def attached_to_loadbalancer(self):
         return bool(self.loadbalancer)
 
+    def to_dict(self, loadbalancers=False):
+        ret_dict = super(Listener, self).to_dict()
+        if loadbalancers:
+            # NOTE(blogan): Returning a list to future proof for M:N objects
+            # that are not yet implemented.
+            lbs = []
+            if self.loadbalancer:
+                lbs = [self.loadbalancer.to_dict()]
+            ret_dict['loadbalancers'] = lbs
+        return ret_dict
+
 
 class LoadBalancer(BaseDataModel):
 
     def __init__(self, id=None, tenant_id=None, name=None, description=None,
                  vip_subnet_id=None, vip_port_id=None, vip_address=None,
-                 status=None, admin_state_up=None, vip_port=None,
-                 stats=None, provider=None, listeners=None):
+                 provisioning_status=None, operating_status=None,
+                 admin_state_up=None, vip_port=None, stats=None,
+                 provider=None, listeners=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -263,7 +313,8 @@ class LoadBalancer(BaseDataModel):
         self.vip_subnet_id = vip_subnet_id
         self.vip_port_id = vip_port_id
         self.vip_address = vip_address
-        self.status = status
+        self.operating_status = operating_status
+        self.provisioning_status = provisioning_status
         self.admin_state_up = admin_state_up
         self.vip_port = vip_port
         self.stats = stats
@@ -272,6 +323,13 @@ class LoadBalancer(BaseDataModel):
 
     def attached_to_loadbalancer(self):
         return True
+
+    def to_dict(self, listeners=False):
+        ret_dict = super(LoadBalancer, self).to_dict()
+        if listeners:
+            ret_dict['listeners'] = [listener.to_dict()
+                                     for listener in self.listeners]
+        return ret_dict
 
 
 SA_MODEL_TO_DATA_MODEL_MAP = {
@@ -285,4 +343,17 @@ SA_MODEL_TO_DATA_MODEL_MAP = {
     models_v2.IPAllocation: IPAllocation,
     models_v2.Port: Port,
     servicetype_db.ProviderResourceAssociation: ProviderResourceAssociation
+}
+
+DATA_MODEL_TO_SA_MODEL_MAP = {
+    LoadBalancer: models.LoadBalancer,
+    HealthMonitor: models.HealthMonitorV2,
+    Listener: models.Listener,
+    Pool: models.PoolV2,
+    Member: models.MemberV2,
+    LoadBalancerStatistics: models.LoadBalancerStatistics,
+    SessionPersistence: models.SessionPersistenceV2,
+    IPAllocation: models_v2.IPAllocation,
+    Port: models_v2.Port,
+    ProviderResourceAssociation: servicetype_db.ProviderResourceAssociation
 }

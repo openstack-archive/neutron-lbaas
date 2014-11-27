@@ -24,6 +24,7 @@ from neutron.plugins.common import constants
 
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.extensions import loadbalancerv2
+from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.services.loadbalancer.drivers.haproxy \
     import namespace_driver
@@ -420,9 +421,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         with mock.patch.object(self.driver.plugin.db, 'update_status') as us:
             self.driver._set_member_status(self.context_mock, lb, member_stats)
             call1 = mock.call(self.context_mock, models.MemberV2,
-                              members[0].id, constants.ACTIVE)
+                              members[0].id, operating_status=lb_const.ONLINE)
             call2 = mock.call(self.context_mock, models.MemberV2,
-                              members[1].id, constants.INACTIVE)
+                              members[1].id, operating_status=lb_const.OFFLINE)
             us.assert_has_calls([call1, call2])
 
     def test_remove_config_directory(self):
@@ -763,15 +764,6 @@ class TestHaproxyNSDriver(base.BaseTestCase):
 
 class BaseTestManager(base.BaseTestCase):
 
-    MockLoadBalancer = collections.namedtuple('LoadBalancer',
-                                              'id listeners status')
-    MockListener = collections.namedtuple(
-        'Listener', 'id loadbalancer status default_pool default_pool_id')
-    MockPool = collections.namedtuple(
-        'Pool', 'id listener members status healthmonitor healthmonitor_id')
-    MockMember = collections.namedtuple('Member', 'id pool status')
-    MockHealthMonitor = collections.namedtuple('HealthMonitor', 'id pool')
-
     def setUp(self):
         super(BaseTestManager, self).setUp()
         self.driver = mock.Mock()
@@ -784,22 +776,43 @@ class BaseTestManager(base.BaseTestCase):
         self.health_monitor = sync_driver.HealthMonitorManager(
             self.driver)
 
+    def _create_mock_models(self):
+        member = data_models.Member(id='1', pool=None,
+                                    provisioning_status=constants.ACTIVE,
+                                    operating_status=lb_const.ONLINE)
+        monitor = data_models.HealthMonitor(id='1', pool=None)
+        pool = data_models.Pool(id='1', listener=None, members=[member],
+                                provisioning_status=constants.ACTIVE,
+                                operating_status=lb_const.ONLINE,
+                                healthmonitor=monitor,
+                                healthmonitor_id=monitor.id)
+        monitor.pool = pool
+        member.pool = pool
+        listener = data_models.Listener(id='1', loadbalancer=None,
+                                        provisioning_status=constants.ACTIVE,
+                                        operating_status=lb_const.ONLINE,
+                                        default_pool=pool,
+                                        default_pool_id=pool.id)
+        pool.listener = listener
+        loadbalancer = data_models.LoadBalancer(
+            id='1', listeners=[listener], provisioning_status=constants.ACTIVE,
+            operating_status=lb_const.ONLINE)
+        listener.loadbalancer = loadbalancer
+        return loadbalancer, listener, pool, member, monitor
+
 
 class TestLoadBalancerManager(BaseTestManager):
 
     def test_refresh_update(self):
-        member = self.MockMember(1, None, constants.ACTIVE)
-        monitor = self.MockHealthMonitor(1, None)
-        pool = self.MockPool(1, None, [member], None, monitor, 1)
-        listener = self.MockListener(1, None, None, pool, None)
-        loadbalancer = self.MockLoadBalancer(1, [listener], None)
+        (loadbalancer, listener,
+         pool, member, monitor) = self._create_mock_models()
         with contextlib.nested(
                 mock.patch.object(self.load_balancer, 'deployable'),
                 mock.patch.object(self.driver, 'exists'),
                 mock.patch.object(self.driver, 'update_instance'),
-                mock.patch.object(self.driver, 'create_instance'),
-        ) as (dep, de, up_instance, create_instance):
-            de.return_value = True
+                mock.patch.object(self.driver, 'create_instance')
+        ) as (dep, exists, up_instance, create_instance):
+            exists.return_value = True
             dep.return_value = True
 
             self.load_balancer.refresh(self.context, loadbalancer)
@@ -808,11 +821,8 @@ class TestLoadBalancerManager(BaseTestManager):
             self.assertTrue(dep.called)
 
     def test_refresh_create(self):
-        member = self.MockMember(1, None, constants.ACTIVE)
-        monitor = self.MockHealthMonitor(1, None)
-        pool = self.MockPool(1, None, [member], None, monitor, 1)
-        listener = self.MockListener(1, None, None, pool, None)
-        loadbalancer = self.MockLoadBalancer(1, [listener], None)
+        (loadbalancer, listener,
+         pool, member, monitor) = self._create_mock_models()
         with contextlib.nested(
                 mock.patch.object(self.load_balancer, 'deployable'),
                 mock.patch.object(self.driver, 'exists'),
@@ -827,11 +837,8 @@ class TestLoadBalancerManager(BaseTestManager):
             self.assertTrue(dep.called)
 
     def test_refresh_non_deployable(self):
-        member = self.MockMember(1, None, constants.ACTIVE)
-        monitor = self.MockHealthMonitor(1, None)
-        pool = self.MockPool(1, None, [member], None, monitor, 1)
-        listener = self.MockListener(1, None, None, pool, None)
-        loadbalancer = self.MockLoadBalancer(1, [listener], None)
+        (loadbalancer, listener,
+         pool, member, monitor) = self._create_mock_models()
         with contextlib.nested(
                 mock.patch.object(self.load_balancer, 'deployable'),
                 mock.patch.object(self.driver, 'exists'),
@@ -846,310 +853,485 @@ class TestLoadBalancerManager(BaseTestManager):
             self.assertTrue(dep.called)
 
     def test_delete(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
+        loadbalancer = self._create_mock_models()[0]
         with mock.patch.object(self.driver, 'delete_instance') as del_instance:
-            with mock.patch.object(self.load_balancer, 'db_delete') as db_del:
+            with mock.patch.object(self.load_balancer,
+                                   'successful_completion') as succ:
                 self.load_balancer.delete(self.context, loadbalancer)
                 del_instance.assert_called_once_with(loadbalancer)
-                db_del.assert_called_once_with(self.context, 1)
+                succ.assert_called_once_with(self.context, loadbalancer,
+                                             delete=True)
 
     def test_create_no_listeners(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        with mock.patch.object(self.load_balancer, 'active') as active:
+        loadbalancer = self._create_mock_models()[0]
+        loadbalancer.listeners = []
+        with mock.patch.object(self.load_balancer,
+                               'successful_completion') as successful:
             with mock.patch.object(self.load_balancer, 'refresh') as refresh:
                 self.load_balancer.create(self.context, loadbalancer)
-                active.assert_called_once_with(self.context, 1)
+                successful.assert_called_once_with(self.context, loadbalancer)
                 self.assertFalse(refresh.called)
 
     def test_create(self):
-        listener = self.MockLoadBalancer(1, None, None)
-        loadbalancer = self.MockLoadBalancer(1, [listener], None)
-        with mock.patch.object(self.load_balancer, 'active') as active:
-            with mock.patch.object(self.load_balancer, 'refresh') as refresh:
+        loadbalancer = self._create_mock_models()[0]
+        with mock.patch.object(self.load_balancer, 'refresh') as refresh:
+            with mock.patch.object(self.load_balancer,
+                                   'successful_completion') as successful:
                 self.load_balancer.create(self.context, loadbalancer)
-                refresh.assert_called_once_with(self.context, loadbalancer)
-                self.assertFalse(active.called)
+                refresh.assert_called_once_with(self.context,
+                                                loadbalancer)
+                successful.assert_called_once_with(self.context,
+                                                   loadbalancer)
 
     def test_stats(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
+        loadbalancer = self._create_mock_models()[0]
         with mock.patch.object(self.driver, 'get_stats') as get_stats:
             self.load_balancer.stats(self.context, loadbalancer)
             get_stats.assert_called_once_with(loadbalancer)
 
     def test_update(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        old_loadbalancer = self.MockLoadBalancer(1, None, None)
+        loadbalancer = self._create_mock_models()[0]
+        old_loadbalancer = self._create_mock_models()[0]
         with mock.patch.object(self.load_balancer, 'refresh') as refresh:
-            self.load_balancer.update(
-                self.context, old_loadbalancer, loadbalancer)
-            refresh.assert_called_once_with(self.context, loadbalancer)
+            with mock.patch.object(self.load_balancer,
+                                   'successful_completion') as success:
+                self.load_balancer.update(
+                    self.context, old_loadbalancer, loadbalancer)
+                refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, loadbalancer)
 
     def test_deployable_all_acceptable(self):
-        member = mock.Mock(status=constants.ACTIVE)
-        pool = mock.Mock(status=constants.ACTIVE, members=[member])
-        listener = mock.Mock(status=constants.ACTIVE, default_pool=pool)
-        loadbalancer = mock.Mock(status=constants.ACTIVE, listeners=[listener])
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        listener.admin_state_up = True
+        loadbalancer.admin_state_up = True
 
         self.assertTrue(self.load_balancer.deployable(loadbalancer))
 
     def test_deployable_lb_not_acceptable(self):
-        listener = mock.Mock(status=constants.ACTIVE)
-        loadbalancer = mock.Mock(status=constants.PENDING_DELETE,
-                                 listeners=[listener])
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        listener.admin_state_up = True
+        loadbalancer.admin_state_up = False
 
         self.assertFalse(self.load_balancer.deployable(loadbalancer))
 
-    def test_deployable_listener_not_acceptable(self):
-        listener = mock.Mock(status=constants.PENDING_DELETE)
-        loadbalancer = mock.Mock(status=constants.ACTIVE, listeners=[listener])
+        loadbalancer.admin_state_up = True
+        loadbalancer.provisioning_status = constants.PENDING_DELETE
+        self.assertFalse(self.load_balancer.deployable(loadbalancer))
 
+    def test_deployable_listener_not_acceptable(self):
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        listener.admin_state_up = False
+        loadbalancer.admin_state_up = True
+        self.assertFalse(self.load_balancer.deployable(loadbalancer))
+
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        listener.admin_state_up = True
+        listener.provisioning_status = constants.ACTIVE
         self.assertFalse(self.load_balancer.deployable(loadbalancer))
 
 
 class TestListenerManager(BaseTestManager):
 
     def test_remove_listener(self):
-        listeners = [self.MockListener(1, None, None, None, None),
-                     self.MockListener(2, None, None, None, None)]
-        loadbalancer = self.MockLoadBalancer(1, listeners, None)
+        loadbalancer = self._create_mock_models()[0]
+        loadbalancer.listeners.append(data_models.Listener(id='2'))
 
-        self.listener._remove_listener(loadbalancer, 1)
+        self.listener._remove_listener(loadbalancer, '1')
         self.assertEqual(1, len(loadbalancer.listeners))
-        self.assertEqual(2, loadbalancer.listeners[0].id)
+        self.assertEqual('2', loadbalancer.listeners[0].id)
 
     def test_create(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.listener.create(self.context, listener)
+            with mock.patch.object(self.listener,
+                                   'successful_completion') as success:
+                self.listener.create(self.context, listener)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, listener)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
-
-    def test_update_unlink_pool(self):
-        loadbalancer = mock.Mock()
-        listener = mock.Mock()
-        listener.loadbalancer = loadbalancer
-        old_listener = mock.Mock()
-        listener.default_pool = None
-        old_listener.default_pool = mock.Mock()
-        with contextlib.nested(
-            mock.patch.object(self.driver.load_balancer, 'refresh'),
-            mock.patch.object(listener, 'attached_to_loadbalancer',
-                              return_value=True),
-            mock.patch.object(old_listener, 'attached_to_loadbalancer',
-                              return_value=True),
-            mock.patch.object(self.driver.plugin, 'activate_linked_entities'),
-            mock.patch.object(self.driver.plugin, 'defer_pool')
-        ) as (lb_refresh, new_attached_listener, old_attached_listener,
-              activate, defer_pool):
-            self.listener.update(self.context, old_listener, listener)
-
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
-            activate.assert_called_once_with(self.context, listener)
-            defer_pool.assert_called_once_with(self.context,
-                                               old_listener.default_pool)
-
-    def test_update_unlink_loadbalancer(self):
-        loadbalancer = mock.Mock()
-        listener = mock.Mock()
-        listener.loadbalancer = None
-        old_listener = mock.Mock()
-        old_listener.loadbalancer = loadbalancer
-        with contextlib.nested(
-            mock.patch.object(self.driver, 'delete_instance'),
-            mock.patch.object(listener, 'attached_to_loadbalancer',
-                              return_value=False),
-            mock.patch.object(old_listener, 'attached_to_loadbalancer',
-                              return_value=True),
-            mock.patch.object(self.driver.plugin, 'activate_linked_entities'),
-            mock.patch.object(self.driver.plugin, 'defer_listener')
-        ) as (lb_delete, new_attached_listener, old_attached_listener,
-              activate, defer_listener):
-            self.listener.update(self.context, old_listener, listener)
-
-            lb_delete.assert_called_once_with(loadbalancer,
-                                              cleanup_namespace=True)
-            defer_listener.assert_called_once_with(self.context, listener)
+    def test_fail_create(self):
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.listener,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.listener,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.listener.create(self.context, listener)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       listener.loadbalancer)
+                    fail.assert_called_once_with(self.context, listener)
+                    self.assertFalse(success.called)
 
     def test_delete_no_listeners_left(self):
-        listeners = [self.MockListener(1, None, None, None, None)]
-        loadbalancer = self.MockLoadBalancer(1, listeners, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
         with contextlib.nested(
-            mock.patch.object(self.listener, 'db_delete'),
             mock.patch.object(self.driver.load_balancer, 'refresh'),
-            mock.patch.object(self.listener, '_remove_listener'),
-            mock.patch.object(self.driver, 'delete_instance')
-        ) as (db_delete, refresh_instance, remove_listener, del_instance):
-            remove_listener.side_effect = lambda x, y: x.listeners.pop()
+            mock.patch.object(self.driver, 'delete_instance'),
+            mock.patch.object(self.listener, 'successful_completion')
+        ) as (refresh_instance, del_instance, success):
             self.listener.delete(self.context, listener)
-            remove_listener.assert_called_once_with(listener.loadbalancer,
-                                                    listener.id)
-            db_delete.assert_called_once_with(self.context, listener.id)
             self.assertFalse(
                 refresh_instance.called,
                 'Attempting to refresh device with no listeners')
             del_instance.assert_called_once_with(loadbalancer)
+            success.assert_called_once_with(self.context, listener,
+                                            delete=True)
 
     def test_delete_with_listeners_left(self):
-        listeners = [self.MockListener(1, None, None, None, None),
-                     self.MockListener(2, None, None, None, None)]
-        loadbalancer = self.MockLoadBalancer(2, listeners, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        with mock.patch.object(self.listener, 'db_delete') as db_delete:
-            with mock.patch.object(self.driver.load_balancer,
-                                   'refresh') as refresh_instance:
-                with mock.patch.object(self.driver,
-                                       'delete_instance') as del_instance:
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        loadbalancer.listeners.append(data_models.Listener(id='2'))
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as refresh_instance:
+            with mock.patch.object(self.driver,
+                                   'delete_instance') as del_instance:
+                with mock.patch.object(self.listener,
+                                       'successful_completion') as success:
                     self.listener.delete(self.context, listener)
-                    db_delete.assert_called_once_with(self.context,
-                                                      listener.id)
                     refresh_instance.assert_called_once_with(self.context,
                                                              loadbalancer)
                     self.assertFalse(
                         del_instance.called,
                         'delete_instance called with listeners attached')
+                    success.assert_called_once_with(self.context, listener,
+                                                    delete=True)
+
+    def test_fail_delete(self):
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        loadbalancer.listeners.append(data_models.Listener(id='2'))
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.listener,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.listener,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.listener.delete(self.context, listener)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       listener.loadbalancer)
+                    fail.assert_called_once_with(self.context, listener)
+                    self.assertFalse(success.called)
+
+    def test_update(self):
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        old_listener = data_models.Listener(id=listener.id)
+        old_listener.loadbalancer = loadbalancer
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.listener,
+                                   'successful_completion') as success:
+                self.listener.update(self.context, old_listener, listener)
+                lb_refresh.assert_called_once_with(self.context,
+                                                   listener.loadbalancer)
+                success.assert_called_once_with(self.context, listener)
+
+    def test_fail_update(self):
+        loadbalancer, listener, _, _, _ = self._create_mock_models()
+        old_listener = data_models.Listener(id=listener.id)
+        old_listener.loadbalancer = loadbalancer
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.listener,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.listener,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.listener.update(self.context, old_listener,
+                                             listener)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       listener.loadbalancer)
+                    fail.assert_called_once_with(self.context, listener)
+                    self.assertFalse(success.called)
 
 
 class TestPoolManager(BaseTestManager):
 
     def test_create(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        pool = self.MockPool(1, listener, None, None, None, None)
+        loadbalancer, listener, pool, _, _ = self._create_mock_models()
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.pool.create(self.context, pool)
+            with mock.patch.object(self.pool,
+                                   'successful_completion') as success:
+                self.pool.create(self.context, pool)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, pool)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
+    def test_fail_create(self):
+        loadbalancer, listener, pool, _, _ = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.pool,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.pool,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.pool.create(self.context, pool)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, pool)
+                    self.assertFalse(success.called)
 
     def test_update(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        healthmonitor = self.MockHealthMonitor(None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        pool = self.MockPool(1, listener, None, None, healthmonitor, None)
-        old_pool = self.MockListener(2, listener, None, None, None)
+        loadbalancer, listener, pool, _, _ = self._create_mock_models()
+        old_pool = data_models.Pool(id='2')
+        old_pool.listener = listener
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.pool.update(self.context, old_pool, pool)
+            with mock.patch.object(self.pool,
+                                   'successful_completion') as success:
+                self.pool.update(self.context, old_pool, pool)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, pool)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
+    def test_fail_update(self):
+        loadbalancer, listener, pool, _, _ = self._create_mock_models()
+        old_pool = data_models.Pool(id='2')
+        old_pool.listener = listener
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.pool,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.pool,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.pool.update(self.context, old_pool, pool)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, pool)
+                    self.assertFalse(success.called)
 
     def test_delete(self):
-        loadbalancer = self.MockLoadBalancer(2, None, None)
-        listener = mock.Mock(loadbalancer=loadbalancer,
-                             default_pool='pool',
-                             default_pool_id=1)
-        pool = self.MockPool(1, listener, None, None, None, None)
-        with mock.patch.object(self.pool,
-                               'db_delete') as db_del:
-            with mock.patch.object(self.driver.load_balancer,
-                                   'refresh') as refresh_instance:
+        loadbalancer, listener, pool, _, _ = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as refresh_instance:
+            with mock.patch.object(self.pool,
+                                   'successful_completion') as success:
                 self.pool.delete(self.context, pool)
                 refresh_instance.assert_called_once_with(self.context,
                                                          loadbalancer)
-                db_del.assert_called_once_with(self.context, 1)
                 self.assertEqual(listener.default_pool, None)
+                success.assert_called_once_with(self.context, pool,
+                                                delete=True)
+
+    def test_fail_delete(self):
+        loadbalancer, listener, pool, _, _ = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.pool,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.pool,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.pool.delete(self.context, pool)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, pool)
+                    self.assertFalse(success.called)
 
 
 class TestMemberManager(BaseTestManager):
 
     def test_remove_member(self):
-        members = [data_models.Member(id=1),
-                   data_models.Member(id=2)]
-        pool = data_models.Pool(id=1, members=members)
-        self.member._remove_member(pool, 1)
+        _, _, pool, member, _ = self._create_mock_models()
+        pool.members.append(data_models.Member(id='2'))
+        self.member._remove_member(pool, '1')
         self.assertTrue(len(pool.members), 1)
-        self.assertEqual(2, pool.members[0].id)
+        self.assertEqual('2', pool.members[0].id)
 
     def test_update(self):
-        loadbalancer = data_models.LoadBalancer(id=1)
-        listener = data_models.Listener(id=1, loadbalancer=loadbalancer)
-        pool = data_models.Pool(id=1, listener=listener)
-        member = data_models.Member(id=1, pool=pool)
-        old_member = data_models.Member(id=1, pool=pool)
+        loadbalancer, listener, pool, member, _ = self._create_mock_models()
+        old_member = data_models.Member(id='2')
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.member.update(self.context, old_member, member)
+            with mock.patch.object(self.member,
+                                   'successful_completion') as success:
+                self.member.update(self.context, old_member, member)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, member)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
+    def test_fail_update(self):
+        loadbalancer, listener, pool, member, _ = self._create_mock_models()
+        old_member = data_models.Member(id='2')
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.member,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.member,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.member.update(self.context, old_member, member)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, member)
+                    self.assertFalse(success.called)
 
     def test_create(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        pool = self.MockPool(1, listener, None, None, None, None)
-        member = self.MockMember(1, pool, None)
+        loadbalancer, listener, pool, member, _ = self._create_mock_models()
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.member.create(self.context, member)
+            with mock.patch.object(self.member,
+                                   'successful_completion') as success:
+                self.member.create(self.context, member)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, member)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
+    def test_fail_create(self):
+        loadbalancer, listener, pool, member, _ = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.member,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.member,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.member.create(self.context, member)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, member)
+                    self.assertFalse(success.called)
 
     def test_delete(self):
-        loadbalancer = self.MockLoadBalancer(2, None, None)
-        listener = mock.Mock(loadbalancer=loadbalancer,
-                             default_pool='pool',
-                             default_pool_id=1)
-        members = [self.MockMember(1, None, None)]
-        pool = self.MockPool(1, listener, members, None, None, None)
-        member = self.MockMember(1, pool, None)
+        loadbalancer, listener, pool, member, _ = self._create_mock_models()
         with contextlib.nested(
-            mock.patch.object(self.member, 'db_delete'),
-            mock.patch.object(self.member, '_remove_member'),
-            mock.patch.object(self.driver.load_balancer, 'refresh')
-        ) as (db_del, rem_mem, refresh):
-            rem_mem.side_effect = lambda x, y: x.members.pop()
+            mock.patch.object(self.driver.load_balancer, 'refresh'),
+            mock.patch.object(self.member, 'successful_completion')
+        ) as (refresh, success):
             self.member.delete(self.context, member)
-            rem_mem.assert_called_once_with(member.pool, member.id)
+            self.assertEqual(0, len(pool.members))
             refresh.assert_called_once_with(self.context, loadbalancer)
-            db_del.assert_called_once_with(self.context, 1)
+            success.assert_called_once_with(self.context, member, delete=True)
+
+    def test_fail_delete(self):
+        loadbalancer, listener, pool, member, _ = self._create_mock_models()
+        with contextlib.nested(
+            mock.patch.object(self.driver.load_balancer, 'refresh'),
+            mock.patch.object(self.member, 'successful_completion'),
+            mock.patch.object(self.member, 'failed_completion')
+        ) as (refresh, success, fail):
+            refresh.side_effect = Exception()
+            try:
+                self.member.delete(self.context, member)
+            except Exception:
+                pass
+            self.assertEqual(0, len(pool.members))
+            refresh.assert_called_once_with(self.context, loadbalancer)
+            fail.assert_called_once_with(self.context, member)
+            self.assertFalse(success.called)
 
 
 class TestHealthMonitorManager(BaseTestManager):
 
     def test_update(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        pool = self.MockPool(1, listener, None, None, None, None)
-        monitor = self.MockHealthMonitor(1, pool)
-        old_monitor = self.MockHealthMonitor(1, pool)
+        loadbalancer, listener, pool, _, monitor = self._create_mock_models()
+        old_monitor = data_models.HealthMonitor(id=monitor.id, pool=pool)
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.health_monitor.update(self.context, old_monitor, monitor)
+            with mock.patch.object(self.health_monitor,
+                                   'successful_completion') as success:
+                self.health_monitor.update(self.context, old_monitor, monitor)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, monitor)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
+    def test_fail_update(self):
+        loadbalancer, listener, pool, _, monitor = self._create_mock_models()
+        old_monitor = data_models.HealthMonitor(id=monitor.id, pool=pool)
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.health_monitor,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.health_monitor,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.health_monitor.update(self.context, old_monitor,
+                                                   monitor)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, monitor)
+                    self.assertFalse(success.called)
 
     def test_create(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        pool = self.MockPool(1, listener, None, None, None, None)
-        monitor = self.MockHealthMonitor(1, pool)
+        loadbalancer, listener, pool, _, monitor = self._create_mock_models()
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
-            self.health_monitor.create(self.context, monitor)
+            with mock.patch.object(self.health_monitor,
+                                   'successful_completion') as success:
+                self.health_monitor.create(self.context, monitor)
+                lb_refresh.assert_called_once_with(self.context, loadbalancer)
+                success.assert_called_once_with(self.context, monitor)
 
-            lb_refresh.assert_called_once_with(
-                self.context, loadbalancer)
+    def test_fail_create(self):
+        loadbalancer, listener, pool, _, monitor = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as lb_refresh:
+            with mock.patch.object(self.health_monitor,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.health_monitor,
+                                       'failed_completion') as fail:
+                    lb_refresh.side_effect = Exception()
+                    try:
+                        self.health_monitor.create(self.context, monitor)
+                    except Exception:
+                        pass
+                    lb_refresh.assert_called_once_with(self.context,
+                                                       loadbalancer)
+                    fail.assert_called_once_with(self.context, monitor)
+                    self.assertFalse(success.called)
 
     def test_delete(self):
-        loadbalancer = self.MockLoadBalancer(1, None, None)
-        listener = self.MockListener(1, loadbalancer, None, None, None)
-        pool = mock.Mock(listener=listener, health_monitor_id=1,
-                         health_monitor='monitor')
-        monitor = self.MockHealthMonitor(1, pool)
-        with mock.patch.object(self.health_monitor,
-                               'db_delete') as db_del:
-            with mock.patch.object(self.driver.load_balancer,
-                                   'refresh') as refresh_instance:
+        loadbalancer, listener, pool, _, monitor = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as refresh_instance:
+            with mock.patch.object(self.health_monitor,
+                                   'successful_completion') as success:
                 self.health_monitor.delete(self.context, monitor)
                 refresh_instance.assert_called_once_with(self.context,
                                                          loadbalancer)
-                db_del.assert_called_once_with(self.context, 1)
+                success.assert_called_once_with(self.context, monitor,
+                                                delete=True)
+
+    def test_fail_delete(self):
+        loadbalancer, listener, pool, _, monitor = self._create_mock_models()
+        with mock.patch.object(self.driver.load_balancer,
+                               'refresh') as refresh_instance:
+            with mock.patch.object(self.health_monitor,
+                                   'successful_completion') as success:
+                with mock.patch.object(self.health_monitor,
+                                       'failed_completion') as fail:
+                    refresh_instance.side_effect = Exception()
+                    try:
+                        self.health_monitor.delete(self.context, monitor)
+                    except Exception:
+                        pass
+                    refresh_instance.assert_called_once_with(self.context,
+                                                             loadbalancer)
+                    fail.assert_called_once_with(self.context, monitor)
+                    self.assertFalse(success.called)
