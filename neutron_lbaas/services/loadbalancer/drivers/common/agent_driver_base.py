@@ -23,12 +23,12 @@ from neutron.common import exceptions as n_exc
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron.db import agents_db
-from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron.extensions import lbaas_agentscheduler
 from neutron.extensions import portbindings
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 
 LOG = logging.getLogger(__name__)

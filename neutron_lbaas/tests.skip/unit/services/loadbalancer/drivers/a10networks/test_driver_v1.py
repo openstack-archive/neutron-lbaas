@@ -17,10 +17,11 @@ import sys
 import mock
 
 from neutron import context
+from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as lb_db
 with mock.patch.dict(sys.modules, {'a10_neutron_lbaas': mock.Mock()}):
-    from neutron_lbaas.services.loadbalancer.drivers.a10networks import driver_v1
-from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
+    from neutron_lbaas.services.loadbalancer.drivers.a10networks \
+        import driver_v1
 
 
 def fake_model(id):

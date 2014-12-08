@@ -1,4 +1,4 @@
-# Copyright (c) 2013 OpenStack Foundation.
+# Copyright 2013 Embrane, Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,11 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lbaas.services.loadbalancer.drivers.common \
-    import agent_driver_base
-from neutron_lbaas.services.loadbalancer.drivers.haproxy \
-    import namespace_driver
+from oslo.config import cfg
+
+from neutron.tests import base
+from neutron_lbaas.services.loadbalancer.drivers.embrane import config  # noqa
 
 
-class HaproxyOnHostPluginDriver(agent_driver_base.AgentDriverBase):
-    device_driver = namespace_driver.DRIVER_NAME
+class ConfigurationTest(base.BaseTestCase):
+
+    def test_defaults(self):
+        self.assertEqual('small', cfg.CONF.heleoslb.lb_flavor)
+        self.assertEqual(60, cfg.CONF.heleoslb.sync_interval)

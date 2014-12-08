@@ -17,8 +17,8 @@ import contextlib
 
 import mock
 
-from neutron_lbaas.services.loadbalancer.drivers.haproxy import cfg
 from neutron.tests import base
+from neutron_lbaas.services.loadbalancer.drivers.haproxy import cfg
 
 
 class TestHaproxyCfg(base.BaseTestCase):

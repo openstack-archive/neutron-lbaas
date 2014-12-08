@@ -18,15 +18,15 @@ from oslo.utils import excutils
 from neutron.api.v2 import attributes as attrs
 from neutron.common import exceptions as n_exc
 from neutron import context
-from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import loadbalancer
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from neutron.services import provider_configuration as pconf
+from neutron.services import service_base
+from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer import agent_scheduler
-from neutron_lbaas.services import provider_configuration as pconf
-from neutron_lbaas.services import service_base
 
 LOG = logging.getLogger(__name__)
 

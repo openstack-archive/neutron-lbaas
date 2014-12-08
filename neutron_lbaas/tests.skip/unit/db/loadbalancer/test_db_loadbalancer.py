@@ -24,18 +24,18 @@ from neutron.api import extensions
 from neutron.common import config
 from neutron.common import exceptions as n_exc
 from neutron import context
-from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron.db import servicetype_db as sdb
 import neutron.extensions
 from neutron.extensions import loadbalancer
 from neutron import manager
 from neutron.plugins.common import constants
+from neutron.services import provider_configuration as pconf
+from neutron.tests.unit import test_db_plugin
+from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer import (
     plugin as loadbalancer_plugin
 )
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
-from neutron_lbaas.services import provider_configuration as pconf
-from neutron.tests.unit import test_db_plugin
 
 
 DB_CORE_PLUGIN_KLASS = 'neutron.db.db_base_plugin_v2.NeutronDbPluginV2'

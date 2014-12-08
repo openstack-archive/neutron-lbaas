@@ -25,7 +25,8 @@ from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
 HELEOSAPIMOCK = mock.Mock()
 sys.modules["heleosapi"] = HELEOSAPIMOCK
 from neutron_lbaas.services.loadbalancer.drivers.embrane import config  # noqa
-from neutron_lbaas.services.loadbalancer.drivers.embrane import constants as h_con
+from neutron_lbaas.services.loadbalancer.drivers.embrane \
+    import constants as h_con
 from neutron_lbaas.services.loadbalancer.drivers.embrane import db as h_db
 # Stop the mock from persisting indefinitely in the global modules space
 del sys.modules["heleosapi"]

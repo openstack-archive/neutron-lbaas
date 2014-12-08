@@ -19,17 +19,18 @@ from six import moves
 from webob import exc
 
 from neutron import context
-from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import loadbalancer
 from neutron.extensions import portbindings
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from neutron_lbaas.services.loadbalancer.drivers.common import agent_driver_base
 from neutron.tests import base
 from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
 from neutron.tests.unit import testlib_api
+from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
+from neutron_lbaas.services.loadbalancer.drivers.common \
+    import agent_driver_base
 
 
 class TestLoadBalancerPluginBase(

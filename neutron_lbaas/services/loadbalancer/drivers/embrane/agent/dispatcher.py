@@ -20,8 +20,10 @@ from heleosapi import exceptions as h_exc
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.embrane.common import contexts as ctx
-from neutron_lbaas.services.loadbalancer.drivers.embrane.agent import lb_operations
-from neutron_lbaas.services.loadbalancer.drivers.embrane import constants as econ
+from neutron_lbaas.services.loadbalancer.drivers.embrane.agent \
+    import lb_operations
+from neutron_lbaas.services.loadbalancer.drivers.embrane \
+    import constants as econ
 
 LOG = logging.getLogger(__name__)
 

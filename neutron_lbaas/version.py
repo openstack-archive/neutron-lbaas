@@ -1,5 +1,4 @@
-# Copyright 2013 Embrane, Inc.
-# All Rights Reserved.
+#    Copyright 2011 OpenStack Foundation
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,14 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
+import pbr.version
 
-from neutron_lbaas.services.loadbalancer.drivers.embrane import config  # noqa
-from neutron.tests import base
-
-
-class ConfigurationTest(base.BaseTestCase):
-
-    def test_defaults(self):
-        self.assertEqual('small', cfg.CONF.heleoslb.lb_flavor)
-        self.assertEqual(60, cfg.CONF.heleoslb.sync_interval)
+version_info = pbr.version.VersionInfo('neutron-lbaas')

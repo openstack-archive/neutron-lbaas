@@ -15,9 +15,10 @@
 import mock
 import requests
 
-from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
-from neutron_lbaas.services.loadbalancer.drivers.netscaler import netscaler_driver
 from neutron.tests.unit import testlib_api
+from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
+from neutron_lbaas.services.loadbalancer.drivers.netscaler \
+    import netscaler_driver
 
 NCC_CLIENT_CLASS = ('neutron.services.loadbalancer.drivers'
                     '.netscaler.ncc_client.NSClient')

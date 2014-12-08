@@ -18,12 +18,13 @@ import mock
 
 from neutron.common import exceptions
 from neutron import context
-from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron import manager
 from neutron.plugins.common import constants
-from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
-from neutron_lbaas.services.loadbalancer.drivers.netscaler import netscaler_driver
 from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
+from neutron_lbaas.db.loadbalancer import loadbalancer_db
+from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
+from neutron_lbaas.services.loadbalancer.drivers.netscaler \
+    import netscaler_driver
 
 
 LBAAS_DRIVER_CLASS = ('neutron.services.loadbalancer.drivers'
