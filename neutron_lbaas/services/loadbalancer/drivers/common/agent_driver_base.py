@@ -35,7 +35,7 @@ LOG = logging.getLogger(__name__)
 
 AGENT_SCHEDULER_OPTS = [
     cfg.StrOpt('loadbalancer_pool_scheduler_driver',
-               default='neutron.services.loadbalancer.agent_scheduler'
+               default='neutron_lbaas.services.loadbalancer.agent_scheduler'
                        '.ChanceScheduler',
                help=_('Driver to use for scheduling '
                       'pool to a default loadbalancer agent')),

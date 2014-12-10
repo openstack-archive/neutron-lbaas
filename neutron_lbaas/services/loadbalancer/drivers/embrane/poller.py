@@ -40,7 +40,7 @@ class Poller(object):
         self.provider = (service_type_manager.get_service_providers(
             None, filters={
                 'service_type': [ccon.LOADBALANCER],
-                'driver': ['neutron.services.loadbalancer.drivers.'
+                'driver': ['neutron_lbaas.services.loadbalancer.drivers.'
                            'embrane.driver.EmbraneLbaas']}))[0]['name']
 
     def start_polling(self, interval):

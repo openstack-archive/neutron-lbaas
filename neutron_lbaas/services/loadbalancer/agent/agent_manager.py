@@ -33,7 +33,7 @@ LOG = logging.getLogger(__name__)
 OPTS = [
     cfg.MultiStrOpt(
         'device_driver',
-        default=['neutron.services.loadbalancer.drivers'
+        default=['neutron_lbaas.services.loadbalancer.drivers'
                  '.haproxy.namespace_driver.HaproxyNSDriver'],
         help=_('Drivers used to manage loadbalancing devices'),
     ),
