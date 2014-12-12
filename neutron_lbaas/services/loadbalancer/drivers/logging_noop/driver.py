@@ -42,11 +42,9 @@ class LoggingNoopCommonManager(object):
 
     def create(self, context, obj):
         LOG.debug("LB %s no-op, create %s", self.__class__.__name__, obj.id)
-        self.active(context, obj.id)
 
     def update(self, context, old_obj, obj):
         LOG.debug("LB %s no-op, update %s", self.__class__.__name__, obj.id)
-        self.active(context, obj.id)
 
     def delete(self, context, obj):
         LOG.debug("LB %s no-op, delete %s", self.__class__.__name__, obj.id)
@@ -69,38 +67,106 @@ class LoggingNoopLoadBalancerManager(LoggingNoopCommonManager,
             "total_connections": 0
         }
 
+    def create(self, context, loadbalancer):
+        super(LoggingNoopLoadBalancerManager, self).create(context,
+                                                           loadbalancer)
+        self.driver.activate_cascade(context, loadbalancer)
+
+    def update(self, context, old_loadbalancer, loadbalancer):
+        super(LoggingNoopLoadBalancerManager, self).update(context,
+                                                           old_loadbalancer,
+                                                           loadbalancer)
+        self.driver.activate_cascade(context, loadbalancer)
+
+    def delete(self, context, loadbalancer):
+        super(LoggingNoopLoadBalancerManager, self).delete(context,
+                                                           loadbalancer)
+        self.db_delete(context, loadbalancer.id)
+
 
 class LoggingNoopListenerManager(LoggingNoopCommonManager,
                                  driver_base.BaseListenerManager):
-
     def create(self, context, obj):
-        LOG.debug("LB listener no-op, create %s", self.__class__.__name__,
-                  obj.id)
+        super(LoggingNoopListenerManager, self).create(context, obj)
+        self.driver.activate_cascade(context, obj)
 
-    def update(self, context, old_obj, obj):
-        LOG.debug("LB listener no-op, update %s", self.__class__.__name__,
-                  obj.id)
+    def update(self, context, old_listener, new_listener):
+        super(LoggingNoopListenerManager, self).update(context, old_listener,
+                                                       new_listener)
+        if new_listener.attached_to_loadbalancer():
+            # Always activate listener and its children if attached to
+            # loadbalancer
+            self.driver.activate_cascade(context, new_listener)
+        elif old_listener.attached_to_loadbalancer():
+            # If listener has just been detached from loadbalancer
+            # defer listener and its children
+            self.defer_cascade(context, new_listener)
+
+        if not new_listener.default_pool and old_listener.default_pool:
+            # if listener's pool has been detached then defer the pool
+            # and its children
+            self.driver.pool.defer_cascade(context, old_listener.default_pool)
+
+    def delete(self, context, listener):
+        super(LoggingNoopListenerManager, self).delete(context, listener)
+        if listener.default_pool:
+            self.driver.pool.defer_cascade(context, listener.default_pool)
+        self.db_delete(context, listener.id)
 
 
 class LoggingNoopPoolManager(LoggingNoopCommonManager,
                              driver_base.BasePoolManager):
-    pass
+    def create(self, context, pool):
+        super(LoggingNoopPoolManager, self).create(context, pool)
+        # This shouldn't be called since a pool cannot be created and linked
+        # to a loadbalancer at the same time
+        self.driver.activate_cascade(context, pool)
+
+    def update(self, context, old_pool, pool):
+        super(LoggingNoopPoolManager, self).update(context, old_pool, pool)
+        self.driver.activate_cascade(context, pool)
+        if not pool.healthmonitor and old_pool.healthmonitor:
+            self.driver.health_monitor.defer(context,
+                                             old_pool.healthmonitor.id)
+
+    def delete(self, context, pool):
+        super(LoggingNoopPoolManager, self).delete(context, pool)
+        if pool.healthmonitor:
+            self.driver.health_monitor.defer(context, pool.healthmonitor.id)
+        self.db_delete(context, pool.id)
 
 
 class LoggingNoopMemberManager(LoggingNoopCommonManager,
                                driver_base.BaseMemberManager):
-    pass
+    def create(self, context, member):
+        super(LoggingNoopMemberManager, self).create(context, member)
+        self.driver.activate_cascade(context, member)
+
+    def update(self, context, old_member, member):
+        super(LoggingNoopMemberManager, self).update(context, old_member,
+                                                     member)
+        self.driver.activate_cascade(context, member)
+
+    def delete(self, context, member):
+        super(LoggingNoopMemberManager, self).delete(context, member)
+        self.db_delete(context, member.id)
 
 
 class LoggingNoopHealthMonitorManager(LoggingNoopCommonManager,
                                       driver_base.BaseHealthMonitorManager):
 
-    def create(self, context, obj):
-        LOG.debug("LB health monitor no-op, create %s",
-                  self.__class__.__name__, obj.id)
-        self.active(context, obj.id, obj.id)
+    def create(self, context, healthmonitor):
+        super(LoggingNoopHealthMonitorManager, self).create(context,
+                                                            healthmonitor)
+        self.driver.activate_cascade(context, healthmonitor)
 
-    def update(self, context, old_obj, obj):
-        LOG.debug("LB health monitor no-op, update %s",
-                  self.__class__.__name__, obj.id)
-        self.active(context, obj.id, obj.id)
+    def update(self, context, old_healthmonitor, healthmonitor):
+        super(LoggingNoopHealthMonitorManager, self).update(context,
+                                                            old_healthmonitor,
+                                                            healthmonitor)
+        self.driver.activate_cascade(context, healthmonitor)
+
+    def delete(self, context, healthmonitor):
+        super(LoggingNoopHealthMonitorManager, self).delete(context,
+                                                            healthmonitor)
+        self.db_delete(context, healthmonitor.id)
