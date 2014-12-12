@@ -15,8 +15,8 @@
 import contextlib
 import copy
 import mock
-
 from neutron.tests import base
+
 from neutron_lbaas.services.loadbalancer.agent import agent_api as api
 
 

@@ -14,9 +14,6 @@
 # limitations under the License.
 
 import mock
-from oslo.config import cfg
-from webob import exc
-
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.common import constants
@@ -27,11 +24,15 @@ from neutron.extensions import lbaas_agentscheduler
 from neutron.extensions import loadbalancer
 from neutron import manager
 from neutron.plugins.common import constants as plugin_const
-from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
 from neutron.tests.unit.openvswitch import test_agent_scheduler
 from neutron.tests.unit import test_agent_ext_plugin
 from neutron.tests.unit import test_db_plugin as test_plugin
 from neutron.tests.unit import test_extensions
+from oslo.config import cfg
+from webob import exc
+
+from neutron_lbaas import tests
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 LBAAS_HOSTA = 'hosta'
 
@@ -65,6 +66,7 @@ class LBaaSAgentSchedulerTestCase(test_agent_ext_plugin.AgentDBTestMixIn,
 
     def setUp(self):
         # Save the global RESOURCE_ATTRIBUTE_MAP
+        tests.override_nvalues()
         self.saved_attr_map = {}
         for resource, attrs in attributes.RESOURCE_ATTRIBUTE_MAP.iteritems():
             self.saved_attr_map[resource] = attrs.copy()
@@ -74,7 +76,7 @@ class LBaaSAgentSchedulerTestCase(test_agent_ext_plugin.AgentDBTestMixIn,
         #default provider should support agent scheduling
         cfg.CONF.set_override(
             'service_provider',
-            [('LOADBALANCER:lbaas:neutron.services.'
+            [('LOADBALANCER:lbaas:neutron_lbaas.services.'
               'loadbalancer.drivers.haproxy.plugin_driver.'
               'HaproxyOnHostPluginDriver:default')],
             'service_providers')

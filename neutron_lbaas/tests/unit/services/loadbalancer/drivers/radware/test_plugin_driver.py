@@ -16,19 +16,19 @@ import re
 
 import contextlib
 import mock
-from oslo.config import cfg
-from oslo.serialization import jsonutils
-from six.moves import queue as Queue
-
 from neutron.api.v2 import attributes
 from neutron import context
 from neutron.extensions import loadbalancer
 from neutron import manager
 from neutron.plugins.common import constants
-from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
+from oslo.config import cfg
+from oslo.serialization import jsonutils
+from six.moves import queue as Queue
+
 from neutron_lbaas.services.loadbalancer.drivers.radware import driver
 from neutron_lbaas.services.loadbalancer.drivers.radware \
     import exceptions as r_exc
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 GET_200 = ('/api/workflow/', '/api/service/', '/api/workflowTemplate')
 SERVER_DOWN_CODES = (-1, 301, 307)
@@ -96,7 +96,7 @@ def _post_handler(resource, binary):
     else:
         return 202, '', '', ''
 
-RADWARE_PROVIDER = ('LOADBALANCER:radware:neutron.services.'
+RADWARE_PROVIDER = ('LOADBALANCER:radware:neutron_lbaas.services.'
                     'loadbalancer.drivers.radware.driver.'
                     'LoadBalancerDriver:default')
 

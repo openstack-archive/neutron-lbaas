@@ -16,21 +16,21 @@
 import contextlib
 
 import mock
-
 from neutron.tests import base
+
 from neutron_lbaas.services.loadbalancer.drivers.haproxy import cfg
 
 
 class TestHaproxyCfg(base.BaseTestCase):
     def test_save_config(self):
         with contextlib.nested(
-                mock.patch('neutron.services.loadbalancer.'
+                mock.patch('neutron_lbaas.services.loadbalancer.'
                            'drivers.haproxy.cfg._build_global'),
-                mock.patch('neutron.services.loadbalancer.'
+                mock.patch('neutron_lbaas.services.loadbalancer.'
                            'drivers.haproxy.cfg._build_defaults'),
-                mock.patch('neutron.services.loadbalancer.'
+                mock.patch('neutron_lbaas.services.loadbalancer.'
                            'drivers.haproxy.cfg._build_frontend'),
-                mock.patch('neutron.services.loadbalancer.'
+                mock.patch('neutron_lbaas.services.loadbalancer.'
                            'drivers.haproxy.cfg._build_backend'),
                 mock.patch('neutron.agent.linux.utils.replace_file')
         ) as (b_g, b_d, b_f, b_b, replace):

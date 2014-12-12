@@ -15,9 +15,9 @@
 import contextlib
 
 import mock
-
 from neutron.plugins.common import constants
 from neutron.tests import base
+
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
 
 
@@ -31,7 +31,7 @@ class TestManager(base.BaseTestCase):
         self.mock_importer = mock.patch.object(manager, 'importutils').start()
 
         rpc_mock_cls = mock.patch(
-            'neutron.services.loadbalancer.agent.agent_api.LbaasAgentApi'
+            'neutron_lbaas.services.loadbalancer.agent.agent_api.LbaasAgentApi'
         ).start()
 
         # disable setting up periodic state reporting

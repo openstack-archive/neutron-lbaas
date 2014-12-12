@@ -16,14 +16,15 @@
 import copy
 
 import mock
-from webob import exc
-
 from neutron.api.v2 import attributes as attr
 from neutron.extensions import loadbalancer
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import test_api_v2
 from neutron.tests.unit import test_api_v2_extension
+from webob import exc
+
+from neutron_lbaas import tests
 
 
 _uuid = uuidutils.generate_uuid
@@ -35,6 +36,7 @@ class LoadBalancerExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
 
     def setUp(self):
         super(LoadBalancerExtensionTestCase, self).setUp()
+        tests.override_nvalues()
         self._setUpExtension(
             'neutron.extensions.loadbalancer.LoadBalancerPluginBase',
             constants.LOADBALANCER, loadbalancer.RESOURCE_ATTRIBUTE_MAP,

@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.tests import base
 from oslo.config import cfg
 
-from neutron.tests import base
 from neutron_lbaas.services.loadbalancer.drivers.embrane import config  # noqa
 
 

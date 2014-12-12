@@ -16,11 +16,11 @@
 import sys
 
 import mock
+from neutron import context
 from oslo.config import cfg
 from oslo.db import exception as n_exc
 
-from neutron import context
-from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 HELEOSAPIMOCK = mock.Mock()
 sys.modules["heleosapi"] = HELEOSAPIMOCK
@@ -31,7 +31,7 @@ from neutron_lbaas.services.loadbalancer.drivers.embrane import db as h_db
 # Stop the mock from persisting indefinitely in the global modules space
 del sys.modules["heleosapi"]
 
-EMBRANE_PROVIDER = ('LOADBALANCER:lbaas:neutron.services.'
+EMBRANE_PROVIDER = ('LOADBALANCER:lbaas:neutron_lbaas.services.'
                     'loadbalancer.drivers.embrane.driver.'
                     'EmbraneLbaas:default')
 

@@ -16,10 +16,7 @@
 import contextlib
 
 import mock
-from oslo.config import cfg
-import testtools
-import webob.exc
-
+import neutron
 from neutron.api import extensions
 from neutron.common import config
 from neutron.common import exceptions as n_exc
@@ -31,20 +28,25 @@ from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.tests.unit import test_db_plugin
+from oslo.config import cfg
+import testtools
+import webob.exc
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer import (
     plugin as loadbalancer_plugin
 )
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
+from neutron_lbaas import tests
 
 
 DB_CORE_PLUGIN_KLASS = 'neutron.db.db_base_plugin_v2.NeutronDbPluginV2'
 DB_LB_PLUGIN_KLASS = (
-    "neutron.services.loadbalancer."
+    "neutron_lbaas.services.loadbalancer."
     "plugin.LoadBalancerPlugin"
 )
-NOOP_DRIVER_KLASS = ('neutron.tests.unit.db.loadbalancer.test_db_loadbalancer.'
-                     'NoopLbaaSDriver')
+NOOP_DRIVER_KLASS = ('neutron_lbaas.tests.unit.db.loadbalancer.'
+                     'test_db_loadbalancer.NoopLbaaSDriver')
 
 extensions_path = ':'.join(neutron.extensions.__path__)
 
@@ -301,6 +303,7 @@ class LoadBalancerPluginDbTestCase(LoadBalancerTestMixin,
                                    test_db_plugin.NeutronDbPluginV2TestCase):
     def setUp(self, core_plugin=None, lb_plugin=None, lbaas_provider=None,
               ext_mgr=None):
+        tests.override_nvalues()
         service_plugins = {'lb_plugin_name': DB_LB_PLUGIN_KLASS}
         if not lbaas_provider:
             lbaas_provider = (
@@ -316,7 +319,6 @@ class LoadBalancerPluginDbTestCase(LoadBalancerTestMixin,
             ext_mgr=ext_mgr,
             service_plugins=service_plugins
         )
-
         if not ext_mgr:
             self.plugin = loadbalancer_plugin.LoadBalancerPlugin()
             ext_mgr = extensions.PluginAwareExtensionManager(
@@ -327,7 +329,7 @@ class LoadBalancerPluginDbTestCase(LoadBalancerTestMixin,
             self.ext_api = extensions.ExtensionMiddleware(app, ext_mgr=ext_mgr)
 
         get_lbaas_agent_patcher = mock.patch(
-            'neutron.services.loadbalancer.agent_scheduler'
+            'neutron_lbaas.services.loadbalancer.agent_scheduler'
             '.LbaasAgentSchedulerDbMixin.get_lbaas_agent_hosting_pool')
         mock_lbaas_agent = mock.MagicMock()
         get_lbaas_agent_patcher.start().return_value = mock_lbaas_agent
@@ -639,7 +641,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
         prov1 = (constants.LOADBALANCER +
                  ':lbaas:' + NOOP_DRIVER_KLASS)
         prov2 = (constants.LOADBALANCER +
-                 ':haproxy:neutron.services.loadbalancer.'
+                 ':haproxy:neutron_lbaas.services.loadbalancer.'
                  'drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver'
                  ':default')
         cfg.CONF.set_override('service_provider',

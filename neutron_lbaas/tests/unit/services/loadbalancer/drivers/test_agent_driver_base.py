@@ -15,9 +15,6 @@
 import contextlib
 
 import mock
-from six import moves
-from webob import exc
-
 from neutron import context
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import loadbalancer
@@ -26,11 +23,14 @@ from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests import base
-from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
 from neutron.tests.unit import testlib_api
+from six import moves
+from webob import exc
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer.drivers.common \
     import agent_driver_base
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 
 class TestLoadBalancerPluginBase(
@@ -48,7 +48,7 @@ class TestLoadBalancerPluginBase(
         st_db.ServiceTypeManager._instance = None
         agent_driver_base.AgentDriverBase.device_driver = 'dummy'
         super(TestLoadBalancerPluginBase, self).setUp(
-            lbaas_provider=('LOADBALANCER:lbaas:neutron.services.'
+            lbaas_provider=('LOADBALANCER:lbaas:neutron_lbaas.services.'
                             'loadbalancer.drivers.common.agent_driver_base.'
                             'AgentDriverBase:default'))
 
@@ -66,14 +66,14 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
             self.plugin_instance
         )
         get_lbaas_agents_patcher = mock.patch(
-            'neutron.services.loadbalancer.agent_scheduler'
+            'neutron_lbaas.services.loadbalancer.agent_scheduler'
             '.LbaasAgentSchedulerDbMixin.get_lbaas_agents')
         get_lbaas_agents_patcher.start()
 
     def test_get_ready_devices(self):
         with self.vip() as vip:
-            with mock.patch('neutron.services.loadbalancer.agent_scheduler'
-                            '.LbaasAgentSchedulerDbMixin.'
+            with mock.patch('neutron_lbaas.services.loadbalancer.'
+                            'agent_scheduler.LbaasAgentSchedulerDbMixin.'
                             'list_pools_on_lbaas_agent') as mock_agent_pools:
                 mock_agent_pools.return_value = {
                     'pools': [{'id': vip['vip']['pool_id']}]}
@@ -121,7 +121,7 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
 
         self.assertEqual(ctx.session.query(ldb.Pool).count(), 3)
         self.assertEqual(ctx.session.query(ldb.Vip).count(), 2)
-        with mock.patch('neutron.services.loadbalancer.agent_scheduler'
+        with mock.patch('neutron_lbaas.services.loadbalancer.agent_scheduler'
                         '.LbaasAgentSchedulerDbMixin'
                         '.list_pools_on_lbaas_agent') as mock_agent_pools:
             mock_agent_pools.return_value = {'pools': [{'id': pools[0].id},
@@ -146,8 +146,8 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
                 vip['vip']['id'],
                 {'vip': {'status': constants.INACTIVE}}
             )
-            with mock.patch('neutron.services.loadbalancer.agent_scheduler'
-                            '.LbaasAgentSchedulerDbMixin.'
+            with mock.patch('neutron_lbaas.services.loadbalancer.'
+                            'agent_scheduler.LbaasAgentSchedulerDbMixin.'
                             'list_pools_on_lbaas_agent') as mock_agent_pools:
                 mock_agent_pools.return_value = {
                     'pools': [{'id': vip['vip']['pool_id']}]}
@@ -166,8 +166,8 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
                 vip['vip']['pool_id'],
                 {'pool': {'status': constants.INACTIVE}}
             )
-            with mock.patch('neutron.services.loadbalancer.agent_scheduler'
-                            '.LbaasAgentSchedulerDbMixin.'
+            with mock.patch('neutron_lbaas.services.loadbalancer.'
+                            'agent_scheduler.LbaasAgentSchedulerDbMixin.'
                             'list_pools_on_lbaas_agent') as mock_agent_pools:
                 mock_agent_pools.return_value = {
                     'pools': [{'id': vip['vip']['pool_id']}]}

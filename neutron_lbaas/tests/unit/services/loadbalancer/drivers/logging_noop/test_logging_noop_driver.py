@@ -13,12 +13,13 @@
 #    under the License.
 
 import mock
-
 from neutron import context
-from neutron.tests.unit.db.loadbalancer import test_db_loadbalancer
-from neutron_lbaas.services.loadbalancer.drivers.logging_noop import driver
 
-log_path = 'neutron.services.loadbalancer.drivers.logging_noop.driver.LOG'
+from neutron_lbaas.services.loadbalancer.drivers.logging_noop import driver
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
+
+log_path = ('neutron_lbaas.services.loadbalancer.drivers.'
+            'logging_noop.driver.LOG')
 
 
 class FakeModel(object):

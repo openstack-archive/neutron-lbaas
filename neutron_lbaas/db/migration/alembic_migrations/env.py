@@ -19,9 +19,6 @@ from oslo.db.sqlalchemy import session
 import sqlalchemy as sa
 from sqlalchemy import event
 
-from neutron.db.migration.models import head  # noqa
-from neutron.db.migration.cli import *  # noqa
-
 
 MYSQL_ENGINE = None
 LBAAS_VERSION_TABLE = 'alembic_version_lbaas'
