@@ -1,30 +1,19 @@
 Welcome!
 ========
 
-You have come across a cloud computing network fabric controller. It has
-identified itself as "Neutron." It aims to tame your (cloud) networking!
+This package contains the code for the Neutron Load Balancer as a
+Service (LBaaS) service. This includes third-party drivers. This package
+requires Neutron to run.
 
 External Resources:
 ===================
 
 The homepage for Neutron is: http://launchpad.net/neutron.  Use this
-site for asking for help, and filing bugs. Code is available on
-git.openstack.org at <http://git.openstack.org/cgit/openstack/neutron>.
+site for asking for help, and filing bugs. We use a single Launchpad
+page for all Neutron projects.
 
-The latest and most in-depth documentation on how to use Neutron is
-available at: <http://docs.openstack.org>. This includes:
+Code is available on git.openstack.org at:
+<http://git.openstack.org/cgit/openstack/neutron-lbaas>.
 
-Neutron Administrator Guide
-   http://docs.openstack.org/admin-guide-cloud/content/ch_networking.html
-
-Neutron API Reference:
-   http://docs.openstack.org/api/openstack-network/2.0/content/
-
-Current Neutron developer documentation is available at:
-   http://wiki.openstack.org/NeutronDevelopment
-
-For help on usage and hacking of Neutron, please send mail to
-<mailto:openstack-dev@lists.openstack.org>.
-
-For information on how to contribute to Neutron, please see the
-contents of the CONTRIBUTING.rst file.
+Please refer to Neutron documentation for more information:
+`Neutron README.rst <http://git.openstack.org/cgit/openstack/neutron/tree/README.rst>`_
