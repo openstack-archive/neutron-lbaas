@@ -13,9 +13,8 @@
 #    under the License.
 
 import abc
-import six
-
 from neutron.plugins.common import constants
+import six
 
 
 @six.add_metaclass(abc.ABCMeta)

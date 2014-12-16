@@ -13,10 +13,10 @@
 #    under the License.
 
 import a10_neutron_lbaas
-
 from neutron.db import l3_db
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as lb_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 

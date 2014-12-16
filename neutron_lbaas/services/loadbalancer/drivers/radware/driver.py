@@ -23,11 +23,6 @@ import time
 import eventlet
 eventlet.monkey_patch(thread=True)
 
-from oslo.config import cfg
-from oslo.serialization import jsonutils
-from oslo.utils import excutils
-from six.moves import queue as Queue
-
 from neutron.api.v2 import attributes
 from neutron.common import log as call_log
 from neutron import context
@@ -35,6 +30,11 @@ from neutron.extensions import loadbalancer
 from neutron.i18n import _LE, _LI, _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from oslo.config import cfg
+from oslo.serialization import jsonutils
+from oslo.utils import excutils
+from six.moves import queue as Queue
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as lb_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 from neutron_lbaas.services.loadbalancer.drivers.radware \

@@ -15,7 +15,6 @@
 
 from heleosapi import constants as h_con
 from heleosapi import exceptions as h_exc
-
 from neutron.plugins.common import constants as ccon
 
 DELETED = 'DELETED'  # not visible status

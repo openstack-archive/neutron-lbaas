@@ -14,7 +14,6 @@
 #    under the License.
 
 from heleosapi import exceptions as h_exc
-
 from neutron import context
 from neutron.db import servicetype_db as sdb
 from neutron.i18n import _LE
@@ -22,6 +21,7 @@ from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall
 from neutron.plugins.common import constants as ccon
 from neutron.plugins.embrane.common import contexts as embrane_ctx
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer.drivers.embrane \
     import constants as econ

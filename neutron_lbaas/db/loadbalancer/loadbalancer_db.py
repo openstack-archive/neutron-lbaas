@@ -13,13 +13,6 @@
 #    under the License.
 #
 
-from oslo.db import exception
-from oslo.utils import excutils
-import sqlalchemy as sa
-from sqlalchemy import orm
-from sqlalchemy.orm import exc
-from sqlalchemy.orm import validates
-
 from neutron.api.v2 import attributes
 from neutron.common import exceptions as n_exc
 from neutron.db import common_db_mixin as base_db
@@ -31,8 +24,14 @@ from neutron import manager
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from neutron_lbaas.services.loadbalancer import constants as lb_const
+from oslo.db import exception
+from oslo.utils import excutils
+import sqlalchemy as sa
+from sqlalchemy import orm
+from sqlalchemy.orm import exc
+from sqlalchemy.orm import validates
 
+from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 LOG = logging.getLogger(__name__)
 

@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
-
 from neutron.api.v2 import attributes
 from neutron.i18n import _LI
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from oslo.config import cfg
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client

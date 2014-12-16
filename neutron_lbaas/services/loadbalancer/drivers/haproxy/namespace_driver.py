@@ -17,10 +17,6 @@ import shutil
 import socket
 
 import netaddr
-from oslo.config import cfg
-from oslo.utils import excutils
-from oslo.utils import importutils
-
 from neutron.agent.common import config
 from neutron.agent.linux import ip_lib
 from neutron.agent.linux import utils
@@ -29,6 +25,10 @@ from neutron.common import utils as n_utils
 from neutron.i18n import _LE, _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from oslo.config import cfg
+from oslo.utils import excutils
+from oslo.utils import importutils
+
 from neutron_lbaas.services.loadbalancer.agent import agent_device_driver
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer.drivers.haproxy import cfg as hacfg

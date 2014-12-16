@@ -13,12 +13,11 @@
 #    under the License.
 
 import itertools
-from six import moves
-
 from neutron.agent.linux import utils
 from neutron.plugins.common import constants as qconstants
-from neutron_lbaas.services.loadbalancer import constants
+from six import moves
 
+from neutron_lbaas.services.loadbalancer import constants
 
 PROTOCOL_MAP = {
     constants.PROTOCOL_TCP: 'tcp',

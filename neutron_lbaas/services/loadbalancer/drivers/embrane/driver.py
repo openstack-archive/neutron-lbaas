@@ -16,8 +16,6 @@
 from heleosapi import backend_operations as h_op
 from heleosapi import constants as h_con
 from heleosapi import info as h_info
-from oslo.config import cfg
-
 from neutron.api.v2 import attributes
 from neutron.common import exceptions as n_exc
 from neutron.extensions import loadbalancer as lb_ext
@@ -27,6 +25,8 @@ from neutron.plugins.common import constants as pcon
 from neutron.plugins.embrane.common import contexts as embrane_ctx
 from neutron.plugins.embrane.common import exceptions as h_exc
 from neutron.plugins.embrane.common import utils
+from oslo.config import cfg
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer import constants as lbcon
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver

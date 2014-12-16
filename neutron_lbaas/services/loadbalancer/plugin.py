@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.utils import excutils
-
 from neutron.api.v2 import attributes as attrs
 from neutron.common import exceptions as n_exc
 from neutron import context
@@ -25,6 +23,8 @@ from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
+from oslo.utils import excutils
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer import agent_scheduler
 

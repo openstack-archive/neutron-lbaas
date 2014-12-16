@@ -14,12 +14,11 @@
 
 import base64
 
-from oslo.serialization import jsonutils
-import requests
-
 from neutron.common import exceptions as n_exc
 from neutron.i18n import _LE
 from neutron.openstack.common import log as logging
+from oslo.serialization import jsonutils
+import requests
 
 LOG = logging.getLogger(__name__)
 

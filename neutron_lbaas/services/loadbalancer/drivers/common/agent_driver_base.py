@@ -14,10 +14,6 @@
 
 import uuid
 
-from oslo.config import cfg
-from oslo import messaging
-from oslo.utils import importutils
-
 from neutron.common import constants as q_const
 from neutron.common import exceptions as n_exc
 from neutron.common import rpc as n_rpc
@@ -29,6 +25,10 @@ from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconf
+from oslo.config import cfg
+from oslo import messaging
+from oslo.utils import importutils
+
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 

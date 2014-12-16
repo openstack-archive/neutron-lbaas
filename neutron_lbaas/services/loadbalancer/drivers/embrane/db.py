@@ -14,6 +14,7 @@
 #    under the License.
 
 from neutron.db import models_v2 as nmodel
+
 from neutron_lbaas.services.loadbalancer.drivers.embrane import models
 
 

@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo import messaging
-
 from neutron.common import rpc as n_rpc
+from oslo import messaging
 
 
 class LbaasAgentApi(object):

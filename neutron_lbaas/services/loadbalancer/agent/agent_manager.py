@@ -12,10 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
-from oslo import messaging
-from oslo.utils import importutils
-
 from neutron.agent import rpc as agent_rpc
 from neutron.common import constants as n_const
 from neutron.common import exceptions as n_exc
@@ -27,6 +23,10 @@ from neutron.openstack.common import loopingcall
 from neutron.openstack.common import periodic_task
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconfig
+from oslo.config import cfg
+from oslo import messaging
+from oslo.utils import importutils
+
 from neutron_lbaas.services.loadbalancer.agent import agent_api
 
 LOG = logging.getLogger(__name__)
