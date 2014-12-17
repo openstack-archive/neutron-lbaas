@@ -109,7 +109,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.driver.pool_to_port_id['pool_id'] = 'port_id'
             isdir.return_value = True
 
-            self.driver.undeploy_instance('pool_id')
+            self.driver.undeploy_instance('pool_id', delete_namespace=True)
 
             kill.assert_called_once_with('sudo_test', '/pool/pid')
             unplug.assert_called_once_with('qlbaas-pool_id', 'port_id')
@@ -468,17 +468,47 @@ class TestHaproxyNSDriver(base.BaseTestCase):
 
     def test_deploy_instance_pool_admin_state_down(self):
         with mock.patch.object(self.driver, 'exists') as exists:
-            self.fake_config['pool']['admin_state_up'] = False
-            self.driver.deploy_instance(self.fake_config)
-            self.assertFalse(exists.called)
+            with mock.patch.object(self.driver, 'update') as update:
+                self.fake_config['pool']['admin_state_up'] = False
+                self.driver.deploy_instance(self.fake_config)
+                exists.assert_called_once_with(self.fake_config['pool']['id'])
+                update.assert_called_once_with(self.fake_config)
 
     def test_refresh_device(self):
-        with mock.patch.object(self.driver, 'deploy_instance') as deploy:
+        with contextlib.nested(
+            mock.patch.object(self.driver, 'deploy_instance'),
+            mock.patch.object(self.driver, 'undeploy_instance')
+        ) as (deploy, undeploy):
             pool_id = 'pool_id1'
             self.driver._refresh_device(pool_id)
             self.rpc_mock.get_logical_device.assert_called_once_with(pool_id)
             deploy.assert_called_once_with(
                 self.rpc_mock.get_logical_device.return_value)
+            self.assertFalse(undeploy.called)
+
+    def test_refresh_device_not_deployed(self):
+        with contextlib.nested(
+            mock.patch.object(self.driver, 'deploy_instance'),
+            mock.patch.object(self.driver, 'exists'),
+            mock.patch.object(self.driver, 'undeploy_instance')
+        ) as (deploy, exists, undeploy):
+            pool_id = 'pool_id1'
+            deploy.return_value = False
+            exists.return_value = True
+            self.driver._refresh_device(pool_id)
+            undeploy.assert_called_once_with(pool_id)
+
+    def test_refresh_device_non_existing(self):
+        with contextlib.nested(
+            mock.patch.object(self.driver, 'deploy_instance'),
+            mock.patch.object(self.driver, 'exists'),
+            mock.patch.object(self.driver, 'undeploy_instance')
+        ) as (deploy, exists, undeploy):
+            pool_id = 'pool_id1'
+            deploy.return_value = False
+            exists.return_value = False
+            self.driver._refresh_device(pool_id)
+            self.assertFalse(undeploy.called)
 
     def test_create_vip(self):
         with mock.patch.object(self.driver, '_refresh_device') as refresh:
@@ -506,18 +536,22 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             refresh.assert_called_once_with('1')
 
     def test_delete_pool_existing(self):
-        with mock.patch.object(self.driver, 'undeploy_instance') as undeploy:
-            with mock.patch.object(self.driver, 'exists') as exists:
-                exists.return_value = True
-                self.driver.delete_pool({'id': '1'})
-                undeploy.assert_called_once_with('1')
+        with contextlib.nested(
+            mock.patch.object(self.driver, 'undeploy_instance'),
+            mock.patch.object(self.driver, 'exists'),
+        ) as (undeploy, exists):
+            exists.return_value = True
+            self.driver.delete_pool({'id': '1'})
+            undeploy.assert_called_once_with('1', delete_namespace=True)
 
     def test_delete_pool_non_existing(self):
-        with mock.patch.object(self.driver, 'undeploy_instance') as undeploy:
-            with mock.patch.object(self.driver, 'exists') as exists:
-                exists.return_value = False
-                self.driver.delete_pool({'id': '1'})
-                self.assertFalse(undeploy.called)
+        with contextlib.nested(
+            mock.patch.object(self.driver, 'undeploy_instance'),
+            mock.patch.object(self.driver, 'exists'),
+        ) as (undeploy, exists):
+            exists.return_value = False
+            self.driver.delete_pool({'id': '1'})
+            self.assertFalse(undeploy.called)
 
     def test_create_member(self):
         with mock.patch.object(self.driver, '_refresh_device') as refresh:

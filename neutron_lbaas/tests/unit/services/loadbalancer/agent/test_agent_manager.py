@@ -165,7 +165,8 @@ class TestManager(base.BaseTestCase):
 
         self.mgr._destroy_pool(pool_id)
 
-        self.driver_mock.undeploy_instance.assert_called_once_with(pool_id)
+        self.driver_mock.undeploy_instance.assert_called_once_with(
+            pool_id, delete_namespace=True)
         self.assertNotIn(pool_id, self.mgr.instance_mapping)
         self.rpc_mock.pool_destroyed.assert_called_once_with(pool_id)
         self.assertFalse(self.mgr.needs_resync)
@@ -177,7 +178,8 @@ class TestManager(base.BaseTestCase):
 
         self.mgr._destroy_pool(pool_id)
 
-        self.driver_mock.undeploy_instance.assert_called_once_with(pool_id)
+        self.driver_mock.undeploy_instance.assert_called_once_with(
+            pool_id, delete_namespace=True)
         self.assertIn(pool_id, self.mgr.instance_mapping)
         self.assertFalse(self.rpc_mock.pool_destroyed.called)
         self.assertTrue(self.log.exception.called)
@@ -367,4 +369,7 @@ class TestManager(base.BaseTestCase):
         payload = {'admin_state_up': False}
         self.mgr.agent_updated(mock.Mock(), payload)
         self.driver_mock.undeploy_instance.assert_has_calls(
-            [mock.call('1'), mock.call('2')], any_order=True)
+            [mock.call('1', delete_namespace=True),
+             mock.call('2', delete_namespace=True)],
+            any_order=True
+        )

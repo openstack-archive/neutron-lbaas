@@ -186,7 +186,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
     def _destroy_pool(self, pool_id):
         driver = self._get_driver(pool_id)
         try:
-            driver.undeploy_instance(pool_id)
+            driver.undeploy_instance(pool_id, delete_namespace=True)
             del self.instance_mapping[pool_id]
             self.plugin_rpc.pool_destroyed(pool_id)
         except Exception:
