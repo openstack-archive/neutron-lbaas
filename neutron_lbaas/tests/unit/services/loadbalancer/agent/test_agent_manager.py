@@ -16,9 +16,9 @@ import contextlib
 
 import mock
 from neutron.plugins.common import constants
-from neutron.tests import base
 
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
+from neutron_lbaas.tests import base
 
 
 class TestManager(base.BaseTestCase):

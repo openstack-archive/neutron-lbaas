@@ -14,10 +14,10 @@
 
 import contextlib
 import mock
-from neutron.tests import base
 from oslo.config import cfg
 
 from neutron_lbaas.services.loadbalancer.agent import agent
+from neutron_lbaas.tests import base
 
 
 class TestLbaasService(base.BaseTestCase):

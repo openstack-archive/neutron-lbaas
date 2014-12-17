@@ -22,7 +22,6 @@ from neutron.extensions import portbindings
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from neutron.tests import base
 from neutron.tests.unit import testlib_api
 from six import moves
 from webob import exc
@@ -30,6 +29,7 @@ from webob import exc
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.services.loadbalancer.drivers.common \
     import agent_driver_base
+from neutron_lbaas.tests import base
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 
