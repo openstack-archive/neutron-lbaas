@@ -28,10 +28,13 @@ from neutron.extensions import portbindings
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
+from neutron.services import provider_configuration as provconf
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 
 LOG = logging.getLogger(__name__)
+
+POOL_SCHEDULERS = 'pool_schedulers'
 
 AGENT_SCHEDULER_OPTS = [
     cfg.StrOpt('loadbalancer_pool_scheduler_driver',
@@ -326,8 +329,9 @@ class AgentDriverBase(abstract_driver.LoadBalancerAbstractDriver):
         self.plugin.agent_notifiers.update(
             {q_const.AGENT_TYPE_LOADBALANCER: self.agent_rpc})
 
-        self.pool_scheduler = importutils.import_object(
-            cfg.CONF.loadbalancer_pool_scheduler_driver)
+        pool_sched_driver = provconf.get_provider_driver_class(
+            cfg.CONF.loadbalancer_pool_scheduler_driver, POOL_SCHEDULERS)
+        self.pool_scheduler = importutils.import_object(pool_sched_driver)
 
     def _set_callbacks_on_plugin(self):
         # other agent based plugin driver might already set callbacks on plugin
