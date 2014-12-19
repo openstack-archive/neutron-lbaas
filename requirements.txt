@@ -35,4 +35,7 @@ oslo.utils>=1.0.0                       # Apache-2.0
 
 python-novaclient>=2.18.0
 
--e git+https://git.openstack.org/openstack/neutron#egg=neutron
+# This project does depend on neutron as a library, but the
+# openstack tooling does not play nicely with projects that
+# are not publicly available in pypi.
+# -e git+https://git.openstack.org/openstack/neutron#egg=neutron
