@@ -16,20 +16,17 @@
 from neutron import context
 from neutron import quota
 from neutron.tests.unit import test_api_v2
-from neutron.tests.unit import test_quota_ext
 from oslo.config import cfg
 
-from neutron_lbaas import tests
+from neutron_lbaas.tests import base
 
 _get_path = test_api_v2._get_path
 
 
-class LBaaSQuotaExtensionTestCase(
-    test_quota_ext.QuotaExtensionTestCase):
+class LBaaSQuotaExtensionTestCase(base.QuotaExtensionTestCase):
 
     def setUp(self):
         super(LBaaSQuotaExtensionTestCase, self).setUp()
-        tests.override_nvalues()
         cfg.CONF.set_override(
             'quota_items',
             ['vip', 'pool', 'member', 'health_monitor', 'extra1'],

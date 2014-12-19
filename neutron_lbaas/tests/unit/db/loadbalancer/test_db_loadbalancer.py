@@ -37,7 +37,7 @@ from neutron_lbaas.services.loadbalancer import (
     plugin as loadbalancer_plugin
 )
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
-from neutron_lbaas import tests
+from neutron_lbaas.tests import base
 
 
 DB_CORE_PLUGIN_KLASS = 'neutron.db.db_base_plugin_v2.NeutronDbPluginV2'
@@ -300,10 +300,9 @@ class LoadBalancerTestMixin(object):
 
 
 class LoadBalancerPluginDbTestCase(LoadBalancerTestMixin,
-                                   test_db_plugin.NeutronDbPluginV2TestCase):
+                                   base.NeutronDbPluginV2TestCase):
     def setUp(self, core_plugin=None, lb_plugin=None, lbaas_provider=None,
               ext_mgr=None):
-        tests.override_nvalues()
         service_plugins = {'lb_plugin_name': DB_LB_PLUGIN_KLASS}
         if not lbaas_provider:
             lbaas_provider = (

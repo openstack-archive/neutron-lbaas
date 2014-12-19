@@ -26,12 +26,11 @@ from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron.tests.unit.openvswitch import test_agent_scheduler
 from neutron.tests.unit import test_agent_ext_plugin
-from neutron.tests.unit import test_db_plugin as test_plugin
 from neutron.tests.unit import test_extensions
 from oslo.config import cfg
 from webob import exc
 
-from neutron_lbaas import tests
+from neutron_lbaas.tests import base
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 LBAAS_HOSTA = 'hosta'
@@ -60,13 +59,12 @@ class AgentSchedulerTestMixIn(test_agent_scheduler.AgentSchedulerTestMixIn):
 class LBaaSAgentSchedulerTestCase(test_agent_ext_plugin.AgentDBTestMixIn,
                                   AgentSchedulerTestMixIn,
                                   test_db_loadbalancer.LoadBalancerTestMixin,
-                                  test_plugin.NeutronDbPluginV2TestCase):
+                                  base.NeutronDbPluginV2TestCase):
     fmt = 'json'
     plugin_str = 'neutron.plugins.ml2.plugin.Ml2Plugin'
 
     def setUp(self):
         # Save the global RESOURCE_ATTRIBUTE_MAP
-        tests.override_nvalues()
         self.saved_attr_map = {}
         for resource, attrs in attributes.RESOURCE_ATTRIBUTE_MAP.iteritems():
             self.saved_attr_map[resource] = attrs.copy()
