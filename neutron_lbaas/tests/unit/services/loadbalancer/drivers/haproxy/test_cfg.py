@@ -126,11 +126,11 @@ class TestHaproxyCfg(base.BaseTestCase):
                          '\ttimeout check 2s',
                          '\tcookie SRV insert indirect nocache',
                          '\tserver member1_id 10.0.0.3:80 weight 1 '
-                         'check inter 3s fall 4 cookie 0',
+                         'check inter 3s fall 4 cookie member1_id',
                          '\tserver member2_id 10.0.0.4:80 weight 1 '
-                         'check inter 3s fall 4 cookie 1',
+                         'check inter 3s fall 4 cookie member2_id',
                          '\tserver member3_id 10.0.0.5:80 weight 1 '
-                         'check inter 3s fall 4 cookie 2']
+                         'check inter 3s fall 4 cookie member3_id']
         opts = cfg._build_backend(test_config)
         self.assertEqual(expected_opts, list(opts))
 
