@@ -119,9 +119,9 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self.pool_to_port_id[pool_id] = logical_config['vip']['port']['id']
 
     @n_utils.synchronized('haproxy-driver')
-    def undeploy_instance(self, pool_id, cleanup_namespace=False):
+    def undeploy_instance(self, pool_id, cleanup_namespace=False,
+                          delete_namespace=False):
         namespace = get_ns_name(pool_id)
-        ns = ip_lib.IPWrapper(self.root_helper, namespace)
         pid_path = self._get_state_file_path(pool_id, 'pid')
 
         # kill the process
@@ -134,6 +134,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         # delete all devices from namespace;
         # used when deleting orphans and port_id is not known for pool_id
         if cleanup_namespace:
+            ns = ip_lib.IPWrapper(self.root_helper, namespace)
             for device in ns.get_devices(exclude_loopback=True):
                 self.vif_driver.unplug(device.name, namespace=namespace)
 
@@ -141,7 +142,10 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         conf_dir = os.path.dirname(self._get_state_file_path(pool_id, ''))
         if os.path.isdir(conf_dir):
             shutil.rmtree(conf_dir)
-        ns.garbage_collect_namespace()
+
+        if delete_namespace:
+            ns = ip_lib.IPWrapper(self.root_helper, namespace)
+            ns.garbage_collect_namespace()
 
     def exists(self, pool_id):
         namespace = get_ns_name(pool_id)
@@ -293,27 +297,45 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         interface_name = self.vif_driver.get_device_name(Wrap(port_stub))
         self.vif_driver.unplug(interface_name, namespace=namespace)
 
-    @n_utils.synchronized('haproxy-driver')
-    def deploy_instance(self, logical_config):
-        # do actual deploy only if vip and pool are configured and active
-        if (not logical_config or
-                'vip' not in logical_config or
+    def _is_active(self, logical_config):
+        # haproxy wil be unable to start without any active vip
+        if ('vip' not in logical_config or
                 (logical_config['vip']['status'] not in
                  constants.ACTIVE_PENDING_STATUSES) or
-                not logical_config['vip']['admin_state_up'] or
-                (logical_config['pool']['status'] not in
-                 constants.ACTIVE_PENDING_STATUSES) or
-                not logical_config['pool']['admin_state_up']):
-            return
+                not logical_config['vip']['admin_state_up']):
+            return False
+
+        # not checking pool's admin_state_up to utilize haproxy ability to
+        # turn backend off instead of doing undeploy.
+        # in this case "ERROR 503: Service Unavailable" will be returned
+        if (logical_config['pool']['status'] not in
+                constants.ACTIVE_PENDING_STATUSES):
+            return False
+
+        return True
+
+    @n_utils.synchronized('haproxy-driver')
+    def deploy_instance(self, logical_config):
+        """Deploys loadbalancer if necessary
+
+        :return: True if loadbalancer was deployed, False otherwise
+        """
+        # do actual deploy only if vip and pool are configured and active
+        if not logical_config or not self._is_active(logical_config):
+            return False
 
         if self.exists(logical_config['pool']['id']):
             self.update(logical_config)
         else:
             self.create(logical_config)
+        return True
 
     def _refresh_device(self, pool_id):
         logical_config = self.plugin_rpc.get_logical_device(pool_id)
-        self.deploy_instance(logical_config)
+        # cleanup if the loadbalancer wasn't deployed (in case nothing to
+        # deploy or any errors)
+        if not self.deploy_instance(logical_config) and self.exists(pool_id):
+            self.undeploy_instance(pool_id)
 
     def create_vip(self, vip):
         self._refresh_device(vip['pool_id'])
@@ -332,10 +354,8 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self._refresh_device(pool['id'])
 
     def delete_pool(self, pool):
-        # delete_pool may be called before vip deletion in case
-        # pool's admin state set to down
         if self.exists(pool['id']):
-            self.undeploy_instance(pool['id'])
+            self.undeploy_instance(pool['id'], delete_namespace=True)
 
     def create_member(self, member):
         self._refresh_device(member['pool_id'])

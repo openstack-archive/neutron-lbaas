@@ -108,6 +108,9 @@ def _build_frontend(config):
     if protocol == constants.PROTOCOL_HTTP:
         opts.append('option forwardfor')
 
+    if not config['vip']['admin_state_up']:
+        opts.append('disabled')
+
     return itertools.chain(
         ['frontend %s' % config['vip']['id']],
         ('\t' + o for o in opts)
@@ -144,6 +147,9 @@ def _build_backend(config):
             if _has_http_cookie_persistence(config):
                 server += ' cookie %d' % config['members'].index(member)
             opts.append(server)
+
+    if not config['pool']['admin_state_up']:
+        opts.append('disabled')
 
     return itertools.chain(
         ['backend %s' % config['pool']['id']],

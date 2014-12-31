@@ -74,6 +74,7 @@ class TestHaproxyCfg(base.BaseTestCase):
                                },
                                'protocol_port': 80,
                                'connection_limit': 2000,
+                               'admin_state_up': True,
                                },
                        'pool': {'id': 'pool_id'}}
         expected_opts = ['frontend vip_id',
@@ -91,10 +92,16 @@ class TestHaproxyCfg(base.BaseTestCase):
         opts = cfg._build_frontend(test_config)
         self.assertEqual(expected_opts, list(opts))
 
+        test_config['vip']['admin_state_up'] = False
+        expected_opts.append('\tdisabled')
+        opts = cfg._build_frontend(test_config)
+        self.assertEqual(expected_opts, list(opts))
+
     def test_build_backend(self):
         test_config = {'pool': {'id': 'pool_id',
                                 'protocol': 'HTTP',
-                                'lb_method': 'ROUND_ROBIN'},
+                                'lb_method': 'ROUND_ROBIN',
+                                'admin_state_up': True},
                        'members': [{'status': 'ACTIVE',
                                     'admin_state_up': True,
                                     'id': 'member1_id',
@@ -131,6 +138,11 @@ class TestHaproxyCfg(base.BaseTestCase):
                          'check inter 3s fall 4 cookie 1',
                          '\tserver member3_id 10.0.0.5:80 weight 1 '
                          'check inter 3s fall 4 cookie 2']
+        opts = cfg._build_backend(test_config)
+        self.assertEqual(expected_opts, list(opts))
+
+        test_config['pool']['admin_state_up'] = False
+        expected_opts.append('\tdisabled')
         opts = cfg._build_backend(test_config)
         self.assertEqual(expected_opts, list(opts))
 
