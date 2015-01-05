@@ -26,9 +26,12 @@ from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall
 from neutron.openstack.common import periodic_task
 from neutron.plugins.common import constants
+from neutron.services import provider_configuration as provconfig
 from neutron_lbaas.services.loadbalancer.agent import agent_api
 
 LOG = logging.getLogger(__name__)
+
+DEVICE_DRIVERS = 'device_drivers'
 
 OPTS = [
     cfg.MultiStrOpt(
@@ -83,6 +86,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
     def _load_drivers(self):
         self.device_drivers = {}
         for driver in self.conf.device_driver:
+            driver = provconfig.get_provider_driver_class(driver,
+                                                          DEVICE_DRIVERS)
             try:
                 driver_inst = importutils.import_object(
                     driver,
