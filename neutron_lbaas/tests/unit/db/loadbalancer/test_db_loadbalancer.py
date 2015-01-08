@@ -504,6 +504,10 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
             with testtools.ExpectedException(webob.exc.HTTPClientError):
                 self.test_create_vip(pool=pool, protocol='HTTP')
 
+    def test_create_vip_with_gateway_ip(self):
+        with testtools.ExpectedException(webob.exc.HTTPClientError):
+            self.test_create_vip(address='10.0.0.1')
+
     def test_update_vip_with_protocol_mismatch(self):
         with self.pool(protocol='TCP') as pool:
             with self.vip(protocol='HTTP') as vip:
