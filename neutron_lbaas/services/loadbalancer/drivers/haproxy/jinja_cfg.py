@@ -48,7 +48,7 @@ STATS_MAP = {
     constants.STATS_RESPONSE_ERRORS: 'eresp'
 }
 
-ACTIVE_PENDING_STATUSES = plugin_constants.ACTIVE_PENDING_STATUSES + (
+MEMBER_STATUSES = plugin_constants.ACTIVE_PENDING_STATUSES + (
     plugin_constants.INACTIVE, constants.DEFERRED)
 
 TEMPLATES_DIR = os.path.abspath(
@@ -174,7 +174,7 @@ def _transform_health_monitor(monitor):
 
 
 def _include_member(member):
-    return member.status in ACTIVE_PENDING_STATUSES and member.admin_state_up
+    return member.status in MEMBER_STATUSES and member.admin_state_up
 
 
 def _expand_expected_codes(codes):
