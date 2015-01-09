@@ -40,3 +40,7 @@ class UnreadableCert(TLSException):
 
 class MisMatchedKey(TLSException):
     message = _LE("Key and x509 certificate do not match")
+
+
+class CertificateStorageException(TLSException):
+    message = _LE('Could not store certificate: %(msg)s')
