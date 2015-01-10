@@ -144,7 +144,7 @@ def _build_backend(config):
             server = (('server %(id)s %(address)s:%(protocol_port)s '
                        'weight %(weight)s') % member) + server_addon
             if _has_http_cookie_persistence(config):
-                server += ' cookie %d' % config['members'].index(member)
+                server += ' cookie %s' % member['id']
             opts.append(server)
 
     if not config['pool']['admin_state_up']:
