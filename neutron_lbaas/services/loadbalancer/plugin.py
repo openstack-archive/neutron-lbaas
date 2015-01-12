@@ -24,7 +24,7 @@ from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
-from oslo.utils import excutils
+from oslo_utils import excutils
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2

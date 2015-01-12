@@ -23,7 +23,7 @@ from neutron.common import config as common_config
 from neutron.common import rpc as n_rpc
 from neutron.common import topics
 from neutron.openstack.common import service
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
 

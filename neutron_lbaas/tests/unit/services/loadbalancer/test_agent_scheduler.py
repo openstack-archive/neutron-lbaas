@@ -27,7 +27,7 @@ from neutron.plugins.common import constants as plugin_const
 from neutron.tests.unit.openvswitch import test_agent_scheduler
 from neutron.tests.unit import test_agent_ext_plugin
 from neutron.tests.unit import test_extensions
-from oslo.config import cfg
+from oslo_config import cfg
 from webob import exc
 
 from neutron_lbaas.tests import base

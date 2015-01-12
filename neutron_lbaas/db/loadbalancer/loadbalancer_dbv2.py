@@ -14,8 +14,8 @@
 #    under the License.
 
 
-from oslo.db import exception
-from oslo.utils import excutils
+from oslo_db import exception
+from oslo_utils import excutils
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 

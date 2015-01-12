@@ -23,9 +23,9 @@ from neutron.openstack.common import loopingcall
 from neutron.openstack.common import periodic_task
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconfig
-from oslo.config import cfg
-from oslo import messaging
-from oslo.utils import importutils
+from oslo_config import cfg
+import oslo_messaging
+from oslo_utils import importutils
 
 from neutron_lbaas.services.loadbalancer.agent import agent_api
 
@@ -56,7 +56,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
     #       - modify/reload/destroy_pool methods were removed;
     #       - added methods to handle create/update/delete for every lbaas
     #       object individually;
-    target = messaging.Target(version='2.0')
+    target = oslo_messaging.Target(version='2.0')
 
     def __init__(self, conf):
         super(LbaasAgentManager, self).__init__()

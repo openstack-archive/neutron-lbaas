@@ -13,7 +13,7 @@
 #    under the License.
 
 from neutron.common import rpc as n_rpc
-from oslo import messaging
+import oslo_messaging
 
 
 class LbaasAgentApi(object):
@@ -28,7 +28,7 @@ class LbaasAgentApi(object):
     def __init__(self, topic, context, host):
         self.context = context
         self.host = host
-        target = messaging.Target(topic=topic, version='2.0')
+        target = oslo_messaging.Target(topic=topic, version='2.0')
         self.client = n_rpc.get_client(target)
 
     def get_ready_devices(self):

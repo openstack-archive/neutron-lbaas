@@ -26,7 +26,7 @@ from neutron.extensions import loadbalancerv2
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import test_db_plugin
-from oslo.config import cfg
+from oslo_config import cfg
 import testtools
 import webob.exc
 

@@ -30,9 +30,9 @@ from neutron.extensions import loadbalancer
 from neutron.i18n import _LE, _LI, _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
-from oslo.config import cfg
-from oslo.serialization import jsonutils
-from oslo.utils import excutils
+from oslo_config import cfg
+from oslo_serialization import jsonutils
+from oslo_utils import excutils
 from six.moves import queue as Queue
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as lb_db
