@@ -22,14 +22,14 @@ QUEUE_TIMEOUT = 300
 BACK_SUB_LIMIT = 6
 
 
-class BackendActions:
+class BackendActions(object):
     UPDATE = 'update'
     GROW = 'grow'
     REMOVE = 'remove'
     SHRINK = 'shrink'
 
 
-class Events:
+class Events(object):
     CREATE_VIP = 'create_vip'
     UPDATE_VIP = 'update_vip'
     DELETE_VIP = 'delete_vip'

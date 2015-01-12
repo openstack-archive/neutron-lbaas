@@ -652,7 +652,7 @@ class LoadBalancerDriver(abstract_driver.LoadBalancerAbstractDriver):
             return ips_on_subnet[0]['ip_address']
 
 
-class vDirectRESTClient:
+class vDirectRESTClient(object):
     """REST server proxy to Radware vDirect."""
 
     def __init__(self,
@@ -770,7 +770,7 @@ class vDirectRESTClient:
         return ret
 
 
-class OperationAttributes:
+class OperationAttributes(object):
 
     """Holds operation attributes.
 
@@ -795,7 +795,8 @@ class OperationAttributes:
         self.post_op_function = post_op_function
 
     def __repr__(self):
-        items = ("%s = %r" % (k, v) for k, v in self.__dict__.items())
+        attrs = self.__dict__
+        items = ("%s = %r" % (k, v) for k, v in attrs.items())
         return "<%s: {%s}>" % (self.__class__.__name__, ', '.join(items))
 
 
