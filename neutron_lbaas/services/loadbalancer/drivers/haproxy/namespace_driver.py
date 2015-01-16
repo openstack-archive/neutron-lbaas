@@ -112,7 +112,8 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         cmd = ['haproxy', '-f', conf_path, '-p', pid_path]
         cmd.extend(extra_cmd_args)
 
-        ns = ip_lib.IPWrapper(self.root_helper, namespace)
+        ns = ip_lib.IPWrapper(root_helper=self.root_helper,
+                              namespace=namespace)
         ns.netns.execute(cmd)
 
         # remember the pool<>port mapping
@@ -134,7 +135,8 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         # delete all devices from namespace;
         # used when deleting orphans and port_id is not known for pool_id
         if cleanup_namespace:
-            ns = ip_lib.IPWrapper(self.root_helper, namespace)
+            ns = ip_lib.IPWrapper(root_helper=self.root_helper,
+                                  namespace=namespace)
             for device in ns.get_devices(exclude_loopback=True):
                 self.vif_driver.unplug(device.name, namespace=namespace)
 
@@ -144,12 +146,13 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             shutil.rmtree(conf_dir)
 
         if delete_namespace:
-            ns = ip_lib.IPWrapper(self.root_helper, namespace)
+            ns = ip_lib.IPWrapper(root_helper=self.root_helper,
+                                  namespace=namespace)
             ns.garbage_collect_namespace()
 
     def exists(self, pool_id):
         namespace = get_ns_name(pool_id)
-        root_ns = ip_lib.IPWrapper(self.root_helper)
+        root_ns = ip_lib.IPWrapper(root_helper=self.root_helper)
 
         socket_path = self._get_state_file_path(pool_id, 'sock', False)
         if root_ns.netns.exists(namespace) and os.path.exists(socket_path):
@@ -245,7 +248,9 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self.plugin_rpc.plug_vip_port(port['id'])
         interface_name = self.vif_driver.get_device_name(Wrap(port))
 
-        if ip_lib.device_exists(interface_name, self.root_helper, namespace):
+        if ip_lib.device_exists(interface_name,
+                                root_helper=self.root_helper,
+                                namespace=namespace):
             if not reuse_existing:
                 raise exceptions.PreexistingDeviceFailure(
                     dev_name=interface_name
@@ -277,7 +282,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
 
         if gw_ip:
             cmd = ['route', 'add', 'default', 'gw', gw_ip]
-            ip_wrapper = ip_lib.IPWrapper(self.root_helper,
+            ip_wrapper = ip_lib.IPWrapper(root_helper=self.root_helper,
                                           namespace=namespace)
             ip_wrapper.netns.execute(cmd, check_exit_code=False)
             # When delete and re-add the same vip, we need to
