@@ -115,6 +115,10 @@ class BaseDataModel(object):
             lb = self
         elif isinstance(self, Listener):
             lb = self.loadbalancer
+        elif isinstance(self, L7Policy):
+            lb = self.listener.loadbalancer
+        elif isinstance(self, L7Rule):
+            lb = self.policy.listener.loadbalancer
         elif isinstance(self, Pool):
             lb = self.loadbalancer
         elif isinstance(self, SNI):
@@ -332,7 +336,8 @@ class Pool(BaseDataModel):
                  admin_state_up=None, operating_status=None,
                  provisioning_status=None, members=None, healthmonitor=None,
                  session_persistence=None, loadbalancer_id=None,
-                 loadbalancer=None, listener=None, listeners=None):
+                 loadbalancer=None, listener=None, listeners=None,
+                 l7_policies=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -353,6 +358,7 @@ class Pool(BaseDataModel):
         self.loadbalancer = loadbalancer
         self.listener = listener
         self.listeners = listeners or []
+        self.l7_policies = l7_policies or []
 
     def attached_to_loadbalancer(self):
         return bool(self.loadbalancer)
@@ -376,6 +382,8 @@ class Pool(BaseDataModel):
             ret_dict['listener_id'] = self.listener.id
         else:
             ret_dict['listener_id'] = None
+        ret_dict['l7_policies'] = [{'id': l7_policy.id}
+            for l7_policy in self.l7_policies]
         return ret_dict
 
     @classmethod
@@ -390,6 +398,9 @@ class Pool(BaseDataModel):
         listeners = model_dict.pop('listeners', [])
         model_dict['listeners'] = [Listener.from_dict(listener)
                                    for listener in listeners]
+        l7_policies = model_dict.pop('l7_policies', [])
+        model_dict['l7_policies'] = [L7Policy.from_dict(policy)
+                                     for policy in l7_policies]
 
         if healthmonitor:
             model_dict['healthmonitor'] = HealthMonitor.from_dict(
@@ -468,6 +479,93 @@ class TLSContainer(BaseDataModel):
         self.primary_cn = primary_cn
 
 
+class L7Rule(BaseDataModel):
+
+    def __init__(self, id=None, tenant_id=None,
+                 l7policy_id=None, type=None, compare_type=None, invert=None,
+                 key=None, value=None, provisioning_status=None,
+                 admin_state_up=None, policy=None):
+        self.id = id
+        self.tenant_id = tenant_id
+        self.l7policy_id = l7policy_id
+        self.type = type
+        self.compare_type = compare_type
+        self.invert = invert
+        self.key = key
+        self.value = value
+        self.provisioning_status = provisioning_status
+        self.admin_state_up = admin_state_up
+        self.policy = policy
+
+    def attached_to_loadbalancer(self):
+        return bool(self.policy.listener.loadbalancer)
+
+    def to_api_dict(self):
+        ret_dict = super(L7Rule, self).to_dict(
+            provisioning_status=False,
+            policy=False, l7policy_id=False)
+        ret_dict['policies'] = []
+        if self.policy:
+            ret_dict['policies'].append({'id': self.policy.id})
+        return ret_dict
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        policy = model_dict.pop('policy', None)
+        if policy:
+            model_dict['policy'] = L7Policy.from_dict(policy)
+        return L7Rule(**model_dict)
+
+
+class L7Policy(BaseDataModel):
+
+    def __init__(self, id=None, tenant_id=None, name=None, description=None,
+                 listener_id=None, action=None, redirect_pool_id=None,
+                 redirect_url=None, position=None,
+                 admin_state_up=None, provisioning_status=None,
+                 listener=None, rules=None, redirect_pool=None):
+        self.id = id
+        self.tenant_id = tenant_id
+        self.name = name
+        self.description = description
+        self.listener_id = listener_id
+        self.action = action
+        self.redirect_pool_id = redirect_pool_id
+        self.redirect_pool = redirect_pool
+        self.redirect_url = redirect_url
+        self.position = position
+        self.admin_state_up = admin_state_up
+        self.provisioning_status = provisioning_status
+        self.listener = listener
+        self.rules = rules or []
+
+    def attached_to_loadbalancer(self):
+        return bool(self.listener.loadbalancer)
+
+    def to_api_dict(self):
+        ret_dict = super(L7Policy, self).to_dict(
+            listener=False, listener_id=False,
+            provisioning_status=False, redirect_pool=False)
+        ret_dict['listeners'] = []
+        if self.listener:
+            ret_dict['listeners'].append({'id': self.listener.id})
+        ret_dict['rules'] = [{'id': rule.id} for rule in self.rules]
+        return ret_dict
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        listener = model_dict.pop('listener', None)
+        redirect_pool = model_dict.pop('redirect_pool', None)
+        rules = model_dict.pop('rules', [])
+        if listener:
+            model_dict['listener'] = Listener.from_dict(listener)
+        if redirect_pool:
+            model_dict['redirect_pool'] = Pool.from_dict(redirect_pool)
+        model_dict['rules'] = [L7Rule.from_dict(rule)
+                               for rule in rules]
+        return L7Policy(**model_dict)
+
+
 class Listener(BaseDataModel):
 
     def __init__(self, id=None, tenant_id=None, name=None, description=None,
@@ -475,7 +573,8 @@ class Listener(BaseDataModel):
                  default_tls_container_id=None, sni_containers=None,
                  protocol_port=None, connection_limit=None,
                  admin_state_up=None, provisioning_status=None,
-                 operating_status=None, default_pool=None, loadbalancer=None):
+                 operating_status=None, default_pool=None, loadbalancer=None,
+                 l7_policies=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -492,6 +591,7 @@ class Listener(BaseDataModel):
         self.provisioning_status = provisioning_status
         self.default_pool = default_pool
         self.loadbalancer = loadbalancer
+        self.l7_policies = l7_policies or []
 
     def attached_to_loadbalancer(self):
         return bool(self.loadbalancer)
@@ -509,6 +609,8 @@ class Listener(BaseDataModel):
         ret_dict['sni_container_refs'] = [container.tls_container_id
                                           for container in self.sni_containers]
         ret_dict['default_tls_container_ref'] = self.default_tls_container_id
+        ret_dict['l7_policies'] = [{'id': l7_policy.id}
+            for l7_policy in self.l7_policies]
         return ret_dict
 
     @classmethod
@@ -518,10 +620,13 @@ class Listener(BaseDataModel):
         sni_containers = model_dict.pop('sni_containers', [])
         model_dict['sni_containers'] = [SNI.from_dict(sni)
                                         for sni in sni_containers]
+        l7_policies = model_dict.pop('l7_policies', [])
         if default_pool:
             model_dict['default_pool'] = Pool.from_dict(default_pool)
         if loadbalancer:
             model_dict['loadbalancer'] = LoadBalancer.from_dict(loadbalancer)
+        model_dict['l7_policies'] = [L7Policy.from_dict(policy)
+                                     for policy in l7_policies]
         return Listener(**model_dict)
 
 
@@ -590,6 +695,8 @@ SA_MODEL_TO_DATA_MODEL_MAP = {
     models.HealthMonitorV2: HealthMonitor,
     models.Listener: Listener,
     models.SNI: SNI,
+    models.L7Rule: L7Rule,
+    models.L7Policy: L7Policy,
     models.PoolV2: Pool,
     models.MemberV2: Member,
     models.LoadBalancerStatistics: LoadBalancerStatistics,
@@ -604,6 +711,8 @@ DATA_MODEL_TO_SA_MODEL_MAP = {
     HealthMonitor: models.HealthMonitorV2,
     Listener: models.Listener,
     SNI: models.SNI,
+    L7Rule: models.L7Rule,
+    L7Policy: models.L7Policy,
     Pool: models.PoolV2,
     Member: models.MemberV2,
     LoadBalancerStatistics: models.LoadBalancerStatistics,

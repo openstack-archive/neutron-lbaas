@@ -58,6 +58,8 @@ class LoadBalancerBaseDriver(object):
     pool = NotImplementedManager()
     member = NotImplementedManager()
     health_monitor = NotImplementedManager()
+    l7policy = NotImplementedManager()
+    l7rule = NotImplementedManager()
 
     def __init__(self, plugin):
         self.plugin = plugin
@@ -136,6 +138,22 @@ class BaseHealthMonitorManager(driver_mixins.BaseManagerMixin):
     @property
     def db_delete_method(self):
         return self.driver.plugin.db.delete_healthmonitor
+
+
+class BaseL7PolicyManager(driver_mixins.BaseManagerMixin):
+    model_class = models.L7Policy
+
+    @property
+    def db_delete_method(self):
+        return self.driver.plugin.db.delete_l7policy
+
+
+class BaseL7RuleManager(driver_mixins.BaseManagerMixin):
+    model_class = models.L7Rule
+
+    @property
+    def db_delete_method(self):
+        return self.driver.plugin.db.delete_l7policy_rule
 
 
 # A decorator for wrapping driver operations, which will automatically

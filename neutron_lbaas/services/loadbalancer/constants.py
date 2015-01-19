@@ -77,6 +77,54 @@ SUPPORTED_SP_TYPES = (SESSION_PERSISTENCE_SOURCE_IP,
                       SESSION_PERSISTENCE_HTTP_COOKIE,
                       SESSION_PERSISTENCE_APP_COOKIE)
 
+L7_RULE_TYPE_HOST_NAME = 'HOST_NAME'
+L7_RULE_TYPE_PATH = 'PATH'
+L7_RULE_TYPE_FILE_TYPE = 'FILE_TYPE'
+L7_RULE_TYPE_HEADER = 'HEADER'
+L7_RULE_TYPE_COOKIE = 'COOKIE'
+SUPPORTED_L7_RULE_TYPES = (L7_RULE_TYPE_HOST_NAME,
+                           L7_RULE_TYPE_PATH,
+                           L7_RULE_TYPE_FILE_TYPE,
+                           L7_RULE_TYPE_HEADER,
+                           L7_RULE_TYPE_COOKIE)
+
+L7_RULE_COMPARE_TYPE_REGEX = 'REGEX'
+L7_RULE_COMPARE_TYPE_STARTS_WITH = 'STARTS_WITH'
+L7_RULE_COMPARE_TYPE_ENDS_WITH = 'ENDS_WITH'
+L7_RULE_COMPARE_TYPE_CONTAINS = 'CONTAINS'
+L7_RULE_COMPARE_TYPE_EQUAL_TO = 'EQUAL_TO'
+SUPPORTED_L7_RULE_COMPARE_TYPES = (L7_RULE_COMPARE_TYPE_REGEX,
+                                   L7_RULE_COMPARE_TYPE_STARTS_WITH,
+                                   L7_RULE_COMPARE_TYPE_ENDS_WITH,
+                                   L7_RULE_COMPARE_TYPE_CONTAINS,
+                                   L7_RULE_COMPARE_TYPE_EQUAL_TO)
+
+L7_POLICY_ACTION_REJECT = 'REJECT'
+L7_POLICY_ACTION_REDIRECT_TO_POOL = 'REDIRECT_TO_POOL'
+L7_POLICY_ACTION_REDIRECT_TO_URL = 'REDIRECT_TO_URL'
+SUPPORTED_L7_POLICY_ACTIONS = (L7_POLICY_ACTION_REJECT,
+                               L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                               L7_POLICY_ACTION_REDIRECT_TO_URL)
+
+URL_REGEX = "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*(),]|\
+             (?:%[0-9a-fA-F][0-9a-fA-F]))+"
+
+# See RFCs 2616, 2965, 6265, 7230: Should match characters valid in a
+# http header or cookie name.
+HTTP_HEADER_COOKIE_NAME_REGEX = r'\A[a-zA-Z0-9!#$%&\'*+-.^_`|~]+\Z'
+
+# See RFCs 2616, 2965, 6265: Should match characters valid in a cookie value.
+HTTP_COOKIE_VALUE_REGEX = r'\A[a-zA-Z0-9!#$%&\'()*+-./:<=>?@[\]^_`{|}~]+\Z'
+
+# See RFC 7230: Should match characters valid in a header value.
+HTTP_HEADER_VALUE_REGEX = (r'\A[a-zA-Z0-9'
+                           r'!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~\\]+\Z')
+
+# Also in RFC 7230: Should match characters valid in a header value
+# when quoted with double quotes.
+HTTP_QUOTED_HEADER_VALUE_REGEX = (r'\A"[a-zA-Z0-9 \t'
+                                  r'!"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~\\]*"\Z')
+
 STATS_ACTIVE_CONNECTIONS = 'active_connections'
 STATS_MAX_CONNECTIONS = 'max_connections'
 STATS_TOTAL_CONNECTIONS = 'total_connections'

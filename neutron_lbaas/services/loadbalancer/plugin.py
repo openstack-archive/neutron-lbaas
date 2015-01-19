@@ -384,6 +384,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     """
     supported_extension_aliases = ["lbaasv2",
                                    "shared_pools",
+                                   "l7",
                                    "lbaas_agent_schedulerv2",
                                    "service-type"]
     path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
@@ -1061,6 +1062,143 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         db_stats = self.db.stats(context, loadbalancer_id)
         return {'stats': db_stats.to_api_dict()}
 
+    def create_l7policy(self, context, l7policy):
+        l7policy = l7policy.get('l7policy')
+        l7policy_db = self.db.create_l7policy(context, l7policy)
+
+        if l7policy_db.attached_to_loadbalancer():
+            driver = self._get_driver_for_loadbalancer(
+                context, l7policy_db.listener.loadbalancer_id)
+            self._call_driver_operation(context,
+                                        driver.l7policy.create,
+                                        l7policy_db)
+
+        return l7policy_db.to_dict()
+
+    def update_l7policy(self, context, id, l7policy):
+        l7policy = l7policy.get('l7policy')
+        old_l7policy = self.db.get_l7policy(context, id)
+        self.db.test_and_set_status(context, models.L7Policy, id,
+                                    constants.PENDING_UPDATE)
+        try:
+            updated_l7policy = self.db.update_l7policy(
+                context, id, l7policy)
+        except Exception as exc:
+            self.db.update_loadbalancer_provisioning_status(
+                context, old_l7policy.root_loadbalancer.id)
+            raise exc
+
+        if (updated_l7policy.attached_to_loadbalancer() or
+                old_l7policy.attached_to_loadbalancer()):
+            if updated_l7policy.attached_to_loadbalancer():
+                driver = self._get_driver_for_loadbalancer(
+                    context, updated_l7policy.listener.loadbalancer_id)
+            else:
+                driver = self._get_driver_for_loadbalancer(
+                    context, old_l7policy.listener.loadbalancer_id)
+            self._call_driver_operation(context,
+                                        driver.l7policy.update,
+                                        updated_l7policy,
+                                        old_db_entity=old_l7policy)
+
+        return self.db.get_l7policy(context, updated_l7policy.id).to_api_dict()
+
+    def delete_l7policy(self, context, id):
+        self.db.test_and_set_status(context, models.L7Policy, id,
+                                    constants.PENDING_DELETE)
+        l7policy_db = self.db.get_l7policy(context, id)
+
+        if l7policy_db.attached_to_loadbalancer():
+            driver = self._get_driver_for_loadbalancer(
+                context, l7policy_db.listener.loadbalancer_id)
+            self._call_driver_operation(context, driver.l7policy.delete,
+                                        l7policy_db)
+        else:
+            self.db.delete_l7policy(context, id)
+
+    def get_l7policies(self, context, filters=None, fields=None):
+        return [policy.to_api_dict() for policy in self.db.get_l7policies(
+            context, filters=filters)]
+
+    def get_l7policy(self, context, id, fields=None):
+        return self.db.get_l7policy(context, id).to_api_dict()
+
+    def _check_l7policy_exists(self, context, l7policy_id):
+        if not self.db._resource_exists(context, models.L7Policy, l7policy_id):
+            raise loadbalancerv2.EntityNotFound(name=models.L7Policy.NAME,
+                                                id=l7policy_id)
+
+    def create_l7policy_rule(self, context, rule, l7policy_id):
+        rule = rule.get('rule')
+        rule_db = self.db.create_l7policy_rule(context, rule, l7policy_id)
+
+        if rule_db.attached_to_loadbalancer():
+            driver = self._get_driver_for_loadbalancer(
+                context, rule_db.policy.listener.loadbalancer_id)
+            self._call_driver_operation(context,
+                                        driver.l7rule.create,
+                                        rule_db)
+        else:
+            self.db.update_status(context, models.L7Rule, rule_db.id,
+                                  lb_const.DEFERRED)
+
+        return rule_db.to_dict()
+
+    def update_l7policy_rule(self, context, id, rule, l7policy_id):
+        rule = rule.get('rule')
+        old_rule_db = self.db.get_l7policy_rule(context, id, l7policy_id)
+        self.db.test_and_set_status(context, models.L7Rule, id,
+                                    constants.PENDING_UPDATE)
+        try:
+            upd_rule_db = self.db.update_l7policy_rule(
+                context, id, rule, l7policy_id)
+        except Exception as exc:
+            self.db.update_loadbalancer_provisioning_status(
+                context, old_rule_db.root_loadbalancer.id)
+            raise exc
+
+        if (upd_rule_db.attached_to_loadbalancer() or
+                old_rule_db.attached_to_loadbalancer()):
+            if upd_rule_db.attached_to_loadbalancer():
+                driver = self._get_driver_for_loadbalancer(
+                    context, upd_rule_db.policy.listener.loadbalancer_id)
+            else:
+                driver = self._get_driver_for_loadbalancer(
+                    context, old_rule_db.policy.listener.loadbalancer_id)
+            self._call_driver_operation(context,
+                                        driver.l7rule.update,
+                                        upd_rule_db,
+                                        old_db_entity=old_rule_db)
+        else:
+            self.db.update_status(context, models.L7Rule, id,
+                                  lb_const.DEFERRED)
+
+        return upd_rule_db.to_dict()
+
+    def delete_l7policy_rule(self, context, id, l7policy_id):
+        self.db.test_and_set_status(context, models.L7Rule, id,
+                                    constants.PENDING_DELETE)
+        rule_db = self.db.get_l7policy_rule(context, id, l7policy_id)
+
+        if rule_db.attached_to_loadbalancer():
+            driver = self._get_driver_for_loadbalancer(
+                context, rule_db.policy.listener.loadbalancer_id)
+            self._call_driver_operation(context, driver.l7rule.delete,
+                                        rule_db)
+        else:
+            self.db.delete_l7policy_rule(context, id, l7policy_id)
+
+    def get_l7policy_rules(self, context, l7policy_id,
+                           filters=None, fields=None):
+        self._check_l7policy_exists(context, l7policy_id)
+        return [rule.to_api_dict() for rule in self.db.get_l7policy_rules(
+            context, l7policy_id, filters=filters)]
+
+    def get_l7policy_rule(self, context, id, l7policy_id, fields=None):
+        self._check_l7policy_exists(context, l7policy_id)
+        return self.db.get_l7policy_rule(
+            context, id, l7policy_id).to_api_dict()
+
     def validate_provider(self, provider):
         if provider not in self.drivers:
             raise pconf.ServiceProviderNotFound(
@@ -1095,10 +1233,24 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         if isinstance(obj, data_models.Listener):
             d = {'id': obj.id, 'operating_status': DISABLED,
                  'provisioning_status': obj.provisioning_status,
-                 'name': obj.name, 'pools': []}
+                 'name': obj.name, 'pools': [], 'l7policies': []}
             if obj.default_pool:
                 pool_dict = self._disable_entity_and_children(obj.default_pool)
                 d['pools'].append(pool_dict)
+            for policy in obj.l7_policies:
+                policy_dict = self._disable_entity_and_children(policy)
+                d['l7policies'].append(policy_dict)
+        if isinstance(obj, data_models.L7Policy):
+            d = {'id': obj.id,
+                 'provisioning_status': obj.provisioning_status,
+                 'name': obj.name, 'rules': []}
+            for rule in obj.rules:
+                rule_dict = self._disable_entity_and_children(rule)
+                d['rules'].append(rule_dict)
+        if isinstance(obj, data_models.L7Rule):
+            d = {'id': obj.id,
+                 'provisioning_status': obj.provisioning_status,
+                 'type': obj.type}
         if isinstance(obj, data_models.Pool):
             d = {'id': obj.id, 'operating_status': DISABLED,
                  'provisioning_status': obj.provisioning_status,
@@ -1132,10 +1284,37 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                     self._disable_entity_and_children(curr_listener)
                 )
                 continue
-            listener_status = self._default_status(curr_listener, pools=[])
+            listener_status = self._default_status(curr_listener,
+                                                   pools=[], l7policies=[])
             lb_status["listeners"].append(listener_status)
             if self._is_degraded(curr_listener):
                 self._set_degraded(lb_status)
+
+            for policy in curr_listener.l7_policies:
+                if not policy.admin_state_up:
+                    listener_status["l7policies"].append(
+                        self._disable_entity_and_children(policy))
+                    continue
+                policy_opts = {"action": policy.action, "rules": []}
+                policy_status = self._default_status(policy, exclude=[OS],
+                                                     **policy_opts)
+                listener_status["l7policies"].append(policy_status)
+                if self._is_degraded(policy, exclude=[OS]):
+                    self._set_degraded(policy_status, listener_status,
+                                       lb_status)
+                for rule in policy.rules:
+                    if not rule.admin_state_up:
+                        policy_status["rules"].append(
+                            self._disable_entity_and_children(rule))
+                        continue
+                    rule_opts = {"type": rule.type}
+                    rule_status = self._default_status(rule, exclude=[OS],
+                                                       **rule_opts)
+                    policy_status["rules"].append(rule_status)
+                    if self._is_degraded(rule, exclude=[OS]):
+                        self._set_degraded(rule_status, policy_status,
+                                           listener_status,
+                                           lb_status)
             if not curr_listener.default_pool:
                 continue
             if not curr_listener.default_pool.admin_state_up:
