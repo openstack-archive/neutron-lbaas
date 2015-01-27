@@ -3,7 +3,7 @@
 # process, which may cause wedges in the gate later.
 pbr>=0.6,!=0.7,<1.0
 
-eventlet>=0.15.2
+eventlet>=0.16.1
 requests>=2.2.0,!=2.4.0
 netaddr>=0.7.12
 SQLAlchemy>=0.9.7,<=0.9.99
