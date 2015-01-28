@@ -17,13 +17,13 @@ import copy
 
 import mock
 from neutron.api.v2 import attributes as attr
-from neutron.extensions import loadbalancer
-from neutron.extensions import loadbalancerv2
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import test_api_v2
 from webob import exc
 
+from neutron_lbaas.extensions import loadbalancer
+from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.tests import base
 
 
@@ -37,7 +37,7 @@ class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
     def setUp(self):
         super(LoadBalancerExtensionTestCase, self).setUp()
         self._setUpExtension(
-            'neutron.extensions.loadbalancer.LoadBalancerPluginBase',
+            'neutron_lbaas.extensions.loadbalancer.LoadBalancerPluginBase',
             constants.LOADBALANCER, loadbalancer.RESOURCE_ATTRIBUTE_MAP,
             loadbalancer.Loadbalancer, 'lb', use_quota=True)
 
@@ -465,7 +465,7 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
     def setUp(self):
         super(LoadBalancerExtensionV2TestCase, self).setUp()
         self._setUpExtension(
-            'neutron.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
+            'neutron_lbaas.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
             constants.LOADBALANCERV2, loadbalancerv2.RESOURCE_ATTRIBUTE_MAP,
             loadbalancerv2.Loadbalancerv2, 'lbaas', use_quota=True)
 

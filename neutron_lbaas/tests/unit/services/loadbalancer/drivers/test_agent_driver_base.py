@@ -17,7 +17,6 @@ import contextlib
 import mock
 from neutron import context
 from neutron.db import servicetype_db as st_db
-from neutron.extensions import loadbalancer
 from neutron.extensions import portbindings
 from neutron import manager
 from neutron.openstack.common import uuidutils
@@ -27,6 +26,7 @@ from six import moves
 from webob import exc
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
+from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer.drivers.common \
     import agent_driver_base
 from neutron_lbaas.tests import base

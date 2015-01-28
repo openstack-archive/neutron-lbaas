@@ -21,11 +21,12 @@ from sqlalchemy.orm import exc
 
 from neutron.api.v2 import attributes
 from neutron.db import common_db_mixin as base_db
-from neutron.extensions import loadbalancerv2
 from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
+
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 

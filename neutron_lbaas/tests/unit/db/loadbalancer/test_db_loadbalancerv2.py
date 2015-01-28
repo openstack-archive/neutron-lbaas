@@ -21,8 +21,6 @@ from neutron.common import config
 from neutron import context
 import neutron.db.l3_db  # noqa
 from neutron.db import servicetype_db as sdb
-import neutron.extensions
-from neutron.extensions import loadbalancerv2
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import test_db_plugin
@@ -31,6 +29,8 @@ import testtools
 import webob.exc
 
 from neutron_lbaas.db.loadbalancer import models
+import neutron_lbaas.extensions
+from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import plugin as loadbalancer_plugin
 from neutron_lbaas.tests import base
@@ -44,7 +44,7 @@ DB_LB_PLUGIN_CLASS = (
 NOOP_DRIVER_CLASS = ('neutron_lbaas.services.loadbalancer.drivers.'
                      'logging_noop.driver.LoggingNoopLoadBalancerDriver')
 
-extensions_path = ':'.join(neutron.extensions.__path__)
+extensions_path = ':'.join(neutron_lbaas.extensions.__path__)
 
 _subnet_id = "0c798ed8-33ba-11e2-8b28-000c291c4d14"
 
@@ -314,6 +314,16 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                               'service_providers')
         #force service type manager to reload configuration:
         sdb.ServiceTypeManager._instance = None
+
+        # removing service-type because it resides in neutron and tests
+        # dont care
+        LBPlugin = loadbalancer_plugin.LoadBalancerPluginv2
+        sea_index = None
+        for index, sea in enumerate(LBPlugin.supported_extension_aliases):
+            if sea == 'service-type':
+                sea_index = index
+        if sea_index:
+            del LBPlugin.supported_extension_aliases[sea_index]
 
         super(LbaasPluginDbTestCase, self).setUp(
             ext_mgr=ext_mgr,

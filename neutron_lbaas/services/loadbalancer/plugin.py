@@ -17,8 +17,6 @@ from neutron.api.v2 import attributes as attrs
 from neutron.common import exceptions as n_exc
 from neutron import context as ncontext
 from neutron.db import servicetype_db as st_db
-from neutron.extensions import loadbalancer
-from neutron.extensions import loadbalancerv2
 from neutron.i18n import _LI, _LE
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
@@ -29,6 +27,8 @@ from oslo.utils import excutils
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.extensions import loadbalancer
+from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import agent_scheduler
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models

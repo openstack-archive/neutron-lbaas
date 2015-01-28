@@ -19,12 +19,13 @@ from neutron.common import constants
 from neutron.db import agents_db
 from neutron.db import agentschedulers_db
 from neutron.db import model_base
-from neutron.extensions import lbaas_agentscheduler
 from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm import joinedload
+
+from neutron_lbaas.extensions import lbaas_agentscheduler
 
 LOG = logging.getLogger(__name__)
 

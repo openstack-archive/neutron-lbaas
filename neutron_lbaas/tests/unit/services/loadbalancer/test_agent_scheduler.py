@@ -20,8 +20,6 @@ from neutron.common import constants
 from neutron import context
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import agent
-from neutron.extensions import lbaas_agentscheduler
-from neutron.extensions import loadbalancer
 from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron.tests.unit.openvswitch import test_agent_scheduler
@@ -30,6 +28,8 @@ from neutron.tests.unit import test_extensions
 from oslo.config import cfg
 from webob import exc
 
+from neutron_lbaas.extensions import lbaas_agentscheduler
+from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.tests import base
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
