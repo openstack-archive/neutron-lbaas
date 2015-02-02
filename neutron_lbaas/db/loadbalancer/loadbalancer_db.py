@@ -23,8 +23,8 @@ from neutron import manager
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from oslo.db import exception
-from oslo.utils import excutils
+from oslo_db import exception
+from oslo_utils import excutils
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm import exc

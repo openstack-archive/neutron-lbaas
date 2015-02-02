@@ -14,8 +14,8 @@ from logging import config as logging_config
 
 from alembic import context
 from neutron.db import model_base
-from oslo.config import cfg
-from oslo.db.sqlalchemy import session
+from oslo_config import cfg
+from oslo_db.sqlalchemy import session
 import sqlalchemy as sa
 from sqlalchemy import event
 

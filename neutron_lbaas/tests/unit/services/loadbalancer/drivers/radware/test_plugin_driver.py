@@ -20,8 +20,8 @@ from neutron.api.v2 import attributes
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants
-from oslo.config import cfg
-from oslo.serialization import jsonutils
+from oslo_config import cfg
+from oslo_serialization import jsonutils
 from six.moves import queue as Queue
 
 from neutron_lbaas.extensions import loadbalancer

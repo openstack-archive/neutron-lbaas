@@ -16,7 +16,7 @@
 from neutron import context
 from neutron import quota
 from neutron.tests.unit import test_api_v2
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron_lbaas.tests import base
 

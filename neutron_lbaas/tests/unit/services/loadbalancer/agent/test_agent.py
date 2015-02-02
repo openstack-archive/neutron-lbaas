@@ -14,7 +14,7 @@
 
 import contextlib
 import mock
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron_lbaas.services.loadbalancer.agent import agent
 from neutron_lbaas.tests import base

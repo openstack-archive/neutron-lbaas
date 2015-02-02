@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
+from oslo_config import cfg
 
 # User may want to use LB service together with the L3 plugin, but using
 # different resources. The service will inherit the configuration from the

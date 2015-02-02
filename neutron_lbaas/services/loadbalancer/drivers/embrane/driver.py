@@ -24,7 +24,7 @@ from neutron.plugins.common import constants as pcon
 from neutron.plugins.embrane.common import contexts as embrane_ctx
 from neutron.plugins.embrane.common import exceptions as h_exc
 from neutron.plugins.embrane.common import utils
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.extensions import loadbalancer as lb_ext

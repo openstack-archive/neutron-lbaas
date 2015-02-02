@@ -24,9 +24,9 @@ from neutron.i18n import _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconf
-from oslo.config import cfg
-from oslo import messaging
-from oslo.utils import importutils
+from oslo_config import cfg
+import oslo_messaging
+from oslo_utils import importutils
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.extensions import lbaas_agentscheduler
@@ -59,7 +59,7 @@ class LoadBalancerCallbacks(object):
     #   2.0 Generic API for agent based drivers
     #       - get_logical_device() handling changed;
     #       - pool_deployed() and update_status() methods added;
-    target = messaging.Target(version='2.0')
+    target = oslo_messaging.Target(version='2.0')
 
     def __init__(self, plugin):
         super(LoadBalancerCallbacks, self).__init__()
@@ -247,7 +247,7 @@ class LoadBalancerAgentApi(object):
     #       object individually;
 
     def __init__(self, topic):
-        target = messaging.Target(topic=topic, version='2.0')
+        target = oslo_messaging.Target(topic=topic, version='2.0')
         self.client = n_rpc.get_client(target)
 
     def create_vip(self, context, vip, host):

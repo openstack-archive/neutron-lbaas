@@ -19,7 +19,7 @@ import six
 
 from neutron.agent.linux import utils
 from neutron.plugins.common import constants as plugin_constants
-from oslo.config import cfg
+from oslo_config import cfg
 
 from neutron_lbaas.services.loadbalancer import constants
 

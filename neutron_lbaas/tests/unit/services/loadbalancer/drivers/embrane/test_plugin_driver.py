@@ -17,8 +17,8 @@ import sys
 
 import mock
 from neutron import context
-from oslo.config import cfg
-from oslo.db import exception as n_exc
+from oslo_config import cfg
+from oslo_db import exception as n_exc
 
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 

@@ -22,7 +22,7 @@ from neutron.tests.unit import test_api_v2_extension
 from neutron.tests.unit import test_db_plugin
 from neutron.tests.unit import test_quota_ext
 from neutron.tests.unit import testlib_api
-from oslo.config import cfg
+from oslo_config import cfg
 from testtools import matchers
 
 
