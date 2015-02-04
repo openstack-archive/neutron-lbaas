@@ -51,6 +51,12 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                     'status': 'ACTIVE', 'admin_state_up': True}
         }
 
+    def _ip_mock_call(self, ns=None):
+        kwargs = {'root_helper': self.conf.AGENT.root_helper}
+        if ns:
+            kwargs['namespace'] = ns
+        return mock.call(**kwargs)
+
     def test_get_name(self):
         self.assertEqual(self.driver.get_name(), namespace_driver.DRIVER_NAME)
 
@@ -91,7 +97,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                               'sock', 'test_group')
             cmd = ['haproxy', '-f', 'conf', '-p', 'pid']
             ip_wrap.assert_has_calls([
-                mock.call('sudo_test', 'qlbaas-pool_id'),
+                self._ip_mock_call('qlbaas-pool_id'),
                 mock.call().netns.execute(cmd)
             ])
 
@@ -116,7 +122,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             isdir.assert_called_once_with('/pool')
             rmtree.assert_called_once_with('/pool')
             ip_wrap.assert_has_calls([
-                mock.call('sudo_test', 'qlbaas-pool_id'),
+                self._ip_mock_call('qlbaas-pool_id'),
                 mock.call().garbage_collect_namespace()
             ])
 
@@ -170,7 +176,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.driver.exists('pool_id')
 
             ip_wrap.assert_has_calls([
-                mock.call('sudo_test'),
+                self._ip_mock_call(),
                 mock.call().netns.exists('qlbaas-pool_id')
             ])
 
@@ -283,7 +289,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                           'test_interface', '-c',
                           self.conf.haproxy.send_gratuitous_arp, '10.0.0.2']
             ip_wrap.assert_has_calls([
-                mock.call('sudo_test', namespace='test_ns'),
+                self._ip_mock_call('test_ns'),
                 mock.call().netns.execute(cmd, check_exit_code=False),
                 mock.call().netns.execute(cmd_arping, check_exit_code=False),
             ])
@@ -313,7 +319,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.driver._plug('test_ns', test_port)
             cmd = ['route', 'add', 'default', 'gw', '10.0.0.1']
             expected = [
-                mock.call('sudo_test', namespace='test_ns'),
+                self._ip_mock_call('test_ns'),
                 mock.call().netns.execute(cmd, check_exit_code=False)]
             self.assertEqual(expected, ip_wrap.mock_calls)
 
@@ -385,7 +391,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             )
             cmd = ['route', 'add', 'default', 'gw', '10.0.0.1']
             ip_wrap.assert_has_calls([
-                mock.call('sudo_test', namespace='test_ns'),
+                self._ip_mock_call('test_ns'),
                 mock.call().netns.execute(cmd, check_exit_code=False),
             ])
 
