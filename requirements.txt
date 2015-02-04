@@ -14,6 +14,9 @@ oslo.db>=1.4.1  # Apache-2.0
 oslo.messaging>=1.6.0
 oslo.serialization>=1.2.0               # Apache-2.0
 oslo.utils>=1.2.0                       # Apache-2.0
+pyasn1
+pyasn1_modules
+pyopenssl>=0.11
 
 # This project does depend on neutron as a library, but the
 # openstack tooling does not play nicely with projects that
