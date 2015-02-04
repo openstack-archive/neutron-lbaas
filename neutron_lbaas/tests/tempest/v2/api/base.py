@@ -24,6 +24,7 @@ from neutron_lbaas.tests.tempest.v2.clients import pools_client
 from tempest.api.network import base
 from tempest import clients as tempest_clients
 from tempest import config
+from tempest import exceptions
 from tempest.openstack.common import log as logging
 
 CONF = config.CONF
@@ -59,8 +60,11 @@ class BaseTestCase(base.BaseNetworkTest):
     @classmethod
     def resource_cleanup(cls):
         for lb_id in cls._lbs_to_delete:
-            lb = cls.load_balancers_client.get_load_balancer_status_tree(
-                lb_id).get('loadbalancer')
+            try:
+                lb = cls.load_balancers_client.get_load_balancer_status_tree(
+                    lb_id).get('loadbalancer')
+            except exceptions.NotFound:
+                continue
             for listener in lb.get('listeners'):
                 for pool in listener.get('pools'):
                     cls._try_delete_resource(cls.pools_client.delete_pool,
