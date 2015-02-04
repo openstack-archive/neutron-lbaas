@@ -37,7 +37,7 @@ RET_MEMBER_1 = {
         'weight': 13,
         'subnet_id': '10.0.0.1/24',
         'admin_state_up': 'true',
-        'status': 'ACTIVE'}
+        'provisioning_status': 'ACTIVE'}
 
 RET_MEMBER_2 = {
         'id': 'sample_member_id_2',
@@ -46,7 +46,7 @@ RET_MEMBER_2 = {
         'weight': 13,
         'subnet_id': '10.0.0.1/24',
         'admin_state_up': 'true',
-        'status': 'ACTIVE'}
+        'provisioning_status': 'ACTIVE'}
 
 RET_POOL = {
         'id': 'sample_pool_id_1',
@@ -56,7 +56,7 @@ RET_POOL = {
         'health_monitor': RET_MONITOR,
         'session_persistence': RET_PERSISTENCE,
         'admin_state_up': 'true',
-        'status': 'ACTIVE'}
+        'provisioning_status': 'ACTIVE'}
 
 RET_LISTENER = {
         'id': 'sample_listener_id_1',
@@ -118,7 +118,7 @@ def sample_pool_tuple(proto=None, monitor=True, persistence=True,
     proto = 'HTTP' if proto is None else proto
     in_pool = collections.namedtuple(
         'pool', 'id, protocol, lb_algorithm, members, healthmonitor,'
-                'sessionpersistence, admin_state_up, status')
+                'sessionpersistence, admin_state_up, provisioning_status')
     mon = sample_health_monitor_tuple(proto=proto) if monitor is True else None
     persis = sample_session_persistence_tuple(
         persistence_type=persistence_type) if persistence is True else None
@@ -131,14 +131,14 @@ def sample_pool_tuple(proto=None, monitor=True, persistence=True,
         healthmonitor=mon,
         sessionpersistence=persis,
         admin_state_up='true',
-        status='ACTIVE')
+        provisioning_status='ACTIVE')
 
 
 def sample_member_tuple(id, ip):
     in_member = collections.namedtuple('member',
                                        'id, address, protocol_port, '
                                        'weight, subnet_id, '
-                                       'admin_state_up, status')
+                                       'admin_state_up, provisioning_status')
     return in_member(
         id=id,
         address=ip,
@@ -146,7 +146,7 @@ def sample_member_tuple(id, ip):
         weight=13,
         subnet_id='10.0.0.1/24',
         admin_state_up='true',
-        status='ACTIVE')
+        provisioning_status='ACTIVE')
 
 
 def sample_session_persistence_tuple(persistence_type=None):

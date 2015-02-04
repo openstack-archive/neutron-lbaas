@@ -125,7 +125,7 @@ def _transform_pool(pool):
         'health_monitor': '',
         'session_persistence': '',
         'admin_state_up': pool.admin_state_up,
-        'status': pool.status
+        'provisioning_status': pool.provisioning_status
     }
     members = [_transform_member(x)
                for x in pool.members if _include_member(x)]
@@ -154,7 +154,7 @@ def _transform_member(member):
         'weight': member.weight,
         'admin_state_up': member.admin_state_up,
         'subnet_id': member.subnet_id,
-        'status': member.status
+        'provisioning_status': member.provisioning_status
     }
 
 
@@ -174,7 +174,8 @@ def _transform_health_monitor(monitor):
 
 
 def _include_member(member):
-    return member.status in MEMBER_STATUSES and member.admin_state_up
+    return (member.provisioning_status in
+            MEMBER_STATUSES and member.admin_state_up)
 
 
 def _expand_expected_codes(codes):

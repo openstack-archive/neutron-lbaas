@@ -281,6 +281,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
             raise loadbalancerv2.LoadBalancerListenerProtocolPortExists(
                 lb_id=listener['loadbalancer_id'],
                 protocol_port=listener['protocol_port'])
+        context.session.refresh(listener_db_entry.loadbalancer)
         return data_models.Listener.from_sqlalchemy_model(listener_db_entry)
 
     def update_listener(self, context, id, listener):
@@ -428,6 +429,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin):
             raise loadbalancerv2.MemberExists(address=member['address'],
                                               port=member['protocol_port'],
                                               pool=pool_id)
+        context.session.refresh(member_db.pool)
         return data_models.Member.from_sqlalchemy_model(member_db)
 
     def update_pool_member(self, context, id, member):
