@@ -44,6 +44,9 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
     def setUp(self, plugin=None, service_plugins=None, ext_mgr=None):
         override_nvalues()
+        # NOTE(blogan): this prevents the neutron serviceprovider code from
+        # parsing real configs in /etc/neutron
+        cfg.CONF.config_dir = ''
         super(NeutronDbPluginV2TestCase, self).setUp(
             plugin, service_plugins, ext_mgr)
 
