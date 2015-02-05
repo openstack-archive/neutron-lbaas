@@ -37,7 +37,7 @@ class BaseDataModel(object):
 
     # NOTE(brandon-logan) This does not discover dicts for relationship
     # attributes.
-    def to_dict(self):
+    def to_dict(self, **kwargs):
         ret = {}
         for attr in self.__dict__:
             if (attr.startswith('_') or
@@ -186,9 +186,9 @@ class HealthMonitor(BaseDataModel):
         return bool(self.pool and self.pool.listener and
                     self.pool.listener.loadbalancer)
 
-    def to_dict(self, pools=False):
+    def to_dict(self, **kwargs):
         ret_dict = super(HealthMonitor, self).to_dict()
-        if pools:
+        if kwargs.get('pools'):
             # NOTE(blogan): Returning a list to future proof for M:N objects
             # that are not yet implemented.
             pool_list = []
@@ -223,13 +223,13 @@ class Pool(BaseDataModel):
     def attached_to_loadbalancer(self):
         return bool(self.listener and self.listener.loadbalancer)
 
-    def to_dict(self, members=False, listeners=False):
+    def to_dict(self, **kwargs):
         ret_dict = super(Pool, self).to_dict()
-        if members:
+        if kwargs.get('members', False):
             ret_dict['members'] = [member.to_dict() for member in self.members]
         if self.sessionpersistence:
             ret_dict['session_persistence'] = self.sessionpersistence.to_dict()
-        if listeners:
+        if kwargs.get('listeners', False):
             # NOTE(blogan): Returning a list to future proof for M:N objects
             # that are not yet implemented.
             listener_list = []
@@ -287,9 +287,9 @@ class Listener(BaseDataModel):
     def attached_to_loadbalancer(self):
         return bool(self.loadbalancer)
 
-    def to_dict(self, loadbalancers=False):
+    def to_dict(self, **kwargs):
         ret_dict = super(Listener, self).to_dict()
-        if loadbalancers:
+        if kwargs.get('loadbalancers', False):
             # NOTE(blogan): Returning a list to future proof for M:N objects
             # that are not yet implemented.
             lbs = []
@@ -324,9 +324,9 @@ class LoadBalancer(BaseDataModel):
     def attached_to_loadbalancer(self):
         return True
 
-    def to_dict(self, listeners=False):
+    def to_dict(self, **kwargs):
         ret_dict = super(LoadBalancer, self).to_dict()
-        if listeners:
+        if kwargs.get('listeners', False):
             ret_dict['listeners'] = [listener.to_dict()
                                      for listener in self.listeners]
         return ret_dict

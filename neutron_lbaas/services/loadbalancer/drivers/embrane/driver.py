@@ -32,7 +32,6 @@ from neutron_lbaas.services.loadbalancer import constants as lbcon
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 from neutron_lbaas.services.loadbalancer.drivers.embrane.agent \
     import dispatcher
-from neutron_lbaas.services.loadbalancer.drivers.embrane import config  # noqa
 from neutron_lbaas.services.loadbalancer.drivers.embrane \
     import constants as econ
 from neutron_lbaas.services.loadbalancer.drivers.embrane import db as edb

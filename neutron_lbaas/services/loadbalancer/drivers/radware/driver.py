@@ -25,7 +25,7 @@ eventlet.monkey_patch(thread=True)
 
 from neutron.api.v2 import attributes
 from neutron.common import log as call_log
-from neutron import context
+from neutron import context as ncontext
 from neutron.i18n import _LE, _LI, _LW
 from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
@@ -580,7 +580,7 @@ class LoadBalancerDriver(abstract_driver.LoadBalancerAbstractDriver):
                          create_workflow_params=None):
         """Create a WF if it doesn't exists yet."""
         if not self.workflow_templates_exists:
-                self._verify_workflow_templates()
+            self._verify_workflow_templates()
         if not self._workflow_exists(wf_name):
             if not create_workflow_params:
                 create_workflow_params = {}
@@ -910,8 +910,9 @@ class OperationCompletionHandler(threading.Thread):
                                   log_data)
 
 
-def _rest_wrapper(response, success_codes=[202]):
+def _rest_wrapper(response, success_codes=None):
     """Wrap a REST call and make sure a valid status is returned."""
+    success_codes = success_codes or [202]
     if not response:
         raise r_exc.RESTRequestFailure(
             status=-1,
@@ -943,7 +944,7 @@ def _update_vip_graph_status(plugin, oper, status):
 
     """
 
-    ctx = context.get_admin_context(load_admin_roles=False)
+    ctx = ncontext.get_admin_context(load_admin_roles=False)
 
     LOG.debug('_update: %s ', oper)
     if oper.lbaas_entity == lb_db.PoolMonitorAssociation:
@@ -987,7 +988,7 @@ def _remove_object_from_db(plugin, oper):
     """Remove a specific entity from db."""
     LOG.debug('_remove_object_from_db %s', oper)
 
-    ctx = context.get_admin_context(load_admin_roles=False)
+    ctx = ncontext.get_admin_context(load_admin_roles=False)
 
     if oper.lbaas_entity == lb_db.PoolMonitorAssociation:
         plugin._delete_db_pool_health_monitor(ctx,

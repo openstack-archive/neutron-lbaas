@@ -27,7 +27,7 @@ from oslo_utils import excutils
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
-from neutron_lbaas.extensions import loadbalancer
+from neutron_lbaas.extensions import loadbalancer as lb_ext
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import agent_scheduler
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -166,10 +166,10 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
         # This validation is because the new API version also has a resource
         # called pool and these attributes have to be optional in the old API
         # so they are not required attributes of the new.  Its complicated.
-        if (pool['pool']['lb_method'] == attrs.ATTR_NOT_SPECIFIED):
+        if pool['pool']['lb_method'] == attrs.ATTR_NOT_SPECIFIED:
             raise loadbalancerv2.RequiredAttributeNotSpecified(
                 attr_name='lb_method')
-        if (pool['pool']['subnet_id'] == attrs.ATTR_NOT_SPECIFIED):
+        if pool['pool']['subnet_id'] == attrs.ATTR_NOT_SPECIFIED:
             raise loadbalancerv2.RequiredAttributeNotSpecified(
                 attr_name='subnet_id')
 
@@ -186,13 +186,13 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
         driver = self.drivers[provider_name]
         try:
             driver.create_pool(context, p)
-        except loadbalancer.NoEligibleBackend:
+        except lb_ext.NoEligibleBackend:
             # that should catch cases when backend of any kind
             # is not available (agent, appliance, etc)
             self.update_status(context, ldb.Pool,
                                p['id'], constants.ERROR,
                                "No eligible backend")
-            raise loadbalancer.NoEligibleBackend(pool_id=p['id'])
+            raise lb_ext.NoEligibleBackend(pool_id=p['id'])
         return p
 
     def update_pool(self, context, id, pool):
@@ -262,7 +262,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
 
     def _validate_hm_parameters(self, delay, timeout):
         if delay < timeout:
-            raise loadbalancer.DelayOrTimeoutInvalid()
+            raise lb_ext.DelayOrTimeoutInvalid()
 
     def create_health_monitor(self, context, health_monitor):
         new_hm = health_monitor['health_monitor']
@@ -403,9 +403,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         """
         loadbalancers = self.db.get_loadbalancers(context)
         lost_providers = set(
-            [loadbalancer.provider.provider_name
-             for loadbalancer in loadbalancers
-             if loadbalancer.provider.provider_name not in provider_names])
+            [lb.provider.provider_name
+             for lb in loadbalancers
+             if lb.provider.provider_name not in provider_names])
         # resources are left without provider - stop the service
         if lost_providers:
             msg = _LE("Delete associated load balancers before "
@@ -422,9 +422,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                     "%s") % provider)
 
     def _get_driver_for_loadbalancer(self, context, loadbalancer_id):
-        loadbalancer = self.db.get_loadbalancer(context, loadbalancer_id)
+        lb = self.db.get_loadbalancer(context, loadbalancer_id)
         try:
-            return self.drivers[loadbalancer.provider.provider_name]
+            return self.drivers[lb.provider.provider_name]
         except KeyError:
             raise n_exc.Invalid(
                 _LE("Error retrieving provider for load balancer. Possible "
@@ -907,9 +907,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             fields=fields)
 
     def stats(self, context, loadbalancer_id):
-        loadbalancer = self.db.get_loadbalancer(context, loadbalancer_id)
+        lb = self.db.get_loadbalancer(context, loadbalancer_id)
         driver = self._get_driver_for_loadbalancer(context, loadbalancer_id)
-        stats_data = driver.load_balancer.stats(context, loadbalancer)
+        stats_data = driver.load_balancer.stats(context, lb)
         # if we get something from the driver -
         # update the db and return the value from db
         # else - return what we have in db
@@ -927,14 +927,14 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def statuses(self, context, loadbalancer_id):
         PROV = 'provisioning_status'
         OPER = 'operating_status'
-        loadbalancer = self.db.get_loadbalancer(context, loadbalancer_id)
+        lb = self.db.get_loadbalancer(context, loadbalancer_id)
         statuses = {'statuses': {}}
         statuses['statuses']['loadbalancer'] = {
-            PROV: getattr(loadbalancer, PROV),
-            OPER: getattr(loadbalancer, OPER)
+            PROV: getattr(lb, PROV),
+            OPER: getattr(lb, OPER)
         }
         listener_statuses = []
-        for lindex, listener in enumerate(loadbalancer.listeners):
+        for lindex, listener in enumerate(lb.listeners):
             listener_statuses.append({
                 'id': listener.id,
                 PROV: getattr(listener, PROV),

@@ -16,7 +16,7 @@ from neutron.agent import rpc as agent_rpc
 from neutron.common import constants as n_const
 from neutron.common import exceptions as n_exc
 from neutron.common import topics
-from neutron import context
+from neutron import context as ncontext
 from neutron.i18n import _LE, _LI
 from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall
@@ -61,7 +61,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
     def __init__(self, conf):
         super(LbaasAgentManager, self).__init__()
         self.conf = conf
-        self.context = context.get_admin_context_without_session()
+        self.context = ncontext.get_admin_context_without_session()
         self.plugin_rpc = agent_api.LbaasAgentApi(
             topics.LOADBALANCER_PLUGIN,
             self.context,

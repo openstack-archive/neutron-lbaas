@@ -120,8 +120,10 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self.pool_to_port_id[pool_id] = logical_config['vip']['port']['id']
 
     @n_utils.synchronized('haproxy-driver')
-    def undeploy_instance(self, pool_id, cleanup_namespace=False,
-                          delete_namespace=False):
+    def undeploy_instance(self, pool_id, **kwargs):
+        cleanup_namespace = kwargs.get('cleanup_namespace', False)
+        delete_namespace = kwargs.get('delete_namespace', False)
+
         namespace = get_ns_name(pool_id)
         pid_path = self._get_state_file_path(pool_id, 'pid')
 
