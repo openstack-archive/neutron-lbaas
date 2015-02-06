@@ -22,6 +22,7 @@ from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
+from oslo_config import cfg
 from oslo_utils import excutils
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
@@ -35,16 +36,15 @@ from neutron_lbaas.services.loadbalancer import constants as lb_const
 LOG = logging.getLogger(__name__)
 
 
-def verify_lbaas_mutual_exclusion(other_service_type, plugin):
-    """Verifies lbaas v1 and lbaas v2 are cannot be active concurrently."""
-    try:
-        service_base.load_drivers(other_service_type, plugin)
-    except SystemExit:
-        pass
-    else:
-        msg = (_LE("Cannot have service providers %{v1}s and %{v2}s active at "
-                   "the same time!") % {'v1': constants.LOADBALANCER,
-                                        'v2': constants.LOADBALANCERV2})
+def verify_lbaas_mutual_exclusion():
+    """Verifies lbaas v1 and lbaas v2 cannot be active concurrently."""
+    plugins = set([LoadBalancerPlugin.__name__, LoadBalancerPluginv2.__name__])
+    cfg_sps = set([sp.split('.')[-1] for sp in cfg.CONF.service_plugins])
+
+    if len(plugins.intersection(cfg_sps)) >= 2:
+        msg = _LE("Cannot have service plugins %(v1)s and %(v2)s active at "
+                  "the same time!") % {'v1': LoadBalancerPlugin.__name__,
+                                       'v2': LoadBalancerPluginv2.__name__}
         LOG.error(msg)
         raise SystemExit(1)
 
@@ -78,7 +78,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
 
         # NOTE(blogan): this method MUST be called after
         # service_base.load_drivers to correctly verify
-        verify_lbaas_mutual_exclusion(constants.LOADBALANCERV2, self)
+        verify_lbaas_mutual_exclusion()
 
         # we're at the point when extensions are not loaded yet
         # so prevent policy from being loaded
@@ -386,7 +386,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
         # NOTE(blogan): this method MUST be called after
         # service_base.load_drivers to correctly verify
-        verify_lbaas_mutual_exclusion(constants.LOADBALANCER, self)
+        verify_lbaas_mutual_exclusion()
 
         # we're at the point when extensions are not loaded yet
         # so prevent policy from being loaded
