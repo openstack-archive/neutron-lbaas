@@ -76,7 +76,7 @@ class ThunderDriver(abstract_driver.LoadBalancerAbstractDriver):
         ip_address = member['address']
         if use_float:
             fip_qry = context.session.query(l3_db.FloatingIP)
-            if (fip_qry.filter_by(fixed_ip_address=ip_address).count() > 0):
+            if fip_qry.filter_by(fixed_ip_address=ip_address).count() > 0:
                 float_address = fip_qry.filter_by(
                     fixed_ip_address=ip_address).first()
                 ip_address = str(float_address.floating_ip_address)

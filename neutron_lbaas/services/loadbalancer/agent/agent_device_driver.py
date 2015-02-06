@@ -22,7 +22,7 @@ class AgentDeviceDriver(object):
     """Abstract device driver that defines the API required by LBaaS agent."""
 
     @abc.abstractmethod
-    def get_name(cls):
+    def get_name(self):
         """Returns unique name across all LBaaS device drivers."""
         pass
 
@@ -32,7 +32,7 @@ class AgentDeviceDriver(object):
         pass
 
     @abc.abstractmethod
-    def undeploy_instance(self, pool_id):
+    def undeploy_instance(self, pool_id, **kwargs):
         """Fully undeploys the loadbalancer instance."""
         pass
 

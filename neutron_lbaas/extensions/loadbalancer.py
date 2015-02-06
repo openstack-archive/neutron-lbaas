@@ -388,7 +388,7 @@ class Loadbalancer(extensions.ExtensionDescriptor):
     def get_plugin_interface(cls):
         return LoadBalancerPluginBase
 
-    def update_attributes_map(self, attributes):
+    def update_attributes_map(self, attributes, extension_attrs_map=None):
         super(Loadbalancer, self).update_attributes_map(
             attributes, extension_attrs_map=RESOURCE_ATTRIBUTE_MAP)
 

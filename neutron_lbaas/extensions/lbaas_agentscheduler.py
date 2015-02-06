@@ -134,5 +134,5 @@ class LbaasAgentSchedulerPluginBase(object):
         pass
 
     @abc.abstractmethod
-    def get_lbaas_agent_hosting_pool(self, context, pool_id):
+    def get_lbaas_agent_hosting_pool(self, context, pool_id, active=None):
         pass
