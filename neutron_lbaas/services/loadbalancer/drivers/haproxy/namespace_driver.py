@@ -17,7 +17,6 @@ import shutil
 import socket
 
 import netaddr
-from neutron.agent.common import config
 from neutron.agent.linux import ip_lib
 from neutron.agent.linux import utils
 from neutron.common import exceptions
@@ -67,7 +66,6 @@ cfg.CONF.register_opts(OPTS, 'haproxy')
 class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
     def __init__(self, conf, plugin_rpc):
         self.conf = conf
-        self.root_helper = config.get_root_helper(conf)
         self.state_path = conf.haproxy.loadbalancer_state_path
         try:
             vif_driver = importutils.import_object(conf.interface_driver, conf)
@@ -112,8 +110,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         cmd = ['haproxy', '-f', conf_path, '-p', pid_path]
         cmd.extend(extra_cmd_args)
 
-        ns = ip_lib.IPWrapper(root_helper=self.root_helper,
-                              namespace=namespace)
+        ns = ip_lib.IPWrapper(namespace=namespace)
         ns.netns.execute(cmd)
 
         # remember the pool<>port mapping
@@ -128,7 +125,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         pid_path = self._get_state_file_path(pool_id, 'pid')
 
         # kill the process
-        kill_pids_in_file(self.root_helper, pid_path)
+        kill_pids_in_file(pid_path)
 
         # unplug the ports
         if pool_id in self.pool_to_port_id:
@@ -137,8 +134,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         # delete all devices from namespace;
         # used when deleting orphans and port_id is not known for pool_id
         if cleanup_namespace:
-            ns = ip_lib.IPWrapper(root_helper=self.root_helper,
-                                  namespace=namespace)
+            ns = ip_lib.IPWrapper(namespace=namespace)
             for device in ns.get_devices(exclude_loopback=True):
                 self.vif_driver.unplug(device.name, namespace=namespace)
 
@@ -148,13 +144,12 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             shutil.rmtree(conf_dir)
 
         if delete_namespace:
-            ns = ip_lib.IPWrapper(root_helper=self.root_helper,
-                                  namespace=namespace)
+            ns = ip_lib.IPWrapper(namespace=namespace)
             ns.garbage_collect_namespace()
 
     def exists(self, pool_id):
         namespace = get_ns_name(pool_id)
-        root_ns = ip_lib.IPWrapper(root_helper=self.root_helper)
+        root_ns = ip_lib.IPWrapper()
 
         socket_path = self._get_state_file_path(pool_id, 'sock', False)
         if root_ns.netns.exists(namespace) and os.path.exists(socket_path):
@@ -250,9 +245,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self.plugin_rpc.plug_vip_port(port['id'])
         interface_name = self.vif_driver.get_device_name(Wrap(port))
 
-        if ip_lib.device_exists(interface_name,
-                                root_helper=self.root_helper,
-                                namespace=namespace):
+        if ip_lib.device_exists(interface_name, namespace=namespace):
             if not reuse_existing:
                 raise exceptions.PreexistingDeviceFailure(
                     dev_name=interface_name
@@ -284,8 +277,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
 
         if gw_ip:
             cmd = ['route', 'add', 'default', 'gw', gw_ip]
-            ip_wrapper = ip_lib.IPWrapper(root_helper=self.root_helper,
-                                          namespace=namespace)
+            ip_wrapper = ip_lib.IPWrapper(namespace=namespace)
             ip_wrapper.netns.execute(cmd, check_exit_code=False)
             # When delete and re-add the same vip, we need to
             # send gratuitous ARP to flush the ARP cache in the Router.
@@ -408,13 +400,13 @@ def get_ns_name(namespace_id):
     return NS_PREFIX + namespace_id
 
 
-def kill_pids_in_file(root_helper, pid_path):
+def kill_pids_in_file(pid_path):
     if os.path.exists(pid_path):
         with open(pid_path, 'r') as pids:
             for pid in pids:
                 pid = pid.strip()
                 try:
-                    utils.execute(['kill', '-9', pid], root_helper)
+                    utils.execute(['kill', '-9', pid], run_as_root=True)
                 except RuntimeError:
                     LOG.exception(
                         _LE('Unable to kill haproxy process: %s'),

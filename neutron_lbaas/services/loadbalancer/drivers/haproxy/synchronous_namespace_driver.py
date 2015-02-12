@@ -54,7 +54,6 @@ cfg.CONF.register_opts(namespace_driver.OPTS, 'haproxy')
 cfg.CONF.register_opts(lb_agent.OPTS, 'haproxy')
 cfg.CONF.register_opts(interface.OPTS)
 cfg.CONF.register_opts(config.INTERFACE_DRIVER_OPTS, 'haproxy')
-config.register_root_helper(cfg.CONF)
 
 
 def get_ns_name(namespace_id):
@@ -80,7 +79,6 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
     def __init__(self, plugin):
         super(HaproxyNSDriver, self).__init__(plugin)
         self.conf = cfg.CONF
-        self.root_helper = config.get_root_helper(self.conf)
         self.state_path = os.path.join(
             self.conf.haproxy.loadbalancer_state_path, STATE_PATH_V2_APPEND)
         if not self.conf.haproxy.interface_driver:
@@ -176,8 +174,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
 
         interface_name = self.vif_driver.get_device_name(port)
 
-        if ip_lib.device_exists(interface_name, self.root_helper,
-                                namespace):
+        if ip_lib.device_exists(interface_name, namespace):
             if not reuse_existing:
                 raise exceptions.PreexistingDeviceFailure(
                     dev_name=interface_name
@@ -212,8 +209,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
 
         if gw_ip:
             cmd = ['route', 'add', 'default', 'gw', gw_ip]
-            ip_wrapper = ip_lib.IPWrapper(self.root_helper,
-                                          namespace=namespace)
+            ip_wrapper = ip_lib.IPWrapper(namespace=namespace)
             ip_wrapper.netns.execute(cmd, check_exit_code=False)
             # When delete and re-add the same vip, we need to
             # send gratuitous ARP to flush the ARP cache in the Router.
@@ -245,7 +241,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
         cmd = ['haproxy', '-f', conf_path, '-p', pid_path]
         cmd.extend(extra_cmd_args)
 
-        ns = ip_lib.IPWrapper(self.root_helper, namespace)
+        ns = ip_lib.IPWrapper(namespace=namespace)
         ns.netns.execute(cmd)
 
         # remember deployed loadbalancer id
@@ -346,10 +342,10 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
 
     def _cleanup_namespace(self, loadbalancer_id):
         namespace = get_ns_name(loadbalancer_id)
-        ns = ip_lib.IPWrapper(self.root_helper, namespace)
+        ns = ip_lib.IPWrapper(namespace=namespace)
         try:
             for device in ns.get_devices(exclude_loopback=True):
-                if ip_lib.device_exists(device.name, self.root_helper):
+                if ip_lib.device_exists(device.name):
                     self.vif_driver.unplug(device.name, namespace=namespace)
         except RuntimeError as re:
             LOG.warn(_LW('An error happend on namespace cleanup: '
@@ -359,7 +355,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
     def _kill_processes(self, loadbalancer_id):
         pid_path = self._get_state_file_path(loadbalancer_id, 'haproxy.pid')
         # kill the process
-        namespace_driver.kill_pids_in_file(self.root_helper, pid_path)
+        namespace_driver.kill_pids_in_file(pid_path)
 
     def _unplug_vip_port(self, loadbalancer):
         namespace = get_ns_name(loadbalancer.id)
@@ -405,7 +401,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
 
     def exists(self, loadbalancer):
         namespace = get_ns_name(loadbalancer.id)
-        root_ns = ip_lib.IPWrapper(self.root_helper)
+        root_ns = ip_lib.IPWrapper()
 
         socket_path = self._get_state_file_path(
             loadbalancer.id, 'haproxy_stats.sock', False)

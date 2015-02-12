@@ -42,7 +42,6 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         conf.interface_driver = 'intdriver'
         conf.haproxy.user_group = 'test_group'
         conf.haproxy.send_gratuitous_arp = 3
-        conf.AGENT.root_helper = 'sudo_test'
         conf.haproxy.periodic_interval = 10
         conf.host = 'host1'
         self.conf = conf
@@ -198,7 +197,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                           'test_interface', '-c',
                           self.conf.haproxy.send_gratuitous_arp, '10.0.0.2']
             ip_wrap.assert_has_calls([
-                mock.call('sudo', namespace='test_ns'),
+                mock.call(namespace='test_ns'),
                 mock.call().netns.execute(cmd, check_exit_code=False),
                 mock.call().netns.execute(cmd_arping, check_exit_code=False),
             ])
@@ -232,7 +231,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.driver._plug(self.context_mock, 'test_ns', test_port)
             cmd = ['route', 'add', 'default', 'gw', '10.0.0.1']
             expected = [
-                mock.call('sudo', namespace='test_ns'),
+                mock.call(namespace='test_ns'),
                 mock.call().netns.execute(cmd, check_exit_code=False)]
             self.assertEqual(expected, ip_wrap.mock_calls)
 
@@ -302,7 +301,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 'test_interface', ['10.0.0.2/24'], namespace='test_ns')
             cmd = ['route', 'add', 'default', 'gw', '10.0.0.1']
             ip_wrap.assert_has_calls([
-                mock.call('sudo', namespace='test_ns'),
+                mock.call(namespace='test_ns'),
                 mock.call().netns.execute(cmd, check_exit_code=False),
             ])
 
@@ -329,7 +328,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ns_name = ''.join([sync_driver.NS_PREFIX,
                               self._sample_in_loadbalancer().id])
             ip_wrap.assert_has_calls([
-                mock.call('sudo', ns_name),
+                mock.call(namespace=ns_name),
                 mock.call().netns.execute(cmd)
             ])
 
@@ -454,8 +453,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ip_wrap.return_value.get_devices.return_value = [device]
             device_exists.return_value = True
             self.driver._cleanup_namespace(self._sample_in_loadbalancer().id)
-            device_exists.assert_called_once_with(
-                device.name, self.driver.root_helper)
+            device_exists.assert_called_once_with(device.name)
             vif_driver.unplug.assert_any_calls(
                 [mock.call(device.name, ns_name.return_value)])
             self.assertEqual(1, vif_driver.unplug.call_count)
@@ -469,8 +467,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             lb_id = self._sample_in_loadbalancer().id
             self.driver._kill_processes(lb_id)
             gsp.assert_called_once_with(lb_id, 'haproxy.pid')
-            kpif.assert_called_once_with(self.driver.root_helper,
-                                         '/test/path')
+            kpif.assert_called_once_with('/test/path')
 
     def test_unplug_vip_port(self):
         with contextlib.nested(
@@ -573,7 +570,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 [sync_driver.NS_PREFIX,
                  self._sample_in_loadbalancer().id])
             ip_wrap.assert_has_calls([
-                mock.call('sudo'),
+                mock.call(),
                 mock.call().netns.exists(lbns)
             ])
 
@@ -667,17 +664,17 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             file_mock.__iter__.return_value = iter(['123'])
 
             path_exists.return_value = False
-            namespace_driver.kill_pids_in_file('sudo_test', 'test_path')
+            namespace_driver.kill_pids_in_file('test_path')
             path_exists.assert_called_once_with('test_path')
             self.assertFalse(mock_open.called)
             self.assertFalse(mock_execute.called)
 
             path_exists.return_value = True
             mock_execute.side_effect = RuntimeError
-            namespace_driver.kill_pids_in_file('sudo_test', 'test_path')
+            namespace_driver.kill_pids_in_file('test_path')
             self.assertTrue(mock_log.called)
             mock_execute.assert_called_once_with(
-                ['kill', '-9', '123'], 'sudo_test')
+                ['kill', '-9', '123'], run_as_root=True)
 
     # TODO(ptoohill) put samples in reusable location
     def _sample_in_loadbalancer(self):

@@ -54,7 +54,6 @@ def main():
     cfg.CONF.register_opts(interface.OPTS)
     config.register_interface_driver_opts_helper(cfg.CONF)
     config.register_agent_state_opts_helper(cfg.CONF)
-    config.register_root_helper(cfg.CONF)
 
     common_config.init(sys.argv[1:])
     config.setup_logging()
