@@ -1,0 +1,19 @@
+# settings for LBaaS devstack pluginlib/neutron_plugins/services/loadbalancer
+
+# For backward compatibility, treat q-lbaas and q-lbaasv1 the same.
+# In the future, the q-lbaas may default to q-lbaasv2
+
+AGENT_LBAAS_BINARY="$NEUTRON_BIN_DIR/neutron-lbaas-agent"
+
+LBAAS_V1="q-lbaas q-lbaasv1"
+LBAAS_V2="q-lbaasv2"
+LBAAS_ANY="$LBAAS_V1 $LBAAS_V2"
+
+LBAAS_AGENT_CONF_PATH=/etc/neutron/services/loadbalancer/haproxy
+LBAAS_AGENT_CONF_FILENAME=$LBAAS_AGENT_CONF_PATH/lbaas_agent.ini
+
+LBAASV1_PLUGIN=neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPlugin
+LBAASV2_PLUGIN=neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2
+
+NEUTRON_LBAAS_DIR=$DEST/neutron-lbaas
+NEUTRON_LBAAS_CONF=$NEUTRON_CONF_DIR/neutron_lbaas.conf
