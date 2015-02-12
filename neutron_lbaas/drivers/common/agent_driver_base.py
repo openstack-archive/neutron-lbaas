@@ -21,6 +21,7 @@ from oslo_config import cfg
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
+from neutron_lbaas.drivers.common import agent_callbacks
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -334,6 +335,7 @@ class AgentDriverBase(driver_base.LoadBalancerBaseDriver):
             return
 
         self.plugin.agent_endpoints = [
+            agent_callbacks.LoadBalancerCallbacks(self.plugin),
             agents_db.AgentExtRpcCallback(self.plugin.db)
         ]
         self.plugin.conn = n_rpc.create_connection(new=True)

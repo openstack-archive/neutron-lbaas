@@ -35,7 +35,7 @@ from neutron_lbaas.db.loadbalancer import models
 
 class BaseDataModel(object):
 
-    def to_dict(self, _from_id=None, **kwargs):
+    def to_dict(self, **kwargs):
         ret = {}
         for attr in self.__dict__:
             if attr.startswith('_') or not kwargs.get(attr, True):
@@ -57,6 +57,10 @@ class BaseDataModel(object):
 
     def to_api_dict(self, **kwargs):
         return {}
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        return cls(**model_dict)
 
     @classmethod
     def from_sqlalchemy_model(cls, sa_model, calling_class=None):
@@ -84,7 +88,7 @@ class BaseDataModel(object):
                         setattr(instance, attr_name, attr_list)
             # This isn't a relationship so it must be a "primitive"
             else:
-                setattr(instance, attr_name, getattr(sa_model, attr_name))
+                setattr(instance, attr_name, attr)
         return instance
 
     @property
@@ -102,11 +106,59 @@ class BaseDataModel(object):
         return lb
 
 
-# NOTE(brandon-logan) IPAllocation, Port, and ProviderResourceAssociation are
-# defined here because there aren't any data_models defined in core neutron
-# or neutron services.  Instead of jumping through the hoops to create those
-# I've just defined them here.  If ever data_models or similar are defined
-# in those packages, those should be used instead of these.
+# NOTE(brandon-logan) AllocationPool, HostRoute, Subnet, IPAllocation, Port,
+# and ProviderResourceAssociation are defined here because there aren't any
+# data_models defined in core neutron or neutron services.  Instead of jumping
+# through the hoops to create those I've just defined them here.  If ever
+# data_models or similar are defined in those packages, those should be used
+# instead of these.
+class AllocationPool(BaseDataModel):
+
+    def __init__(self, start=None, end=None):
+        self.start = start
+        self.end = end
+
+
+class HostRoute(BaseDataModel):
+
+    def __init__(self, destination=None, nexthop=None):
+        self.destination = destination
+        self.nexthop = nexthop
+
+
+class Subnet(BaseDataModel):
+
+    def __init__(self, id=None, name=None, tenant_id=None, network_id=None,
+                 ip_version=None, cidr=None, gateway_ip=None, enable_dhcp=None,
+                 ipv6_ra_mode=None, ipv6_address_mode=None, shared=None,
+                 dns_nameservers=None, host_routes=None,
+                 allocation_pools=None):
+        self.id = id
+        self.name = name
+        self.tenant_id = tenant_id
+        self.network_id = network_id
+        self.ip_version = ip_version
+        self.cidr = cidr
+        self.gateway_ip = gateway_ip
+        self.enable_dhcp = enable_dhcp
+        self.ipv6_ra_mode = ipv6_ra_mode
+        self.ipv6_address_mode = ipv6_address_mode
+        self.shared = shared
+        self.dns_nameservers = dns_nameservers
+        self.host_routes = host_routes
+        self.allocation_pools = allocation_pools
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        host_routes = model_dict.pop('host_routes', [])
+        allocation_pools = model_dict.pop('allocation_pools', [])
+        model_dict['host_routes'] = [HostRoute.from_dict(route)
+                                     for route in host_routes]
+        model_dict['allocation_pools'] = [AllocationPool.from_dict(ap)
+                                          for ap in allocation_pools]
+        return Subnet(**model_dict)
+
+
 class IPAllocation(BaseDataModel):
 
     def __init__(self, port_id=None, ip_address=None, subnet_id=None,
@@ -115,6 +167,17 @@ class IPAllocation(BaseDataModel):
         self.ip_address = ip_address
         self.subnet_id = subnet_id
         self.network_id = network_id
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        subnet = model_dict.pop('subnet', None)
+        # TODO(blogan): add subnet to __init__.  Can't do it yet because it
+        # causes issues with converting SA models into data models.
+        instance = IPAllocation(**model_dict)
+        setattr(instance, 'subnet', None)
+        if subnet:
+            setattr(instance, 'subnet', Subnet.from_dict(subnet))
+        return instance
 
 
 class Port(BaseDataModel):
@@ -133,12 +196,26 @@ class Port(BaseDataModel):
         self.device_owner = device_owner
         self.fixed_ips = fixed_ips or []
 
+    @classmethod
+    def from_dict(cls, model_dict):
+        fixed_ips = model_dict.pop('fixed_ips', [])
+        model_dict['fixed_ips'] = [IPAllocation.from_dict(fixed_ip)
+                                   for fixed_ip in fixed_ips]
+        return Port(**model_dict)
+
 
 class ProviderResourceAssociation(BaseDataModel):
 
     def __init__(self, provider_name=None, resource_id=None):
         self.provider_name = provider_name
         self.resource_id = resource_id
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        device_driver = model_dict.pop('device_driver', None)
+        instance = ProviderResourceAssociation(**model_dict)
+        setattr(instance, 'device_driver', device_driver)
+        return instance
 
 
 class SessionPersistence(BaseDataModel):
@@ -153,6 +230,14 @@ class SessionPersistence(BaseDataModel):
     def to_api_dict(self):
         return super(SessionPersistence, self).to_dict(pool=False,
                                                        pool_id=False)
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        pool = model_dict.pop('pool', None)
+        if pool:
+            model_dict['pool'] = Pool.from_dict(
+                pool)
+        return SessionPersistence(**model_dict)
 
 
 class LoadBalancerStatistics(BaseDataModel):
@@ -203,6 +288,14 @@ class HealthMonitor(BaseDataModel):
             ret_dict['pools'].append({'id': self.pool.id})
         return ret_dict
 
+    @classmethod
+    def from_dict(cls, model_dict):
+        pool = model_dict.pop('pool', None)
+        if pool:
+            model_dict['pool'] = Pool.from_dict(
+                pool)
+        return HealthMonitor(**model_dict)
+
 
 class Pool(BaseDataModel):
 
@@ -245,6 +338,24 @@ class Pool(BaseDataModel):
         ret_dict['members'] = [{'id': member.id} for member in self.members]
         return ret_dict
 
+    @classmethod
+    def from_dict(cls, model_dict):
+        healthmonitor = model_dict.pop('healthmonitor', None)
+        session_persistence = model_dict.pop('session_persistence', None)
+        listener = model_dict.pop('listener', [])
+        members = model_dict.pop('members', [])
+        model_dict['members'] = [Member.from_dict(member)
+                                 for member in members]
+        if listener:
+            model_dict['listener'] = Listener.from_dict(listener)
+        if healthmonitor:
+            model_dict['healthmonitor'] = HealthMonitor.from_dict(
+                healthmonitor)
+        if session_persistence:
+            model_dict['session_persistence'] = SessionPersistence.from_dict(
+                session_persistence)
+        return Pool(**model_dict)
+
 
 class Member(BaseDataModel):
 
@@ -271,6 +382,14 @@ class Member(BaseDataModel):
     def to_api_dict(self):
         return super(Member, self).to_dict(
             provisioning_status=False, operating_status=False, pool=False)
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        pool = model_dict.pop('pool', None)
+        if pool:
+            model_dict['pool'] = Pool.from_dict(
+                pool)
+        return Member(**model_dict)
 
 
 class Listener(BaseDataModel):
@@ -309,6 +428,16 @@ class Listener(BaseDataModel):
             ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
         return ret_dict
 
+    @classmethod
+    def from_dict(cls, model_dict):
+        default_pool = model_dict.pop('default_pool', None)
+        loadbalancer = model_dict.pop('loadbalancer', None)
+        if default_pool:
+            model_dict['default_pool'] = Pool.from_dict(default_pool)
+        if loadbalancer:
+            model_dict['loadbalancer'] = LoadBalancer.from_dict(loadbalancer)
+        return Listener(**model_dict)
+
 
 class LoadBalancer(BaseDataModel):
 
@@ -343,6 +472,21 @@ class LoadBalancer(BaseDataModel):
         if self.provider:
             ret_dict['provider'] = self.provider.provider_name
         return ret_dict
+
+    @classmethod
+    def from_dict(cls, model_dict):
+        listeners = model_dict.pop('listeners', [])
+        vip_port = model_dict.pop('vip_port', None)
+        provider = model_dict.pop('provider', None)
+        model_dict.pop('stats', None)
+        model_dict['listeners'] = [Listener.from_dict(listener)
+                                   for listener in listeners]
+        if vip_port:
+            model_dict['vip_port'] = Port.from_dict(vip_port)
+        if provider:
+            model_dict['provider'] = ProviderResourceAssociation.from_dict(
+                provider)
+        return LoadBalancer(**model_dict)
 
 
 SA_MODEL_TO_DATA_MODEL_MAP = {
