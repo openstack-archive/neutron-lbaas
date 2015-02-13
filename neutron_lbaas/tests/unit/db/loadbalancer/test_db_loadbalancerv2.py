@@ -417,7 +417,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
             'provisioning_status': constants.ACTIVE,
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
-            'listeners': []
+            'listeners': [],
+            'provider': 'lbaas'
         }
 
         expected.update(extras)
@@ -431,6 +432,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                 for k in ('id', 'vip_address', 'vip_subnet_id'):
                     self.assertTrue(lb['loadbalancer'].get(k, None))
 
+                expected['vip_port_id'] = lb['loadbalancer']['vip_port_id']
                 actual = dict((k, v)
                               for k, v in lb['loadbalancer'].items()
                               if k in expected)
@@ -453,10 +455,13 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                            'admin_state_up': False,
                            'provisioning_status': constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
-                           'listeners': []}
+                           'listeners': [],
+                           'provider': 'lbaas'}
         with self.subnet() as subnet:
             expected_values['vip_subnet_id'] = subnet['subnet']['id']
             with self.loadbalancer(subnet=subnet) as loadbalancer:
+                expected_values['vip_port_id'] = (
+                    loadbalancer['loadbalancer']['vip_port_id'])
                 loadbalancer_id = loadbalancer['loadbalancer']['id']
                 data = {'loadbalancer': {'name': name,
                                          'description': description,
@@ -497,7 +502,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                            'admin_state_up': True,
                            'provisioning_status': constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
-                           'listeners': []}
+                           'listeners': [],
+                           'provider': 'lbaas'}
         with self.subnet() as subnet:
             vip_subnet_id = subnet['subnet']['id']
             expected_values['vip_subnet_id'] = vip_subnet_id
@@ -506,6 +512,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                                    vip_address=vip_address) as lb:
                 lb_id = lb['loadbalancer']['id']
                 expected_values['id'] = lb_id
+                expected_values['vip_port_id'] = (
+                    lb['loadbalancer']['vip_port_id'])
                 resp, body = self._get_loadbalancer_api(lb_id)
                 for k in expected_values:
                     self.assertEqual(body['loadbalancer'][k],
@@ -521,7 +529,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                            'admin_state_up': True,
                            'provisioning_status': constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
-                           'listeners': []}
+                           'listeners': [],
+                           'provider': 'lbaas'}
         with self.subnet() as subnet:
             vip_subnet_id = subnet['subnet']['id']
             expected_values['vip_subnet_id'] = vip_subnet_id
@@ -530,6 +539,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                                    vip_address=vip_address) as lb:
                 lb_id = lb['loadbalancer']['id']
                 expected_values['id'] = lb_id
+                expected_values['vip_port_id'] = (
+                    lb['loadbalancer']['vip_port_id'])
                 resp, body = self._list_loadbalancers_api()
                 self.assertEqual(len(body['loadbalancers']), 1)
                 for k in expected_values:
