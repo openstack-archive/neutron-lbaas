@@ -25,6 +25,7 @@ from neutron.services import service_base
 from oslo_config import cfg
 from oslo_utils import excutils
 
+from neutron_lbaas import agent_scheduler as agent_scheduler_v2
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
@@ -368,7 +369,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                                    "lbaas_agent_schedulerv2",
                                    "service-type"]
 
-    agent_notifiers = {}
+    agent_notifiers = (
+        agent_scheduler_v2.LbaasAgentSchedulerDbMixin.agent_notifiers)
 
     def __init__(self):
         """Initialization for the loadbalancer service plugin."""
