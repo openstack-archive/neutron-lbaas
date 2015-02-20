@@ -155,6 +155,8 @@ RESOURCE_ATTRIBUTE_MAP = {
                         'default': attr.ATTR_NOT_SPECIFIED,
                         'validate': {'type:ip_address_or_none': None},
                         'is_visible': True},
+        'vip_port_id': {'allow_post': False, 'allow_put': False,
+                        'is_visible': True},
         'provider': {'allow_post': True, 'allow_put': False,
                      'validate': {'type:string': None},
                      'is_visible': True, 'default': attr.ATTR_NOT_SPECIFIED},

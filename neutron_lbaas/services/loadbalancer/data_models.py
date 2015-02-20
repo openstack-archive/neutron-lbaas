@@ -35,16 +35,19 @@ from neutron_lbaas.db.loadbalancer import models
 
 class BaseDataModel(object):
 
-    # NOTE(brandon-logan) This does not discover dicts for relationship
+    # NOTE(brandon-logan) This does not yet discover dicts for relationship
     # attributes.
     def to_dict(self, **kwargs):
         ret = {}
         for attr in self.__dict__:
-            if (attr.startswith('_') or
+            if (attr.startswith('_') or not kwargs.get(attr, True) or
                     isinstance(getattr(self, attr), BaseDataModel)):
                 continue
             ret[attr] = self.__dict__[attr]
         return ret
+
+    def to_api_dict(self, **kwargs):
+        return {}
 
     @classmethod
     def from_sqlalchemy_model(cls, sa_model, calling_class=None):
@@ -138,11 +141,9 @@ class SessionPersistence(BaseDataModel):
         self.cookie_name = cookie_name
         self.pool = pool
 
-    def to_dict(self):
-        ret_dict = super(SessionPersistence, self).to_dict()
-        ret_dict.pop('pool_id', None)
-        ret_dict.pop('pool', None)
-        return ret_dict
+    def to_api_dict(self):
+        return super(SessionPersistence, self).to_dict(pool=False,
+                                                       pool_id=False)
 
 
 class LoadBalancerStatistics(BaseDataModel):
@@ -157,10 +158,9 @@ class LoadBalancerStatistics(BaseDataModel):
         self.total_connections = total_connections
         self.loadbalancer = loadbalancer
 
-    def to_dict(self):
-        ret = super(LoadBalancerStatistics, self).to_dict()
-        ret.pop('loadbalancer_id', None)
-        return ret
+    def to_api_dict(self):
+        return super(LoadBalancerStatistics, self).to_dict(
+            loadbalancer_id=False, loadbalancer=False)
 
 
 class HealthMonitor(BaseDataModel):
@@ -186,15 +186,12 @@ class HealthMonitor(BaseDataModel):
         return bool(self.pool and self.pool.listener and
                     self.pool.listener.loadbalancer)
 
-    def to_dict(self, **kwargs):
-        ret_dict = super(HealthMonitor, self).to_dict()
-        if kwargs.get('pools'):
-            # NOTE(blogan): Returning a list to future proof for M:N objects
-            # that are not yet implemented.
-            pool_list = []
-            if self.pool:
-                pool_list = [self.pool.to_dict()]
-            ret_dict['pools'] = pool_list
+    def to_api_dict(self):
+        ret_dict = super(HealthMonitor, self).to_dict(
+            provisioning_status=False, pool=False)
+        ret_dict['pools'] = []
+        if self.pool:
+            ret_dict['pools'].append({'id': self.pool.id})
         return ret_dict
 
 
@@ -223,19 +220,20 @@ class Pool(BaseDataModel):
     def attached_to_loadbalancer(self):
         return bool(self.listener and self.listener.loadbalancer)
 
-    def to_dict(self, **kwargs):
-        ret_dict = super(Pool, self).to_dict()
-        if kwargs.get('members', False):
-            ret_dict['members'] = [member.to_dict() for member in self.members]
+    def to_api_dict(self):
+        ret_dict = super(Pool, self).to_dict(
+            provisioning_status=False, operating_status=False,
+            healthmonitor=False, listener=False, session_persistence=False)
+        # NOTE(blogan): Returning a list to future proof for M:N objects
+        # that are not yet implemented.
+        ret_dict['listeners'] = []
+        if self.listener:
+            ret_dict['listeners'].append({'id': self.listener.id})
+        ret_dict['session_persistence'] = None
         if self.sessionpersistence:
-            ret_dict['session_persistence'] = self.sessionpersistence.to_dict()
-        if kwargs.get('listeners', False):
-            # NOTE(blogan): Returning a list to future proof for M:N objects
-            # that are not yet implemented.
-            listener_list = []
-            if self.listener:
-                listener_list = [self.listener.to_dict()]
-            ret_dict['listeners'] = listener_list
+            ret_dict['session_persistence'] = (
+                self.sessionpersistence.to_api_dict())
+        ret_dict['members'] = [{'id': member.id} for member in self.members]
         return ret_dict
 
 
@@ -260,6 +258,10 @@ class Member(BaseDataModel):
     def attached_to_loadbalancer(self):
         return bool(self.pool and self.pool.listener and
                     self.pool.listener.loadbalancer)
+
+    def to_api_dict(self):
+        return super(Member, self).to_dict(
+            provisioning_status=False, operating_status=False, pool=False)
 
 
 class Listener(BaseDataModel):
@@ -287,15 +289,15 @@ class Listener(BaseDataModel):
     def attached_to_loadbalancer(self):
         return bool(self.loadbalancer)
 
-    def to_dict(self, **kwargs):
-        ret_dict = super(Listener, self).to_dict()
-        if kwargs.get('loadbalancers', False):
-            # NOTE(blogan): Returning a list to future proof for M:N objects
-            # that are not yet implemented.
-            lbs = []
-            if self.loadbalancer:
-                lbs = [self.loadbalancer.to_dict()]
-            ret_dict['loadbalancers'] = lbs
+    def to_api_dict(self):
+        ret_dict = super(Listener, self).to_dict(
+            loadbalancer=False, loadbalancer_id=False, default_pool=False,
+            operating_status=False, provisioning_status=False)
+        # NOTE(blogan): Returning a list to future proof for M:N objects
+        # that are not yet implemented.
+        ret_dict['loadbalancers'] = []
+        if self.loadbalancer:
+            ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
         return ret_dict
 
 
@@ -324,11 +326,13 @@ class LoadBalancer(BaseDataModel):
     def attached_to_loadbalancer(self):
         return True
 
-    def to_dict(self, **kwargs):
-        ret_dict = super(LoadBalancer, self).to_dict()
-        if kwargs.get('listeners', False):
-            ret_dict['listeners'] = [listener.to_dict()
-                                     for listener in self.listeners]
+    def to_api_dict(self):
+        ret_dict = super(LoadBalancer, self).to_dict(
+            vip_port=False, stats=False, listeners=False)
+        ret_dict['listeners'] = [{'id': listener.id}
+                                 for listener in self.listeners]
+        if self.provider:
+            ret_dict['provider'] = self.provider.provider_name
         return ret_dict
 
 
