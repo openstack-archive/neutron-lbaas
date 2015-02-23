@@ -18,9 +18,9 @@ from neutron.api.v2 import attributes
 from neutron import context as ncontext
 from neutron.plugins.common import constants
 
+from neutron_lbaas.drivers import driver_mixins
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
-from neutron_lbaas.services.loadbalancer.drivers import driver_mixins
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 

@@ -41,8 +41,8 @@ DB_LB_PLUGIN_CLASS = (
     "neutron_lbaas.services.loadbalancer."
     "plugin.LoadBalancerPluginv2"
 )
-NOOP_DRIVER_CLASS = ('neutron_lbaas.services.loadbalancer.drivers.'
-                     'logging_noop.driver.LoggingNoopLoadBalancerDriver')
+NOOP_DRIVER_CLASS = ('neutron_lbaas.drivers.logging_noop.driver.'
+                     'LoggingNoopLoadBalancerDriver')
 
 extensions_path = ':'.join(neutron_lbaas.extensions.__path__)
 

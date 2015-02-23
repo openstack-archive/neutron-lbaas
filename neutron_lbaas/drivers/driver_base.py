@@ -13,7 +13,7 @@
 #    under the License.
 
 from neutron_lbaas.db.loadbalancer import models
-from neutron_lbaas.services.loadbalancer.drivers import driver_mixins
+from neutron_lbaas.drivers import driver_mixins
 
 
 class NotImplementedManager(object):

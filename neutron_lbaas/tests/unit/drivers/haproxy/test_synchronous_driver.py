@@ -23,13 +23,13 @@ from neutron.extensions import portbindings
 from neutron.plugins.common import constants
 
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.drivers.haproxy \
+    import synchronous_namespace_driver as sync_driver
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.services.loadbalancer.drivers.haproxy \
     import namespace_driver
-from neutron_lbaas.services.loadbalancer.drivers.haproxy \
-    import synchronous_namespace_driver as sync_driver
 from neutron_lbaas.tests import base
 
 

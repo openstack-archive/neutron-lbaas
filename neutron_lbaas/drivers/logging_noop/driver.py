@@ -14,7 +14,7 @@
 
 from neutron.openstack.common import log as logging
 
-from neutron_lbaas.services.loadbalancer.drivers import driver_base
+from neutron_lbaas.drivers import driver_base
 
 LOG = logging.getLogger(__name__)
 
