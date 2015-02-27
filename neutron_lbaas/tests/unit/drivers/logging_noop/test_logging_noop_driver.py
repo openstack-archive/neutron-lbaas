@@ -15,12 +15,11 @@
 import mock
 from neutron import context
 
+from neutron_lbaas.drivers.logging_noop import driver
 from neutron_lbaas.services.loadbalancer import data_models
-from neutron_lbaas.services.loadbalancer.drivers.logging_noop import driver
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
-log_path = ('neutron_lbaas.services.loadbalancer.drivers.'
-            'logging_noop.driver.LOG')
+log_path = ('neutron_lbaas.drivers.logging_noop.driver.LOG')
 
 
 class FakeModel(object):
