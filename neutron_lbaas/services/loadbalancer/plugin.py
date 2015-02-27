@@ -28,6 +28,7 @@ from oslo_utils import excutils
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.extensions import loadbalancer as lb_ext
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import agent_scheduler
@@ -356,8 +357,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
                 provider=provider, service_type=constants.LOADBALANCER)
 
 
-class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
-                           agent_scheduler.LbaasAgentSchedulerDbMixin):
+class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     """Implementation of the Neutron Loadbalancer Service Plugin.
 
     This class manages the workflow of LBaaS request/response.
@@ -365,12 +365,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     loadbalancer_db.LoadBalancerPluginDb.
     """
     supported_extension_aliases = ["lbaasv2",
-                                   "lbaas_agent_scheduler",
+                                   "lbaas_agent_schedulerv2",
                                    "service-type"]
 
-    # lbaas agent notifiers to handle agent update operations;
-    # can be updated by plugin drivers while loading;
-    # will be extracted by neutron manager when loading service plugins;
     agent_notifiers = {}
 
     def __init__(self):
@@ -455,6 +452,10 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 driver_method(context, old_db_entity, db_entity)
             else:
                 driver_method(context, db_entity)
+        # catching and reraising agent issues
+        except (lbaas_agentschedulerv2.NoEligibleLbaasAgent,
+                lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
+            raise no_agent
         except Exception:
             LOG.exception(_LE("There was an error in the driver"))
             self._handle_driver_error(context, db_entity)
@@ -511,7 +512,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 context, id, loadbalancer)
         except Exception as exc:
             self.db.update_status(context, models.LoadBalancer, id,
-                                  old_lb.status)
+                                  old_lb.provisioning_status)
             raise exc
         driver = self._get_driver_for_provider(old_lb.provider.provider_name)
         self._call_driver_operation(context,
@@ -529,8 +530,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         self.db.test_and_set_status(context, models.LoadBalancer, id,
                                     constants.PENDING_DELETE)
         driver = self._get_driver_for_provider(old_lb.provider.provider_name)
+        db_lb = self.db.get_loadbalancer(context, id)
         self._call_driver_operation(
-            context, driver.load_balancer.delete, old_lb)
+            context, driver.load_balancer.delete, db_lb)
 
     def get_loadbalancer(self, context, id, fields=None):
         return self.db.get_loadbalancer(context, id).to_api_dict()

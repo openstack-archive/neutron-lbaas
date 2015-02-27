@@ -58,3 +58,10 @@ ONLINE = 'ONLINE'
 OFFLINE = 'OFFLINE'
 DEGRADED = 'DEGRADED'
 OPERATING_STATUSES = (ONLINE, OFFLINE, DEGRADED)
+
+# LBaaS V2 Agent Constants
+# LBaaS V1 Agent constants live in neutron
+LBAAS_AGENT_SCHEDULER_V2_EXT_ALIAS = 'lbaas_agent_schedulerv2'
+AGENT_TYPE_LOADBALANCERV2 = 'Loadbalancerv2 agent'
+LOADBALANCER_PLUGINV2 = 'n-lbaasv2-plugin'
+LOADBALANCER_AGENTV2 = 'n-lbaasv2_agent'

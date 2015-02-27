@@ -35,15 +35,24 @@ from neutron_lbaas.db.loadbalancer import models
 
 class BaseDataModel(object):
 
-    # NOTE(brandon-logan) This does not yet discover dicts for relationship
-    # attributes.
-    def to_dict(self, **kwargs):
+    def to_dict(self, _from_id=None, **kwargs):
         ret = {}
         for attr in self.__dict__:
-            if (attr.startswith('_') or not kwargs.get(attr, True) or
-                    isinstance(getattr(self, attr), BaseDataModel)):
+            if attr.startswith('_') or not kwargs.get(attr, True):
                 continue
-            ret[attr] = self.__dict__[attr]
+            if isinstance(getattr(self, attr), list):
+                ret[attr] = []
+                for item in self.__dict__[attr]:
+                    if isinstance(item, BaseDataModel):
+                        ret[attr].append(item.to_dict())
+                    else:
+                        ret[attr] = item
+            elif isinstance(getattr(self, attr), BaseDataModel):
+                ret[attr] = self.__dict__[attr].to_dict()
+            elif isinstance(self.__dict__[attr], unicode):
+                ret[attr.encode('utf8')] = self.__dict__[attr].encode('utf8')
+            else:
+                ret[attr] = self.__dict__[attr]
         return ret
 
     def to_api_dict(self, **kwargs):
