@@ -16,9 +16,9 @@
 from neutron.api.v2 import attributes
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from oslo_db import exception
+from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import uuidutils
 from sqlalchemy import orm

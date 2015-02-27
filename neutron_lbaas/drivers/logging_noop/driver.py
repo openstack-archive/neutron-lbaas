@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.openstack.common import log as logging
+from oslo_log import log as logging
 
 from neutron_lbaas.drivers import driver_base
 

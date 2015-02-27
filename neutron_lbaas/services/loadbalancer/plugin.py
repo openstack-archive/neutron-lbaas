@@ -18,11 +18,11 @@ from neutron.common import exceptions as n_exc
 from neutron import context as ncontext
 from neutron.db import servicetype_db as st_db
 from neutron.i18n import _LI, _LE
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_utils import excutils
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
