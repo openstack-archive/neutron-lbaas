@@ -16,8 +16,8 @@ import os
 import uuid
 
 from neutron.i18n import _LI, _LE
-from neutron.openstack.common import log as logging
 from oslo_config import cfg
+from oslo_log import log as logging
 
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common import exceptions

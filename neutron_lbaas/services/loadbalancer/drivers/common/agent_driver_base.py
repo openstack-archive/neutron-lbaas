@@ -21,10 +21,10 @@ from neutron.common import topics
 from neutron.db import agents_db
 from neutron.extensions import portbindings
 from neutron.i18n import _LW
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
+from oslo_log import log as logging
 import oslo_messaging
 from oslo_utils import importutils
 

@@ -16,8 +16,8 @@ from barbicanclient import client as barbican_client
 from keystoneclient.auth.identity import v3 as keystone_client
 from keystoneclient import session
 from neutron.i18n import _LI, _LW, _LE
-from neutron.openstack.common import log as logging
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_utils import excutils
 
 from neutron_lbaas.common.cert_manager import cert_manager

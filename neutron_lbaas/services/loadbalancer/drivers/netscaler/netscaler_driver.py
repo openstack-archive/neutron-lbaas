@@ -14,9 +14,9 @@
 
 from neutron.api.v2 import attributes
 from neutron.i18n import _LI
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import log as logging
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver

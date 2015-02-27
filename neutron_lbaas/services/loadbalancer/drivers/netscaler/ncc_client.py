@@ -16,7 +16,7 @@ import base64
 
 from neutron.common import exceptions as n_exc
 from neutron.i18n import _LE
-from neutron.openstack.common import log as logging
+from oslo_log import log as logging
 from oslo_serialization import jsonutils
 import requests
 

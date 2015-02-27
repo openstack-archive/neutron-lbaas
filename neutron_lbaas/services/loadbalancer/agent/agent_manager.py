@@ -18,12 +18,12 @@ from neutron.common import exceptions as n_exc
 from neutron.common import topics
 from neutron import context as ncontext
 from neutron.i18n import _LE, _LI
-from neutron.openstack.common import log as logging
 from neutron.openstack.common import loopingcall
 from neutron.openstack.common import periodic_task
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconfig
 from oslo_config import cfg
+from oslo_log import log as logging
 import oslo_messaging
 from oslo_utils import importutils
 

@@ -22,9 +22,9 @@ from neutron.agent.linux import utils
 from neutron.common import exceptions
 from neutron.common import utils as n_utils
 from neutron.i18n import _LE, _LW
-from neutron.openstack.common import log as logging
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import importutils
 
