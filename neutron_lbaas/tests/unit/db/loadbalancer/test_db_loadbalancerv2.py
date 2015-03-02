@@ -1070,6 +1070,31 @@ class LbaasPoolTests(PoolTestBase):
             resp, body = self._update_pool_api(pool_id, data)
             self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
+    def test_list_pools(self):
+        name = 'list_pools'
+        expected_values = {'name': name,
+                           'protocol': 'HTTP',
+                           'description': 'apool',
+                           'lb_algorithm': 'ROUND_ROBIN',
+                           'admin_state_up': True,
+                           'tenant_id': self._tenant_id,
+                           'session_persistence': {'cookie_name': None,
+                                                   'type': 'HTTP_COOKIE'},
+                           'listeners': [{'id': self.listener_id}],
+                           'members': []}
+
+        with self.pool(name=name, listener_id=self.listener_id,
+                       description='apool',
+                       session_persistence={'type': 'HTTP_COOKIE'},
+                       members=[]) as pool:
+            pool_id = pool['pool']['id']
+            expected_values['id'] = pool_id
+            resp, body = self._list_pools_api()
+            pool_list = body['pools']
+            self.assertEqual(len(pool_list), 1)
+            for k in expected_values:
+                self.assertEqual(pool_list[0][k], expected_values[k])
+
     def test_list_pools_with_sort_emulated(self):
         with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
                                              protocol_port=81,
