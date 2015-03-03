@@ -15,6 +15,7 @@
 
 import contextlib
 
+import mock
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.common import config
@@ -323,6 +324,13 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             )
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = extensions.ExtensionMiddleware(app, ext_mgr=ext_mgr)
+
+        get_lbaas_agent_patcher = mock.patch(
+            'neutron_lbaas.agent_scheduler'
+            '.LbaasAgentSchedulerDbMixin.get_agent_hosting_loadbalancer')
+        mock_lbaas_agent = mock.MagicMock()
+        get_lbaas_agent_patcher.start().return_value = mock_lbaas_agent
+        mock_lbaas_agent.__getitem__.return_value = {'host': 'host'}
 
         self._subnet_id = _subnet_id
 
