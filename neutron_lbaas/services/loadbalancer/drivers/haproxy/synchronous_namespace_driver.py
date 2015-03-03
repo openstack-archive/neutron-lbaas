@@ -21,4 +21,7 @@ LOG = logging.getLogger(__name__)
 LOG.warn(_LW("This path has been deprecated. "
              "Use neutron_lbaas.drivers.haproxy."
              "synchronous_namespace_driver instead."))
-__path__ = synchronous_namespace_driver.__path__
+
+
+class HaproxyNSDriver(synchronous_namespace_driver.HaproxyNSDriver):
+    pass
