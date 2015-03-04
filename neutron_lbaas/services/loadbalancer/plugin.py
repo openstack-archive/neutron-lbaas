@@ -664,8 +664,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         self._call_driver_operation(context, driver.pool.delete, db_pool)
 
     def get_pools(self, context, filters=None, fields=None):
-        return [pool.to_dict() for pool in self.db.get_pools(context,
-                                                             filters=filters)]
+        return [pool.to_api_dict() for pool in self.db.get_pools(
+            context, filters=filters)]
 
     def get_pool(self, context, id, fields=None):
         return self.db.get_pool(context, id).to_api_dict()
