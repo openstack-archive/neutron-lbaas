@@ -56,7 +56,7 @@ class PoolsClientJSON(service_client.ServiceClient):
         """Update a pool"""
         url = 'v2.0/lbaas/pools/{pool_id}'.format(pool_id=pool_id)
         post_body = jsonutils.dumps({'pool': kwargs})
-        resp, body = self.post(url, post_body)
+        resp, body = self.put(url, post_body)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, body['pool'])
