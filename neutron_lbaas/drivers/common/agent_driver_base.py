@@ -15,9 +15,9 @@
 from neutron.common import exceptions as n_exc
 from neutron.common import rpc as n_rpc
 from neutron.db import agents_db
-from neutron.openstack.common import log as logging
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
+from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
