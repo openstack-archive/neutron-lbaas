@@ -1,3 +1,4 @@
+# Copyright (c) 2013 OpenStack Foundation.
 # Copyright (c) 2015 Rackspace.
 # All Rights Reserved.
 #
@@ -14,7 +15,8 @@
 #    under the License.
 
 from neutron_lbaas.drivers.common import agent_driver_base
+from neutron_lbaas.drivers.haproxy import namespace_driver
 
 
 class HaproxyOnHostPluginDriver(agent_driver_base.AgentDriverBase):
-    device_driver = 'test'
+    device_driver = namespace_driver.DRIVER_NAME

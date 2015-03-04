@@ -509,7 +509,6 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         with context.session.begin(subtransactions=True):
             lb_db = self._get_resource(context, models.LoadBalancer,
                                        loadbalancer_id)
-            self.assert_modification_allowed(lb_db)
             lb_db.stats = self._create_loadbalancer_stats(context,
                                                           loadbalancer_id,
                                                           data=stats_data)
