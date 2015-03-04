@@ -1154,9 +1154,12 @@ class LbaasPoolTests(PoolTestBase):
 class MemberTestBase(PoolTestBase):
     def setUp(self):
         super(MemberTestBase, self).setUp()
-        pool_res = self._create_pool(self.fmt, lb_const.PROTOCOL_HTTP,
-                                     lb_const.LB_METHOD_ROUND_ROBIN,
-                                     self.listener_id)
+        pool_res = self._create_pool(
+            self.fmt, lb_const.PROTOCOL_HTTP,
+            lb_const.LB_METHOD_ROUND_ROBIN,
+            self.listener_id,
+            session_persistence={'type':
+                                 lb_const.SESSION_PERSISTENCE_HTTP_COOKIE})
         self.pool = self.deserialize(self.fmt, pool_res)
         self.pool_id = self.pool['pool']['id']
 
@@ -1424,6 +1427,11 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             self.assertEqual(expected, actual)
             self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
                                     hm_id=hm_id)
+            _, pool = self._get_pool_api(self.pool_id)
+            self.assertEqual(
+                pool['pool'].get('session_persistence'),
+                {'type': lb_const.SESSION_PERSISTENCE_HTTP_COOKIE,
+                 'cookie_name': None})
         return healthmonitor
 
     def test_show_healthmonitor(self, **extras):
