@@ -502,7 +502,8 @@ class TestLoadBalancerManager(BaseTestLoadBalancerManager):
         self.driver.exists.return_value = True
         self.lb_manager.delete(self.in_lb)
         self.driver.exists.assert_called_once_with(self.in_lb.id)
-        self.driver.undeploy_instance.assert_called_once_with(self.in_lb.id)
+        self.driver.undeploy_instance.assert_called_once_with(
+            self.in_lb.id, delete_namespace=True)
 
     def test_create(self):
         self.lb_manager.refresh = mock.Mock()

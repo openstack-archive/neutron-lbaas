@@ -344,7 +344,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
 
     def delete_pool(self, context, pool):
         pool = data_models.Pool.from_dict(pool)
-        driver = self._get_driver(pool.id)
+        driver = self._get_driver(pool.listener.loadbalancer.id)
         driver.pool.delete(pool)
 
     def create_member(self, context, member):
