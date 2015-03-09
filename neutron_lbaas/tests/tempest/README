@@ -1,0 +1,6 @@
+These tests are reliant on a specific version of tempest.
+This version of tempest is pulled down through the tox
+configuration. To run these tests you need to
+have devstack running and execute:
+
+tox -re tempest

@@ -21,6 +21,7 @@ run_tests.log
 setuptools*.egg/
 subunit.log
 tempest.log
+.testrepository
 *.mo
 *.sw?
 *~
