@@ -68,6 +68,12 @@ class BaseTestCase(base.BaseNetworkTest):
                 continue
             for listener in lb.get('listeners'):
                 for pool in listener.get('pools'):
+                    hm = pool.get('healthmonitor')
+                    if hm:
+                        cls._try_delete_resource(
+                            cls.health_monitors_client.delete_health_monitor,
+                            pool.get('healthmonitor').get('id'))
+                        cls._wait_for_load_balancer_status(lb_id)
                     cls._try_delete_resource(cls.pools_client.delete_pool,
                                              pool.get('id'))
                     cls._wait_for_load_balancer_status(lb_id)
@@ -132,7 +138,7 @@ class BaseTestCase(base.BaseNetworkTest):
                   "provisioning status and {operating_status} "
                   "operating status.").format(
                       timeout=timeout,
-                      lb_id=lb.get('id'),
+                      lb_id=load_balancer_id,
                       provisioning_status=provisioning_status,
                       operating_status=operating_status))
         return lb
