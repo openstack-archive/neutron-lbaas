@@ -89,13 +89,13 @@ class BaseTestCase(base.BaseNetworkTest):
         cls.LOG = logging.getLogger(cls._get_full_case_name())
         super(BaseTestCase, cls).setUpClass()
 
-    def setUp(self):
-        self.LOG.info(_LI('Starting: {0}').format(self._testMethodName))
-        super(BaseTestCase, self).setUp()
+    def setUp(cls):
+        cls.LOG.info(_LI('Starting: {0}').format(cls._testMethodName))
+        super(BaseTestCase, cls).setUp()
 
-    def tearDown(self):
-        super(BaseTestCase, self).tearDown()
-        self.LOG.info(_LI('Finished: {0}\n').format(self._testMethodName))
+    def tearDown(cls):
+        super(BaseTestCase, cls).tearDown()
+        cls.LOG.info(_LI('Finished: {0}\n').format(cls._testMethodName))
 
     @classmethod
     def _create_load_balancer(cls, **kwargs):
@@ -136,6 +136,47 @@ class BaseTestCase(base.BaseNetworkTest):
                       provisioning_status=provisioning_status,
                       operating_status=operating_status))
         return lb
+
+    @classmethod
+    def _check_status_tree(cls, load_balancer_id, listener_ids=None,
+                           pool_ids=None, health_monitor_id=None,
+                           member_ids=None):
+        statuses = cls.load_balancers_client.get_load_balancer_status_tree(
+            load_balancer_id=load_balancer_id)
+        load_balancer = statuses['loadbalancer']
+        assert 'ONLINE' == load_balancer['operating_status']
+        assert 'ACTIVE' == load_balancer['provisioning_status']
+
+        if listener_ids:
+            cls._check_status_tree_thing(listener_ids,
+                                         load_balancer['listeners'])
+        if pool_ids:
+            cls._check_status_tree_thing(pool_ids,
+                                         load_balancer['listeners']['pools'])
+        if member_ids:
+            cls._check_status_tree_thing(
+                member_ids,
+                load_balancer['listeners']['pools']['members'])
+        if health_monitor_id:
+            health_monitor = (
+                load_balancer['listeners']['pools']['health_monitor'])
+            assert health_monitor_id == health_monitor['id']
+            assert 'ACTIVE' == health_monitor['provisioning_status']
+
+    @classmethod
+    def _check_status_tree_thing(cls, actual_thing_ids, status_tree_things):
+            found_things = 0
+            status_tree_things = status_tree_things
+            assert len(actual_thing_ids) == len(status_tree_things)
+            for actual_thing_id in actual_thing_ids:
+                for status_tree_thing in status_tree_things:
+                    if status_tree_thing['id'] == actual_thing_id:
+                        assert 'ONLINE' == (
+                            status_tree_thing['operating_status'])
+                        assert 'ACTIVE' == (
+                            status_tree_thing['provisioning_status'])
+                        found_things += 1
+            assert len(actual_thing_ids) == found_things
 
     @classmethod
     def _get_full_case_name(cls):

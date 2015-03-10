@@ -56,6 +56,7 @@ class ListenersClientJSON(service_client.ServiceClient):
         put_body = jsonutils.dumps({'listener': kwargs})
         resp, body = self.put('v2.0/lbaas/listeners/{0}'
                               .format(listener_id), put_body)
+        body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, body['listener'])
 
