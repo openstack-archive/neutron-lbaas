@@ -55,8 +55,9 @@ class LoadBalancersClientJSON(service_client.ServiceClient):
     def update_load_balancer(self, load_balancer_id, **kwargs):
         """Update a load balancer build."""
         put_body = jsonutils.dumps({'loadbalancer': kwargs})
-        resp, body = self.put('v2.0/lbaas/load_balancers/{0}'
+        resp, body = self.put('v2.0/lbaas/loadbalancers/{0}'
                               .format(load_balancer_id), put_body)
+        body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, body['loadbalancer'])
 
