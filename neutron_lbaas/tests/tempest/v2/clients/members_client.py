@@ -41,7 +41,7 @@ class MembersClientJSON(service_client.ServiceClient):
         if params:
             url = '{0}?{1}'.format(url, urllib.urlencode(params))
         resp, body = self.get(url)
-        body = jsonutils.dumps(body)
+        body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, body["member"])
 
