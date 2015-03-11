@@ -25,10 +25,8 @@ from neutron_lbaas.common.cert_manager import cert_manager
 LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
+cfg.CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
 keystone_authtoken_opts = [
-    cfg.StrOpt('auth_uri'),
-    cfg.StrOpt('admin_user'),
-    cfg.StrOpt('admin_password'),
     cfg.StrOpt('admin_project_id'),
 ]
 cfg.CONF.register_opts(keystone_authtoken_opts, group='keystone_authtoken')
@@ -44,17 +42,24 @@ class Cert(cert_manager.Cert):
                 "(certificate)."))
         self._cert_container = cert_container
 
+    # Container secrets are accessed upon query and can return as None,
+    # don't return the payload if the secret is not available.
+
     def get_certificate(self):
-        return self._cert_container.certificate.payload
+        if self._cert_container.certificate:
+            return self._cert_container.certificate.payload
 
     def get_intermediates(self):
-        return self._cert_container.intermediates.payload
+        if self._cert_container.intermediates:
+            return self._cert_container.intermediates.payload
 
     def get_private_key(self):
-        return self._cert_container.private_key.payload
+        if self._cert_container.private_key:
+            return self._cert_container.private_key.payload
 
     def get_private_key_passphrase(self):
-        return self._cert_container.private_key_passphrase.payload
+        if self._cert_container.private_key_passphrase:
+            return self._cert_container.private_key_passphrase.payload
 
 
 class BarbicanKeystoneAuth(object):
