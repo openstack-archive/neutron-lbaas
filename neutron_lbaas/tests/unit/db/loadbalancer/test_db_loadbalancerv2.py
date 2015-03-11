@@ -1052,6 +1052,23 @@ class LbaasPoolTests(PoolTestBase):
         with testtools.ExpectedException(webob.exc.HTTPClientError):
             self.test_create_pool(session_persistence=sp)
 
+    def test_validate_session_persistence_valid_with_cookie_name(self):
+        sp = {'type': 'APP_COOKIE', 'cookie_name': 'MyCookie'}
+        self.assertIsNone(
+            self.plugin._validate_session_persistence_info(sp_info=sp))
+
+    def test_validate_session_persistence_invalid_with_cookie_name(self):
+        sp = {'type': 'HTTP', 'cookie_name': 'MyCookie'}
+        with testtools.ExpectedException(
+                loadbalancerv2.SessionPersistenceConfigurationInvalid):
+            self.plugin._validate_session_persistence_info(sp_info=sp)
+
+    def test_validate_session_persistence_invalid_without_cookie_name(self):
+        sp = {'type': 'APP_COOKIE'}
+        with testtools.ExpectedException(
+                loadbalancerv2.SessionPersistenceConfigurationInvalid):
+            self.plugin._validate_session_persistence_info(sp_info=sp)
+
     def test_reset_session_persistence(self):
         name = 'pool4'
         sp = {'type': "HTTP_COOKIE"}

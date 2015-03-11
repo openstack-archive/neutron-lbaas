@@ -131,6 +131,10 @@ class LBConfigurationUnsupported(nexception.NeutronException):
                 "supported by driver %(driver_name)s")
 
 
+class SessionPersistenceConfigurationInvalid(nexception.BadRequest):
+    message = _("Session Persistence Invalid: %(msg)s")
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
