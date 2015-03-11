@@ -54,7 +54,15 @@ function neutron_lbaas_configure_agent {
 }
 
 function neutron_lbaas_start {
-    run_process q-lbaas "python $AGENT_LBAAS_BINARY --config-file $NEUTRON_CONF --config-file $LBAAS_AGENT_CONF_FILENAME --config-file=$LBAAS_AGENT_CONF_FILENAME"
+    if is_service_enabled $LBAAS_V1; then
+        LBAAS_VERSION="q-lbaas"
+        AGENT_LBAAS_BINARY=${AGENT_LBAASV1_BINARY}
+    else
+        LBAAS_VERSION="q-lbaasv2"
+        AGENT_LBAAS_BINARY=${AGENT_LBAASV2_BINARY}
+    fi
+
+    run_process $LBAAS_VERSION "python $AGENT_LBAAS_BINARY --config-file $NEUTRON_CONF --config-file $NEUTRON_LBAAS_CONF --config-file=$LBAAS_AGENT_CONF_FILENAME"
 }
 
 function neutron_lbaas_stop {
