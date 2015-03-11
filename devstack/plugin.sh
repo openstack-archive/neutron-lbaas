@@ -18,10 +18,12 @@ function neutron_lbaas_configure_common {
 
     cp $NEUTRON_LBAAS_DIR/etc/neutron_lbaas.conf $NEUTRON_LBAAS_CONF
 
-    if is_service_enabled $LBAAS_V2; then
+    if is_service_enabled $LBAAS_V1; then
         inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
-        iniadd $NEUTRON_LBAAS_CONF service_providers service_provider\
-            "LOADBALANCERV2:Haproxy:neutron_lbaas.services.loadbalancer.drivers.haproxy.synchronous_namespace_driver.HaproxyNSDriver:default"
+        iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV1
+    elif is_service_enabled $LBAAS_V2; then
+        inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
+        iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV2
     fi
 
     if is_service_enabled $LBAAS_V1; then
