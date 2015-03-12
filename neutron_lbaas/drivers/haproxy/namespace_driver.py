@@ -363,7 +363,8 @@ class LoadBalancerManager(agent_device_driver.BaseLoadBalancerManager):
 
     def delete(self, loadbalancer):
         if self.driver.exists(loadbalancer.id):
-            self.driver.undeploy_instance(loadbalancer.id)
+            self.driver.undeploy_instance(loadbalancer.id,
+                                          delete_namespace=True)
 
     def create(self, loadbalancer):
         # loadbalancer has no listeners then do nothing because haproxy will
