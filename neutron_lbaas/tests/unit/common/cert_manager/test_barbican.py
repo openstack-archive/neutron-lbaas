@@ -132,6 +132,25 @@ class TestBarbicanCert(base.BaseTestCase):
         self.assertEqual(cert.get_private_key_passphrase(),
                          self.private_key_passphrase)
 
+    def test_barbican_cert_none_values(self):
+        container = barbican_client.containers.CertificateContainer(
+            api=mock.MagicMock(),
+            certificate=None,
+            intermediates=None,
+            private_key=None,
+            private_key_passphrase=None
+        )
+        # Create a cert
+        cert = bcm.Cert(
+            cert_container=container
+        )
+
+        # Validate the cert functions
+        self.assertEqual(cert.get_certificate(), None)
+        self.assertEqual(cert.get_intermediates(), None)
+        self.assertEqual(cert.get_private_key(), None)
+        self.assertEqual(cert.get_private_key_passphrase(), None)
+
 
 class TestBarbicanManager(base.BaseTestCase):
 
