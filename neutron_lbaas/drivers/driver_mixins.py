@@ -46,9 +46,8 @@ class BaseManagerMixin(object):
     def successful_completion(self, context, obj, delete=False):
         """
         Sets the provisioning_status of the load balancer and obj to
-        ACTIVE.  Also sets the operating status of obj to ONLINE.  Should be
-        called last in the implementor's BaseManagerMixin methods for
-        successful runs.
+        ACTIVE.  Should be called last in the implementor's BaseManagerMixin
+        methods for successful runs.
 
         :param context: neutron context
         :param obj: instance of a
@@ -56,21 +55,21 @@ class BaseManagerMixin(object):
         :param delete: set True if being called from a delete method.  Will
                        most likely result in the obj being deleted from the db.
         """
-        # TODO(blogan): Will need to decide what to do with all operating
-        # statuses.  Update to ONLINE here, or leave the operating status
-        # alone and let health checks update
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
         if delete:
             self.db_delete_method(context, obj.id)
         if obj == obj.root_loadbalancer and delete:
             # Load balancer was deleted and no longer exists
             return
-        lb_op_status = obj.root_loadbalancer.operating_status
+        lb_op_status = None
+        lb_p_status = constants.ACTIVE
         if obj == obj.root_loadbalancer:
+            # only set the status to online if this an operation on the
+            # load balancer
             lb_op_status = lb_const.ONLINE
         self.driver.plugin.db.update_status(
             context, models.LoadBalancer, obj.root_loadbalancer.id,
-            provisioning_status=constants.ACTIVE,
+            provisioning_status=lb_p_status,
             operating_status=lb_op_status)
         if obj == obj.root_loadbalancer or delete:
             # Do not want to update the status of the load balancer again
@@ -88,28 +87,29 @@ class BaseManagerMixin(object):
 
     def failed_completion(self, context, obj):
         """
-        Sets the provisioning status of the load balancer and obj to
-        ERROR.  Should be called whenever something goes wrong (raised
-        exception) in an implementor's BaseManagerMixin methods.
+        Sets the provisioning status of the obj to ERROR.  If obj is a
+        loadbalancer it will be set to ERROR, otherwise set to ACTIVE. Should
+        be called whenever something goes wrong (raised exception) in an
+        implementor's BaseManagerMixin methods.
 
         :param context: neutron context
         :param obj: instance of a
                     neutron_lbaas.services.loadbalancer.data_model
         """
-        # TODO(blogan): Will need to decide what to do with all operating
-        # statuses.  Update to ONLINE here, or leave the operating status
-        # alone and let health checks update
-        self.driver.plugin.db.update_status(
-            context, models.LoadBalancer, obj.root_loadbalancer.id,
-            provisioning_status=constants.ERROR)
-        if obj == obj.root_loadbalancer:
-            # Do not want to update the status of the load balancer again
+        if isinstance(obj, data_models.LoadBalancer):
+            self.driver.plugin.db.update_status(
+                context, models.LoadBalancer, obj.root_loadbalancer.id,
+                provisioning_status=constants.ERROR,
+                operating_status=lb_const.OFFLINE)
             return
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
         self.driver.plugin.db.update_status(
             context, obj_sa_cls, obj.id,
             provisioning_status=constants.ERROR,
             operating_status=lb_const.OFFLINE)
+        self.driver.plugin.db.update_status(
+            context, models.LoadBalancer, obj.root_loadbalancer.id,
+            provisioning_status=constants.ACTIVE)
 
 
 @six.add_metaclass(abc.ABCMeta)

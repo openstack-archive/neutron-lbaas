@@ -114,6 +114,11 @@ class TestLBManager(TestBaseManager):
         lb = self.plugin.db.get_loadbalancer(self.context,
                                              self.listener.loadbalancer.id)
         self.assertEqual(constants.ERROR, lb.provisioning_status)
+        self.assertEqual(lb_const.OFFLINE, lb.operating_status)
+        listener = self.plugin.db.get_listener(self.context, self.listener.id)
+        self.assertEqual(constants.PENDING_CREATE,
+                         listener.provisioning_status)
+        self.assertEqual(lb_const.OFFLINE, listener.operating_status)
 
 
 class TestListenerManager(TestBaseManager):
@@ -147,7 +152,7 @@ class TestListenerManager(TestBaseManager):
         self.manager.failed_completion(self.context, self.listener)
         lb = self.plugin.db.get_loadbalancer(self.context,
                                              self.listener.loadbalancer.id)
-        self.assertEqual(constants.ERROR, lb.provisioning_status)
+        self.assertEqual(constants.ACTIVE, lb.provisioning_status)
         self.assertEqual(lb_const.OFFLINE, lb.operating_status)
         listener = self.plugin.db.get_listener(self.context, self.listener.id)
         self.assertEqual(constants.ERROR, listener.provisioning_status)
