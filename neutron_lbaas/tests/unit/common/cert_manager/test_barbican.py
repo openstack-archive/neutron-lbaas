@@ -19,6 +19,7 @@ from barbicanclient import containers
 from barbicanclient import secrets
 from keystoneclient import session
 import mock
+from oslo_config import fixture
 
 from neutron_lbaas.common.cert_manager import barbican_cert_manager as bcm
 from neutron_lbaas.common.cert_manager import cert_manager
@@ -34,7 +35,40 @@ class TestBarbicanAuth(base.BaseTestCase):
 
         super(TestBarbicanAuth, self).setUp()
 
-    def test_get_keystone_client(self):
+    def test_get_keystone_client_v2(self):
+        # self.skip("Temporarily skipping test until a workaround is found.")
+        bcm.v2_client = mock.MagicMock()
+
+        fixture.Config().config(group='keystone_authtoken', auth_version='v2')
+
+        # There should be no existing session
+        self.assertIsNone(
+            bcm.BarbicanKeystoneAuth._keystone_session
+        )
+
+        # Get us a session
+        ks1 = bcm.BarbicanKeystoneAuth._get_keystone_session()
+
+        # Our returned session should also be the saved session
+        self.assertIsInstance(
+            bcm.BarbicanKeystoneAuth._keystone_session,
+            session.Session
+        )
+        self.assertIs(
+            bcm.BarbicanKeystoneAuth._keystone_session,
+            ks1
+        )
+
+        # Getting the session again should return the same object
+        ks2 = bcm.BarbicanKeystoneAuth._get_keystone_session()
+        self.assertIs(ks1, ks2)
+
+    def test_get_keystone_client_v3(self):
+        # self.skip("Temporarily skipping test until a workaround is found.")
+        bcm.v3_client = mock.MagicMock()
+
+        fixture.Config().config(group='keystone_authtoken', auth_version='v3')
+
         # There should be no existing session
         self.assertIsNone(
             bcm.BarbicanKeystoneAuth._keystone_session

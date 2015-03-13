@@ -13,8 +13,9 @@
 #    under the License.
 
 from barbicanclient import client as barbican_client
-from keystoneclient.auth.identity import v3 as keystone_client
 from keystoneclient import session
+from keystoneclient.v2_0 import client as v2_client
+from keystoneclient.v3 import client as v3_client
 from neutron.i18n import _LI, _LW, _LE
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -26,10 +27,6 @@ LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
 cfg.CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
-keystone_authtoken_opts = [
-    cfg.StrOpt('admin_project_id'),
-]
-cfg.CONF.register_opts(keystone_authtoken_opts, group='keystone_authtoken')
 
 
 class Cert(cert_manager.Cert):
@@ -75,12 +72,22 @@ class BarbicanKeystoneAuth(object):
         """
         if not cls._keystone_session:
             try:
-                kc = keystone_client.Password(
-                    auth_url=CONF.keystone_authtoken.auth_uri,
-                    username=CONF.keystone_authtoken.admin_user,
-                    password=CONF.keystone_authtoken.admin_password,
-                    project_id=CONF.keystone_authtoken.admin_project_id
-                )
+                if CONF.keystone_authtoken.auth_version.lower() == 'v2':
+                    kc = v2_client.Client(
+                        username=CONF.keystone_authtoken.admin_user,
+                        password=CONF.keystone_authtoken.admin_password,
+                        tenant_name=CONF.keystone_authtoken.admin_tenant_name,
+                        auth_url=CONF.keystone_authtoken.auth_uri
+                    )
+                elif CONF.keystone_authtoken.auth_version.lower() == 'v3':
+                    kc = v3_client.Client(
+                        username=CONF.keystone_authtoken.admin_user,
+                        password=CONF.keystone_authtoken.admin_password,
+                        tenant_name=CONF.keystone_authtoken.admin_tenant_name,
+                        auth_url=CONF.keystone_authtoken.auth_uri
+                    )
+                else:
+                    raise Exception('Unknown authentication version')
                 cls._keystone_session = session.Session(auth=kc)
             except Exception:
                 # Keystone sometimes masks exceptions strangely -- this will
