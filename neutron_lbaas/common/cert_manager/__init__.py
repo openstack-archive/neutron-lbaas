@@ -18,7 +18,8 @@ from oslo_config import cfg
 
 CONF = cfg.CONF
 
-CERT_MANAGER_DEFAULT = 'neutron_lbaas.common.cert_manager.local_cert_manager'
+CERT_MANAGER_DEFAULT = ('neutron_lbaas.common.cert_manager.'
+                        'barbican_cert_manager')
 
 cert_manager_opts = [
     cfg.StrOpt('cert_manager_class',
