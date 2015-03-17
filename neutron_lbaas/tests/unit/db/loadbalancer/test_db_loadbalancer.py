@@ -1532,6 +1532,16 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                               "123-456-789"
                               )
 
+    def test_create_pool_healthmon_invalid_health_monitor_id(self):
+        with self.pool() as pool:
+            healthmon = {'health_monitor': {'id': '123-456-789'}}
+            self.assertRaises(loadbalancer.HealthMonitorNotFound,
+                              self.plugin.create_pool_health_monitor,
+                              context.get_admin_context(),
+                              healthmon,
+                              pool['pool']['id']
+                              )
+
     def test_update_status(self):
         with self.pool() as pool:
             self.assertEqual(pool['pool']['status'], 'PENDING_CREATE')
