@@ -477,13 +477,14 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             return
         if sp_info['type'] == lb_const.SESSION_PERSISTENCE_APP_COOKIE:
             if not sp_info.get('cookie_name'):
-                raise ValueError(_LE("'cookie_name' should be specified for %s"
-                                     " session persistence.") %
-                                 sp_info['type'])
+                raise loadbalancerv2.SessionPersistenceConfigurationInvalid(
+                    msg="'cookie_name' should be specified for %s"
+                        " session persistence." % sp_info['type'])
         else:
             if 'cookie_name' in sp_info:
-                raise ValueError(_LE("'cookie_name' is not allowed for %s"
-                                     " session persistence") % sp_info['type'])
+                raise loadbalancerv2.SessionPersistenceConfigurationInvalid(
+                    msg="'cookie_name' is not allowed for %s"
+                        " session persistence" % sp_info['type'])
 
     def get_plugin_type(self):
         return constants.LOADBALANCERV2
