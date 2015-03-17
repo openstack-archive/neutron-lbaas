@@ -6,6 +6,10 @@ function neutron_lbaas_install {
 }
 
 function neutron_agent_lbaas_install_agent_packages {
+    if is_ubuntu; then
+        sudo add-apt-repository ppa:vbernat/haproxy-1.5 -y
+        sudo apt-get update
+    fi
     if is_ubuntu || is_fedora || is_suse; then
         install_package haproxy
     fi
