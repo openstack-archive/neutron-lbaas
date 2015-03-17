@@ -28,36 +28,7 @@ from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
 
-# TODO(dougw) - stop hard-coding these constants when this extension moves
-# to the neutron-lbaas repo
-#from neutron.services.loadbalancer import constants as lb_const
-
-LB_METHOD_ROUND_ROBIN = 'ROUND_ROBIN'
-LB_METHOD_LEAST_CONNECTIONS = 'LEAST_CONNECTIONS'
-LB_METHOD_SOURCE_IP = 'SOURCE_IP'
-SUPPORTED_LB_ALGORITHMS = (LB_METHOD_LEAST_CONNECTIONS, LB_METHOD_ROUND_ROBIN,
-                           LB_METHOD_SOURCE_IP)
-
-PROTOCOL_TCP = 'TCP'
-PROTOCOL_HTTP = 'HTTP'
-PROTOCOL_HTTPS = 'HTTPS'
-SUPPORTED_PROTOCOLS = (PROTOCOL_TCP, PROTOCOL_HTTPS, PROTOCOL_HTTP)
-
-
-HEALTH_MONITOR_PING = 'PING'
-HEALTH_MONITOR_TCP = 'TCP'
-HEALTH_MONITOR_HTTP = 'HTTP'
-HEALTH_MONITOR_HTTPS = 'HTTPS'
-SUPPORTED_HEALTH_MONITOR_TYPES = (HEALTH_MONITOR_HTTP, HEALTH_MONITOR_HTTPS,
-                                  HEALTH_MONITOR_PING, HEALTH_MONITOR_TCP)
-
-
-SESSION_PERSISTENCE_SOURCE_IP = 'SOURCE_IP'
-SESSION_PERSISTENCE_HTTP_COOKIE = 'HTTP_COOKIE'
-SESSION_PERSISTENCE_APP_COOKIE = 'APP_COOKIE'
-SUPPORTED_SP_TYPES = (SESSION_PERSISTENCE_SOURCE_IP,
-                      SESSION_PERSISTENCE_HTTP_COOKIE,
-                      SESSION_PERSISTENCE_APP_COOKIE)
+from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 
 # Loadbalancer Exceptions
@@ -135,6 +106,18 @@ class SessionPersistenceConfigurationInvalid(nexception.BadRequest):
     message = _("Session Persistence Invalid: %(msg)s")
 
 
+class TLSDefaultContainerNotSpecified(nexception.BadRequest):
+    message = _("Default TLS container was not specified")
+
+
+class TLSContainerNotFound(nexception.NotFound):
+    message = _("TLS container %(container_id)s could not be found")
+
+
+class TLSContainerInvalid(nexception.NeutronException):
+    message = _("TLS container %(container_id)s is invalid. %(reason)s")
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -199,12 +182,22 @@ RESOURCE_ATTRIBUTE_MAP = {
         'default_pool_id': {'allow_post': False, 'allow_put': False,
                             'validate': {'type:uuid': None},
                             'is_visible': True},
+        'default_tls_container_id': {'allow_post': True,
+                                     'allow_put': True,
+                                     'default': None,
+                                     'validate': {'type:string_or_none': 128},
+                                     'is_visible': True},
+        'sni_container_ids': {'allow_post': True, 'allow_put': True,
+                              'default': None,
+                              'convert_to': attr.convert_to_list,
+                              'is_visible': True},
         'connection_limit': {'allow_post': True, 'allow_put': True,
                              'default': -1,
                              'convert_to': attr.convert_to_int,
                              'is_visible': True},
         'protocol': {'allow_post': True, 'allow_put': False,
-                     'validate': {'type:values': SUPPORTED_PROTOCOLS},
+                     'validate': {'type:values':
+                                  lb_const.LISTENER_SUPPORTED_PROTOCOLS},
                      'is_visible': True},
         'protocol_port': {'allow_post': True, 'allow_put': False,
                           'validate': {'type:range': [0, 65535]},
@@ -239,11 +232,12 @@ RESOURCE_ATTRIBUTE_MAP = {
                              'validate': {'type:uuid': None},
                              'is_visible': True},
         'protocol': {'allow_post': True, 'allow_put': False,
-                     'validate': {'type:values': SUPPORTED_PROTOCOLS},
+                     'validate': {'type:values':
+                                  lb_const.POOL_SUPPORTED_PROTOCOLS},
                      'is_visible': True},
         'lb_algorithm': {'allow_post': True, 'allow_put': True,
                          'validate': {
-                             'type:values': SUPPORTED_LB_ALGORITHMS},
+                             'type:values': lb_const.SUPPORTED_LB_ALGORITHMS},
                          'is_visible': True},
         'session_persistence': {
             'allow_post': True, 'allow_put': True,
@@ -252,7 +246,7 @@ RESOURCE_ATTRIBUTE_MAP = {
             'validate': {
                 'type:dict_or_empty': {
                     'type': {
-                        'type:values': SUPPORTED_SP_TYPES,
+                        'type:values': lb_const.SUPPORTED_SP_TYPES,
                         'required': True},
                     'cookie_name': {'type:string': None,
                                     'required': False}}},
@@ -280,7 +274,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                   'is_visible': True},
         'type': {'allow_post': True, 'allow_put': False,
                  'validate': {
-                     'type:values': SUPPORTED_HEALTH_MONITOR_TYPES},
+                     'type:values': lb_const.SUPPORTED_HEALTH_MONITOR_TYPES},
                  'is_visible': True},
         'delay': {'allow_post': True, 'allow_put': True,
                   'validate': {'type:non_negative': None},
@@ -409,6 +403,7 @@ class Loadbalancerv2(extensions.ExtensionDescriptor):
             {}, RESOURCE_ATTRIBUTE_MAP)
         action_map = {'loadbalancer': {'stats': 'GET', 'statuses': 'GET'}}
         plural_mappings['members'] = 'member'
+        plural_mappings['sni_container_ids'] = 'sni_container_id'
         attr.PLURALS.update(plural_mappings)
         resources = resource_helper.build_resource_info(
             plural_mappings,

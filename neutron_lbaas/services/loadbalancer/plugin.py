@@ -26,6 +26,8 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 
 from neutron_lbaas import agent_scheduler as agent_scheduler_v2
+import neutron_lbaas.common.cert_manager
+from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
@@ -36,6 +38,7 @@ from neutron_lbaas.services.loadbalancer import agent_scheduler
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 LOG = logging.getLogger(__name__)
+CERT_MANAGER_PLUGIN = neutron_lbaas.common.cert_manager.CERT_MANAGER_PLUGIN
 
 
 def verify_lbaas_mutual_exclusion():
@@ -544,13 +547,68 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         return [listener.to_api_dict() for listener in
                 self.db.get_loadbalancers(context, filters=filters)]
 
+    def _validate_tls(self, listener, curr_listener=None):
+        def validate_tls_container(container_ref):
+            cert_container = None
+            try:
+                cert_container = CERT_MANAGER_PLUGIN.CertManager.get_cert(
+                    container_ref, check_only=True)
+            except Exception:
+                raise loadbalancerv2.TLSContainerNotFound(
+                    container_id=container_ref)
+
+            try:
+                cert_parser.validate_cert(
+                    cert_container.get_certificate(),
+                    private_key=cert_container.get_private_key(),
+                    private_key_passphrase=(
+                        cert_container.get_private_key_passphrase()),
+                    intermediates=cert_container.get_intermediates())
+            except Exception as e:
+                raise loadbalancerv2.TLSContainerInvalid(
+                    container_id=container_ref, reason=str(e))
+
+        def validate_tls_containers(to_validate):
+            for container_ref in to_validate:
+                validate_tls_container(container_ref)
+
+        to_validate = []
+        if not listener['default_tls_container_id']:
+            raise loadbalancerv2.TLSDefaultContainerNotSpecified()
+        if not curr_listener:
+            to_validate.extend([listener['default_tls_container_id']])
+            to_validate.extend(listener['sni_container_ids'])
+        elif curr_listener['provisioning_status'] == constants.ERROR:
+            to_validate.extend(curr_listener['default_tls_container_id'])
+            to_validate.extend([
+                    container.tls_container_id for container in (
+                        curr_listener['sni_containers'])])
+        else:
+            if (curr_listener['default_tls_container_id'] !=
+                    listener['default_tls_container_id']):
+                to_validate.extend(listener['default_tls_container_id'])
+
+            if (listener['sni_container_ids'] is not None and
+                    [container['tls_container_id'] for container in (
+                        curr_listener['sni_containers'])] !=
+                    listener['sni_container_ids']):
+                to_validate.extend(listener['sni_container_ids'])
+
+        if len(to_validate) > 0:
+            validate_tls_containers(to_validate)
+
+        return len(to_validate) > 0
+
     def create_listener(self, context, listener):
         listener = listener.get('listener')
         lb_id = listener.get('loadbalancer_id')
         listener['default_pool_id'] = None
         self.db.test_and_set_status(context, models.LoadBalancer, lb_id,
                                     constants.PENDING_UPDATE)
+
         try:
+            if listener['protocol'] == lb_const.PROTOCOL_TERMINATED_HTTPS:
+                self._validate_tls(listener)
             listener_db = self.db.create_listener(context, listener)
         except Exception as exc:
             self.db.update_loadbalancer_provisioning_status(
@@ -565,14 +623,44 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def update_listener(self, context, id, listener):
         listener = listener.get('listener')
-        old_listener = self.db.get_listener(context, id)
+        curr_listener_db = self.db.get_listener(context, id)
         self.db.test_and_set_status(context, models.Listener, id,
                                     constants.PENDING_UPDATE)
         try:
-            listener_db = self.db.update_listener(context, id, listener)
+            curr_listener = curr_listener_db.to_dict()
+
+            default_tls_container_id = listener.get(
+                'default_tls_container_id')
+            sni_container_ids = listener.get('sni_container_ids')
+            if not default_tls_container_id:
+                listener['default_tls_container_id'] = (
+                    curr_listener['default_tls_container_id'])
+            if not sni_container_ids:
+                listener['sni_container_ids'] = [
+                    container.tls_container_id for container in (
+                        curr_listener['sni_containers'])]
+
+            tls_containers_changed = False
+            if curr_listener['protocol'] == lb_const.PROTOCOL_TERMINATED_HTTPS:
+                tls_containers_changed = self._validate_tls(
+                    listener, curr_listener=curr_listener)
+
+            listener_db = self.db.update_listener(
+                context, id, listener,
+                tls_containers_changed=tls_containers_changed)
         except Exception as exc:
-            self.db.update_loadbalancer_provisioning_status(
-                context, old_listener.loadbalancer.id)
+            self.db.update_status(
+                context,
+                models.LoadBalancer,
+                curr_listener_db.loadbalancer.id,
+                provisioning_status=constants.ACTIVE
+            )
+            self.db.update_status(
+                context,
+                models.Listener,
+                curr_listener_db.id,
+                provisioning_status=constants.ACTIVE
+            )
             raise exc
 
         driver = self._get_driver_for_loadbalancer(
@@ -581,7 +669,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             context,
             driver.listener.update,
             listener_db,
-            old_db_entity=old_listener)
+            old_db_entity=curr_listener_db)
 
         return self.db.get_listener(context, id).to_api_dict()
 

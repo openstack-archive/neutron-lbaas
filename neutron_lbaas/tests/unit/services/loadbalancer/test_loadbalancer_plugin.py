@@ -566,6 +566,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                              'description': 'listen-1-desc',
                              'protocol': 'HTTP',
                              'protocol_port': 80,
+                             'default_tls_container_id': None,
+                             'sni_container_ids': [],
                              'connection_limit': 100,
                              'admin_state_up': True,
                              'loadbalancer_id': _uuid()}}

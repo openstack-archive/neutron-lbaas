@@ -13,10 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.db import servicetype_db as st_db
 import sqlalchemy as sa
+from sqlalchemy.ext import orderinglist
 from sqlalchemy import orm
 
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -126,7 +128,7 @@ class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
                                  sa.ForeignKey("lbaas_healthmonitors.id"),
                                  unique=True,
                                  nullable=True)
-    protocol = sa.Column(sa.Enum(*lb_const.SUPPORTED_PROTOCOLS,
+    protocol = sa.Column(sa.Enum(*lb_const.POOL_SUPPORTED_PROTOCOLS,
                                  name="pool_protocolsv2"),
                          nullable=False)
     lb_algorithm = sa.Column(sa.Enum(*lb_const.SUPPORTED_LB_ALGORITHMS,
@@ -195,6 +197,30 @@ class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
         return self
 
 
+class SNI(model_base.BASEV2):
+
+    """Many-to-many association between Listener and TLS container ids
+    Making the SNI certificates list, ordered using the position
+    """
+
+    NAME = 'sni'
+
+    __tablename__ = "lbaas_sni"
+
+    listener_id = sa.Column(sa.String(36),
+                            sa.ForeignKey("lbaas_listeners.id"),
+                            primary_key=True,
+                            nullable=False)
+    tls_container_id = sa.Column(sa.String(36),
+                                 primary_key=True,
+                                 nullable=False)
+    position = sa.Column(sa.Integer)
+
+    @property
+    def root_loadbalancer(self):
+        return self.listener.loadbalancer
+
+
 class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     """Represents a v2 neutron listener."""
 
@@ -213,9 +239,23 @@ class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
                                 unique=True)
     loadbalancer_id = sa.Column(sa.String(36), sa.ForeignKey(
         "lbaas_loadbalancers.id"))
-    protocol = sa.Column(sa.Enum(*lb_const.SUPPORTED_PROTOCOLS,
+    protocol = sa.Column(sa.Enum(*lb_const.LISTENER_SUPPORTED_PROTOCOLS,
                                  name="listener_protocolsv2"),
                          nullable=False)
+    default_tls_container_id = sa.Column(sa.String(36),
+                                         default=None, nullable=True)
+    sni_containers = orm.relationship(
+            SNI,
+            backref=orm.backref("listener", uselist=False),
+            uselist=True,
+            lazy="joined",
+            primaryjoin="Listener.id==SNI.listener_id",
+            order_by='SNI.position',
+            collection_class=orderinglist.ordering_list(
+                'position'),
+            foreign_keys=[SNI.listener_id],
+            cascade="all, delete-orphan"
+    )
     protocol_port = sa.Column(sa.Integer, nullable=False)
     connection_limit = sa.Column(sa.Integer)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)

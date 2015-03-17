@@ -67,7 +67,7 @@ class TestBaseManager(test_db_loadbalancerv2.LbaasPluginDbTestCase):
         listener = self.plugin.db.create_listener(
             context, {'protocol_port': 80, 'protocol': lb_const.PROTOCOL_HTTP,
                       'admin_state_up': True, 'loadbalancer_id': lb.id,
-                      'default_pool_id': pool.id})
+                      'default_pool_id': pool.id, 'sni_container_ids': []})
         return listener
 
     def setUp(self):
