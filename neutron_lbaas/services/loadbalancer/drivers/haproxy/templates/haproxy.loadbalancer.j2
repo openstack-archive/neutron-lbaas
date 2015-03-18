@@ -13,13 +13,13 @@
 #    under the License.
 #
 #}
-{% extends 'haproxy_v1.4_proxies.template' %}
+{% extends 'haproxy_proxies.j2' %}
 {% set loadbalancer_name = loadbalancer.name %}
 {% set usergroup = user_group %}
 {% set sock_path = stats_sock %}
 
 {% block proxies %}
-{% from 'haproxy_v1.4_proxies.template' import frontend_macro as frontend_macro, backend_macro%}
+{% from 'haproxy_proxies.j2' import frontend_macro as frontend_macro, backend_macro%}
 {% for listener in loadbalancer.listeners %}
 {{ frontend_macro(constants, listener, loadbalancer.vip_address) }}
 {% if listener.default_pool %}

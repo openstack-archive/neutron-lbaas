@@ -397,7 +397,6 @@ class Member(BaseDataModel):
 
 
 class SNI(BaseDataModel):
-
     def __init__(self, listener_id=None, tls_container_id=None,
                  position=None, listener=None):
         self.listener_id = listener_id
@@ -410,6 +409,18 @@ class SNI(BaseDataModel):
 
     def to_api_dict(self):
         return super(SNI, self).to_dict(listener=False)
+
+
+class TLSContainer(BaseDataModel):
+
+    def __init__(self, id=None, certificate=None, private_key=None,
+                 passphrase=None, intermediates=None, primary_cn=None):
+        self.id = id
+        self.certificate = certificate
+        self.private_key = private_key
+        self.passphrase = passphrase
+        self.intermediates = intermediates
+        self.primary_cn = primary_cn
 
 
 class Listener(BaseDataModel):

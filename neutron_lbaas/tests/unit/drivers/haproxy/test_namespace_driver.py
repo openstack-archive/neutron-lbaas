@@ -416,10 +416,12 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         mock_ns = ip_wrap.return_value
         self.driver._spawn(self.lb)
         conf_dir = self.driver.state_path + '/' + self.lb.id + '/%s'
-        jinja_save.assert_called_once_with(conf_dir % 'haproxy.conf',
-                                           self.lb,
-                                           conf_dir % 'haproxy_stats.sock',
-                                           'test_group')
+        jinja_save.assert_called_once_with(
+            conf_dir % 'haproxy.conf',
+            self.lb,
+            conf_dir % 'haproxy_stats.sock',
+            'test_group',
+            conf_dir % '')
         ip_wrap.assert_called_once_with(
             namespace=namespace_driver.get_ns_name(self.lb.id))
         mock_ns.netns.execute.assert_called_once_with(

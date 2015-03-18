@@ -13,7 +13,27 @@
 #    under the License.
 #
 #}
-{% extends 'haproxy_base.template' %}
+{% extends 'haproxy_base.j2' %}
+
+{% macro bind_macro(constants, listener, lb_vip_address) %}
+{% if listener.default_tls_path %}
+{% set def_crt_opt = "ssl crt %s"|format(listener.default_tls_path)|trim() %}
+{% else %}
+{% set def_crt_opt = "" %}
+{% endif %}
+{% if listener.crt_dir %}
+{% set crt_dir_opt = "crt %s"|format(listener.crt_dir)|trim() %}
+{% else %}
+{% set crt_dir_opt = "" %}
+{% endif %}
+bind {{ lb_vip_address }}:{{ listener.protocol_port }} {{ "%s %s"|format(def_crt_opt, crt_dir_opt)|trim() }}
+{% endmacro %}
+
+{% macro use_backend_macro(listener) %}
+{% if listener.default_pool %}
+default_backend {{ listener.default_pool.id }}
+{% endif %}
+{% endmacro %}
 
 {% macro frontend_macro(constants, listener, lb_vip_address) %}
 frontend {{ listener.id }}
@@ -21,11 +41,11 @@ frontend {{ listener.id }}
 {% if listener.connection_limit is defined %}
     maxconn {{ listener.connection_limit }}
 {% endif %}
-{% if listener.protocol == constants.PROTOCOL_HTTP.lower() %}
+{% if listener.protocol_mode == constants.PROTOCOL_HTTP.lower() %}
     option forwardfor
 {% endif %}
-    bind {{ lb_vip_address }}:{{ listener.protocol_port }}
-    mode {{ listener.protocol }}
+    {{ bind_macro(constants, listener, lb_vip_address)|trim() }}
+    mode {{ listener.protocol_mode }}
 {% if listener.default_pool %}
     default_backend {{ listener.default_pool.id }}
 {% endif %}
@@ -34,6 +54,9 @@ frontend {{ listener.id }}
 {% macro backend_macro(constants, listener, pool) %}
 backend {{ pool.id }}
     mode {{ pool.protocol }}
+{% if listener.protocol == constants.PROTOCOL_TERMINATED_HTTPS %}
+    redirect scheme https if !{ ssl_fc }
+{% endif %}
     balance {{ pool.lb_algorithm }}
 {% if pool.session_persistence %}
 {% if pool.session_persistence.type == constants.SESSION_PERSISTENCE_SOURCE_IP %}
@@ -55,7 +78,7 @@ backend {{ pool.id }}
     option ssl-hello-chk
 {% endif %}
 {% endif %}
-{% if listener.protocol == constants.PROTOCOL_HTTP.lower() %}
+{% if listener.protocol_mode == constants.PROTOCOL_HTTP.lower() %}
     option forwardfor
 {% endif %}
 {% for member in pool.members %}

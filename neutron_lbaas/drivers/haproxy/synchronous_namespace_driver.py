@@ -236,8 +236,10 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
         sock_path = self._get_state_file_path(loadbalancer.id,
                                               'haproxy_stats.sock')
         user_group = self.conf.haproxy.user_group
+        state_path = self._get_state_file_path(loadbalancer.id, '')
 
-        jinja_cfg.save_config(conf_path, loadbalancer, sock_path, user_group)
+        jinja_cfg.save_config(conf_path, loadbalancer, sock_path, user_group,
+                              state_path)
         cmd = ['haproxy', '-f', conf_path, '-p', pid_path]
         cmd.extend(extra_cmd_args)
 
