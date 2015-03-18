@@ -14,42 +14,19 @@
 #    under the License.
 #
 
-import os
-
-import neutron
 from neutron.tests import base as n_base
 from neutron.tests.unit import test_api_v2_extension
 from neutron.tests.unit import test_db_plugin
 from neutron.tests.unit import test_quota_ext
 from neutron.tests.unit import testlib_api
-from oslo_config import cfg
 from testtools import matchers
 
 
-def override_nvalues():
-    neutron_path = os.path.abspath(
-        os.path.join(os.path.dirname(neutron.__file__), os.pardir))
-    neutron_policy = os.path.join(neutron_path, 'etc/policy.json')
-    cfg.CONF.set_override('policy_file', neutron_policy)
-
-
 class BaseTestCase(n_base.BaseTestCase):
-
-    def setUp(self):
-        override_nvalues()
-        super(BaseTestCase, self).setUp()
+    pass
 
 
 class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
-
-    def setUp(self, plugin=None, service_plugins=None, ext_mgr=None):
-        override_nvalues()
-        # NOTE(blogan): this prevents the neutron serviceprovider code from
-        # parsing real configs in /etc/neutron
-        cfg.CONF.config_dir = ''
-        super(NeutronDbPluginV2TestCase, self).setUp(
-            plugin, service_plugins, ext_mgr)
-
     def new_list_request(self, resource, fmt=None, params=None, id=None,
                          subresource=None):
         return self._req(
@@ -201,14 +178,8 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
 
 
 class ExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
-
-    def setUp(self):
-        override_nvalues()
-        super(ExtensionTestCase, self).setUp()
+    pass
 
 
 class QuotaExtensionTestCase(test_quota_ext.QuotaExtensionTestCase):
-
-    def setUp(self):
-        override_nvalues()
-        super(QuotaExtensionTestCase, self).setUp()
+    pass
