@@ -203,7 +203,7 @@ def _build_pem(tls_cert):
         pem = pem + (tls_cert.certificate,)
     if tls_cert.private_key:
         pem = pem + (tls_cert.private_key,)
-    return "".join(pem)
+    return "\n".join(pem)
 
 
 def render_loadbalancer_obj(loadbalancer, user_group, socket_path,

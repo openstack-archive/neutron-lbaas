@@ -403,7 +403,7 @@ class TestHaproxyCfg(base.BaseTestCase):
                                  cert).intermediates)
 
     def test_build_pem(self):
-        expected = 'imainterimainter2imacertimakey'
+        expected = 'imainter\nimainter2\nimacert\nimakey'
         tls_tupe = sample_configs.sample_tls_container_tuple(
             certificate='imacert', private_key='imakey',
             intermediates=['imainter', 'imainter2'])
