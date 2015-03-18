@@ -1,0 +1,12 @@
+Brocade LBaaS Driver
+
+Installation info:
+
+- Install Brocade LBaaS Device Driver
+- Enable Brocade as default lbaas service provider in neutron_lbaas.conf file
+- Restart Neutron Server
+
+Third-party CI info:
+
+Contact info for any problems is: DL-GRP-ENG-brocade-adx-openstack-ci at brocade dot com
+Or contact Pattabi Ayyasami directly (IRC: pattabi)
