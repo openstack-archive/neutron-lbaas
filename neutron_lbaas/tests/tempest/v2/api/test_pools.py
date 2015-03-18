@@ -139,6 +139,56 @@ class TestPools(base.BaseTestCase):
                           protocol_port=80)
 
     @test.attr(type='smoke')
+    def test_create_pool_with_session_persistence_unsupported_type(self):
+        """Test create a pool with an incorrect type value
+        for session persistence
+        """
+        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+                          session_persistence={'type': 'UNSUPPORTED'},
+                          protocol='HTTP',
+                          lb_algorithm='ROUND_ROBIN')
+
+    @test.attr(type='smoke')
+    def test_create_pool_with_session_persistence_http_cookie(self):
+        """Test create a pool with session_persistence type=HTTP_COOKIE"""
+        new_pool = self._create_pool(
+                        session_persistence={'type': 'HTTP_COOKIE'})
+        pool = self.pools_client.get_pool(new_pool.get('id'))
+        self.assertEqual(new_pool, pool)
+        self.pools_client.delete_pool(new_pool.get('id'))
+
+    @test.attr(type='smoke')
+    def test_create_pool_with_session_persistence_app_cookie(self):
+        """Test create a pool with session_persistence type=APP_COOKIE"""
+        new_pool = self._create_pool(
+                        session_persistence={'type': 'APP_COOKIE',
+                                             'cookie_name': 'sessionId'})
+        pool = self.pools_client.get_pool(new_pool.get('id'))
+        self.assertEqual(new_pool, pool)
+        self.pools_client.delete_pool(new_pool.get('id'))
+
+    @test.attr(type='smoke')
+    def test_create_pool_with_session_persistence_redundant_cookie_name(self):
+        """Test create a pool with session_persistence with cookie_name
+        for type=HTTP_COOKIE
+        """
+        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+                          session_persistence={'type': 'HTTP_COOKIE',
+                                               'cookie_name': 'sessionId'},
+                          protocol='HTTP',
+                          lb_algorithm='ROUND_ROBIN')
+
+    @test.attr(type='smoke')
+    def test_create_pool_with_session_persistence_without_cookie_name(self):
+        """Test create a pool with session_persistence without
+        cookie_name for type=APP_COOKIE
+        """
+        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+                          session_persistence={'type': 'APP_COOKIE'},
+                          protocol='HTTP',
+                          lb_algorithm='ROUND_ROBIN')
+
+    @test.attr(type='smoke')
     def test_update_pool(self):
         """Test update pool"""
         new_pool = self._create_pool()
