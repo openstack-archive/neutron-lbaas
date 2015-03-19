@@ -410,6 +410,10 @@ class SNI(BaseDataModel):
     def to_api_dict(self):
         return super(SNI, self).to_dict(listener=False)
 
+    @classmethod
+    def from_dict(cls, model_dict):
+        return SNI(**model_dict)
+
 
 class TLSContainer(BaseDataModel):
 
@@ -469,6 +473,9 @@ class Listener(BaseDataModel):
     def from_dict(cls, model_dict):
         default_pool = model_dict.pop('default_pool', None)
         loadbalancer = model_dict.pop('loadbalancer', None)
+        sni_containers = model_dict.pop('sni_containers', [])
+        model_dict['sni_containers'] = [SNI.from_dict(sni)
+                                        for sni in sni_containers]
         if default_pool:
             model_dict['default_pool'] = Pool.from_dict(default_pool)
         if loadbalancer:
