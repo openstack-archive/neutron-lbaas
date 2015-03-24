@@ -1,0 +1,647 @@
+# Copyright 2015, Radware LTD. All rights reserved
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+import copy
+import netaddr
+import threading
+import time
+
+from neutron.api.v2 import attributes
+from neutron.common import log as call_log
+from neutron import context
+from neutron.i18n import _LE, _LW, _LI
+from neutron.plugins.common import constants
+from oslo_config import cfg
+from oslo_log import log as logging
+from oslo_utils import excutils
+from six.moves import queue as Queue
+
+import neutron_lbaas.common.cert_manager
+from neutron_lbaas.drivers.radware import base_v2_driver
+from neutron_lbaas.drivers.radware import exceptions as r_exc
+from neutron_lbaas.drivers.radware import rest_client as rest
+
+CERT_MANAGER_PLUGIN = neutron_lbaas.common.cert_manager.CERT_MANAGER_PLUGIN
+TEMPLATE_HEADER = {'Content-Type':
+                   'application/vnd.com.radware.vdirect.'
+                   'template-parameters+json'}
+PROVISION_HEADER = {'Content-Type':
+                    'application/vnd.com.radware.'
+                    'vdirect.status+json'}
+CREATE_SERVICE_HEADER = {'Content-Type':
+                         'application/vnd.com.radware.'
+                         'vdirect.adc-service-specification+json'}
+
+PROPERTY_DEFAULTS = {'type': 'none',
+                     'cookie_name': 'none',
+                     'url_path': '/',
+                     'http_method': 'GET',
+                     'expected_codes': '200',
+                     'subnet': '255.255.255.255',
+                     'mask': '255.255.255.255',
+                     'gw': '255.255.255.255',
+                     }
+LOADBALANCER_PROPERTIES = ['vip_address', 'admin_state_up']
+LISTENER_PROPERTIES = ['protocol_port', 'protocol',
+                       'connection_limit', 'admin_state_up']
+POOL_PROPERTIES = ['protocol', 'lb_algorithm', 'admin_state_up']
+MEMBER_PROPERTIES = ['id', 'address', 'protocol_port', 'weight',
+                     'admin_state_up', 'subnet', 'mask', 'gw']
+SESSION_PERSISTENCY_PROPERTIES = ['type', 'cookie_name']
+HEALTH_MONITOR_PROPERTIES = ['type', 'delay', 'timeout', 'max_retries',
+                             'admin_state_up', 'url_path', 'http_method',
+                             'expected_codes', 'id']
+
+LOG = logging.getLogger(__name__)
+
+
+class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
+    #
+    # Assumptions:
+    # 1) We have only one worflow that takes care of l2-l4 and service creation
+    # 2) The workflow template exsists on the vDirect server
+    # 3) The workflow expose one operaion named 'update' (plus ctor and dtor)
+    # 4) The 'update' operation gets the loadbalancer object graph as input
+    # 5) The object graph is enehanced by our code before it is sent to the
+    #    workflow
+    # 6) Async operations are handled by a diffrent thread
+    #
+    def __init__(self, plugin):
+        super(RadwareLBaaSV2Driver, self).__init__(plugin)
+        rad = cfg.CONF.radwarev2
+        rad_debug = cfg.CONF.radwarev2_debug
+        self.plugin = plugin
+        self.service = {
+            "name": "_REPLACE_",
+            "tenantId": "_REPLACE_",
+            "haPair": rad.service_ha_pair,
+            "sessionMirroringEnabled": rad.service_session_mirroring_enabled,
+            "primary": {
+                "capacity": {
+                    "throughput": rad.service_throughput,
+                    "sslThroughput": rad.service_ssl_throughput,
+                    "compressionThroughput":
+                    rad.service_compression_throughput,
+                    "cache": rad.service_cache
+                },
+                "network": {
+                    "type": "portgroup",
+                    "portgroups": '_REPLACE_'
+                },
+                "adcType": rad.service_adc_type,
+                "acceptableAdc": "Exact"
+            }
+        }
+        if rad.service_resource_pool_ids:
+            ids = rad.service_resource_pool_ids
+            self.service['resourcePoolIds'] = [
+                {'id': id} for id in ids
+            ]
+        else:
+            self.service['resourcePoolIds'] = []
+
+        if rad.service_isl_vlan:
+            self.service['islVlan'] = rad.service_isl_vlan
+        self.workflow_template_name = rad.workflow_template_name
+        self.child_workflow_template_names = rad.child_workflow_template_names
+        self.workflow_params = rad.workflow_params
+        self.workflow_action_name = rad.workflow_action_name
+        self.stats_action_name = rad.stats_action_name
+        vdirect_address = rad.vdirect_address
+        sec_server = rad.ha_secondary_address
+        self.rest_client = rest.vDirectRESTClient(
+            server=vdirect_address,
+            secondary_server=sec_server,
+            user=rad.vdirect_user,
+            password=rad.vdirect_password)
+        self.workflow_params['provision_service'] = rad_debug.provision_service
+        self.workflow_params['configure_l3'] = rad_debug.configure_l3
+        self.workflow_params['configure_l4'] = rad_debug.configure_l4
+
+        self.queue = Queue.Queue()
+        self.completion_handler = OperationCompletionHandler(self.queue,
+                                                             self.rest_client,
+                                                             plugin)
+        self.workflow_templates_exists = False
+        self.completion_handler.setDaemon(True)
+        self.completion_handler_started = False
+
+    def _start_completion_handling_thread(self):
+        if not self.completion_handler_started:
+            LOG.info(_LI('Starting operation completion handling thread'))
+            self.completion_handler.start()
+            self.completion_handler_started = True
+
+    @staticmethod
+    def _get_wf_name(lb):
+        return 'LB_' + lb.id
+
+    @call_log.log
+    def _verify_workflow_templates(self):
+        """Verify the existence of workflows on vDirect server."""
+        resource = '/api/workflowTemplate/'
+        workflow_templates = {self.workflow_template_name: False}
+        for child_wf_name in self.child_workflow_template_names:
+            workflow_templates[child_wf_name] = False
+        response = _rest_wrapper(self.rest_client.call('GET',
+                                                       resource,
+                                                       None,
+                                                       None), [200])
+        for workflow_template in workflow_templates.keys():
+            for template in response:
+                if workflow_template == template['name']:
+                    workflow_templates[workflow_template] = True
+                    break
+        for template, found in workflow_templates.items():
+            if not found:
+                raise r_exc.WorkflowTemplateMissing(
+                    workflow_template=template)
+
+    @call_log.log
+    def workflow_exists(self, lb):
+        """Create workflow for loadbalancer instance"""
+        wf_name = self._get_wf_name(lb)
+        wf_resource = '/api/workflow/%s' % (wf_name)
+        try:
+            _rest_wrapper(self.rest_client.call(
+                'GET', wf_resource, None, None),
+                [200])
+        except Exception:
+            return False
+        return True
+
+    @call_log.log
+    def _create_workflow(self, lb, lb_network_id, proxy_network_id):
+        """Create workflow for loadbalancer instance"""
+
+        self._verify_workflow_templates()
+
+        wf_name = self._get_wf_name(lb)
+        service = copy.deepcopy(self.service)
+        service['tenantId'] = lb.tenant_id
+        service['name'] = 'srv_' + lb_network_id
+
+        if lb_network_id != proxy_network_id:
+            self.workflow_params["twoleg_enabled"] = True
+            service['primary']['network']['portgroups'] = [
+                lb_network_id, proxy_network_id]
+        else:
+            self.workflow_params["twoleg_enabled"] = False
+            service['primary']['network']['portgroups'] = [lb_network_id]
+
+        tmpl_resource = '/api/workflowTemplate/%s?name=%s' % (
+            self.workflow_template_name, wf_name)
+        _rest_wrapper(self.rest_client.call(
+            'POST', tmpl_resource,
+            {'parameters': dict(self.workflow_params,
+                                service_params=service)},
+            TEMPLATE_HEADER))
+
+    @call_log.log
+    def get_stats(self, ctx, lb):
+
+        wf_name = self._get_wf_name(lb)
+        resource = '/api/workflow/%s/action/%s' % (
+            wf_name, self.stats_action_name)
+        response = _rest_wrapper(self.rest_client.call('POST', resource,
+                                 None, TEMPLATE_HEADER), success_codes=[202])
+        LOG.debug('stats_action  response: %s ', response)
+
+        resource = '/api/workflow/%s/parameters' % (wf_name)
+        response = _rest_wrapper(self.rest_client.call('GET', resource,
+                                 None, TEMPLATE_HEADER), success_codes=[200])
+        LOG.debug('stats_values  response: %s ', response)
+        return response['stats']
+
+    @call_log.log
+    def execute_workflow(self, ctx, manager, data_model,
+                         old_data_model=None, delete=False):
+        lb = data_model.root_loadbalancer
+
+        # Get possible proxy subnet.
+        # Proxy subnet equals to LB subnet if no proxy
+        # is necessary.
+        # Get subnet id of any member located on different than
+        # loadbalancer's network. If returned subnet id is the subnet id
+        # of loadbalancer - all members are accesssible from loadbalancer's
+        # network, meaning no second leg or static routes are required.
+        # Otherwise, create proxy port on found member's subnet and get its
+        # address as a proxy address for loadbalancer instance
+        lb_subnet = self.plugin.db._core_plugin.get_subnet(
+            ctx, lb.vip_subnet_id)
+        proxy_subnet = lb_subnet
+        proxy_port_subnet_id = self._get_proxy_port_subnet_id(lb)
+        if proxy_port_subnet_id == lb.vip_subnet_id:
+            proxy_port_address = lb.vip_address
+        else:
+            proxy_port_address = self._create_proxy_port_and_get_address(
+                ctx, lb, proxy_port_subnet_id)
+            proxy_subnet = self.plugin.db._core_plugin.get_subnet(
+                ctx, proxy_port_subnet_id)
+
+        # Check if workflow exist, create if not
+        if not self.workflow_exists(lb):
+            self._create_workflow(lb,
+                                  lb_subnet['network_id'],
+                                  proxy_subnet['network_id'])
+
+        # Build objects graph
+        objects_graph = self._build_objects_graph(ctx, lb, data_model,
+                                                  proxy_port_address,
+                                                  proxy_subnet)
+        LOG.debug("Radware vDirect LB object graph is " + str(objects_graph))
+
+        wf_name = self._get_wf_name(lb)
+        resource = '/api/workflow/%s/action/%s' % (
+            wf_name, self.workflow_action_name)
+        response = _rest_wrapper(self.rest_client.call('POST', resource,
+                                 {'parameters': objects_graph},
+                                 TEMPLATE_HEADER), success_codes=[202])
+        LOG.debug('_update_workflow response: %s ', response)
+
+        oper = OperationAttributes(
+            manager, response['uri'], lb,
+            data_model, old_data_model,
+            delete=delete)
+
+        LOG.debug('Pushing operation %s to the queue', oper)
+        self._start_completion_handling_thread()
+        self.queue.put_nowait(oper)
+
+    def remove_workflow(self, ctx, manager, lb):
+        wf_name = self._get_wf_name(lb)
+        LOG.debug('Remove the workflow %s' % wf_name)
+        resource = '/api/workflow/%s' % (wf_name)
+        rest_return = self.rest_client.call('DELETE', resource, None, None)
+        response = _rest_wrapper(rest_return, [204, 202, 404])
+        if rest_return[rest.RESP_STATUS] in [404]:
+            try:
+                self._delete_proxy_port(ctx, lb)
+                LOG.debug('Proxy port for LB %s was deleted', lb.id)
+            except Exception:
+                with excutils.save_and_reraise_exception():
+                    LOG.error(_LE('Proxy port deletion for LB %s '
+                                'failed'), lb.id)
+            manager.successful_completion(ctx, lb)
+        else:
+            oper = OperationAttributes(
+                manager, response['uri'], lb,
+                lb, old_data_model=None,
+                delete=True)
+
+            self._start_completion_handling_thread()
+            self.queue.put_nowait(oper)
+
+    def _build_objects_graph(self, ctx, lb, data_model,
+                             proxy_port_address, proxy_subnet):
+        """Iterate over the LB model starting from root lb entity
+        and build its JSON representtaion for vDirect
+        """
+        graph = {}
+        for prop in LOADBALANCER_PROPERTIES:
+            graph[prop] = getattr(lb, prop, PROPERTY_DEFAULTS.get(prop))
+
+        graph['pip_address'] = proxy_port_address
+
+        graph['listeners'] = []
+        for listener in lb.listeners:
+            if not listener.default_pool or \
+                not listener.default_pool.members:
+                break
+            listener_dict = {}
+            for prop in LISTENER_PROPERTIES:
+                listener_dict[prop] = getattr(
+                    listener, prop, PROPERTY_DEFAULTS.get(prop))
+
+            if listener.default_tls_container_id:
+                default_cert = CERT_MANAGER_PLUGIN.CertManager.get_cert(
+                    listener.default_tls_container_id,
+                    service_name='Neutron LBaaS v2 Radware provider')
+                cert_dict = {
+                    'certificate': default_cert.get_certificate(),
+                    'intermediates': default_cert.get_intermediates(),
+                    'private_key': default_cert.get_private_key(),
+                    'passphrase': default_cert.get_private_key_passphrase()}
+                listener_dict['default_tls_certificate'] = cert_dict
+
+            if listener.sni_containers:
+                listener_dict['sni_tls_certificates'] = []
+                for sni_container in listener.sni_containers:
+                    sni_cert = CERT_MANAGER_PLUGIN.CertManager.get_cert(
+                        sni_container.tls_container_id,
+                        service_name='Neutron LBaaS v2 Radware provider')
+                    listener_dict['sni_tls_certificates'].append(
+                        {'position': sni_container.position,
+                         'certificate': sni_cert.get_certificate(),
+                         'intermediates': sni_cert.get_intermediates(),
+                         'private_key': sni_cert.get_private_key(),
+                         'passphrase': sni_cert.get_private_key_passphrase()})
+
+            if listener.default_pool:
+                pool_dict = {}
+                for prop in POOL_PROPERTIES:
+                    pool_dict[prop] = getattr(
+                        listener.default_pool, prop,
+                        PROPERTY_DEFAULTS.get(prop))
+
+                if listener.default_pool.healthmonitor:
+                    hm_dict = {}
+                    for prop in HEALTH_MONITOR_PROPERTIES:
+                        hm_dict[prop] = getattr(
+                            listener.default_pool.healthmonitor, prop,
+                            PROPERTY_DEFAULTS.get(prop))
+                    pool_dict['healthmonitor'] = hm_dict
+
+                if listener.default_pool.sessionpersistence:
+                    sess_pers_dict = {}
+                    for prop in SESSION_PERSISTENCY_PROPERTIES:
+                        sess_pers_dict[prop] = getattr(
+                            listener.default_pool.sessionpersistence, prop,
+                            PROPERTY_DEFAULTS.get(prop))
+                    pool_dict['sessionpersistence'] = sess_pers_dict
+
+                pool_dict['members'] = []
+                for member in listener.default_pool.members:
+                    member_dict = {}
+                    for prop in MEMBER_PROPERTIES:
+                        member_dict[prop] = getattr(
+                            member, prop,
+                            PROPERTY_DEFAULTS.get(prop))
+                    if (proxy_port_address != lb.vip_address and
+                        netaddr.IPAddress(member.address)
+                        not in netaddr.IPNetwork(proxy_subnet['cidr'])):
+                        self._accomplish_member_static_route_data(
+                            ctx, member, member_dict,
+                            proxy_subnet['gateway_ip'])
+                    pool_dict['members'].append(member_dict)
+
+                listener_dict['default_pool'] = pool_dict
+            graph['listeners'].append(listener_dict)
+        return graph
+
+    def _get_lb_proxy_port_name(self, lb):
+        return 'proxy_' + lb.id
+
+    def _get_proxy_port_subnet_id(self, lb):
+        """Look for at least one member of any listener's pool
+        that is located on subnet different than loabalancer's subnet.
+        If such member found, return its subnet id.
+        Otherwise, return loadbalancer's subnet id
+        """
+        for listener in lb.listeners:
+            if listener.default_pool:
+                for member in listener.default_pool.members:
+                    if lb.vip_subnet_id != member.subnet_id:
+                        return member.subnet_id
+        return lb.vip_subnet_id
+
+    def _create_proxy_port_and_get_address(self,
+        ctx, lb, proxy_port_subnet_id):
+        """Check if proxy port was created earlier.
+        If not, create a new port on proxy subnet and return its ip address.
+        Returns port IP address
+        """
+        proxy_port_name = self._get_lb_proxy_port_name(lb)
+        ports = self.plugin.db._core_plugin.get_ports(
+            ctx, filters={'name': [proxy_port_name], })
+        if not ports:
+            # Create pip port. Use the subnet
+            # determined before by _get_pip_port_subnet_id() function
+            proxy_port_subnet = self.plugin.db._core_plugin.get_subnet(
+                ctx, proxy_port_subnet_id)
+            proxy_port_data = {
+                'tenant_id': lb.tenant_id,
+                'name': proxy_port_name,
+                'network_id': proxy_port_subnet['network_id'],
+                'mac_address': attributes.ATTR_NOT_SPECIFIED,
+                'admin_state_up': False,
+                'device_id': '',
+                'device_owner': 'neutron:' + constants.LOADBALANCERV2,
+                'fixed_ips': [{'subnet_id': proxy_port_subnet_id}]
+            }
+            proxy_port = self.plugin.db._core_plugin.create_port(
+                ctx, {'port': proxy_port_data})
+        else:
+            proxy_port = ports[0]
+
+        ips_on_subnet = [ip for ip in proxy_port['fixed_ips']
+                         if ip['subnet_id'] == proxy_port_subnet_id]
+        if not ips_on_subnet:
+            raise Exception(_('Could not find or allocate '
+                              'IP address on subnet id %s for proxy port'),
+                            proxy_port_subnet_id)
+        else:
+            return ips_on_subnet[0]['ip_address']
+
+    def _delete_proxy_port(self, ctx, lb):
+        port_filter = {
+            'name': [self._get_lb_proxy_port_name(lb)],
+        }
+        ports = self.plugin.db._core_plugin.get_ports(
+            ctx, filters=port_filter)
+        if ports:
+            for port in ports:
+                try:
+                    self.plugin.db._core_plugin.delete_port(
+                        ctx, port['id'])
+
+                except Exception as exception:
+                    # stop exception propagation, nport may have
+                    # been deleted by other means
+                    LOG.warning(_LW('proxy port deletion failed: %r'),
+                                exception)
+
+    def _accomplish_member_static_route_data(self,
+        ctx, member, member_data, proxy_gateway_ip):
+        member_ports = self.plugin.db._core_plugin.get_ports(
+            ctx,
+            filters={'fixed_ips': {'ip_address': [member.address]},
+                     'tenant_id': [member.tenant_id]})
+        if len(member_ports) == 1:
+            member_subnet = self.plugin._core_plugin.get_subnet(
+                ctx,
+                member_ports[0]['fixed_ips'][0]['subnet_id'])
+            member_network = netaddr.IPNetwork(member_subnet['cidr'])
+            member_data['subnet'] = str(member_network.network)
+            member_data['mask'] = str(member_network.netmask)
+        else:
+            member_data['subnet'] = member_data['address']
+        member_data['gw'] = proxy_gateway_ip
+
+
+class OperationCompletionHandler(threading.Thread):
+
+    """Update DB with operation status or delete the entity from DB."""
+
+    def __init__(self, queue, rest_client, plugin):
+        threading.Thread.__init__(self)
+        self.queue = queue
+        self.rest_client = rest_client
+        self.plugin = plugin
+        self.stoprequest = threading.Event()
+        self.opers_to_handle_before_rest = 0
+
+    def join(self, timeout=None):
+        self.stoprequest.set()
+        super(OperationCompletionHandler, self).join(timeout)
+
+    def handle_operation_completion(self, oper):
+        result = self.rest_client.call('GET',
+                                       oper.operation_url,
+                                       None,
+                                       None)
+        LOG.debug('Operation completion requested %(uri) and got: %(result)',
+                  {'uri': oper.operation_url, 'result': result})
+        completed = result[rest.RESP_DATA]['complete']
+        reason = result[rest.RESP_REASON],
+        description = result[rest.RESP_STR]
+        if completed:
+            # operation is done - update the DB with the status
+            # or delete the entire graph from DB
+            success = result[rest.RESP_DATA]['success']
+            sec_to_completion = time.time() - oper.creation_time
+            debug_data = {'oper': oper,
+                          'sec_to_completion': sec_to_completion,
+                          'success': success}
+            LOG.debug('Operation %(oper)s is completed after '
+                      '%(sec_to_completion)d sec '
+                      'with success status: %(success)s :',
+                      debug_data)
+            if not success:
+                # failure - log it and set the return ERROR as DB state
+                if reason or description:
+                    msg = 'Reason:%s. Description:%s' % (reason, description)
+                else:
+                    msg = "unknown"
+                error_params = {"operation": oper, "msg": msg}
+                LOG.error(_LE(
+                    'Operation %(operation)s failed. Reason: %(msg)s'),
+                    error_params)
+                oper.status = constants.ERROR
+                OperationCompletionHandler._run_post_failure_function(oper)
+            else:
+                oper.status = constants.ACTIVE
+                OperationCompletionHandler._run_post_success_function(oper)
+
+        return completed
+
+    def run(self):
+        while not self.stoprequest.isSet():
+            try:
+                oper = self.queue.get(timeout=1)
+
+                # Get the current queue size (N) and set the counter with it.
+                # Handle N operations with no intermission.
+                # Once N operations handles, get the size again and repeat.
+                if self.opers_to_handle_before_rest <= 0:
+                    self.opers_to_handle_before_rest = self.queue.qsize() + 1
+
+                LOG.debug('Operation consumed from the queue: ' +
+                          str(oper))
+                # check the status - if oper is done: update the db ,
+                # else push the oper again to the queue
+                if not self.handle_operation_completion(oper):
+                    LOG.debug('Operation %s is not completed yet..' % oper)
+                    # Not completed - push to the queue again
+                    self.queue.put_nowait(oper)
+
+                self.queue.task_done()
+                self.opers_to_handle_before_rest -= 1
+
+                # Take one second rest before start handling
+                # new operations or operations handled before
+                if self.opers_to_handle_before_rest <= 0:
+                    time.sleep(1)
+
+            except Queue.Empty:
+                continue
+            except Exception:
+                LOG.error(_LE(
+                    "Exception was thrown inside OperationCompletionHandler"))
+
+    @staticmethod
+    def _run_post_success_function(oper):
+        try:
+            ctx = context.get_admin_context(load_admin_roles=False)
+            oper.manager.successful_completion(ctx, oper.data_model,
+                                               delete=oper.delete)
+            LOG.debug('Post-operation success function completed '
+                      'for operation %s',
+                      repr(oper))
+        except Exception:
+            with excutils.save_and_reraise_exception():
+                LOG.error(_LE('Post-operation success function failed '
+                             'for operation %s'),
+                          repr(oper))
+
+    @staticmethod
+    def _run_post_failure_function(oper):
+        try:
+            ctx = context.get_admin_context(load_admin_roles=False)
+            oper.manager.failed_completion(ctx, oper.data_model)
+            LOG.debug('Post-operation failure function completed '
+                      'for operation %s',
+                      repr(oper))
+        except Exception:
+            with excutils.save_and_reraise_exception():
+                LOG.error(_LE('Post-operation failure function failed '
+                              'for operation %s'),
+                          repr(oper))
+
+
+class OperationAttributes(object):
+
+    """Holds operation attributes"""
+
+    def __init__(self,
+                 manager,
+                 operation_url,
+                 lb,
+                 data_model=None,
+                 old_data_model=None,
+                 delete=False):
+        self.manager = manager
+        self.operation_url = operation_url
+        self.lb = lb
+        self.data_model = data_model
+        self.old_data_model = old_data_model
+        self.delete = delete
+        self.creation_time = time.time()
+
+    def __repr__(self):
+        attrs = self.__dict__
+        items = ("%s = %r" % (k, v) for k, v in attrs.items())
+        return "<%s: {%s}>" % (self.__class__.__name__, ', '.join(items))
+
+
+def _rest_wrapper(response, success_codes=None):
+    """Wrap a REST call and make sure a valido status is returned."""
+    success_codes = success_codes or [202]
+    if not response:
+        raise r_exc.RESTRequestFailure(
+            status=-1,
+            reason="Unknown",
+            description="Unknown",
+            success_codes=success_codes
+        )
+    elif response[rest.RESP_STATUS] not in success_codes:
+        raise r_exc.RESTRequestFailure(
+            status=response[rest.RESP_STATUS],
+            reason=response[rest.RESP_REASON],
+            description=response[rest.RESP_STR],
+            success_codes=success_codes
+        )
+    else:
+        LOG.debug("this is a respone: %s" % (response,))
+        return response[rest.RESP_DATA]
