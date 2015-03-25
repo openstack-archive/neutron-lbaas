@@ -193,8 +193,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             if provisioning_status and (model_db.provisioning_status !=
                                         provisioning_status):
                 model_db.provisioning_status = provisioning_status
-            if operating_status and (model_db.operating_status !=
-                                     operating_status):
+            if (operating_status and hasattr(model_db, 'operating_status') and
+                    model_db.operating_status != operating_status):
                 model_db.operating_status = operating_status
 
     def create_loadbalancer(self, context, loadbalancer):

@@ -1927,6 +1927,18 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             resp, body = self._get_pool_api(self.pool_id)
             self.assertEqual(hm_id, body['pool']['healthmonitor_id'])
 
+    def test_update_healthmonitor_status(self):
+        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor'].get('id')
+            ctx = context.get_admin_context()
+            self.plugin.db.update_status(ctx,
+                                         models.HealthMonitorV2, hm_id,
+                                         provisioning_status=constants.ACTIVE,
+                                         operating_status=lb_const.DEGRADED)
+            db_hm = self.plugin.db.get_healthmonitor(ctx, hm_id)
+            self.assertEqual(db_hm.provisioning_status, constants.ACTIVE)
+            self.assertFalse(hasattr(db_hm, 'operating_status'))
+
 
 class LbaasStatusesTest(MemberTestBase):
     def setUp(self):
