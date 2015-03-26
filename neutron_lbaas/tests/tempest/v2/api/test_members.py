@@ -26,6 +26,7 @@ LOG = logging.getLogger(__name__)
 
 
 class MemberTestJSON(base.BaseTestCase):
+
     """
     Test the following operations in Neutron-LBaaS API using the
     REST client for members:
@@ -51,18 +52,15 @@ class MemberTestJSON(base.BaseTestCase):
             tenant_id=cls.tenant_id,
             vip_subnet_id=cls.subnet.get('id'))
         cls.load_balancer_id = cls.load_balancer.get("id")
-        cls._wait_for_load_balancer_status(cls.load_balancer_id)
-        cls.listener = cls.listeners_client.create_listener(
+        cls.listener = cls._create_listener(
             loadbalancer_id=cls.load_balancer.get('id'),
             protocol='HTTP', protocol_port=80)
         cls.listener_id = cls.listener.get('id')
-        cls._wait_for_load_balancer_status(cls.load_balancer_id)
-        cls.pool = cls.pools_client.create_pool(protocol='HTTP',
-                                                tenant_id=cls.tenant_id,
-                                                lb_algorithm='ROUND_ROBIN',
-                                                listener_id=cls.listener_id)
+        cls.pool = cls._create_pool(protocol='HTTP',
+                                    tenant_id=cls.tenant_id,
+                                    lb_algorithm='ROUND_ROBIN',
+                                    listener_id=cls.listener_id)
         cls.pool_id = cls.pool.get('id')
-        cls._wait_for_load_balancer_status(cls.load_balancer_id)
 
     @test.attr(type='smoke')
     def test_list_empty_members(self):
@@ -78,8 +76,7 @@ class MemberTestJSON(base.BaseTestCase):
         for ip in member_ips_exp:
             member_opts = self.build_member_opts()
             member_opts["address"] = ip
-            self.members_client.create_member(self.pool_id, **member_opts)
-            self._wait_for_load_balancer_status(self.load_balancer_id)
+            self._create_member(self.pool_id, **member_opts)
         members = self.members_client.list_members(self.pool_id)
         self.assertEqual(3, len(members))
         for member in members:
@@ -89,8 +86,8 @@ class MemberTestJSON(base.BaseTestCase):
         found_member_ips = set([m["address"] for m in members])
         self.assertEqual(found_member_ips, member_ips_exp)
         for member in members:
-            self.members_client.delete_member(self.pool_id,
-                                              member["id"])
+            self._delete_member(self.pool_id,
+                                member["id"])
 
     @test.attr(type='smoke')
     def test_add_member(self):
@@ -98,9 +95,8 @@ class MemberTestJSON(base.BaseTestCase):
         expect_empty_members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(expect_empty_members)
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id, **member_opts)
+        member = self._create_member(self.pool_id, **member_opts)
         member_id = member.get("id")
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self.assertEqual(member_opts["address"], member["address"])
         self.assertEqual(self.tenant_id, member["tenant_id"])
         self.assertEqual(80, member["protocol_port"])
@@ -108,23 +104,22 @@ class MemberTestJSON(base.BaseTestCase):
         # Should have default values for admin_state_up and weight
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
-        self.members_client.delete_member(self.pool_id, member_id)
+        self._delete_member(self.pool_id, member_id)
         self.assertEmpty(self.members_client.list_members(self.pool_id))
 
     @test.attr(type='smoke')
     def test_get_member(self):
         """Test that we can fetch a member by id."""
         member_opts = self.build_member_opts()
-        member_id = self.members_client.create_member(self.pool_id,
-                                                      **member_opts)["id"]
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = self._create_member(self.pool_id,
+                                        **member_opts)["id"]
         member = self.members_client.get_member(self.pool_id, member_id)
         self.assertEqual(member_id, member["id"])
         self.assertEqual(member_opts["address"], member["address"])
         self.assertEqual(member_opts["tenant_id"], member["tenant_id"])
         self.assertEqual(member_opts["protocol_port"], member["protocol_port"])
         self.assertEqual(member_opts["subnet_id"], member["subnet_id"])
-        self.members_client.delete_member(self.pool_id, member_id)
+        self._delete_member(self.pool_id, member_id)
         self.assertEmpty(self.members_client.list_members(self.pool_id))
 
     @test.attr(type='smoke')
@@ -136,9 +131,8 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        member = self.members_client.create_member(self.pool_id, **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
-        self.members_client.delete_member(self.pool_id, member['id'])
+        member = self._create_member(self.pool_id, **member_opts)
+        self._delete_member(self.pool_id, member['id'])
         self.assertEmpty(self.members_client.list_members(self.pool_id))
 
     @test.attr(type='negative')
@@ -147,7 +141,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -156,7 +150,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -165,14 +159,14 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['protocol_port'] = 80
         member_opts['address'] = "127.0.0.1"
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
     def test_raises_BadRequest_when_missing_attrs_during_member_create(self):
         """Test failure on missing attributes on member create."""
         member_opts = {}
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -183,7 +177,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
         member_opts['tenant_id'] = "$232!$pw"
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -193,7 +187,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = "127$%<ki"
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -203,7 +197,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 8090000
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -213,7 +207,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = "45k%^"
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -224,7 +218,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
         member_opts['admin_state_up'] = "$232!$pw"
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -235,7 +229,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
         member_opts['weight'] = "$232!$pw"
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -246,7 +240,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
         member_opts['tenant_id'] = ""
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -256,7 +250,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = ""
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -266,7 +260,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = ""
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -276,7 +270,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = ""
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -287,7 +281,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
         member_opts['admin_state_up'] = ""
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
@@ -298,19 +292,18 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts['protocol_port'] = 80
         member_opts['subnet_id'] = MemberTestJSON.subnet_id
         member_opts['weight'] = ""
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='smoke')
     def test_delete_member(self):
         """Test that we can delete a member by id."""
         member_opts = self.build_member_opts()
-        member_id = self.members_client.create_member(self.pool_id,
-                                                      **member_opts)["id"]
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = self._create_member(self.pool_id,
+                                        **member_opts)["id"]
         members = self.members_client.list_members(self.pool_id)
         self.assertEqual(1, len(members))
-        self.members_client.delete_member(self.pool_id, member_id)
+        self._delete_member(self.pool_id, member_id)
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -318,22 +311,20 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member(self):
         """Test that we can update a member."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         # Make sure the defaults are correct
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         # Lets overwrite the defaults
         member_opts = {"weight": 10, "admin_state_up": False}
-        member = self.members_client.update_member(self.pool_id, member_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._update_member(self.pool_id, member_id,
+                                     **member_opts)
         # And make sure they stick
         self.assertEqual(False, member["admin_state_up"])
         self.assertEqual(10, member["weight"])
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -341,19 +332,17 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_missing_admin_state_up(self):
         """Test that we can update a member with missing admin_state_up."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10}
-        member = self.members_client.update_member(self.pool_id, member_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._update_member(self.pool_id, member_id,
+                                     **member_opts)
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(10, member["weight"])
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -361,19 +350,17 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_missing_weight(self):
         """Test that we can update a member with missing weight."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False}
-        member = self.members_client.update_member(self.pool_id, member_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._update_member(self.pool_id, member_id,
+                                     **member_opts)
         self.assertEqual(False, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -381,16 +368,15 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_invalid_admin_state_up(self):
         """Test that we can update a member with empty admin_state_up."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10, "admin_state_up": "%^67"}
-        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+        self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -398,16 +384,15 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_invalid_weight(self):
         """Test that we can update a member with an empty weight."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False, "weight": "*^$df"}
-        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+        self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -415,16 +400,15 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_empty_admin_state_up(self):
         """Test that we can update a member with empty admin_state_up."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10, "admin_state_up": ""}
-        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+        self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -432,16 +416,15 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_empty_weight(self):
         """Test that we can update a member with an empty weight."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id,
-                                                   **member_opts)
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member = self._create_member(self.pool_id,
+                                     **member_opts)
         member_id = member["id"]
         self.assertEqual(True, member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False, "weight": ""}
-        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+        self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
-        self.members_client.delete_member(self.pool_id, member["id"])
+        self._delete_member(self.pool_id, member["id"])
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -449,15 +432,14 @@ class MemberTestJSON(base.BaseTestCase):
     def test_raises_immutable_when_updating_immutable_attrs_on_member(self):
         """Test failure on immutable attribute on member create."""
         member_opts = self.build_member_opts()
-        member_id = self.members_client.create_member(self.pool_id,
-                                                      **member_opts)["id"]
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = self._create_member(self.pool_id,
+                                        **member_opts)["id"]
         member_opts = {"address": "127.0.0.69"}
         # The following code actually raises a 400 instead of a 422 as expected
         # Will need to consult with blogan as to what to fix
-        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+        self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
-        self.members_client.delete_member(self.pool_id, member_id)
+        self._delete_member(self.pool_id, member_id)
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
@@ -466,20 +448,19 @@ class MemberTestJSON(base.BaseTestCase):
         """Test failure on invalid attribute on member create."""
         member_opts = self.build_member_opts()
         member_opts["invalid_op"] = "should_break_request"
-        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+        self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
     def test_raises_exception_on_invalid_attr_on_update(self):
         """Test failure on invalid attribute on member update."""
         member_opts = self.build_member_opts()
-        member = self.members_client.create_member(self.pool_id, **member_opts)
+        member = self._create_member(self.pool_id, **member_opts)
         member_id = member["id"]
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         member_opts["invalid_op"] = "watch_this_break"
-        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+        self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
-        self.members_client.delete_member(self.pool_id, member_id)
+        self._delete_member(self.pool_id, member_id)
 
     @classmethod
     def build_member_opts(cls, **kw):

@@ -14,7 +14,6 @@
 
 import os
 import time
-
 from neutron.i18n import _, _LI
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
@@ -104,9 +103,11 @@ class BaseTestCase(base.BaseNetworkTest):
         cls.LOG.info(_LI('Finished: {0}\n').format(cls._testMethodName))
 
     @classmethod
-    def _create_load_balancer(cls, **kwargs):
+    def _create_load_balancer(cls, wait=True, **lb_kwargs):
         try:
-            lb = cls.load_balancers_client.create_load_balancer(**kwargs)
+            lb = cls.load_balancers_client.create_load_balancer(**lb_kwargs)
+            if wait:
+                cls._wait_for_load_balancer_status(lb.get('id'))
         except Exception:
             raise Exception(_("Failed to create load balancer..."))
         cls._lbs_to_delete.append(lb.get('id'))
@@ -119,18 +120,54 @@ class BaseTestCase(base.BaseNetworkTest):
         return lb
 
     @classmethod
+    def _delete_load_balancer(cls, load_balancer_id, wait=True):
+        cls.load_balancers_client.delete_load_balancer(load_balancer_id)
+        if wait:
+            cls._wait_for_load_balancer_status(
+                load_balancer_id, delete=True)
+
+    @classmethod
+    def _update_load_balancer(cls, load_balancer_id, wait=True, **lb_kwargs):
+        lb = cls.load_balancers_client.update_load_balancer(
+            load_balancer_id, **lb_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(
+                load_balancer_id)
+        return lb
+
+    @classmethod
     def _wait_for_load_balancer_status(cls, load_balancer_id,
                                        provisioning_status='ACTIVE',
-                                       operating_status='ONLINE'):
+                                       operating_status='ONLINE',
+                                       delete=False):
         interval_time = 10
         timeout = 300
         end_time = time.time() + timeout
+        lb = {}
         while time.time() < end_time:
-            lb = cls.load_balancers_client.get_load_balancer(load_balancer_id)
-            if (lb.get('provisioning_status') == provisioning_status and
-                    lb.get('operating_status') == operating_status):
-                break
-            time.sleep(interval_time)
+            try:
+                lb = cls.load_balancers_client.get_load_balancer(
+                    load_balancer_id)
+                if not lb:
+                        # loadbalancer not found
+                    if delete:
+                        break
+                    else:
+                        raise Exception(
+                            _("loadbalancer {lb_id} not"
+                              " found").format(
+                                  lb_id=load_balancer_id))
+                if (lb.get('provisioning_status') == provisioning_status and
+                        lb.get('operating_status') == operating_status):
+                    break
+                time.sleep(interval_time)
+            except exceptions.NotFound as e:
+                # if wait is for delete operation do break
+                if delete:
+                    break
+                else:
+                    # raise original exception
+                    raise e
         else:
             raise Exception(
                 _("Wait for load balancer ran for {timeout} seconds and did "
@@ -142,6 +179,96 @@ class BaseTestCase(base.BaseNetworkTest):
                       provisioning_status=provisioning_status,
                       operating_status=operating_status))
         return lb
+
+    @classmethod
+    def _create_listener(cls, wait=True, **listener_kwargs):
+        listener = cls.listeners_client.create_listener(**listener_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+        return listener
+
+    @classmethod
+    def _delete_listener(cls, listener_id, wait=True):
+        cls.listeners_client.delete_listener(listener_id)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+
+    @classmethod
+    def _update_listener(cls, listener_id, wait=True, **listener_kwargs):
+        listener = cls.listeners_client.update_listener(
+            listener_id, **listener_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(
+                cls.load_balancer.get('id'))
+        return listener
+
+    @classmethod
+    def _create_pool(cls, wait=True, **pool_kwargs):
+        pool = cls.pools_client.create_pool(**pool_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+        return pool
+
+    @classmethod
+    def _delete_pool(cls, pool_id, wait=True):
+        cls.pools_client.delete_pool(pool_id)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+
+    @classmethod
+    def _update_pool(cls, pool_id, wait=True, **pool_kwargs):
+        pool = cls.pools_client.update_pool(pool_id, **pool_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(
+                cls.load_balancer.get('id'))
+        return pool
+
+    @classmethod
+    def _create_health_monitor(cls, wait=True, **health_monitor_kwargs):
+        hm = cls.health_monitors_client.create_health_monitor(
+            **health_monitor_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+        return hm
+
+    @classmethod
+    def _delete_health_monitor(cls, health_monitor_id, wait=True):
+        cls.health_monitors_client.delete_health_monitor(health_monitor_id)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+
+    @classmethod
+    def _update_health_monitor(cls, health_monitor_id, wait=True,
+                               **health_monitor_kwargs):
+        health_monitor = cls.health_monitors_client.update_health_monitor(
+            health_monitor_id, **health_monitor_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(
+                cls.load_balancer.get('id'))
+        return health_monitor
+
+    @classmethod
+    def _create_member(cls, pool_id, wait=True, **member_kwargs):
+        member = cls.members_client.create_member(pool_id, **member_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+        return member
+
+    @classmethod
+    def _delete_member(cls, pool_id, member_id, wait=True):
+        cls.members_client.delete_member(pool_id, member_id)
+        if wait:
+            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+
+    @classmethod
+    def _update_member(cls, pool_id, member_id, wait=True,
+                       **member_kwargs):
+        member = cls.members_client.update_member(
+            pool_id, member_id, **member_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(
+                cls.load_balancer.get('id'))
+        return member
 
     @classmethod
     def _check_status_tree(cls, load_balancer_id, listener_ids=None,
@@ -171,18 +298,18 @@ class BaseTestCase(base.BaseNetworkTest):
 
     @classmethod
     def _check_status_tree_thing(cls, actual_thing_ids, status_tree_things):
-            found_things = 0
-            status_tree_things = status_tree_things
-            assert len(actual_thing_ids) == len(status_tree_things)
-            for actual_thing_id in actual_thing_ids:
-                for status_tree_thing in status_tree_things:
-                    if status_tree_thing['id'] == actual_thing_id:
-                        assert 'ONLINE' == (
-                            status_tree_thing['operating_status'])
-                        assert 'ACTIVE' == (
-                            status_tree_thing['provisioning_status'])
-                        found_things += 1
-            assert len(actual_thing_ids) == found_things
+        found_things = 0
+        status_tree_things = status_tree_things
+        assert len(actual_thing_ids) == len(status_tree_things)
+        for actual_thing_id in actual_thing_ids:
+            for status_tree_thing in status_tree_things:
+                if status_tree_thing['id'] == actual_thing_id:
+                    assert 'ONLINE' == (
+                        status_tree_thing['operating_status'])
+                    assert 'ACTIVE' == (
+                        status_tree_thing['provisioning_status'])
+                    found_things += 1
+        assert len(actual_thing_ids) == found_things
 
     @classmethod
     def _get_full_case_name(cls):

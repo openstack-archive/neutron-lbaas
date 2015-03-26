@@ -58,10 +58,9 @@ class ListenersTestJSON(base.BaseTestCase):
         cls.create_listener_kwargs = {'loadbalancer_id': cls.load_balancer_id,
                                       'protocol': cls.protocol,
                                       'protocol_port': cls.port}
-        cls.listener = cls.listeners_client.create_listener(
+        cls.listener = cls._create_listener(
             **cls.create_listener_kwargs)
         cls.listener_id = cls.listener['id']
-        cls._wait_for_load_balancer_status(cls.load_balancer_id)
 
     @test.attr(type='smoke')
     def test_get_listener(self):
@@ -86,10 +85,9 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test get listeners with two listeners"""
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8080
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -98,17 +96,16 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertIn(self.listener, listeners)
         self.assertIn(new_listener, listeners)
         self.assertNotEqual(self.listener, new_listener)
-        self.listeners_client.delete_listener(new_listener_id)
+        self._delete_listener(new_listener_id)
 
     @test.attr(type='smoke')
     def test_create_listener(self):
         """Test create listener"""
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8081
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -116,13 +113,13 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
         self.assertNotEqual(self.listener, new_listener)
-        self.listeners_client.delete_listener(new_listener_id)
+        self._delete_listener(new_listener_id)
 
     @test.attr(type='negative')
     def test_create_listener_missing_field_loadbalancer(self):
         """Test create listener with a missing required field loadbalancer"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           protocol_port=self.port,
                           protocol=self.protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -132,7 +129,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_missing_field_protocol(self):
         """Test create listener with a missing required field protocol"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -142,7 +139,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_missing_field_protocol_port(self):
         """Test create listener with a missing required field protocol_port"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol=self.protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -153,10 +150,9 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test create listener with a missing admin_state_up field"""
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8081
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -164,13 +160,13 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
         self.assertTrue(new_listener['admin_state_up'])
-        self.listeners_client.delete_listener(new_listener_id)
+        self._delete_listener(new_listener_id)
 
     @test.attr(type='negative')
     def test_create_listener_invalid_load_balancer_id(self):
         """Test create listener with an invalid load_balancer_id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id="234*",
                           protocol_port=self.port,
                           protocol=self.protocol)
@@ -181,7 +177,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_protocol(self):
         """Test create listener with an invalid protocol"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol="UDP")
@@ -192,7 +188,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_protocol_port(self):
         """Test create listener with an invalid protocol_port"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port="9999999",
                           protocol=self.protocol)
@@ -203,7 +199,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_admin_state_up(self):
         """Test update listener with an invalid admin_state_up"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           protocol_port=self.port,
                           protocol=self.protocol,
                           admin_state_up="abc123")
@@ -214,7 +210,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_tenant_id(self):
         """Test create listener with an invalid tenant id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -227,7 +223,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_name(self):
         """Test create listener with an invalid name"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -240,7 +236,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_description(self):
         """Test create listener with an invalid description"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -254,7 +250,7 @@ class ListenersTestJSON(base.BaseTestCase):
         _limit field
         """
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -266,7 +262,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_empty_load_balancer_id(self):
         """Test create listener with an empty load_balancer_id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id="",
                           protocol_port=self.port,
                           protocol=self.protocol)
@@ -277,7 +273,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_empty_protocol(self):
         """Test create listener with an empty protocol"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol="")
@@ -288,7 +284,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_empty_protocol_port(self):
         """Test create listener with an empty protocol_port"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port="",
                           protocol=self.protocol)
@@ -299,7 +295,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_empty_admin_state_up(self):
         """Test update listener with an empty  admin_state_up"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           protocol_port=self.port,
                           protocol=self.protocol,
                           admin_state_up="")
@@ -310,7 +306,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_invalid_empty_tenant_id(self):
         """Test create listener with an empty tenant id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -324,17 +320,16 @@ class ListenersTestJSON(base.BaseTestCase):
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8081
         create_new_listener_kwargs['name'] = ""
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
         self.assertEqual(new_listener, listener)
-        self.listeners_client.delete_listener(new_listener_id)
+        self._delete_listener(new_listener_id)
 
     @test.attr(type='smoke')
     def test_create_listener_empty_description(self):
@@ -342,17 +337,16 @@ class ListenersTestJSON(base.BaseTestCase):
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8081
         create_new_listener_kwargs['description'] = ""
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
         self.assertEqual(new_listener, listener)
-        self.listeners_client.delete_listener(new_listener_id)
+        self._delete_listener(new_listener_id)
 
     @test.attr(type='negative')
     def test_create_listener_empty_connection_limit(self):
@@ -360,7 +354,7 @@ class ListenersTestJSON(base.BaseTestCase):
         _limit field
         """
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -372,7 +366,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_create_listener_incorrect_attribute(self):
         """Test create a listener with an extra, incorrect field"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.create_listener,
+                          self._create_listener,
                           incorrect_attribute="incorrect_attribute",
                           **self.create_listener_kwargs)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -381,9 +375,8 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_listener(self):
         """Test update listener"""
-        self.listeners_client.update_listener(self.listener_id,
-                                              name='new_name')
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              name='new_name')
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -394,7 +387,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_invalid_tenant_id(self):
         """Test update listener with an invalid tenant id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           tenant_id="&^%123")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -404,7 +397,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_invalid_admin_state_up(self):
         """Test update a listener with an invalid admin_state_up"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           admin_state_up="$23")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -415,7 +408,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_invalid_name(self):
         """Test update a listener with an invalid name"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           name='a' * 256)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -426,7 +419,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_invalid_description(self):
         """Test update a listener with an invalid description"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           description='a' * 256)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -436,7 +429,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_invalid_connection_limit(self):
         """Test update a listener with an invalid connection_limit"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           connection_limit="$23")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -446,7 +439,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_incorrect_attribute(self):
         """Test update a listener with an extra, incorrect field"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           name="listener_name123",
                           description="listener_description123",
@@ -462,9 +455,8 @@ class ListenersTestJSON(base.BaseTestCase):
         old_listener = self.listeners_client.get_listener(
             self.listener_id)
         old_name = old_listener['name']
-        self.listeners_client.update_listener(self.listener_id,
-                                              description='updated')
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              description='updated')
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -477,9 +469,8 @@ class ListenersTestJSON(base.BaseTestCase):
         old_listener = self.listeners_client.get_listener(
             self.listener_id)
         old_description = old_listener['description']
-        self.listeners_client.update_listener(self.listener_id,
-                                              name='updated_name')
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              name='updated_name')
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -492,9 +483,8 @@ class ListenersTestJSON(base.BaseTestCase):
         old_listener = self.listeners_client.get_listener(
             self.listener_id)
         old_admin_state_up = old_listener['admin_state_up']
-        self.listeners_client.update_listener(self.listener_id,
-                                              name='updated_name')
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              name='updated_name')
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -507,9 +497,8 @@ class ListenersTestJSON(base.BaseTestCase):
         old_listener = self.listeners_client.get_listener(
             self.listener_id)
         old_connection_limit = old_listener['connection_limit']
-        self.listeners_client.update_listener(self.listener_id,
-                                              name='updated_name')
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              name='updated_name')
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -521,7 +510,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_empty_tenant_id(self):
         """Test update listener with an empty tenant id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           tenant_id="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -531,7 +520,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_empty_admin_state_up(self):
         """Test update a listener with an empty admin_state_up"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           admin_state_up="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -540,9 +529,8 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_listener_empty_name(self):
         """Test update a listener with an empty name"""
-        self.listeners_client.update_listener(self.listener_id,
-                                              name="")
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              name="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -552,9 +540,8 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_listener_empty_description(self):
         """Test update a listener with an empty description"""
-        self.listeners_client.update_listener(self.listener_id,
-                                              description="")
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_listener(self.listener_id,
+                              description="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
         listener = self.listeners_client.get_listener(
@@ -565,7 +552,7 @@ class ListenersTestJSON(base.BaseTestCase):
     def test_update_listener_empty_connection_limit(self):
         """Test update a listener with an empty connection_limit"""
         self.assertRaises(exceptions.BadRequest,
-                          self.listeners_client.update_listener,
+                          self._update_listener,
                           listener_id=self.listener_id,
                           connection_limit="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
@@ -576,10 +563,9 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test delete listener"""
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8083
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
-        self._wait_for_load_balancer_status(self.load_balancer_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -587,7 +573,7 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
         self.assertNotEqual(self.listener, new_listener)
-        self.listeners_client.delete_listener(new_listener_id)
+        self._delete_listener(new_listener_id)
         self.assertRaises(exceptions.NotFound,
                           self.listeners_client.get_listener,
                           new_listener_id)
