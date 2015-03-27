@@ -31,6 +31,11 @@ def get_nsxv_edge_pool_mapping(context, pool_id):
            filter_by(pool_id=pool_id).first())
 
 
+def get_nsxv_edge_pool_mapping_by_edge(context, edge_id):
+    return(context.session.query(models.NsxvEdgePoolMapping).
+           filter_by(edge_id=edge_id).all())
+
+
 def delete_nsxv_edge_pool_mapping(context, pool_id):
     session = context.session
     mapping = (session.query(models.NsxvEdgePoolMapping).filter_by(
