@@ -152,6 +152,9 @@ class TestLoadBalancerCallbacks(
             expected_lb['provider']['device_driver'] = 'dummy'
             subnet = self.plugin_instance.db._core_plugin.get_subnet(
                 ctx, expected_lb['vip_subnet_id'])
+            # TODO(john-davidge) - Remove once neutron subnet-allocation
+            # BP is merged
+            subnet['subnetpool_id'] = None
             expected_lb['vip_port']['fixed_ips'][0]['subnet'] = subnet
             del expected_lb['stats']
             self.assertEqual(expected_lb, load_balancer)
