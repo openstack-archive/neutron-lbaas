@@ -46,6 +46,15 @@ class TestNSClient(testlib_api.WebTestCase):
         self.request_method_mock = mock.Mock()
         requests.request = self.request_method_mock
         self.testclient = self._get_nsclient()
+        self.testclient.login = mock.Mock()
+        self.testclient.login.side_effect = self.mock_auth_func(
+            self.testclient)
+        nfe_mock = mock.patch.object(
+            ncc_client.NCCException, "is_not_found_exception").start()
+        nfe_mock.return_value = True
+
+    def mock_auth_func(self, ncc_test_client):
+        ncc_test_client.auth = "SessId=123456789"
 
     def test_instantiate_nsclient_with_empty_uri(self):
         """Asserts that a call with empty URI will raise an exception."""
@@ -72,7 +81,7 @@ class TestNSClient(testlib_api.WebTestCase):
         # create a mock object to represent a valid http response
         # with a failure status code.
         fake_response = requests.Response()
-        fake_response.status_code = requests.codes.unauthorized
+        fake_response.status_code = requests.codes.unavailable
         fake_response.headers = []
         requests.request.return_value = fake_response
         resource_path = netscaler_driver.VIPS_RESOURCE
@@ -111,7 +120,7 @@ class TestNSClient(testlib_api.WebTestCase):
         """Asserts that a failed update call raises an exception."""
         # create a valid http response with a failure status code.
         fake_response = requests.Response()
-        fake_response.status_code = requests.codes.unauthorized
+        fake_response.status_code = requests.codes.unavailable
         fake_response.headers = []
         # obtain the mock object that corresponds to the call of request()
         self.request_method_mock.return_value = fake_response
@@ -154,8 +163,9 @@ class TestNSClient(testlib_api.WebTestCase):
         """Asserts that a failed delete call raises an exception."""
         # create a valid http response with a failure status code.
         fake_response = requests.Response()
-        fake_response.status_code = requests.codes.unauthorized
+        fake_response.status_code = requests.codes.unavailable
         fake_response.headers = []
+        self.request_method_mock.return_value = fake_response
         resource_path = "%s/%s" % (netscaler_driver.VIPS_RESOURCE,
                                    TESTVIP_ID)
         # call method under test: create_resource
