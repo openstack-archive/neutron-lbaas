@@ -44,8 +44,7 @@ def validate_cert(certificate, private_key=None,
         for x509Pem in _split_x509s(intermediates):
             _get_x509_from_pem_bytes(x509Pem)
     if private_key:
-        pkey = _read_privatekey(private_key,
-            passphrase=private_key_passphrase)
+        pkey = _read_privatekey(private_key, passphrase=private_key_passphrase)
         ctx = SSL.Context(SSL.TLSv1_METHOD)
         ctx.use_certificate(x509)
         try:
@@ -59,7 +58,7 @@ def validate_cert(certificate, private_key=None,
 def _read_privatekey(privatekey_pem, passphrase=None):
     def cb(*args):
         if passphrase:
-            return six.b(passphrase)
+            return six.b(passphrase).encode('utf-8')
         else:
             raise exceptions.NeedsPassphrase
     return crypto.load_privatekey(crypto.FILETYPE_PEM, privatekey_pem, cb)

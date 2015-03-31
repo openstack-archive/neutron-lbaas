@@ -236,8 +236,18 @@ class TestTLSParseUtils(base.BaseTestCase):
         self.assertRaises(exceptions.NeedsPassphrase,
                           cert_parser._read_privatekey,
                           ENCRYPTED_PKCS8_CRT_KEY)
-        epkey = cert_parser._read_privatekey(ENCRYPTED_PKCS8_CRT_KEY,
+        epkey = cert_parser._read_privatekey(
+            ENCRYPTED_PKCS8_CRT_KEY,
             passphrase=ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE)
+        self.assertTrue(epkey.check())
+
+    def test_read_private_key_unicode(self):
+        self.assertRaises(exceptions.NeedsPassphrase,
+                          cert_parser._read_privatekey,
+                          ENCRYPTED_PKCS8_CRT_KEY)
+        epkey = cert_parser._read_privatekey(
+            ENCRYPTED_PKCS8_CRT_KEY,
+            passphrase=u'{0}'.format(ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
         self.assertTrue(epkey.check())
 
     def test_dump_private_key(self):
@@ -257,7 +267,7 @@ class TestTLSParseUtils(base.BaseTestCase):
 
     def test_validate_cert_and_key_match(self):
         self.assertTrue(cert_parser.validate_cert(ALT_EXT_CRT,
-            private_key=ALT_EXT_CRT_KEY))
+                                                  private_key=ALT_EXT_CRT_KEY))
         self.assertRaises(exceptions.MisMatchedKey,
                           cert_parser.validate_cert,
                           ALT_EXT_CRT, private_key=SOME_OTHER_RSA_KEY)
