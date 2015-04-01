@@ -90,6 +90,18 @@ def _split_x509s(x509Str):
                 inside_x509 = True
 
 
+def dump_private_key(private_key, private_key_passphrase=None):
+    """
+    Parses encrypted key to provide an unencrypted version
+
+    :param private_key: private key
+    :param private_key_passphrase: private key passphrase
+    :return: Unencrypted private key
+    """
+    pkey = _read_privatekey(private_key, private_key_passphrase)
+    return crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)
+
+
 def get_host_names(certificate):
     """
     Extract the host names from the Pem encoded X509 certificate

@@ -387,20 +387,23 @@ class TestHaproxyCfg(base.BaseTestCase):
         cert.get_private_key.return_value = tls.private_key
         cert.get_certificate.return_value = tls.certificate
         cert.get_intermediates.return_value = tls.intermediates
+        cert.get_private_key_passphrase.return_value = 'passphrase'
         with mock.patch.object(cert_parser, 'get_host_names') as cp:
-            cp.return_value = {'cn': 'fakeCN'}
-            self.assertEqual(tls.primary_cn,
-                             jinja_cfg._map_cert_tls_container(
-                                 cert).primary_cn)
-            self.assertEqual(tls.certificate,
-                             jinja_cfg._map_cert_tls_container(
-                                 cert).certificate)
-            self.assertEqual(tls.private_key,
-                             jinja_cfg._map_cert_tls_container(
-                                 cert).private_key)
-            self.assertEqual(tls.intermediates,
-                             jinja_cfg._map_cert_tls_container(
-                                 cert).intermediates)
+            with mock.patch.object(cert_parser, 'dump_private_key') as dp:
+                cp.return_value = {'cn': 'fakeCN'}
+                dp.return_value = 'imaPrivateKey'
+                self.assertEqual(tls.primary_cn,
+                                 jinja_cfg._map_cert_tls_container(
+                                     cert).primary_cn)
+                self.assertEqual(tls.certificate,
+                                 jinja_cfg._map_cert_tls_container(
+                                     cert).certificate)
+                self.assertEqual(tls.private_key,
+                                 jinja_cfg._map_cert_tls_container(
+                                     cert).private_key)
+                self.assertEqual(tls.intermediates,
+                                 jinja_cfg._map_cert_tls_container(
+                                     cert).intermediates)
 
     def test_build_pem(self):
         expected = 'imainter\nimainter2\nimacert\nimakey'
