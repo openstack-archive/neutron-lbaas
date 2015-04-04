@@ -128,9 +128,176 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertEmpty(self.members_client.list_members(self.pool_id))
 
     @test.attr(type='smoke')
+    def test_create_member_missing_required_field_tenant_id(self):
+        """Test if a non_admin user can create a member with tenant_id
+        missing
+        """
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member = self.members_client.create_member(self.pool_id, **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self.members_client.delete_member(self.pool_id, member['id'])
+        self.assertEmpty(self.members_client.list_members(self.pool_id))
+
+    @test.attr(type='negative')
+    def test_create_member_missing_required_field_address(self):
+        """Test create a member with missing field address"""
+        member_opts = {}
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_missing_required_field_protocol_port(self):
+        """Test create a member with missing field protocol_port"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_missing_required_field_subnet_id(self):
+        """Test create a member with missing field subnet_id """
+        member_opts = {}
+        member_opts['protocol_port'] = 80
+        member_opts['address'] = "127.0.0.1"
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
     def test_raises_BadRequest_when_missing_attrs_during_member_create(self):
         """Test failure on missing attributes on member create."""
         member_opts = {}
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_invalid_tenant_id(self):
+        """Test create member with invalid tenant_id"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['tenant_id'] = "$232!$pw"
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_invalid_address(self):
+        """Test create member with invalid address"""
+        member_opts = {}
+        member_opts['address'] = "127$%<ki"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_invalid_protocol_port(self):
+        """Test create member with invalid protocol_port"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 8090000
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_invalid_subnet_id(self):
+        """Test create member with invalid subnet_id"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = "45k%^"
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_invalid_admin_state_up(self):
+        """Test create member with invalid admin_state_up"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['admin_state_up'] = "$232!$pw"
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_invalid_weight(self):
+        """Test create member with invalid weight"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['weight'] = "$232!$pw"
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_empty_tenant_id(self):
+        """Test create member with an empty tenant_id"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['tenant_id'] = ""
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_empty_address(self):
+        """Test create member with an empty address"""
+        member_opts = {}
+        member_opts['address'] = ""
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_empty_protocol_port(self):
+        """Test create member with an empty protocol_port"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = ""
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_empty_subnet_id(self):
+        """Test create member with empty subnet_id"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = ""
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_empty_admin_state_up(self):
+        """Test create member with an empty admin_state_up"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['admin_state_up'] = ""
+        self.assertRaises(ex.BadRequest, self.members_client.create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
+    def test_create_member_empty_weight(self):
+        """Test create member with an empty weight"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['weight'] = ""
         self.assertRaises(ex.BadRequest, self.members_client.create_member,
                           self.pool_id, **member_opts)
 
@@ -147,7 +314,7 @@ class MemberTestJSON(base.BaseTestCase):
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
-    @test.attr(ttype='smoke')
+    @test.attr(type='smoke')
     def test_update_member(self):
         """Test that we can update a member."""
         member_opts = self.build_member_opts()
@@ -166,7 +333,119 @@ class MemberTestJSON(base.BaseTestCase):
         # And make sure they stick
         self.assertEqual(False, member["admin_state_up"])
         self.assertEqual(10, member["weight"])
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
 
+    @test.attr(type='smoke')
+    def test_update_member_missing_admin_state_up(self):
+        """Test that we can update a member with missing admin_state_up."""
+        member_opts = self.build_member_opts()
+        member = self.members_client.create_member(self.pool_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = member["id"]
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        member_opts = {"weight": 10}
+        member = self.members_client.update_member(self.pool_id, member_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(10, member["weight"])
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
+
+    @test.attr(type='smoke')
+    def test_update_member_missing_weight(self):
+        """Test that we can update a member with missing weight."""
+        member_opts = self.build_member_opts()
+        member = self.members_client.create_member(self.pool_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = member["id"]
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        member_opts = {"admin_state_up": False}
+        member = self.members_client.update_member(self.pool_id, member_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self.assertEqual(False, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
+
+    @test.attr(type='negative')
+    def test_update_member_invalid_admin_state_up(self):
+        """Test that we can update a member with empty admin_state_up."""
+        member_opts = self.build_member_opts()
+        member = self.members_client.create_member(self.pool_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = member["id"]
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        member_opts = {"weight": 10, "admin_state_up": "%^67"}
+        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+                          self.pool_id, member_id, **member_opts)
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
+
+    @test.attr(type='negative')
+    def test_update_member_invalid_weight(self):
+        """Test that we can update a member with an empty weight."""
+        member_opts = self.build_member_opts()
+        member = self.members_client.create_member(self.pool_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = member["id"]
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        member_opts = {"admin_state_up": False, "weight": "*^$df"}
+        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+                          self.pool_id, member_id, **member_opts)
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
+
+    @test.attr(type='negative')
+    def test_update_member_empty_admin_state_up(self):
+        """Test that we can update a member with empty admin_state_up."""
+        member_opts = self.build_member_opts()
+        member = self.members_client.create_member(self.pool_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = member["id"]
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        member_opts = {"weight": 10, "admin_state_up": ""}
+        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+                          self.pool_id, member_id, **member_opts)
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
+
+    @test.attr(type='negative')
+    def test_update_member_empty_weight(self):
+        """Test that we can update a member with an empty weight."""
+        member_opts = self.build_member_opts()
+        member = self.members_client.create_member(self.pool_id,
+                                                   **member_opts)
+        self._wait_for_load_balancer_status(self.load_balancer_id)
+        member_id = member["id"]
+        self.assertEqual(True, member["admin_state_up"])
+        self.assertEqual(1, member["weight"])
+        member_opts = {"admin_state_up": False, "weight": ""}
+        self.assertRaises(ex.BadRequest, self.members_client.update_member,
+                          self.pool_id, member_id, **member_opts)
+        self.members_client.delete_member(self.pool_id, member["id"])
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
+
+    @test.attr(type='negative')
     def test_raises_immutable_when_updating_immutable_attrs_on_member(self):
         """Test failure on immutable attribute on member create."""
         member_opts = self.build_member_opts()
@@ -179,7 +458,10 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self.members_client.update_member,
                           self.pool_id, member_id, **member_opts)
         self.members_client.delete_member(self.pool_id, member_id)
+        members = self.members_client.list_members(self.pool_id)
+        self.assertEmpty(members)
 
+    @test.attr(type='negative')
     def test_raises_exception_on_invalid_attr_on_create(self):
         """Test failure on invalid attribute on member create."""
         member_opts = self.build_member_opts()
@@ -187,6 +469,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self.members_client.create_member,
                           self.pool_id, **member_opts)
 
+    @test.attr(type='negative')
     def test_raises_exception_on_invalid_attr_on_update(self):
         """Test failure on invalid attribute on member update."""
         member_opts = self.build_member_opts()
