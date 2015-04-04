@@ -226,6 +226,12 @@ class TestTLSParseUtils(base.BaseTestCase):
         self.assertTrue(cert_parser.validate_cert(ALT_EXT_CRT,
                         private_key=UNENCRYPTED_PKCS8_CRT_KEY))
 
+    def test_x509_parses_intermediates(self):
+        # Should not throw error when parsing with intermediates
+        cert_parser.validate_cert(ALT_EXT_CRT,
+                                  UNENCRYPTED_PKCS8_CRT_KEY,
+                                  intermediates=X509_IMDS)
+
     def test_read_private_key(self):
         self.assertRaises(exceptions.NeedsPassphrase,
                           cert_parser._read_privatekey,
