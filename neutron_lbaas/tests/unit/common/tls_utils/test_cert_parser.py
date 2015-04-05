@@ -240,6 +240,21 @@ class TestTLSParseUtils(base.BaseTestCase):
             passphrase=ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE)
         self.assertTrue(epkey.check())
 
+    def test_dump_private_key(self):
+        self.assertRaises(exceptions.NeedsPassphrase,
+                          cert_parser.dump_private_key,
+                          ENCRYPTED_PKCS8_CRT_KEY)
+        self.assertEqual(UNENCRYPTED_PKCS8_CRT_KEY,
+                         cert_parser.dump_private_key(
+                             ENCRYPTED_PKCS8_CRT_KEY,
+                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE
+                         ))
+        self.assertIsNot(ENCRYPTED_PKCS8_CRT_KEY,
+                         cert_parser.dump_private_key(
+                             ENCRYPTED_PKCS8_CRT_KEY,
+                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE
+                         ))
+
     def test_validate_cert_and_key_match(self):
         self.assertTrue(cert_parser.validate_cert(ALT_EXT_CRT,
             private_key=ALT_EXT_CRT_KEY))

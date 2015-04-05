@@ -182,9 +182,11 @@ def _map_cert_tls_container(cert):
     :return: mapped TLSContainer object
     """
     certificate = cert.get_certificate()
+    pkey = cert_parser.dump_private_key(cert.get_private_key(),
+                                        cert.get_private_key_passphrase())
     return data_models.TLSContainer(
         primary_cn=_get_primary_cn(certificate),
-        private_key=cert.get_private_key(),
+        private_key=pkey,
         certificate=certificate,
         intermediates=cert.get_intermediates())
 
