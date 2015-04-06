@@ -19,6 +19,7 @@ from tempest import test
 
 
 class TestHealthMonitors(base.BaseTestCase):
+
     """
     Tests the following operations in the Neutron-LBaaS API using the
     REST client for Health Monitors:
@@ -42,18 +43,12 @@ class TestHealthMonitors(base.BaseTestCase):
         cls.load_balancer = cls._create_load_balancer(
             tenant_id=cls.subnet.get('tenant_id'),
             vip_subnet_id=cls.subnet.get('id'))
-        cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
-        cls.listener = cls.listeners_client.create_listener(
+        cls.listener = cls._create_listener(
             loadbalancer_id=cls.load_balancer.get('id'),
             protocol='HTTP', protocol_port=80)
-        cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
-        cls.pool = cls.pools_client.create_pool(
+        cls.pool = cls._create_pool(
             protocol='HTTP', lb_algorithm='ROUND_ROBIN',
             listener_id=cls.listener.get('id'))
-        cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
-
-    def _create_healthmonitor(self, **kwargs):
-        return self.health_monitors_client.create_health_monitor(**kwargs)
 
     @test.attr(type='smoke')
     def test_list_health_monitors_empty(self):
@@ -62,122 +57,116 @@ class TestHealthMonitors(base.BaseTestCase):
 
     @test.attr(type='smoke')
     def test_list_health_monitors_one(self):
-        hm = self._create_healthmonitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
+                                         timeout=5,
+                                         pool_id=self.pool.get('id'))
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertIn(hm, hm_list)
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(hm.get('id'))
+        self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='smoke')
     def test_list_health_monitors_two(self):
-        hm1 = self._create_healthmonitor(
+        hm1 = self._create_health_monitor(
             type='HTTP', delay=3, max_retries=10, timeout=5,
             pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
-        new_listener = self.listeners_client.create_listener(
+        new_listener = self._create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
             protocol='HTTP', protocol_port=88)
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
-        new_pool = self.pools_client.create_pool(
+        new_pool = self._create_pool(
             protocol='HTTP', lb_algorithm='ROUND_ROBIN',
             listener_id=new_listener.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
-        hm2 = self._create_healthmonitor(
+        hm2 = self._create_health_monitor(
             type='HTTP', max_retries=10, delay=3, timeout=5,
             pool_id=new_pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertEqual(2, len(hm_list))
         self.assertIn(hm1, hm_list)
         self.assertIn(hm2, hm_list)
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(hm1.get('id'))
-        self.health_monitors_client.delete_health_monitor(hm2.get('id'))
-        self.pools_client.delete_pool(new_pool.get('id'))
-        self.listeners_client.delete_listener(new_listener.get('id'))
+        self._delete_health_monitor(hm1.get('id'))
+        self._delete_health_monitor(hm2.get('id'))
+        self._delete_pool(new_pool.get('id'))
+        self._delete_listener(new_listener.get('id'))
 
     @test.attr(type='smoke')
     def test_get_health_monitor(self):
-        hm = self._create_healthmonitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
+                                         timeout=5,
+                                         pool_id=self.pool.get('id'))
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(hm.get('id'))
+        self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='smoke')
     def test_create_health_monitor(self):
-        new_hm = self._create_healthmonitor(
+        new_hm = self._create_health_monitor(
             type='HTTP', delay=3, max_retries=10, timeout=5,
             pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         hm = self.health_monitors_client.get_health_monitor(new_hm.get('id'))
         self.assertEqual(new_hm, hm)
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(new_hm.get('id'))
+        self._delete_health_monitor(new_hm.get('id'))
 
     @test.attr(type='smoke')
     def test_create_health_monitor_missing_attribute(self):
-        self.assertRaises(ex.BadRequest, self._create_healthmonitor,
+        self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='HTTP', delay=3, max_retries=10,
                           pool_id=self.pool.get('id'))
 
     @test.attr(type='smoke')
     def test_create_health_monitor_invalid_attribute(self):
-        self.assertRaises(ex.BadRequest, self._create_healthmonitor,
+        self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='HTTP', delay=3, max_retries='twenty one',
                           pool_id=self.pool.get('id'))
 
     @test.attr(type='smoke')
     def test_create_health_monitor_extra_attribute(self):
-        self.assertRaises(ex.BadRequest, self._create_healthmonitor,
+        self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='HTTP', delay=3, max_retries=10,
                           pool_id=self.pool.get('id'), subnet_id=10)
 
     @test.attr(type='smoke')
     def test_update_health_monitor(self):
-        hm = self._create_healthmonitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
+                                         timeout=5,
+                                         pool_id=self.pool.get('id'))
         max_retries = 1
-        new_hm = self.health_monitors_client.update_health_monitor(
+        new_hm = self._update_health_monitor(
             hm.get('id'), max_retries=max_retries)
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertEqual(max_retries, new_hm.get('max_retries'))
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(new_hm.get('id'))
+        self._delete_health_monitor(new_hm.get('id'))
 
     @test.attr(type='smoke')
     def test_udpate_health_monitor_invalid_attribute(self):
-        hm = self._create_healthmonitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
+                                         timeout=5,
+                                         pool_id=self.pool.get('id'))
         self.assertRaises(ex.BadRequest,
-                          self.health_monitors_client.update_health_monitor,
+                          self._update_health_monitor,
                           hm.get('id'), max_retries='blue')
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(hm.get('id'))
+        self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_extra_attribute(self):
-        hm = self._create_healthmonitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
+                                         timeout=5,
+                                         pool_id=self.pool.get('id'))
         self.assertRaises(ex.BadRequest,
-                          self.health_monitors_client.update_health_monitor,
+                          self._update_health_monitor,
                           hm.get('id'), protocol='UDP')
         # cleanup test
-        self.health_monitors_client.delete_health_monitor(hm.get('id'))
+        self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='smoke')
     def test_delete_health_monitor(self):
-        hm = self._create_healthmonitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
-        self.health_monitors_client.delete_health_monitor(hm.get('id'))
+        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
+                                         timeout=5,
+                                         pool_id=self.pool.get('id'))
+        self._delete_health_monitor(hm.get('id'))
         self.assertRaises(ex.NotFound,
                           self.health_monitors_client.get_health_monitor,
                           hm.get('id'))

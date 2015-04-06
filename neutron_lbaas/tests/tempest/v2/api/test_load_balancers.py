@@ -72,7 +72,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertIn(self.load_balancer, load_balancers)
         self.assertIn(new_load_balancer, load_balancers)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
-        self.load_balancers_client.delete_load_balancer(new_load_balancer_id)
+        self._delete_load_balancer(new_load_balancer_id)
 
     @test.attr(type='smoke')
     def test_get_load_balancer(self):
@@ -91,13 +91,14 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             new_load_balancer_id)
         self.assertEqual(new_load_balancer, load_balancer)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
-        self.load_balancers_client.delete_load_balancer(new_load_balancer_id)
+        self._delete_load_balancer(new_load_balancer_id)
 
     @test.attr(type='smoke')
     def test_create_load_balancer_missing_field(self):
         """Test create load balancer with a missing required field"""
         self.assertRaises(exceptions.BadRequest,
                           self.load_balancers_client.create_load_balancer,
+                          wait=False,
                           tenant_id=self.subnet['tenant_id'])
 
     @test.attr(type='smoke')
@@ -105,6 +106,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         """Test create load balancer with an invalid vip subnet id"""
         self.assertRaises(exceptions.BadRequest,
                           self.load_balancers_client.create_load_balancer,
+                          wait=False,
                           vip_subnet_id="abc123")
 
     @test.attr(type='smoke')
@@ -112,6 +114,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         """Test create load balancer with an invalid tenant id"""
         self.assertRaises(exceptions.BadRequest,
                           self.load_balancers_client.create_load_balancer,
+                          wait=False,
                           tenant_id="&^%123")
 
     @test.attr(type='smoke')
@@ -119,6 +122,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         """Test create a load balancer with an extra, incorrect field"""
         self.assertRaises(exceptions.BadRequest,
                           self.load_balancers_client.create_load_balancer,
+                          wait=False,
                           tenant_id=self.subnet['tenant_id'],
                           vip_subnet_id=self.subnet['id'],
                           protocol_port=80)
@@ -126,36 +130,38 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_load_balancer(self):
         """Test update load balancer"""
-        self.load_balancers_client.update_load_balancer(self.load_balancer_id,
-                                                        name='new_name')
-        self._wait_for_load_balancer_status(self.load_balancer_id)
+        self._update_load_balancer(self.load_balancer_id,
+                                   name='new_name')
         load_balancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         self.assertEqual(load_balancer.get('name'), 'new_name')
-        self.load_balancers_client.delete_load_balancer(self.load_balancer_id)
+        self._delete_load_balancer(self.load_balancer_id)
 
     @test.attr(type='smoke')
     def test_update_load_balancer_invalid_admin_state_up(self):
         """Test update load balancer with an invalid admin_state_up"""
         self.assertRaises(exceptions.BadRequest,
-                          self.load_balancers_client.update_load_balancer,
+                          self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
+                          wait=False,
                           admin_state_up="abc123")
 
     @test.attr(type='smoke')
     def test_update_load_balancer_invalid_tenant_id(self):
         """Test update load balancer with an invalid tenant id"""
         self.assertRaises(exceptions.BadRequest,
-                          self.load_balancers_client.update_load_balancer,
+                          self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
+                          wait=False,
                           tenant_id="&^%123")
 
     @test.attr(type='smoke')
     def test_update_load_balancer_incorrect_attribute(self):
         """Test update a load balancer with an extra, invalid attribute"""
         self.assertRaises(exceptions.BadRequest,
-                          self.load_balancers_client.update_load_balancer,
+                          self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
+                          wait=False,
                           name="lb_name",
                           description="lb_name_description",
                           admin_state_up=True,
@@ -191,7 +197,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             new_load_balancer_id)
         self.assertEqual(new_load_balancer, load_balancer)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
-        self.load_balancers_client.delete_load_balancer(new_load_balancer_id)
+        self._delete_load_balancer(new_load_balancer_id)
         self.assertRaises(exceptions.NotFound,
                           self.load_balancers_client.get_load_balancer,
                           new_load_balancer_id)

@@ -23,6 +23,7 @@ PROTOCOL_PORT = 80
 
 
 class TestPools(base.BaseTestCase):
+
     """
     Tests the following operations in the Neutron-LBaaS API using the
     REST client for Pools:
@@ -46,30 +47,27 @@ class TestPools(base.BaseTestCase):
         cls.load_balancer = cls._create_load_balancer(
             tenant_id=cls.subnet.get('tenant_id'),
             vip_subnet_id=cls.subnet.get('id'))
-        cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
 
     def increment_protocol_port(self):
         global PROTOCOL_PORT
         PROTOCOL_PORT += 1
 
-    def _create_pool(self, protocol=None, lb_algorithm=None, listener_id=None,
-                     **kwargs):
+    def _prepare_and_create_pool(self, protocol=None, lb_algorithm=None,
+                                 listener_id=None, **kwargs):
         self.increment_protocol_port()
         if not protocol:
             protocol = 'HTTP'
         if not lb_algorithm:
             lb_algorithm = 'ROUND_ROBIN'
         if not listener_id:
-            listener = self.listeners_client.create_listener(
+            listener = self._create_listener(
                 loadbalancer_id=self.load_balancer.get('id'),
                 protocol='HTTP', protocol_port=PROTOCOL_PORT)
             listener_id = listener.get('id')
-            self._wait_for_load_balancer_status(self.load_balancer.get('id'))
-        response = self.pools_client.create_pool(protocol=protocol,
-                                                 lb_algorithm=lb_algorithm,
-                                                 listener_id=listener_id,
-                                                 **kwargs)
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        response = self._create_pool(protocol=protocol,
+                                     lb_algorithm=lb_algorithm,
+                                     listener_id=listener_id,
+                                     **kwargs)
         return response
 
     @test.attr(type='smoke')
@@ -81,59 +79,59 @@ class TestPools(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_list_pools_one(self):
         """Test get pools with one pool"""
-        new_pool = self._create_pool()
+        new_pool = self._prepare_and_create_pool()
         new_pool = self.pools_client.get_pool(new_pool['id'])
         pools = self.pools_client.list_pools()
         self.assertEqual(1, len(pools))
         self.assertIn(new_pool, pools)
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_list_pools_two(self):
         """Test get pools with two pools"""
-        new_pool1 = self._create_pool()
-        new_pool2 = self._create_pool()
+        new_pool1 = self._prepare_and_create_pool()
+        new_pool2 = self._prepare_and_create_pool()
         pools = self.pools_client.list_pools()
         self.assertEqual(2, len(pools))
         self.assertIn(new_pool1, pools)
         self.assertIn(new_pool2, pools)
-        self.pools_client.delete_pool(new_pool1.get('id'))
-        self.pools_client.delete_pool(new_pool2.get('id'))
+        self._delete_pool(new_pool1.get('id'))
+        self._delete_pool(new_pool2.get('id'))
 
     @test.attr(type='smoke')
     def test_get_pool(self):
         """Test get pool"""
-        new_pool = self._create_pool()
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_create_pool(self):
         """Test create pool"""
-        new_pool = self._create_pool()
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_create_pool_missing_field(self):
         """Test create pool with a missing required field"""
-        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+        self.assertRaises(ex.BadRequest, self._create_pool,
                           protocol='HTTP',
                           lb_algorithm='ROUND_ROBIN')
 
     @test.attr(type='smoke')
     def test_create_pool_invalid_protocol(self):
         """Test create pool with an invalid protocol"""
-        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+        self.assertRaises(ex.BadRequest, self._create_pool,
                           protocol='UDP',
                           lb_algorithm='ROUND_ROBIN')
 
     @test.attr(type='smoke')
     def test_create_pool_incorrect_attribute(self):
         """Test create a pool with an extra, incorrect field"""
-        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+        self.assertRaises(ex.BadRequest, self._create_pool,
                           protocol='HTTP',
                           lb_algorithm='ROUND_ROBIN',
                           protocol_port=80)
@@ -143,7 +141,7 @@ class TestPools(base.BaseTestCase):
         """Test create a pool with an incorrect type value
         for session persistence
         """
-        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+        self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence={'type': 'UNSUPPORTED'},
                           protocol='HTTP',
                           lb_algorithm='ROUND_ROBIN')
@@ -151,28 +149,28 @@ class TestPools(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_create_pool_with_session_persistence_http_cookie(self):
         """Test create a pool with session_persistence type=HTTP_COOKIE"""
-        new_pool = self._create_pool(
-                        session_persistence={'type': 'HTTP_COOKIE'})
+        new_pool = self._prepare_and_create_pool(
+            session_persistence={'type': 'HTTP_COOKIE'})
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_create_pool_with_session_persistence_app_cookie(self):
         """Test create a pool with session_persistence type=APP_COOKIE"""
-        new_pool = self._create_pool(
-                        session_persistence={'type': 'APP_COOKIE',
-                                             'cookie_name': 'sessionId'})
+        new_pool = self._prepare_and_create_pool(
+            session_persistence={'type': 'APP_COOKIE',
+                                 'cookie_name': 'sessionId'})
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_create_pool_with_session_persistence_redundant_cookie_name(self):
         """Test create a pool with session_persistence with cookie_name
         for type=HTTP_COOKIE
         """
-        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+        self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence={'type': 'HTTP_COOKIE',
                                                'cookie_name': 'sessionId'},
                           protocol='HTTP',
@@ -183,7 +181,7 @@ class TestPools(base.BaseTestCase):
         """Test create a pool with session_persistence without
         cookie_name for type=APP_COOKIE
         """
-        self.assertRaises(ex.BadRequest, self.pools_client.create_pool,
+        self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence={'type': 'APP_COOKIE'},
                           protocol='HTTP',
                           lb_algorithm='ROUND_ROBIN')
@@ -191,46 +189,45 @@ class TestPools(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_pool(self):
         """Test update pool"""
-        new_pool = self._create_pool()
+        new_pool = self._prepare_and_create_pool()
         desc = 'testing update with new description'
-        pool = self.pools_client.update_pool(new_pool.get('id'),
-                                             description=desc)
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
+        pool = self._update_pool(new_pool.get('id'),
+                                 description=desc)
         self.assertEqual(desc, pool.get('description'))
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_update_pool_invalid_attribute(self):
         """Test update pool with an invalid attribute"""
-        new_pool = self._create_pool()
-        self.assertRaises(ex.BadRequest, self.pools_client.update_pool,
+        new_pool = self._prepare_and_create_pool()
+        self.assertRaises(ex.BadRequest, self._update_pool,
                           new_pool.get('id'), lb_algorithm='ROUNDED')
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_update_pool_incorrect_attribute(self):
         """Test update a pool with an extra, incorrect field"""
-        new_pool = self._create_pool()
-        self.assertRaises(ex.BadRequest, self.pools_client.update_pool,
+        new_pool = self._prepare_and_create_pool()
+        self.assertRaises(ex.BadRequest, self._update_pool,
                           new_pool.get('id'), protocol='HTTPS')
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_delete_pool(self):
         """Test delete pool"""
-        new_pool = self._create_pool()
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
-        self.pools_client.delete_pool(new_pool.get('id'))
+        self._delete_pool(new_pool.get('id'))
         self.assertRaises(ex.NotFound, self.pools_client.get_pool,
                           new_pool.get('id'))
 
     @test.attr(type='smoke')
     def test_delete_invalid_pool(self):
         """Test delete pool that doesn't exist"""
-        new_pool = self._create_pool()
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
-        self.pools_client.delete_pool(new_pool.get('id'))
-        self.assertRaises(ex.NotFound, self.pools_client.delete_pool,
+        self._delete_pool(new_pool.get('id'))
+        self.assertRaises(ex.NotFound, self._delete_pool,
                           new_pool.get('id'))
