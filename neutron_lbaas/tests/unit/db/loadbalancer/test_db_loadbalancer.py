@@ -24,7 +24,7 @@ from neutron.db import servicetype_db as sdb
 from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
-from neutron.tests.unit import test_db_plugin
+from neutron.tests.unit.db import test_db_base_plugin_v2
 from oslo_config import cfg
 import testtools
 import webob.exc
@@ -200,8 +200,11 @@ class LoadBalancerTestMixin(object):
         if not fmt:
             fmt = self.fmt
 
-        with test_db_plugin.optional_ctx(subnet, self.subnet) as tmp_subnet:
-            with test_db_plugin.optional_ctx(pool, self.pool) as tmp_pool:
+        with test_db_base_plugin_v2.optional_ctx(
+            subnet, self.subnet) as tmp_subnet:
+            with test_db_base_plugin_v2.optional_ctx(
+                pool, self.pool) as tmp_pool:
+
                 pool_id = tmp_pool['pool']['id']
                 res = self._create_vip(fmt,
                                        name,

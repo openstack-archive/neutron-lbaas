@@ -15,12 +15,12 @@
 
 from neutron import context
 from neutron import quota
-from neutron.tests.unit import test_api_v2
+from neutron.tests.unit.api.v2 import test_base
 from oslo_config import cfg
 
 from neutron_lbaas.tests import base
 
-_get_path = test_api_v2._get_path
+_get_path = test_base._get_path
 
 
 class LBaaSQuotaExtensionTestCase(base.QuotaExtensionTestCase):

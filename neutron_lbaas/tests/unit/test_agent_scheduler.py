@@ -25,10 +25,10 @@ from neutron.db import servicetype_db as st_db
 from neutron.extensions import agent
 from neutron import manager
 from neutron.plugins.common import constants as plugin_const
+from neutron.tests.unit.api import test_extensions
 import neutron.tests.unit.extensions
-from neutron.tests.unit.openvswitch import test_agent_scheduler
-from neutron.tests.unit import test_agent_ext_plugin
-from neutron.tests.unit import test_extensions
+from neutron.tests.unit.extensions import test_agent
+from neutron.tests.unit.plugins.openvswitch import test_agent_scheduler
 from oslo_config import cfg
 from oslo_utils import timeutils
 from webob import exc
@@ -63,7 +63,7 @@ class AgentSchedulerTestMixIn(test_agent_scheduler.AgentSchedulerTestMixIn):
                                   admin_context=admin_context)
 
 
-class LBaaSAgentSchedulerTestCase(test_agent_ext_plugin.AgentDBTestMixIn,
+class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                                   AgentSchedulerTestMixIn,
                                   test_db_loadbalancerv2.LbaasTestMixin,
                                   base.NeutronDbPluginV2TestCase):
@@ -76,13 +76,13 @@ class LBaaSAgentSchedulerTestCase(test_agent_ext_plugin.AgentDBTestMixIn,
         if lbaas_agents:
             lbaas_hosta = {
                 'binary': 'neutron-loadbalancer-agent',
-                'host': test_agent_ext_plugin.LBAAS_HOSTA,
+                'host': test_agent.LBAAS_HOSTA,
                 'topic': 'LOADBALANCER_AGENT',
                 'configurations': {'device_drivers': [
                     plugin_driver.HaproxyOnHostPluginDriver.device_driver]},
                 'agent_type': lb_const.AGENT_TYPE_LOADBALANCERV2}
             lbaas_hostb = copy.deepcopy(lbaas_hosta)
-            lbaas_hostb['host'] = test_agent_ext_plugin.LBAAS_HOSTB
+            lbaas_hostb['host'] = test_agent.LBAAS_HOSTB
             callback = agents_db.AgentExtRpcCallback()
             callback.report_state(self.adminContext,
                                   agent_state={'agent_state': lbaas_hosta},

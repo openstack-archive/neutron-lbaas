@@ -15,9 +15,9 @@
 #
 
 from neutron.tests import base as n_base
-from neutron.tests.unit import test_api_v2_extension
-from neutron.tests.unit import test_db_plugin
-from neutron.tests.unit import test_quota_ext
+from neutron.tests.unit.db import test_db_base_plugin_v2
+from neutron.tests.unit.extensions import base as ext_base
+from neutron.tests.unit.extensions import test_quotasv2
 from neutron.tests.unit import testlib_api
 from testtools import matchers
 
@@ -26,7 +26,9 @@ class BaseTestCase(n_base.BaseTestCase):
     pass
 
 
-class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
+class NeutronDbPluginV2TestCase(
+    test_db_base_plugin_v2.NeutronDbPluginV2TestCase):
+
     def new_list_request(self, resource, fmt=None, params=None, id=None,
                          subresource=None):
         return self._req(
@@ -177,9 +179,9 @@ class NeutronDbPluginV2TestCase(test_db_plugin.NeutronDbPluginV2TestCase):
         self.assertEqual(expected_res, [n['id'] for n in item_res])
 
 
-class ExtensionTestCase(test_api_v2_extension.ExtensionTestCase):
+class ExtensionTestCase(ext_base.ExtensionTestCase):
     pass
 
 
-class QuotaExtensionTestCase(test_quota_ext.QuotaExtensionTestCase):
+class QuotaExtensionTestCase(test_quotasv2.QuotaExtensionTestCase):
     pass

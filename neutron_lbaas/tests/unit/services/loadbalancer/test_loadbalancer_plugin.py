@@ -19,7 +19,7 @@ import mock
 from neutron.api.v2 import attributes as attr
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
-from neutron.tests.unit import test_api_v2
+from neutron.tests.unit.api.v2 import test_base
 from webob import exc
 
 from neutron_lbaas.extensions import loadbalancer
@@ -28,7 +28,7 @@ from neutron_lbaas.tests import base
 
 
 _uuid = uuidutils.generate_uuid
-_get_path = test_api_v2._get_path
+_get_path = test_base._get_path
 
 
 class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
@@ -831,8 +831,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
     def test_pool_member_delete(self):
         entity_id = _uuid()
         res = self.api.delete(
-            test_api_v2._get_path('lbaas/pools/pid1/members',
-                                  id=entity_id, fmt=self.fmt))
+            test_base._get_path('lbaas/pools/pid1/members',
+                                id=entity_id, fmt=self.fmt))
         delete_entity = getattr(self.plugin.return_value,
                                 "delete_pool_member")
         delete_entity.assert_called_with(mock.ANY, entity_id,
@@ -949,8 +949,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
     def test_health_monitor_delete(self):
         entity_id = _uuid()
         res = self.api.delete(
-            test_api_v2._get_path('lbaas/healthmonitors',
-                                  id=entity_id, fmt=self.fmt))
+            test_base._get_path('lbaas/healthmonitors',
+                                id=entity_id, fmt=self.fmt))
         delete_entity = getattr(self.plugin.return_value,
                                 "delete_healthmonitor")
         delete_entity.assert_called_with(mock.ANY, entity_id)
