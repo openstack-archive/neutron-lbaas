@@ -226,6 +226,7 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
         status = getattr(obj, 'status', None)
 
         if status == constants.PENDING_DELETE:
+            id = getattr(obj, 'id', None)
             raise loadbalancer.StateInvalid(id=id, state=status)
 
     ########################################################
