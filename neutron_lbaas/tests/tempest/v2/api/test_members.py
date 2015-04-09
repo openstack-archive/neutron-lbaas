@@ -169,7 +169,6 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.skip_because(bug="1441512")
     @test.attr(type='negative')
     def test_create_member_invalid_tenant_id(self):
         """Test create member with invalid tenant_id"""
@@ -233,7 +232,6 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.skip_because(bug="1441512")
     @test.attr(type='negative')
     def test_create_member_empty_tenant_id(self):
         """Test create member with an empty tenant_id"""

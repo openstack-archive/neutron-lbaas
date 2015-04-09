@@ -206,7 +206,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.skip_because(bug="1441512")
     @test.attr(type='negative')
     def test_create_listener_invalid_tenant_id(self):
         """Test create listener with an invalid tenant id"""
@@ -303,9 +302,8 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.skip_because(bug="1441512")
     @test.attr(type='negative')
-    def test_create_listener_invalid_empty_tenant_id(self):
+    def test_create_listener_empty_tenant_id(self):
         """Test create listener with an empty tenant id"""
         self.assertRaises(exceptions.BadRequest,
                           self._create_listener,
