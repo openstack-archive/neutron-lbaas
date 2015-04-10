@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.common import log as call_log
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 
 from neutron_lbaas.drivers import driver_base
 
@@ -122,11 +122,11 @@ class RadwareLBaaSBaseV2Driver(driver_base.LoadBalancerBaseDriver):
 
 class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
 
-    @call_log.log
+    @log_helpers.log_method_call
     def create(self, context, lb):
         self.successful_completion(context, lb)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def update(self, context, old_lb, lb):
         if self.driver.workflow_exists(old_lb):
             self.driver.execute_workflow(
@@ -134,12 +134,12 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         else:
             self.successful_completion(context, lb)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def delete(self, context, lb):
         self.driver.remove_workflow(
             context, self, lb)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def refresh(self, context, lb):
         if lb.listeners and any(listener.default_pool and
             listener.default_pool.members for listener in lb.listeners):
@@ -148,7 +148,7 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         else:
             self.successful_completion(context, lb)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def stats(self, context, lb):
         if self.driver.workflow_exists(lb):
             return self.driver.get_stats(context, lb)
@@ -158,11 +158,11 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
 
 class ListenerManager(driver_base.BaseListenerManager):
 
-    @call_log.log
+    @log_helpers.log_method_call
     def create(self, context, listener):
         self.successful_completion(context, listener)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def update(self, context, old_listener, listener):
         if self.driver.workflow_exists(old_listener.root_loadbalancer):
             self.driver.execute_workflow(
@@ -170,7 +170,7 @@ class ListenerManager(driver_base.BaseListenerManager):
         else:
             self.successful_completion(context, listener)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def delete(self, context, listener):
         if self.driver.workflow_exists(listener.root_loadbalancer):
             self.driver.execute_workflow(
@@ -182,11 +182,11 @@ class ListenerManager(driver_base.BaseListenerManager):
 
 class PoolManager(driver_base.BasePoolManager):
 
-    @call_log.log
+    @log_helpers.log_method_call
     def create(self, context, pool):
         self.successful_completion(context, pool)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def update(self, context, old_pool, pool):
         if self.driver.workflow_exists(old_pool.root_loadbalancer):
             self.driver.execute_workflow(
@@ -194,7 +194,7 @@ class PoolManager(driver_base.BasePoolManager):
         else:
             self.successful_completion(context, pool)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def delete(self, context, pool):
         if self.driver.workflow_exists(pool.root_loadbalancer):
             self.driver.execute_workflow(
@@ -206,17 +206,17 @@ class PoolManager(driver_base.BasePoolManager):
 
 class MemberManager(driver_base.BaseMemberManager):
 
-    @call_log.log
+    @log_helpers.log_method_call
     def create(self, context, member):
         self.driver.execute_workflow(
             context, self, member)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def update(self, context, old_member, member):
         self.driver.execute_workflow(
             context, self, member, old_data_model=old_member)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def delete(self, context, member):
         self.driver.execute_workflow(
             context, self, member,
@@ -225,7 +225,7 @@ class MemberManager(driver_base.BaseMemberManager):
 
 class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
-    @call_log.log
+    @log_helpers.log_method_call
     def create(self, context, hm):
         if self.driver.workflow_exists(hm.root_loadbalancer):
             self.driver.execute_workflow(
@@ -233,7 +233,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         else:
             self.successful_completion(context, hm)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def update(self, context, old_hm, hm):
         if self.driver.workflow_exists(old_hm.root_loadbalancer):
             self.driver.execute_workflow(
@@ -241,7 +241,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         else:
             self.successful_completion(context, hm)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def delete(self, context, hm):
         if self.driver.workflow_exists(hm.root_loadbalancer):
             self.driver.execute_workflow(

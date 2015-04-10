@@ -18,11 +18,11 @@ import threading
 import time
 
 from neutron.api.v2 import attributes
-from neutron.common import log as call_log
 from neutron import context
 from neutron.i18n import _LE, _LW, _LI
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 from six.moves import queue as Queue
@@ -147,7 +147,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
     def _get_wf_name(lb):
         return 'LB_' + lb.id
 
-    @call_log.log
+    @log_helpers.log_method_call
     def _verify_workflow_templates(self):
         """Verify the existence of workflows on vDirect server."""
         resource = '/api/workflowTemplate/'
@@ -168,7 +168,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 raise r_exc.WorkflowTemplateMissing(
                     workflow_template=template)
 
-    @call_log.log
+    @log_helpers.log_method_call
     def workflow_exists(self, lb):
         """Create workflow for loadbalancer instance"""
         wf_name = self._get_wf_name(lb)
@@ -181,7 +181,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             return False
         return True
 
-    @call_log.log
+    @log_helpers.log_method_call
     def _create_workflow(self, lb, lb_network_id, proxy_network_id):
         """Create workflow for loadbalancer instance"""
 
@@ -208,7 +208,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                                 service_params=service)},
             TEMPLATE_HEADER))
 
-    @call_log.log
+    @log_helpers.log_method_call
     def get_stats(self, ctx, lb):
 
         wf_name = self._get_wf_name(lb)
@@ -224,7 +224,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         LOG.debug('stats_values  response: %s ', response)
         return response['stats']
 
-    @call_log.log
+    @log_helpers.log_method_call
     def execute_workflow(self, ctx, manager, data_model,
                          old_data_model=None, delete=False):
         lb = data_model.root_loadbalancer

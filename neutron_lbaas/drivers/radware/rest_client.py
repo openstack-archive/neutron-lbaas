@@ -15,8 +15,8 @@
 import base64
 import httplib
 
-from neutron.common import log as call_log
 from neutron.i18n import _LE, _LW
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
@@ -32,7 +32,7 @@ RESP_DATA = 3
 
 class vDirectRESTClient(object):
     """REST server proxy to Radware vDirect."""
-    @call_log.log
+    @log_helpers.log_method_call
     def __init__(self,
                  server='localhost',
                  secondary_server=None,
@@ -95,7 +95,7 @@ class vDirectRESTClient(object):
         else:
             return resp
 
-    @call_log.log
+    @log_helpers.log_method_call
     def _call(self, action, resource, data, headers, binary=False):
         if resource.startswith('http'):
             uri = resource

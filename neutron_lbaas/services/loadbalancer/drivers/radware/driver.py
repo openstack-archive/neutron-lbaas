@@ -24,11 +24,11 @@ import eventlet
 eventlet.monkey_patch(thread=True)
 
 from neutron.api.v2 import attributes
-from neutron.common import log as call_log
 from neutron import context as ncontext
 from neutron.i18n import _LE, _LI, _LW
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
@@ -424,7 +424,7 @@ class LoadBalancerDriver(abstract_driver.LoadBalancerAbstractDriver):
             context, extended_vip['pool']['subnet_id'])
         return subnet['network_id']
 
-    @call_log.log
+    @log_helpers.log_method_call
     def _update_workflow(self, wf_name, action,
                          wf_params, context,
                          delete=False,
@@ -717,7 +717,7 @@ class vDirectRESTClient(object):
         else:
             return resp
 
-    @call_log.log
+    @log_helpers.log_method_call
     def _call(self, action, resource, data, headers, binary=False):
         if resource.startswith('http'):
             uri = resource

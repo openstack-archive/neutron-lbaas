@@ -22,13 +22,13 @@ from neutron.agent.common import config
 from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
 from neutron.common import exceptions
-from neutron.common import log
 from neutron import context as ncontext
 from neutron.extensions import portbindings
 from neutron.i18n import _LE, _LW
 from neutron.openstack.common import service
 from neutron.plugins.common import constants
 from oslo_config import cfg
+from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import importutils
@@ -369,7 +369,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
         self._cleanup_namespace(loadbalancer_id)
         self._remove_config_directory(loadbalancer_id)
 
-    @log.log
+    @log_helpers.log_method_call
     def periodic_tasks(self, *args):
         try:
             self._collect_and_store_stats()
