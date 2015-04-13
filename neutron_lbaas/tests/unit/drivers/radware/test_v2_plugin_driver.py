@@ -330,12 +330,14 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                 "admin_state_up": True}
                             wf_apply_params = {'parameters': {
                                 'listeners': [{
+                                    "id": l['listener']['id'],
                                     "admin_state_up": True,
                                     "protocol_port": 80,
                                     "protocol": lb_const.PROTOCOL_HTTP,
                                     "connection_limit": -1,
                                     "admin_state_up": True,
                                     "default_pool": {
+                                        "id": p['pool']['id'],
                                         "protocol": lb_const.PROTOCOL_HTTP,
                                         "lb_algorithm":
                                             "ROUND_ROBIN",
@@ -445,12 +447,14 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                 "admin_state_up": True}
                             wf_apply_params = {'parameters': {
                                 'listeners': [{
+                                    "id": l['listener']['id'],
                                     "admin_state_up": True,
                                     "protocol_port": 80,
                                     "protocol": lb_const.PROTOCOL_HTTP,
                                     "connection_limit": -1,
                                     "admin_state_up": True,
                                     "default_pool": {
+                                        "id": p['pool']['id'],
                                         "protocol": lb_const.PROTOCOL_HTTP,
                                         "lb_algorithm":
                                             "ROUND_ROBIN",
@@ -570,12 +574,14 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                     'passphrase': 'private_key_passphrase'}
                                 wf_apply_one_leg_params = {'parameters': {
                                     'listeners': [{
+                                        "id": listener['listener']['id'],
                                         "admin_state_up": True,
                                         "protocol_port": 80,
                                         "protocol":
                                         lb_const.PROTOCOL_TERMINATED_HTTPS,
                                         "connection_limit": -1,
                                         "default_pool": {
+                                            "id": pool['pool']['id'],
                                             "protocol": lb_const.PROTOCOL_HTTP,
                                             "lb_algorithm": "ROUND_ROBIN",
                                             "admin_state_up": True,
@@ -654,11 +660,13 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                 "admin_state_up": True}
                             wf_apply_one_leg_params = {'parameters': {
                                 'listeners': [{
+                                    "id": listener['listener']['id'],
                                     "admin_state_up": True,
                                     "protocol_port": 80,
                                     "protocol": "HTTP",
                                     "connection_limit": -1,
                                     "default_pool": {
+                                        "id": pool['pool']['id'],
                                         "protocol": "HTTP",
                                         "lb_algorithm": "ROUND_ROBIN",
                                         "admin_state_up": True,
@@ -747,12 +755,14 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                         "admin_state_up": True}
                                     wf_apply_full_params = {'parameters': {
                                         'listeners': [{
+                                            "id": listener['listener']['id'],
                                             "admin_state_up": True,
                                             "protocol_port": 80,
                                             "protocol": "HTTP",
                                             "connection_limit": -1,
                                             "admin_state_up": True,
                                             "default_pool": {
+                                                "id": pool['pool']['id'],
                                                 "protocol": "HTTP",
                                                 "lb_algorithm":
                                                     "ROUND_ROBIN",
