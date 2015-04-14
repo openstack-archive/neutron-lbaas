@@ -63,6 +63,10 @@ class MemberTestJSON(base.BaseTestCase):
                                     listener_id=cls.listener_id)
         cls.pool_id = cls.pool.get('id')
 
+    @classmethod
+    def resource_cleanup(cls):
+        super(MemberTestJSON, cls).resource_cleanup()
+
     @test.attr(type='smoke')
     def test_list_empty_members(self):
         """Test that pool members are empty."""
@@ -131,7 +135,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member = self._create_member(self.pool_id, **member_opts)
         self._delete_member(self.pool_id, member['id'])
         self.assertEmpty(self.members_client.list_members(self.pool_id))
@@ -141,7 +145,7 @@ class MemberTestJSON(base.BaseTestCase):
         """Test create a member with missing field address"""
         member_opts = {}
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
@@ -150,7 +154,7 @@ class MemberTestJSON(base.BaseTestCase):
         """Test create a member with missing field protocol_port"""
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
@@ -176,7 +180,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member_opts['tenant_id'] = "$232!$pw"
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
@@ -187,7 +191,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127$%<ki"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
@@ -197,7 +201,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 8090000
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
@@ -217,7 +221,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member_opts['admin_state_up'] = "$232!$pw"
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
@@ -228,7 +232,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member_opts['weight'] = "$232!$pw"
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
@@ -239,7 +243,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member_opts['tenant_id'] = ""
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
@@ -250,7 +254,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = ""
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
@@ -260,7 +264,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = ""
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
@@ -280,7 +284,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member_opts['admin_state_up'] = ""
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
@@ -291,7 +295,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {}
         member_opts['address'] = "127.0.0.1"
         member_opts['protocol_port'] = 80
-        member_opts['subnet_id'] = MemberTestJSON.subnet_id
+        member_opts['subnet_id'] = self.subnet_id
         member_opts['weight'] = ""
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
