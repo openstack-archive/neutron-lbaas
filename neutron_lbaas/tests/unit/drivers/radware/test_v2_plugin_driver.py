@@ -556,17 +556,20 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                     "gw": "255.255.255.255",
                                     'admin_state_up': True}
                                 default_tls_cert_data = {
+                                    'id': 'def1',
                                     'certificate': 'certificate',
                                     'intermediates': 'intermediates',
                                     'private_key': 'private_key',
                                     'passphrase': 'private_key_passphrase'}
                                 sni1_tls_cert_data = {
+                                    'id': 'sni1',
                                     'position': 0,
                                     'certificate': 'certificate',
                                     'intermediates': 'intermediates',
                                     'private_key': 'private_key',
                                     'passphrase': 'private_key_passphrase'}
                                 sni2_tls_cert_data = {
+                                    'id': 'sni2',
                                     'position': 1,
                                     'certificate': 'certificate',
                                     'intermediates': 'intermediates',
