@@ -53,9 +53,9 @@ PROPERTY_DEFAULTS = {'type': 'none',
                      'gw': '255.255.255.255',
                      }
 LOADBALANCER_PROPERTIES = ['vip_address', 'admin_state_up']
-LISTENER_PROPERTIES = ['protocol_port', 'protocol',
+LISTENER_PROPERTIES = ['id', 'protocol_port', 'protocol',
                        'connection_limit', 'admin_state_up']
-POOL_PROPERTIES = ['protocol', 'lb_algorithm', 'admin_state_up']
+POOL_PROPERTIES = ['id', 'protocol', 'lb_algorithm', 'admin_state_up']
 MEMBER_PROPERTIES = ['id', 'address', 'protocol_port', 'weight',
                      'admin_state_up', 'subnet', 'mask', 'gw']
 SESSION_PERSISTENCY_PROPERTIES = ['type', 'cookie_name']
