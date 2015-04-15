@@ -21,6 +21,8 @@ from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 
 
+# Mixin classes
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseManagerMixin(object):
 

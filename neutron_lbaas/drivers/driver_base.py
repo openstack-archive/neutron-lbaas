@@ -12,6 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from functools import wraps
+
+from oslo_utils import excutils
+
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers import driver_mixins
 
@@ -103,3 +107,21 @@ class BaseHealthMonitorManager(driver_mixins.BaseManagerMixin):
     @property
     def db_delete_method(self):
         return self.driver.plugin.db.delete_healthmonitor
+
+
+# A decorator for wrapping driver operations, which will automatically
+# set the neutron object's status based on whether it sees an exception
+
+def driver_op(func):
+    @wraps(func)
+    def func_wrapper(*args, **kwargs):
+        d = (func.__name__ == 'delete')
+        try:
+            r = func(*args, **kwargs)
+            args[0].successful_completion(
+                args[1], args[2], delete=d)
+            return r
+        except Exception:
+            with excutils.save_and_reraise_exception():
+                args[0].failed_completion(args[1], args[2])
+    return func_wrapper
