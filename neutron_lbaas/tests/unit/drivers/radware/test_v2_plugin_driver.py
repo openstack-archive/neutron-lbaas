@@ -27,6 +27,7 @@ from six.moves import queue as Queue
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.drivers.radware import exceptions as r_exc
 from neutron_lbaas.drivers.radware import v2_driver
+from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
@@ -390,6 +391,9 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                 self.driver_rest_call_mock.assert_any_call(
                     'DELETE', '/api/workflow/LB_' + lb_id,
                     None, None)
+                self.assertRaises(loadbalancerv2.EntityNotFound,
+                                  self.plugin_instance.get_loadbalancer,
+                                  context.get_admin_context(), lb_id)
 
     def test_lb_stats(self):
         with self.subnet(cidr='10.0.0.0/24') as s:

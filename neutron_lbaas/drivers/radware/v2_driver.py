@@ -293,7 +293,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 with excutils.save_and_reraise_exception():
                     LOG.error(_LE('Proxy port deletion for LB %s '
                                 'failed'), lb.id)
-            manager.successful_completion(ctx, lb)
+            manager.successful_completion(ctx, lb, delete=True)
         else:
             oper = OperationAttributes(
                 manager, response['uri'], lb,
