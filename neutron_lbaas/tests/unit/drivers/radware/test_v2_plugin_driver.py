@@ -150,7 +150,6 @@ class TestLBaaSDriverRestClient(TestLBaaSDriverBase):
         self.recover_mock = mock.Mock(
             side_effect=_recover_function_mock)
 
-        #self.driver = self.plugin_instance.drivers['radwarev2']
         self.orig_recover = self.driver.rest_client._recover
         self.orig_flip_servers = self.driver.rest_client._flip_servers
         self.driver.rest_client._flip_servers = self.flip_servers_mock
@@ -413,15 +412,6 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                 'active_connections': 1, 'bytes_out': 200}})
 
     def test_member_crud(self):
-        expected = {
-            "address": "10.0.1.10",
-            "protocol_port": 80,
-            "weight": 1,
-            "admin_state_up": True,
-            "tenant_id": "test-tenant",
-            "admin_state_up": True,
-            "provisioning_status": "ACTIVE",
-            "operating_status": "ONLINE"}
         with self.subnet(cidr='10.0.0.0/24') as s:
             with self.loadbalancer(subnet=s) as lb:
                 lb_id = lb['loadbalancer']['id']
@@ -429,15 +419,16 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.pool(
                         protocol=lb_const.PROTOCOL_HTTP,
                         listener_id=l['listener']['id']) as p:
-                        with self.member(
-                            no_delete=True, pool_id=p['pool']['id'],
-                            subnet=s, address='10.0.1.10') as m:
+                        with contextlib.nested(
+                            self.member(
+                                no_delete=True, pool_id=p['pool']['id'],
+                                subnet=s, address='10.0.1.10'),
+                            self.member(
+                                no_delete=True, pool_id=p['pool']['id'],
+                                subnet=s, address='10.0.1.20')) as (m1, m2):
 
-                            expected["id"] = m['member']['id']
-                            expected["pool_id"] = p['pool']['id']
-                            expected["subnet_id"] = s['subnet']['id']
-                            m_data = {
-                                "id": m['member']['id'],
+                            m1_data = {
+                                "id": m1['member']['id'],
                                 "address": "10.0.1.10",
                                 "protocol_port": 80,
                                 "weight": 1, "admin_state_up": True,
@@ -445,21 +436,31 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                 "mask": "255.255.255.255",
                                 "gw": "255.255.255.255",
                                 "admin_state_up": True}
-                            wf_apply_params = {'parameters': {
-                                'listeners': [{
+                            m2_data = {
+                                "id": m2['member']['id'],
+                                "address": "10.0.1.20",
+                                "protocol_port": 80,
+                                "weight": 1, "admin_state_up": True,
+                                "subnet": "255.255.255.255",
+                                "mask": "255.255.255.255",
+                                "gw": "255.255.255.255",
+                                "admin_state_up": True}
+                            pool_data = {
+                                "id": p['pool']['id'],
+                                "protocol": lb_const.PROTOCOL_HTTP,
+                                "lb_algorithm": "ROUND_ROBIN",
+                                "admin_state_up": True,
+                                "members": [m1_data, m2_data]}
+                            listener_data = {
                                     "id": l['listener']['id'],
                                     "admin_state_up": True,
                                     "protocol_port": 80,
                                     "protocol": lb_const.PROTOCOL_HTTP,
                                     "connection_limit": -1,
                                     "admin_state_up": True,
-                                    "default_pool": {
-                                        "id": p['pool']['id'],
-                                        "protocol": lb_const.PROTOCOL_HTTP,
-                                        "lb_algorithm":
-                                            "ROUND_ROBIN",
-                                        "admin_state_up": True,
-                                        "members": [m_data]}}],
+                                    "default_pool": pool_data}
+                            wf_apply_params = {'parameters': {
+                                'listeners': [listener_data],
                                 "admin_state_up": True,
                                 "pip_address": "10.0.0.2",
                                 "vip_address": "10.0.0.2"}}
@@ -477,25 +478,41 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                             ]
 
                             self.driver_rest_call_mock.assert_has_calls(calls)
+                            self.driver_rest_call_mock.reset_mock()
                             member = self.plugin_instance.db.get_pool_member(
                                 context.get_admin_context(),
-                                m['member']['id']).to_dict(pool=False)
-                            self.assertEqual(member, expected)
+                                m1['member']['id']).to_dict(pool=False)
 
                             member['weight'] = 2
-                            expected['weight'] = 2
+                            m1_data['weight'] = 2
                             self.plugin_instance.update_pool_member(
                                 context.get_admin_context(),
-                                m['member']['id'], p['pool']['id'],
+                                m1['member']['id'], p['pool']['id'],
                                 {'member': member})
-                            member_u = self.plugin_instance.db.get_pool_member(
-                                context.get_admin_context(),
-                                m['member']['id']).to_dict(pool=False)
-                            self.assertEqual(member_u, expected)
+                            calls = [
+                                mock.call(
+                                    'POST',
+                                    '/api/workflow/LB_' + lb_id +
+                                    '/action/apply',
+                                    wf_apply_params,
+                                    v2_driver.TEMPLATE_HEADER)
+                            ]
+                            self.driver_rest_call_mock.assert_has_calls(calls)
+                            self.driver_rest_call_mock.reset_mock()
 
                             self.plugin_instance.delete_pool_member(
                                 context.get_admin_context(),
-                                m['member']['id'], p['pool']['id'])
+                                m2['member']['id'], p['pool']['id'])
+                            pool_data["members"] = [m1_data]
+                            calls = [
+                                mock.call(
+                                    'POST',
+                                    '/api/workflow/LB_' + lb_id +
+                                    '/action/apply',
+                                    wf_apply_params,
+                                    v2_driver.TEMPLATE_HEADER)
+                            ]
+                            self.driver_rest_call_mock.assert_has_calls(calls)
                             lb = self.plugin_instance.db.get_loadbalancer(
                                 context.get_admin_context(),
                                 lb_id).to_dict(listener=False)
