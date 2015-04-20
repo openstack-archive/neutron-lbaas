@@ -329,6 +329,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                     listener.default_tls_container_id,
                     service_name='Neutron LBaaS v2 Radware provider')
                 cert_dict = {
+                    'id': listener.default_tls_container_id,
                     'certificate': default_cert.get_certificate(),
                     'intermediates': default_cert.get_intermediates(),
                     'private_key': default_cert.get_private_key(),
@@ -342,7 +343,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                         sni_container.tls_container_id,
                         service_name='Neutron LBaaS v2 Radware provider')
                     listener_dict['sni_tls_certificates'].append(
-                        {'position': sni_container.position,
+                        {'id': sni_container.tls_container_id,
+                         'position': sni_container.position,
                          'certificate': sni_cert.get_certificate(),
                          'intermediates': sni_cert.get_intermediates(),
                          'private_key': sni_cert.get_private_key(),
