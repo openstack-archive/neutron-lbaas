@@ -102,9 +102,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
         # service_base.load_drivers to correctly verify
         verify_lbaas_mutual_exclusion()
 
-        # we're at the point when extensions are not loaded yet
-        # so prevent policy from being loaded
-        ctx = ncontext.get_admin_context(load_admin_roles=False)
+        ctx = ncontext.get_admin_context()
         # stop service in case provider was removed, but resources were not
         self._check_orphan_pool_associations(ctx, self.drivers.keys())
 
@@ -411,9 +409,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         # service_base.load_drivers to correctly verify
         verify_lbaas_mutual_exclusion()
 
-        # we're at the point when extensions are not loaded yet
-        # so prevent policy from being loaded
-        ctx = ncontext.get_admin_context(load_admin_roles=False)
+        ctx = ncontext.get_admin_context()
         # stop service in case provider was removed, but resources were not
         self._check_orphan_loadbalancer_associations(ctx, self.drivers.keys())
 

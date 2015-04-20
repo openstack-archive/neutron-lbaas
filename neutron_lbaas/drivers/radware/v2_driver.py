@@ -608,7 +608,7 @@ class OperationCompletionHandler(threading.Thread):
     @staticmethod
     def _run_post_success_function(oper):
         try:
-            ctx = context.get_admin_context(load_admin_roles=False)
+            ctx = context.get_admin_context()
             if oper.post_operation_function:
                 oper.post_operation_function(ctx, oper.data_model)
             oper.manager.successful_completion(ctx, oper.data_model,
@@ -625,7 +625,7 @@ class OperationCompletionHandler(threading.Thread):
     @staticmethod
     def _run_post_failure_function(oper):
         try:
-            ctx = context.get_admin_context(load_admin_roles=False)
+            ctx = context.get_admin_context()
             oper.manager.failed_completion(ctx, oper.data_model)
             LOG.debug('Post-operation failure function completed '
                       'for operation %s',
