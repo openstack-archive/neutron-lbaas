@@ -18,6 +18,7 @@ import contextlib
 import mock
 from neutron.api import extensions
 from neutron.common import config
+from neutron.common import constants as n_constants
 from neutron.common import exceptions as n_exc
 from neutron import context
 from neutron.db import servicetype_db as sdb
@@ -1618,3 +1619,21 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 SystemExit,
                 loadbalancer_plugin.LoadBalancerPlugin
             )
+
+    def test_port_delete_via_port_api(self):
+        port = {
+            'id': 'my_port_id',
+            'device_owner': n_constants.DEVICE_OWNER_LOADBALANCER
+        }
+        ctx = context.get_admin_context()
+        port['device_owner'] = n_constants.DEVICE_OWNER_LOADBALANCER
+        myvips = [{'name': 'vip1'}]
+        with mock.patch.object(manager.NeutronManager, 'get_plugin') as gp:
+            self.plugin.get_vips = mock.Mock(return_value=myvips)
+            plugin = mock.Mock()
+            gp.return_value = plugin
+            plugin._get_port.return_value = port
+            self.assertRaises(n_exc.ServicePortInUse,
+                              self.plugin.prevent_lbaas_port_deletion,
+                              ctx,
+                              port['id'])
