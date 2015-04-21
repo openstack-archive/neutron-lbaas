@@ -21,6 +21,8 @@ import six
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.common import config
+from neutron.common import constants as n_constants
+from neutron.common import exceptions as n_exc
 from neutron import context
 import neutron.db.l3_db  # noqa
 from neutron.db import servicetype_db as sdb
@@ -31,6 +33,7 @@ from oslo_config import cfg
 import testtools
 import webob.exc
 
+from neutron import manager
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
@@ -656,6 +659,25 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                         for k in expected_values:
                             self.assertEqual(body['loadbalancer'][k],
                                              expected_values[k])
+
+    def test_port_delete_via_port_api(self):
+        port = {
+            'id': 'my_port_id',
+            'device_owner': n_constants.DEVICE_OWNER_LOADBALANCERV2
+        }
+        ctx = context.get_admin_context()
+        port['device_owner'] = n_constants.DEVICE_OWNER_LOADBALANCERV2
+        myloadbalancers = [{'name': 'lb1'}]
+        with mock.patch.object(manager.NeutronManager, 'get_plugin') as gp:
+            self.plugin.db.get_loadbalancers = mock.Mock(
+                                               return_value=myloadbalancers)
+            plugin = mock.Mock()
+            gp.return_value = plugin
+            plugin._get_port.return_value = port
+            self.assertRaises(n_exc.ServicePortInUse,
+                              self.plugin.db.prevent_lbaasv2_port_deletion,
+                              ctx,
+                              port['id'])
 
 
 class ListenerTestBase(LbaasPluginDbTestCase):
