@@ -315,10 +315,11 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         graph['pip_address'] = proxy_port_address
 
         graph['listeners'] = []
-        for listener in lb.listeners:
-            if not listener.default_pool or \
-                not listener.default_pool.members:
-                break
+        listeners = [
+            listener for listener in lb.listeners
+            if listener.provisioning_status != constants.PENDING_DELETE and
+            (listener.default_pool and listener.default_pool.members)]
+        for listener in listeners:
             listener_dict = {}
             for prop in LISTENER_PROPERTIES:
                 listener_dict[prop] = getattr(
@@ -374,7 +375,10 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                     pool_dict['sessionpersistence'] = sess_pers_dict
 
                 pool_dict['members'] = []
-                for member in listener.default_pool.members:
+                members = [
+                    member for member in listener.default_pool.members
+                    if member.provisioning_status != constants.PENDING_DELETE]
+                for member in members:
                     member_dict = {}
                     for prop in MEMBER_PROPERTIES:
                         member_dict[prop] = getattr(
