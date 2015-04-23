@@ -37,6 +37,8 @@ if os.path.exists('./tests/tempest/etc/dev_tempest.conf'):
 
 class BaseTestCase(base.BaseNetworkTest):
 
+    # This class picks non-admin credentials and run the tempest tests
+
     _lbs_to_delete = []
 
     @classmethod
@@ -48,17 +50,18 @@ class BaseTestCase(base.BaseNetworkTest):
         auth_provider = mgr.get_auth_provider(credentials)
         client_args = [auth_provider, 'network', 'regionOne']
 
-        cls.load_balancers_client = \
-            load_balancers_client.LoadBalancersClientJSON(*client_args)
-        cls.listeners_client = \
-            listeners_client.ListenersClientJSON(*client_args)
+        cls.load_balancers_client = (
+            load_balancers_client.LoadBalancersClientJSON(*client_args))
+        cls.listeners_client = (
+            listeners_client.ListenersClientJSON(*client_args))
         cls.pools_client = pools_client.PoolsClientJSON(*client_args)
         cls.members_client = members_client.MembersClientJSON(*client_args)
-        cls.health_monitors_client = \
-            health_monitors_client.HealthMonitorsClientJSON(*client_args)
+        cls.health_monitors_client = (
+            health_monitors_client.HealthMonitorsClientJSON(*client_args))
 
     @classmethod
     def resource_cleanup(cls):
+
         for lb_id in cls._lbs_to_delete:
             try:
                 lb = cls.load_balancers_client.get_load_balancer_status_tree(
@@ -318,3 +321,32 @@ class BaseTestCase(base.BaseNetworkTest):
             case_name=cls.__name__
         )
         return name
+
+
+class BaseAdminTestCase(BaseTestCase):
+
+    # This class picks admin credentials and run the tempest tests
+
+    @classmethod
+    def resource_setup(cls):
+
+        super(BaseAdminTestCase, cls).resource_setup()
+        credentials_admin = cls.isolated_creds.get_admin_creds()
+        mgr_admin = tempest_clients.Manager(credentials=credentials_admin)
+        auth_provider_admin = mgr_admin.get_auth_provider(credentials_admin)
+        client_args = [auth_provider_admin, 'network', 'regionOne']
+
+        cls.load_balancers_client = (
+            load_balancers_client.LoadBalancersClientJSON(*client_args))
+        cls.listeners_client = (
+            listeners_client.ListenersClientJSON(*client_args))
+        cls.pools_client = (
+            pools_client.PoolsClientJSON(*client_args))
+        cls.members_client = (
+            members_client.MembersClientJSON(*client_args))
+        cls.health_monitors_client = (
+            health_monitors_client.HealthMonitorsClientJSON(*client_args))
+
+    @classmethod
+    def resource_cleanup(cls):
+        super(BaseAdminTestCase, cls).resource_cleanup()
