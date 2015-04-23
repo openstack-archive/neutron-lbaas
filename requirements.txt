@@ -15,7 +15,7 @@ oslo.log>=1.0.0,<1.1.0  # Apache-2.0
 oslo.messaging>=1.8.0,<1.9.0  # Apache-2.0
 oslo.serialization>=1.4.0,<1.5.0               # Apache-2.0
 oslo.utils>=1.4.0,<1.5.0                       # Apache-2.0
-python-barbicanclient>=3.0.1
+python-barbicanclient>=3.0.1,<3.1.0
 pyasn1
 pyasn1_modules
 pyOpenSSL>=0.11
