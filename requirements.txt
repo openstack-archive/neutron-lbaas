@@ -3,18 +3,18 @@
 # process, which may cause wedges in the gate later.
 pbr>=0.6,!=0.7,<1.0
 
-eventlet>=0.16.1,!=0.17.0
+eventlet>=0.17.3
 requests>=2.2.0,!=2.4.0
 netaddr>=0.7.12
 SQLAlchemy>=0.9.7,<=0.9.99
 alembic>=0.7.2
 six>=1.9.0
-oslo.config>=1.9.3,<1.10.0  # Apache-2.0
-oslo.db>=1.7.0,<1.8.0  # Apache-2.0
-oslo.log>=1.0.0,<1.1.0  # Apache-2.0
-oslo.messaging>=1.8.0,<1.9.0  # Apache-2.0
-oslo.serialization>=1.4.0,<1.5.0               # Apache-2.0
-oslo.utils>=1.4.0,<1.5.0                       # Apache-2.0
+oslo.config>=1.9.3  # Apache-2.0
+oslo.db>=1.7.0  # Apache-2.0
+oslo.log>=1.0.0  # Apache-2.0
+oslo.messaging>=1.8.0  # Apache-2.0
+oslo.serialization>=1.4.0               # Apache-2.0
+oslo.utils>=1.4.0                       # Apache-2.0
 python-barbicanclient>=3.0.1
 pyasn1
 pyasn1_modules
