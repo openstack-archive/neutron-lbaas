@@ -61,7 +61,7 @@ class TestPools(base.BaseAdminTestCase):
         if not listener_id:
             listener = self._create_listener(
                 loadbalancer_id=self.load_balancer.get('id'),
-                protocol='HTTP', protocol_port=PROTOCOL_PORT)
+                protocol='HTTP', protocol_port=PROTOCOL_PORT, **kwargs)
             listener_id = listener.get('id')
         response = self._create_pool(protocol=protocol,
                                      lb_algorithm=lb_algorithm,
