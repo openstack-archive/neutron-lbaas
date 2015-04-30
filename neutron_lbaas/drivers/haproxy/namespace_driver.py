@@ -104,7 +104,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         cleanup_namespace = kwargs.get('cleanup_namespace', False)
         delete_namespace = kwargs.get('delete_namespace', False)
         namespace = get_ns_name(loadbalancer_id)
-        pid_path = self._get_state_file_path(loadbalancer_id, 'pid')
+        pid_path = self._get_state_file_path(loadbalancer_id, 'haproxy.pid')
 
         # kill the process
         kill_pids_in_file(pid_path)
