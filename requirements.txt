@@ -4,7 +4,7 @@
 pbr>=0.6,!=0.7,<1.0
 
 eventlet>=0.17.3
-requests>=2.2.0,!=2.4.0
+requests>=2.5.2
 netaddr>=0.7.12
 SQLAlchemy>=0.9.7,<=0.9.99
 alembic>=0.7.2
