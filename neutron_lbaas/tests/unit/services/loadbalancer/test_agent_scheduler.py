@@ -73,7 +73,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
         service_plugins = {
             'lb_plugin_name': test_db_loadbalancer.DB_LB_PLUGIN_KLASS}
 
-        #default provider should support agent scheduling
+        # default provider should support agent scheduling
         cfg.CONF.set_override(
             'service_provider',
             [('LOADBALANCER:lbaas:neutron_lbaas.services.'
@@ -217,3 +217,15 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                 'fake_id',
                 expected_code=exc.HTTPForbidden.code,
                 admin_context=False)
+
+
+class LeastPoolAgentSchedulerTestCase(LBaaSAgentSchedulerTestCase):
+
+    def setUp(self):
+        # Setting LeastPoolAgentScheduler as scheduler
+        cfg.CONF.set_override(
+            'loadbalancer_pool_scheduler_driver',
+            'neutron_lbaas.services.loadbalancer.'
+            'agent_scheduler.LeastPoolAgentScheduler')
+
+        super(LeastPoolAgentSchedulerTestCase, self).setUp()
