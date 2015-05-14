@@ -22,6 +22,7 @@ from neutron.db import servicetype_db as st_db
 from neutron.extensions import agent
 from neutron import manager
 from neutron.plugins.common import constants as plugin_const
+from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
 from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.plugins.openvswitch import test_agent_scheduler
@@ -124,7 +125,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             'topic': 'LOADBALANCER_AGENT',
             'configurations': {'device_drivers': ['haproxy_ns']},
             'agent_type': constants.AGENT_TYPE_LOADBALANCER}
-        self._register_one_agent_state(lbaas_hosta)
+        helpers._register_agent(lbaas_hosta)
         with self.pool() as pool:
             lbaas_agent = self._get_lbaas_agent_hosting_pool(
                 pool['pool']['id'])
@@ -155,7 +156,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             'topic': 'LOADBALANCER_AGENT',
             'configurations': {'device_drivers': ['haproxy_ns']},
             'agent_type': constants.AGENT_TYPE_LOADBALANCER}
-        self._register_one_agent_state(lbaas_hosta)
+        helpers._register_agent(lbaas_hosta)
         is_agent_down_str = 'neutron.db.agents_db.AgentDbMixin.is_agent_down'
         with mock.patch(is_agent_down_str) as mock_is_agent_down:
             mock_is_agent_down.return_value = False
