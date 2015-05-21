@@ -1,7 +1,4 @@
-#! /bin/sh
-
-# Copyright (C) 2014 VA Linux Systems Japan K.K.
-# Copyright (C) 2014 YAMAMOTO Takashi <yamamoto at valinux co jp>
+# Copyright 2012 OpenStack Foundation
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -16,16 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# The purpose of this script is to avoid casual introduction of more
-# bash dependency.  Please consider alternatives before commiting code
-# which uses bash specific features.
 
-# Ignore comments, but include shebangs
-OBSERVED=$(grep -E '^([^#]|#!).*bash' tox.ini tools/* | wc -l)
-EXPECTED=5
-if [ ${EXPECTED} -ne ${OBSERVED} ]; then
-    echo Unexpected number of bash usages are detected.
-    echo Please read the comment in $0
-    exit 1
-fi
-exit 0
+def have_effective_read_access(path):
+    try:
+        fh = open(path, "rb")
+    except IOError:
+        return False
+    fh.close()
+    return True

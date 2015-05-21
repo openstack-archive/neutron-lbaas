@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest.common.utils import data_utils
-from tempest import exceptions as ex
-from tempest import test
+from tempest_lib.common.utils import data_utils
+from tempest_lib import decorators
+from tempest_lib import exceptions as ex
 
+from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
-
 
 PROTOCOL_PORT = 80
 
@@ -350,7 +350,7 @@ class TestPools(base.BaseTestCase):
                           tenant_id=tenant,
                           lb_algorithm='ROUND_ROBIN')
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_pool_invalid_name_field(self):
         """
@@ -362,7 +362,7 @@ class TestPools(base.BaseTestCase):
                           lb_algorithm='ROUND_ROBIN',
                           name='n' * 256)
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_pool_invalid_desc_field(self):
         """
@@ -478,7 +478,7 @@ class TestPools(base.BaseTestCase):
         self.assertAlmostEqual(sess_pers, pool.get('session_persistence'))
         self._delete_pool(new_pool.get('id'))
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_pool_invalid_name(self):
         """Test update pool with invalid name"""
@@ -487,7 +487,7 @@ class TestPools(base.BaseTestCase):
                           new_pool.get('id'), name='n' * 256)
         self._delete_pool(new_pool.get('id'))
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_pool_invalid_desc(self):
         """Test update pool with invalid desc"""

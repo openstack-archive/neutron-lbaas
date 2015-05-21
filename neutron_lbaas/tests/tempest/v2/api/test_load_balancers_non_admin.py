@@ -15,12 +15,14 @@
 
 from netaddr import IPAddress
 
+from oslo_log import log as logging
+from tempest_lib.common.utils import data_utils
+from tempest_lib import decorators
+from tempest_lib import exceptions
+
+from neutron_lbaas.tests.tempest.lib import config
+from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
-from tempest.common.utils import data_utils
-from tempest import config
-from tempest import exceptions
-from tempest.openstack.common import log as logging
-from tempest import test
 
 CONF = config.CONF
 
@@ -224,7 +226,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           tenant_id="&^%123")
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_name(self):
         """Test create load balancer with an invalid name"""
@@ -235,7 +237,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           name='n' * 256)
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_description(self):
         """Test create load balancer with an invalid description"""
@@ -302,7 +304,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             self.load_balancer_id)
         self.assertEqual(load_balancer.get('name'), "")
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_load_balancer_invalid_name(self):
         """Test update load balancer with invalid name"""
@@ -324,7 +326,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         load_balancer_new = load_balancer['name']
         self.assertEqual(load_balancer_initial, load_balancer_new)
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_load_balancer_invalid_description(self):
         """Test update load balancer with invalid description"""
