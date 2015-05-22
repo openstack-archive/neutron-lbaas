@@ -2178,7 +2178,7 @@ class LbaasStatusesTest(MemberTestBase):
             health_monitor = self.deserialize(fmt, res)
             lb_dict['listeners'][-1]['pools'][-1]['health_monitor'] = {
                 'id': health_monitor['healthmonitor']['id']}
-            for i in xrange(0, 3):
+            for i in six.moves.range(0, 3):
                 address = "127.0.0.%i" % oct4
                 oct4 += 1
                 res = self._create_member(fmt, pool_id, address, port,

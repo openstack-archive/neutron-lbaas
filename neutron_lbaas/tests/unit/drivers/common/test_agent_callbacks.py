@@ -67,7 +67,7 @@ class TestLoadBalancerCallbacks(
         # add 3 load balancers and 2 listeners directly to DB
         # to create 2 "ready" devices and one load balancer without listener
         loadbalancers = []
-        for i in moves.xrange(3):
+        for i in moves.range(3):
             loadbalancers.append(ldb.models.LoadBalancer(
                 id=uuidutils.generate_uuid(), vip_subnet_id=self._subnet_id,
                 provisioning_status=constants.ACTIVE, admin_state_up=True,

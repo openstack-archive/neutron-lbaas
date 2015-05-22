@@ -277,5 +277,5 @@ class TestTLSParseUtils(base.BaseTestCase):
         for x509Pem in cert_parser._split_x509s(X509_IMDS):
             imds.append(cert_parser._get_x509_from_pem_bytes(x509Pem))
 
-        for i in xrange(0, len(imds)):
+        for i in range(0, len(imds)):
             self.assertEqual(EXPECTED_IMD_SUBJS[i], imds[i].get_subject().CN)

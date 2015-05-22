@@ -234,7 +234,7 @@ def _expand_expected_codes(codes):
             continue
         elif '-' in code:
             low, hi = code.split('-')[:2]
-            retval.update(str(i) for i in moves.xrange(int(low), int(hi) + 1))
+            retval.update(str(i) for i in moves.range(int(low), int(hi) + 1))
         else:
             retval.add(code)
     return retval
