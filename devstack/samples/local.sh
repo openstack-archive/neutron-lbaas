@@ -16,13 +16,18 @@ source ${TOP_DIR}/stackrc
 # Destination path for installation ``DEST``
 DEST=${DEST:-/opt/stack}
 
+# Additional Variables
+IMAGE_NAME="cirros"
+SUBNET_NAME="private-subnet"
+
 if is_service_enabled nova; then
 
     # Get OpenStack demo user auth
     source ${TOP_DIR}/openrc demo demo
 
     # Create an SSH key to use for the instances
-    DEVSTACK_LBAAS_SSH_KEY_NAME=$(hostname)_DEVSTACK_LBAAS_SSH_KEY_RSA
+    HOST=$(echo $HOSTNAME | cut -d"." -f1)
+    DEVSTACK_LBAAS_SSH_KEY_NAME=${HOST}_DEVSTACK_LBAAS_SSH_KEY_RSA
     DEVSTACK_LBAAS_SSH_KEY_DIR=${TOP_DIR}
     DEVSTACK_LBAAS_SSH_KEY=${DEVSTACK_LBAAS_SSH_KEY_DIR}/${DEVSTACK_LBAAS_SSH_KEY_NAME}
     rm -f ${DEVSTACK_LBAAS_SSH_KEY}.pub ${DEVSTACK_LBAAS_SSH_KEY}
@@ -34,8 +39,14 @@ if is_service_enabled nova; then
     nova secgroup-add-rule default tcp 80 80 0.0.0.0/0
     nova secgroup-add-rule default icmp -1 -1 0.0.0.0/0
 
+    # Get Image id
+    IMAGE_ID=$(glance image-list | awk -v image=${IMAGE_NAME} '$0 ~ image {print $2}' | head -1)
+
+    # Get Network id
+    NET_ID=$(neutron subnet-show ${SUBNET_NAME} | awk '/network_id/ {print $4}')
+
     # Boot some instances
-    NOVA_BOOT_ARGS="--key-name ${DEVSTACK_LBAAS_SSH_KEY_NAME} --image $(nova image-list | awk '/ cirros-0.3.0-x86_64-disk / {print $2}') --flavor 1 --nic net-id=$(neutron net-list | awk '/ private / {print $2}')"
+    NOVA_BOOT_ARGS="--key-name ${DEVSTACK_LBAAS_SSH_KEY_NAME} --image ${IMAGE_ID} --flavor 1 --nic net-id=$NET_ID"
 
     nova boot ${NOVA_BOOT_ARGS} node1
     nova boot ${NOVA_BOOT_ARGS} node2
@@ -43,8 +54,10 @@ if is_service_enabled nova; then
     echo "Waiting ${BOOT_DELAY} seconds for instances to boot"
     sleep ${BOOT_DELAY}
 
-    IP1=$(nova show node1 | grep "private network" | awk '{print $5}')
-    IP2=$(nova show node2 | grep "private network" | awk '{print $5}')
+    # Get Instances IP Addresses
+    SUBNET_ID=$(neutron subnet-show ${SUBNET_NAME} | awk '/ id / {print $4}')
+    IP1=$(neutron port-list --device_owner compute:None -c fixed_ips | grep ${SUBNET_ID} | cut -d'"' -f8 | sed -n 1p)
+    IP2=$(neutron port-list --device_owner compute:None -c fixed_ips | grep ${SUBNET_ID} | cut -d'"' -f8 | sed -n 2p)
 
     ssh-keygen -R ${IP1}
     ssh-keygen -R ${IP2}
@@ -60,12 +73,12 @@ fi
 
 if is_service_enabled q-lbaasv2; then
 
-    neutron lbaas-loadbalancer-create --name lb1 private-subnet
+    neutron lbaas-loadbalancer-create --name lb1 ${SUBNET_NAME}
     sleep 10
     neutron lbaas-listener-create --loadbalancer lb1 --protocol HTTP --protocol-port 80 --name listener1
     sleep 10
     neutron lbaas-pool-create --lb-algorithm ROUND_ROBIN --listener listener1 --protocol HTTP --name pool1
-    neutron lbaas-member-create  --subnet private-subnet --address ${IP1} --protocol-port 80 pool1
-    neutron lbaas-member-create  --subnet private-subnet --address ${IP2} --protocol-port 80 pool1
+    neutron lbaas-member-create  --subnet ${SUBNET_NAME} --address ${IP1} --protocol-port 80 pool1
+    neutron lbaas-member-create  --subnet ${SUBNET_NAME} --address ${IP2} --protocol-port 80 pool1
 
 fi
