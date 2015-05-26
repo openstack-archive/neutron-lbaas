@@ -16,10 +16,10 @@
 from netaddr import IPAddress
 
 from neutron_lbaas.tests.tempest.v2.api import base
+from oslo_log import log as logging
 from tempest.common.utils import data_utils
 from tempest import config
 from tempest import exceptions
-from tempest.openstack.common import log as logging
 from tempest import test
 
 CONF = config.CONF

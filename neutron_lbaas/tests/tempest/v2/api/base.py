@@ -21,11 +21,11 @@ from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
 from neutron_lbaas.tests.tempest.v2.clients import pools_client
 
+from oslo_log import log as logging
 from tempest.api.network import base
 from tempest import clients as tempest_clients
 from tempest import config
 from tempest import exceptions
-from tempest.openstack.common import log as logging
 
 CONF = config.CONF
 
