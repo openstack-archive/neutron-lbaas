@@ -69,13 +69,14 @@ class TestHaproxyCfg(base.BaseTestCase):
               "    cookie SRV insert indirect nocache\n"
               "    timeout check 31\n"
               "    option httpchk GET /index.html\n"
-              "    http-check expect rstatus 405|404|500\n"
+              "    http-check expect rstatus %s\n"
               "    option forwardfor\n"
               "    server sample_member_id_1 10.0.0.99:82"
               " weight 13 check inter 30s fall 3 cookie sample_member_id_1\n"
               "    server sample_member_id_2 10.0.0.98:82"
               " weight 13 check inter 30s fall 3 cookie "
-              "sample_member_id_2\n\n")
+              "sample_member_id_2\n\n"
+              % sample_configs.PIPED_CODES)
         with mock.patch('os.makedirs'):
             with mock.patch('os.listdir'):
                 with mock.patch.object(jinja_cfg, 'utils'):
@@ -114,12 +115,13 @@ class TestHaproxyCfg(base.BaseTestCase):
               "    cookie SRV insert indirect nocache\n"
               "    timeout check 31\n"
               "    option httpchk GET /index.html\n"
-              "    http-check expect rstatus 405|404|500\n"
+              "    http-check expect rstatus %s\n"
               "    option forwardfor\n"
               "    server sample_member_id_1 10.0.0.99:82 "
               "weight 13 check inter 30s fall 3 cookie sample_member_id_1\n"
               "    server sample_member_id_2 10.0.0.98:82 "
-              "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n")
+              "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n"
+              % sample_configs.PIPED_CODES)
         with mock.patch('os.makedirs'):
             with mock.patch('neutron.agent.linux.utils.replace_file'):
                 with mock.patch('os.listdir'):
@@ -146,12 +148,13 @@ class TestHaproxyCfg(base.BaseTestCase):
               "    cookie SRV insert indirect nocache\n"
               "    timeout check 31\n"
               "    option httpchk GET /index.html\n"
-              "    http-check expect rstatus 405|404|500\n"
+              "    http-check expect rstatus %s\n"
               "    option forwardfor\n"
               "    server sample_member_id_1 10.0.0.99:82 "
               "weight 13 check inter 30s fall 3 cookie sample_member_id_1\n"
               "    server sample_member_id_2 10.0.0.98:82 "
-              "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n")
+              "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n"
+              % sample_configs.PIPED_CODES)
         rendered_obj = jinja_cfg.render_loadbalancer_obj(
             sample_configs.sample_loadbalancer_tuple(),
             'nogroup', '/sock_path', '/v2')
@@ -172,12 +175,13 @@ class TestHaproxyCfg(base.BaseTestCase):
               "    cookie SRV insert indirect nocache\n"
               "    timeout check 31\n"
               "    option httpchk GET /index.html\n"
-              "    http-check expect rstatus 405|404|500\n"
+              "    http-check expect rstatus %s\n"
               "    option ssl-hello-chk\n"
               "    server sample_member_id_1 10.0.0.99:82 "
               "weight 13 check inter 30s fall 3 cookie sample_member_id_1\n"
               "    server sample_member_id_2 10.0.0.98:82 "
-              "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n")
+              "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n"
+              % sample_configs.PIPED_CODES)
         rendered_obj = jinja_cfg.render_loadbalancer_obj(
             sample_configs.sample_loadbalancer_tuple(proto='HTTPS'),
             'nogroup', '/sock_path', '/v2')
@@ -264,12 +268,13 @@ class TestHaproxyCfg(base.BaseTestCase):
               "    stick on src\n"
               "    timeout check 31\n"
               "    option httpchk GET /index.html\n"
-              "    http-check expect rstatus 405|404|500\n"
+              "    http-check expect rstatus %s\n"
               "    option forwardfor\n"
               "    server sample_member_id_1 10.0.0.99:82 "
               "weight 13 check inter 30s fall 3\n"
               "    server sample_member_id_2 10.0.0.98:82 "
-              "weight 13 check inter 30s fall 3\n\n")
+              "weight 13 check inter 30s fall 3\n\n"
+              % sample_configs.PIPED_CODES)
         rendered_obj = jinja_cfg.render_loadbalancer_obj(
             sample_configs.sample_loadbalancer_tuple(
                 persistence_type='SOURCE_IP'),
@@ -288,12 +293,13 @@ class TestHaproxyCfg(base.BaseTestCase):
                       "    appsession APP_COOKIE len 56 timeout 3h\n"
                       "    timeout check 31\n"
                       "    option httpchk GET /index.html\n"
-                      "    http-check expect rstatus 405|404|500\n"
+                      "    http-check expect rstatus %s\n"
                       "    option forwardfor\n"
                       "    server sample_member_id_1 10.0.0.99:82 "
                       "weight 13 check inter 30s fall 3\n"
                       "    server sample_member_id_2 10.0.0.98:82 "
-                      "weight 13 check inter 30s fall 3\n\n")
+                      "weight 13 check inter 30s fall 3\n\n"
+                      % sample_configs.PIPED_CODES)
                 rendered_obj = jinja_cfg.render_loadbalancer_obj(
                     sample_configs.sample_loadbalancer_tuple(
                         persistence_type='APP_COOKIE'),
