@@ -20,6 +20,7 @@ from neutron.extensions import portbindings
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
+import six
 from six import moves
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldb
@@ -171,7 +172,7 @@ class TestLoadBalancerCallbacks(
             db_lb = self.plugin_instance.db.get_loadbalancer(ctx, lb_id)
             func(ctx, port_id=db_lb.vip_port_id, **kwargs)
             db_port = core.get_port(ctx, db_lb.vip_port_id)
-            for k, v in expected.iteritems():
+            for k, v in six.iteritems(expected):
                 self.assertEqual(db_port[k], v)
 
     def test_plug_vip_port(self):
