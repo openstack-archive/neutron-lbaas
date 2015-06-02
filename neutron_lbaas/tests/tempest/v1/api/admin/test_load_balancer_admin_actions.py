@@ -37,7 +37,7 @@ class LoadBalancerAdminTestJSON(base.BaseAdminNetworkTest):
         cls.force_tenant_isolation = True
         manager = cls.get_client_manager()
         cls.client = manager.network_client
-        cls.tenant_id = cls.isolated_creds.get_primary_creds().tenant_id
+        cls.tenant_id = manager.credentials.tenant_id
         cls.network = cls.create_network()
         cls.subnet = cls.create_subnet(cls.network)
         cls.pool = cls.create_pool(data_utils.rand_name('pool-'),
