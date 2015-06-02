@@ -19,6 +19,9 @@ RET_PERSISTENCE = {
     'type': 'HTTP_COOKIE',
     'cookie_name': 'HTTP_COOKIE'}
 
+HASHSEED_ORDERED_CODES = list({'404', '405', '500'})
+PIPED_CODES = '|'.join(HASHSEED_ORDERED_CODES)
+
 RET_MONITOR = {
     'id': 'sample_monitor_id_1',
     'type': 'HTTP',
@@ -27,7 +30,7 @@ RET_MONITOR = {
     'max_retries': 3,
     'http_method': 'GET',
     'url_path': '/index.html',
-    'expected_codes': '405|404|500',
+    'expected_codes': PIPED_CODES,
     'admin_state_up': True}
 
 RET_MEMBER_1 = {
@@ -270,11 +273,12 @@ def sample_base_expected_config(frontend=None, backend=None):
                    "    cookie SRV insert indirect nocache\n"
                    "    timeout check 31\n"
                    "    option httpchk GET /index.html\n"
-                   "    http-check expect rstatus 405|404|500\n"
+                   "    http-check expect rstatus %s\n"
                    "    server sample_member_id_1 10.0.0.99:82 weight 13 "
                    "check inter 30s fall 3 cookie sample_member_id_1\n"
                    "    server sample_member_id_2 10.0.0.98:82 weight 13 "
-                   "check inter 30s fall 3 cookie sample_member_id_2\n")
+                   "check inter 30s fall 3 cookie sample_member_id_2\n"
+                   % PIPED_CODES)
     return ("# Configuration for test-lb\n"
             "global\n"
             "    daemon\n"
