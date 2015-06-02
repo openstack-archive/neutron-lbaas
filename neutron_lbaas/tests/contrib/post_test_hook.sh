@@ -8,6 +8,12 @@ SCRIPTS_DIR="/usr/local/jenkins/slave_scripts"
 
 testenv=${1:-"apiv2"}
 
+if [ "$testenv" = "lbaasv1" ]; then
+    testenv="apiv1"
+elif [ "$testenv" = "lbaasv2" ]; then
+    testenv="apiv2"
+fi
+
 function generate_testr_results {
     # Give job user rights to access tox logs
     sudo -H -u $owner chmod o+rw .
