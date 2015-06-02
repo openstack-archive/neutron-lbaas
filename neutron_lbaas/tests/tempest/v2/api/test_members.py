@@ -12,13 +12,14 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from neutron_lbaas.tests.tempest.v2.api import base
 
-from tempest.common.utils import data_utils
-from tempest import config
-from tempest import exceptions as ex
-from tempest.openstack.common import log as logging
-from tempest import test
+from oslo_log import log as logging
+from tempest_lib.common.utils import data_utils
+from tempest_lib import exceptions as ex
+
+from neutron_lbaas.tests.tempest.lib import config
+from neutron_lbaas.tests.tempest.lib import test
+from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
 

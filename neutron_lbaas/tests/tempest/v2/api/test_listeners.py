@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lbaas.tests.tempest.v2.api import base
+from oslo_log import log as logging
+from tempest_lib.common.utils import data_utils
+from tempest_lib import decorators
+from tempest_lib import exceptions
 
-from tempest.common.utils import data_utils
-from tempest import config
-from tempest import exceptions
-from tempest.openstack.common import log as logging
-from tempest import test
+from neutron_lbaas.tests.tempest.lib import config
+from neutron_lbaas.tests.tempest.lib import test
+from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
 
@@ -218,7 +219,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_listener_invalid_name(self):
         """Test create listener with an invalid name"""
@@ -231,7 +232,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_listener_invalid_description(self):
         """Test create listener with an invalid description"""
@@ -403,7 +404,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_listener_invalid_name(self):
         """Test update a listener with an invalid name"""
@@ -414,7 +415,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.skip_because(bug="1434717")
+    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_listener_invalid_description(self):
         """Test update a listener with an invalid description"""

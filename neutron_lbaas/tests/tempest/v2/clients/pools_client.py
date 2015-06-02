@@ -15,7 +15,8 @@
 import urllib
 
 from oslo_serialization import jsonutils
-from tempest.common import service_client
+
+from neutron_lbaas.tests.tempest.lib.common import service_client
 
 
 class PoolsClientJSON(service_client.ServiceClient):

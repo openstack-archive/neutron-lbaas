@@ -14,18 +14,19 @@
 
 import os
 import time
+
 from neutron.i18n import _, _LI
+from oslo_log import log as logging
+from tempest_lib import exceptions
+
+# from neutron_lbaas.tests.tempest.lib import clients as tempest_clients
+from neutron_lbaas.tests.tempest.lib import config
+from neutron_lbaas.tests.tempest.v1.api import base
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
 from neutron_lbaas.tests.tempest.v2.clients import pools_client
-
-from tempest.api.network import base
-from tempest import clients as tempest_clients
-from tempest import config
-from tempest import exceptions
-from tempest.openstack.common import log as logging
 
 CONF = config.CONF
 
@@ -45,9 +46,11 @@ class BaseTestCase(base.BaseNetworkTest):
     def resource_setup(cls):
         super(BaseTestCase, cls).resource_setup()
 
-        credentials = cls.isolated_creds.get_primary_creds()
-        mgr = tempest_clients.Manager(credentials=credentials)
-        auth_provider = mgr.get_auth_provider(credentials)
+        # credentials = cls.isolated_creds.get_primary_creds()
+        # mgr = tempest_clients.Manager(credentials=credentials)
+        mgr = cls.get_client_manager()
+        # auth_provider = mgr.get_auth_provider(credentials)
+        auth_provider = mgr.auth_provider
         client_args = [auth_provider, 'network', 'regionOne']
 
         cls.load_balancers_client = (
@@ -331,9 +334,16 @@ class BaseAdminTestCase(BaseTestCase):
     def resource_setup(cls):
 
         super(BaseAdminTestCase, cls).resource_setup()
-        credentials_admin = cls.isolated_creds.get_admin_creds()
-        mgr_admin = tempest_clients.Manager(credentials=credentials_admin)
-        auth_provider_admin = mgr_admin.get_auth_provider(credentials_admin)
+
+        # credentials = cls.isolated_creds.get_primary_creds()
+        # mgr = tempest_clients.Manager(credentials=credentials)
+        mgr = cls.get_client_manager(credential_type='admin')
+        # auth_provider = mgr.get_auth_provider(credentials)
+        auth_provider_admin = mgr.auth_provider
+
+        # credentials_admin = cls.isolated_creds.get_admin_creds()
+        # mgr_admin = tempest_clients.Manager(credentials=credentials_admin)
+        # auth_provider_admin = mgr_admin.get_auth_provider(credentials_admin)
         client_args = [auth_provider_admin, 'network', 'regionOne']
 
         cls.load_balancers_client = (
