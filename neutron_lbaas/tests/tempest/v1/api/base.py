@@ -435,14 +435,9 @@ class BaseAdminNetworkTest(BaseNetworkTest):
     def resource_setup(cls):
         super(BaseAdminNetworkTest, cls).resource_setup()
 
-        try:
-            creds = cls.isolated_creds.get_admin_creds()
-            cls.os_adm = clients.Manager(credentials=creds)
-        except NotImplementedError:
-            msg = ("Missing Administrative Network API credentials "
-                   "in configuration.")
-            raise cls.skipException(msg)
-        cls.admin_client = cls.os_adm.network_client
+        mgr = cls.get_client_manager(credential_type='admin')
+        cls.manager = mgr
+        cls.admin_client = mgr.network_client
 
     @classmethod
     def create_metering_label(cls, name, description):
