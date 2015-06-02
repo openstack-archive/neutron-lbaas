@@ -22,6 +22,7 @@ from neutron import manager
 from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
+import six
 from six import moves
 from webob import exc
 
@@ -323,7 +324,7 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
 
                     db_port = core.get_port(ctx, vip['vip']['port_id'])
 
-                    for k, v in expected.iteritems():
+                    for k, v in six.iteritems(expected):
                         self.assertEqual(db_port[k], v)
 
     def test_plug_vip_port(self):
