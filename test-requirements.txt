@@ -3,7 +3,6 @@
 # process, which may cause wedges in the gate later.
 hacking>=0.10.0,<0.11
 
-cliff>=1.10.0  # Apache-2.0
 coverage>=3.6
 discover
 fixtures>=0.3.14
@@ -19,6 +18,3 @@ testtools>=0.9.36,!=1.2.0
 testscenarios>=0.4
 WebOb>=1.2.3
 WebTest>=2.0
-oslotest>=1.5.1  # Apache-2.0
-psycopg2
-MySQL-python
