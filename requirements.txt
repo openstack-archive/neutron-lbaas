@@ -19,8 +19,3 @@ python-barbicanclient>=3.0.1
 pyasn1
 pyasn1_modules
 pyOpenSSL>=0.11
-
-# This project does depend on neutron as a library, but the
-# openstack tooling does not play nicely with projects that
-# are not publicly available in pypi.
-# -e git+https://git.openstack.org/openstack/neutron#egg=neutron
