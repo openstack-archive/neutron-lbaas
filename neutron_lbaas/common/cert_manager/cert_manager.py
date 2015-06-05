@@ -65,7 +65,8 @@ class CertManager(object):
         pass
 
     @abc.abstractmethod
-    def get_cert(self, cert_ref, check_only=False, **kwargs):
+    def get_cert(self, cert_ref, check_only=False,
+                 resource_ref=None, **kwargs):
         """Retrieves the specified cert.
 
         If check_only is True, don't perform any sort of registration.
@@ -75,7 +76,7 @@ class CertManager(object):
         pass
 
     @abc.abstractmethod
-    def delete_cert(self, cert_ref, **kwargs):
+    def delete_cert(self, cert_ref, resource_ref, **kwargs):
         """Deletes the specified cert.
 
         If the specified cert does not exist, a CertificateStorageException
