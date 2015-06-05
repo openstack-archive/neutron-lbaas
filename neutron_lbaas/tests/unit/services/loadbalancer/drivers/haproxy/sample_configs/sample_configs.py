@@ -257,7 +257,7 @@ def sample_health_monitor_tuple(proto='HTTP'):
                    admin_state_up=True)
 
 
-def sample_base_expected_config(frontend=None, backend=None):
+def sample_base_expected_config(backend, frontend=None):
     if frontend is None:
         frontend = ("frontend sample_listener_id_1\n"
                     "    option tcplog\n"
@@ -266,19 +266,6 @@ def sample_base_expected_config(frontend=None, backend=None):
                     "    bind 10.0.0.2:80\n"
                     "    mode http\n"
                     "    default_backend sample_pool_id_1\n\n")
-    if backend is None:
-        backend = ("backend sample_pool_id_1\n"
-                   "    mode http\n"
-                   "    balance roundrobin\n"
-                   "    cookie SRV insert indirect nocache\n"
-                   "    timeout check 31\n"
-                   "    option httpchk GET /index.html\n"
-                   "    http-check expect rstatus %s\n"
-                   "    server sample_member_id_1 10.0.0.99:82 weight 13 "
-                   "check inter 30s fall 3 cookie sample_member_id_1\n"
-                   "    server sample_member_id_2 10.0.0.98:82 weight 13 "
-                   "check inter 30s fall 3 cookie sample_member_id_2\n"
-                   % PIPED_CODES)
     return ("# Configuration for test-lb\n"
             "global\n"
             "    daemon\n"
