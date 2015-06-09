@@ -131,7 +131,7 @@ def services(*args, **kwargs):
 def stresstest(*args, **kwargs):
     """Add stress test decorator
 
-    For all functions with this decorator a attr stress will be
+    For all functions with this decorator an attr stress will be
     set automatically.
 
     @param class_setup_per: allowed values are application, process, action

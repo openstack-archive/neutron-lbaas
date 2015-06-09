@@ -70,12 +70,12 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
     #
     # Assumptions:
     # 1) We have only one worflow that takes care of l2-l4 and service creation
-    # 2) The workflow template exsists on the vDirect server
+    # 2) The workflow template exists on the vDirect server
     # 3) The workflow expose one operaion named 'update' (plus ctor and dtor)
     # 4) The 'update' operation gets the loadbalancer object graph as input
     # 5) The object graph is enehanced by our code before it is sent to the
     #    workflow
-    # 6) Async operations are handled by a diffrent thread
+    # 6) Async operations are handled by a different thread
     #
     def __init__(self, plugin):
         super(RadwareLBaaSV2Driver, self).__init__(plugin)
@@ -234,7 +234,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         # is necessary.
         # Get subnet id of any member located on different than
         # loadbalancer's network. If returned subnet id is the subnet id
-        # of loadbalancer - all members are accesssible from loadbalancer's
+        # of loadbalancer - all members are accessible from loadbalancer's
         # network, meaning no second leg or static routes are required.
         # Otherwise, create proxy port on found member's subnet and get its
         # address as a proxy address for loadbalancer instance
