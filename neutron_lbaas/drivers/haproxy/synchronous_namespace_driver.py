@@ -350,7 +350,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
                 if ip_lib.device_exists(device.name):
                     self.vif_driver.unplug(device.name, namespace=namespace)
         except RuntimeError as re:
-            LOG.warn(_LW('An error happend on namespace cleanup: '
+            LOG.warn(_LW('An error happened on namespace cleanup: '
                        '%s') % re.message)
         ns.garbage_collect_namespace()
 

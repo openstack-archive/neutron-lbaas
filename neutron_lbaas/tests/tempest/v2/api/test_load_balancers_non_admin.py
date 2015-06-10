@@ -159,7 +159,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
 
     @test.attr(type='smoke')
     def test_create_load_balancer_empty_name(self):
-        """Test create load balancer with a empty name field"""
+        """Test create load balancer with an empty name field"""
         load_balancer = self.load_balancers_client.create_load_balancer(
             vip_subnet_id=self.subnet['id'], name="")
         self.assertEqual(load_balancer.get('name'), "")
