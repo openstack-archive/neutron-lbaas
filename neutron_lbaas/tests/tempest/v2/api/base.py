@@ -30,6 +30,8 @@ from neutron_lbaas.tests.tempest.v2.clients import pools_client
 
 CONF = config.CONF
 
+LOG = logging.getLogger(__name__)
+
 # Use local tempest conf if one is available.
 # This usually means we're running tests outside of devstack
 if os.path.exists('./tests/tempest/etc/dev_tempest.conf'):
