@@ -464,7 +464,7 @@ def kill_pids_in_file(pid_path):
             for pid in pids:
                 pid = pid.strip()
                 try:
-                    linux_utils.execute(['kill', '-9', pid])
+                    linux_utils.execute(['kill', '-9', pid], run_as_root=True)
                 except RuntimeError:
                     LOG.exception(
                         _LE('Unable to kill haproxy process: %s'),
