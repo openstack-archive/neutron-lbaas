@@ -53,6 +53,22 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
     model_class = models.LoadBalancer
 
     @property
+    def allocates_vip(self):
+        """Does this driver need to allocate its own virtual IPs"""
+        return False
+
+    def create_and_allocate_vip(self, context, obj):
+        """Create the load balancer and allocate a VIP
+
+        If this method is implemented AND allocates_vip returns True, then
+        this method will be called instead of the create method.  Any driver
+        that implements this method is responsible for allocating a virtual IP
+        and updating at least the vip_address attribute in the loadbalancer
+        database table.
+        """
+        raise NotImplementedError
+
+    @property
     def db_delete_method(self):
         return self.driver.plugin.db.delete_loadbalancer
 

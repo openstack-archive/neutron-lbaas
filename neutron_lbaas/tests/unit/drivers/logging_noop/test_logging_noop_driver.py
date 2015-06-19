@@ -98,8 +98,17 @@ class LoadBalancerManagerTest(ManagerTestWithUpdates):
     def __init__(self, parent, manager, model):
         super(LoadBalancerManagerTest, self).__init__(parent, manager, model)
 
+        self.create_and_allocate_vip(model)
         self.refresh(model)
         self.stats(model)
+
+    @patch_manager
+    def allocates_vip(self):
+        self.manager.allocates_vip()
+
+    @patch_manager
+    def create_and_allocate_vip(self, model):
+        self.manager.create(self.parent.context, model)
 
     @patch_manager
     def refresh(self, model):
