@@ -26,10 +26,10 @@ from neutron.common import exceptions as n_exc
 from neutron import context
 import neutron.db.l3_db  # noqa
 from neutron.db import servicetype_db as sdb
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from oslo_config import cfg
+from oslo_utils import uuidutils
 import testtools
 import webob.exc
 
