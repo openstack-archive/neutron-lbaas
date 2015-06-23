@@ -17,9 +17,9 @@ import mock
 
 from neutron import context
 from neutron.extensions import portbindings
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
+from oslo_utils import uuidutils
 import six
 from six import moves
 

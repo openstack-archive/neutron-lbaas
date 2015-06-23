@@ -17,9 +17,9 @@ import copy
 
 import mock
 from neutron.api.v2 import attributes as attr
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit.api.v2 import test_base
+from oslo_utils import uuidutils
 from webob import exc
 
 from neutron_lbaas.extensions import loadbalancer

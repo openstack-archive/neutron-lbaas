@@ -19,9 +19,9 @@ from neutron import context
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import portbindings
 from neutron import manager
-from neutron.openstack.common import uuidutils
 from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
+from oslo_utils import uuidutils
 import six
 from six import moves
 from webob import exc
