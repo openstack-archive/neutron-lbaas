@@ -87,7 +87,8 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         pool_id = logical_config['pool']['id']
         namespace = get_ns_name(pool_id)
 
-        self._plug(namespace, logical_config['vip']['port'])
+        self._plug(namespace, logical_config['vip']['port'],
+                   logical_config['vip']['address'])
         self._spawn(logical_config)
 
     def update(self, logical_config):
@@ -241,7 +242,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                 os.makedirs(conf_dir, 0o755)
         return os.path.join(conf_dir, kind)
 
-    def _plug(self, namespace, port, reuse_existing=True):
+    def _plug(self, namespace, port, vip_address, reuse_existing=True):
         self.plugin_rpc.plug_vip_port(port['id'])
         interface_name = self.vif_driver.get_device_name(Wrap(port))
 
@@ -265,6 +266,12 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             for ip in port['fixed_ips']
         ]
         self.vif_driver.init_l3(interface_name, cidrs, namespace=namespace)
+
+        # Haproxy socket binding to IPv6 VIP address will fail if this adress
+        # is not yet ready(i.e tentative address).
+        if netaddr.IPAddress(vip_address).version == 6:
+            device = ip_lib.IPDevice(interface_name, namespace=namespace)
+            device.addr.wait_until_address_ready(vip_address)
 
         gw_ip = port['fixed_ips'][0]['subnet'].get('gateway_ip')
 

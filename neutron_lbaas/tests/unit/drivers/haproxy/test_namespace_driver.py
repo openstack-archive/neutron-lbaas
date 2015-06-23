@@ -61,7 +61,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                 mac_address='12-34-56-78-9A-BC',
                                 fixed_ips=[fixed_ip])
         self.lb = data_models.LoadBalancer(id='lb1', listeners=[],
-                                           vip_port=port)
+                                           vip_port=port,
+                                           vip_address='10.0.0.1')
 
     def test_get_name(self):
         self.assertEqual(namespace_driver.DRIVER_NAME, self.driver.get_name())
@@ -313,7 +314,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.driver._spawn = mock.Mock()
         self.driver.create(self.lb)
         self.driver._plug.assert_called_once_with(
-            namespace_driver.get_ns_name(self.lb.id), self.lb.vip_port)
+            namespace_driver.get_ns_name(self.lb.id),
+            self.lb.vip_port, self.lb.vip_address)
         self.driver._spawn.assert_called_once_with(self.lb)
 
     def test_deployable(self):
@@ -370,8 +372,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         interface_name = 'tap-d4nc3'
         self.vif_driver.get_device_name.return_value = interface_name
         self.assertRaises(exceptions.PreexistingDeviceFailure,
-                          self.driver._plug,
-                          'ns1', self.lb.vip_port, reuse_existing=False)
+                          self.driver._plug, 'ns1', self.lb.vip_port,
+                          self.lb.vip_address, reuse_existing=False)
         device_exists.assert_called_once_with(interface_name,
                                               namespace='ns1')
         self.rpc_mock.plug_vip_port.assert_called_once_with(
@@ -380,7 +382,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         device_exists.reset_mock()
         self.rpc_mock.plug_vip_port.reset_mock()
         mock_ns = ip_wrap.return_value
-        self.driver._plug('ns1', self.lb.vip_port)
+        self.driver._plug('ns1', self.lb.vip_port, self.lb.vip_address)
         self.rpc_mock.plug_vip_port.assert_called_once_with(
             self.lb.vip_port.id)
         device_exists.assert_called_once_with(interface_name,

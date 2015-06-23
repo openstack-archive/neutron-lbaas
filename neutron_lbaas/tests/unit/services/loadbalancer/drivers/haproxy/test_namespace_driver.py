@@ -47,6 +47,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             'pool': {'id': 'pool_id', 'status': 'ACTIVE',
                      'admin_state_up': True},
             'vip': {'id': 'vip_id', 'port': {'id': 'port_id'},
+                    'address': '10.0.0.2',
                     'status': 'ACTIVE', 'admin_state_up': True}
         }
 
@@ -65,7 +66,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 self.driver.create(self.fake_config)
 
                 plug.assert_called_once_with(
-                    'qlbaas-pool_id', {'id': 'port_id'}
+                    'qlbaas-pool_id', {'id': 'port_id'}, '10.0.0.2'
                 )
                 spawn.assert_called_once_with(self.fake_config)
 
@@ -260,6 +261,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                      'fixed_ips': [{'ip_address': '10.0.0.2',
                                     'subnet': {'cidr': '10.0.0.0/24',
                                                'gateway_ip': '10.0.0.1'}}]}
+        test_address = '10.0.0.2'
         with contextlib.nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
@@ -270,7 +272,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ip_net.return_value = ip_net
             ip_net.prefixlen = 24
 
-            self.driver._plug('test_ns', test_port)
+            self.driver._plug('test_ns', test_port, test_address)
             self.rpc_mock.plug_vip_port.assert_called_once_with(
                 test_port['id'])
             self.assertTrue(dev_exists.called)
@@ -295,7 +297,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
 
             dev_exists.return_value = True
             self.assertRaises(exceptions.PreexistingDeviceFailure,
-                              self.driver._plug, 'test_ns', test_port, False)
+                              self.driver._plug, 'test_ns', test_port,
+                              test_address, False)
 
     def test_plug_not_send_gratuitous_arp(self):
         self.conf.haproxy.send_gratuitous_arp = 0
@@ -305,6 +308,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                      'fixed_ips': [{'ip_address': '10.0.0.2',
                                     'subnet': {'cidr': '10.0.0.0/24',
                                                'gateway_ip': '10.0.0.1'}}]}
+        test_address = '10.0.0.2'
         with contextlib.nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
@@ -315,7 +319,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ip_net.return_value = ip_net
             ip_net.prefixlen = 24
 
-            self.driver._plug('test_ns', test_port)
+            self.driver._plug('test_ns', test_port, test_address)
             cmd = ['route', 'add', 'default', 'gw', '10.0.0.1']
             expected = [
                 self._ip_mock_call('test_ns'),
@@ -328,6 +332,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                      'mac_address': 'mac_addr',
                      'fixed_ips': [{'ip_address': '10.0.0.2',
                                     'subnet': {'cidr': '10.0.0.0/24'}}]}
+        test_address = '10.0.0.2'
         with contextlib.nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
@@ -338,7 +343,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ip_net.return_value = ip_net
             ip_net.prefixlen = 24
 
-            self.driver._plug('test_ns', test_port)
+            self.driver._plug('test_ns', test_port, test_address)
             self.rpc_mock.plug_vip_port.assert_called_once_with(
                 test_port['id'])
             self.assertTrue(dev_exists.called)
@@ -354,7 +359,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.assertFalse(ip_wrap.called)
             dev_exists.return_value = True
             self.assertRaises(exceptions.PreexistingDeviceFailure,
-                              self.driver._plug, 'test_ns', test_port, False)
+                              self.driver._plug, 'test_ns', test_port,
+                              test_address, False)
 
     def test_plug_gw_in_host_routes(self):
         test_port = {'id': 'port_id',
@@ -365,6 +371,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                'host_routes':
                                                [{'destination': '0.0.0.0/0',
                                                  'nexthop': '10.0.0.1'}]}}]}
+        test_address = '10.0.0.2'
         with contextlib.nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
@@ -375,7 +382,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ip_net.return_value = ip_net
             ip_net.prefixlen = 24
 
-            self.driver._plug('test_ns', test_port)
+            self.driver._plug('test_ns', test_port, test_address)
             self.rpc_mock.plug_vip_port.assert_called_once_with(
                 test_port['id'])
             self.assertTrue(dev_exists.called)
