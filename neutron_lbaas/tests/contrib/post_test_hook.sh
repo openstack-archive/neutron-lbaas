@@ -3,7 +3,7 @@
 set -xe
 
 NEUTRON_LBAAS_DIR="$BASE/new/neutron-lbaas"
-TEMPEST_DIR="$BASE/new/tempest"
+TEMPEST_CONFIG_DIR="$BASE/new/tempest/etc"
 SCRIPTS_DIR="/usr/local/jenkins/slave_scripts"
 
 testenv=${1:-"apiv2"}
@@ -28,8 +28,6 @@ function generate_testr_results {
 }
 
 owner=tempest
-# Configure the api tests to use the tempest.conf set by devstack.
-sudo cp $TEMPEST_DIR/etc/tempest.conf $NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/etc
 
 # Set owner permissions according to job's requirements.
 cd $NEUTRON_LBAAS_DIR
@@ -37,10 +35,13 @@ sudo chown -R $owner:stack $NEUTRON_LBAAS_DIR
 
 sudo_env=" OS_TESTR_CONCURRENCY=1"
 
+# Configure the api tests to use the tempest.conf set by devstack
+sudo_env+=" TEMPEST_CONFIG_DIR=$TEMPEST_CONFIG_DIR"
+
 if [ "$testenv" = "apiv2" ]; then
-    sudo_env+="OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v2/api"
+    sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v2/api"
 elif [ "$testenv" = "apiv1" ]; then
-    sudo_env+="OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v1/api"
+    sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v1/api"
 else
     echo "ERROR: unsupported testenv: $testenv"
     exit 1
