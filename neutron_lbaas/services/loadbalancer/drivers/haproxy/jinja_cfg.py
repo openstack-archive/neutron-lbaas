@@ -291,7 +291,7 @@ def _transform_pool(pool):
     members = [_transform_member(x)
                for x in pool.members if _include_member(x)]
     ret_value['members'] = members
-    if pool.healthmonitor:
+    if pool.healthmonitor and pool.healthmonitor.admin_state_up:
         ret_value['health_monitor'] = _transform_health_monitor(
             pool.healthmonitor)
     if pool.sessionpersistence:

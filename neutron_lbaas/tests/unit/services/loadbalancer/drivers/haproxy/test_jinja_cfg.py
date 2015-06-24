@@ -439,6 +439,13 @@ class TestHaproxyCfg(base.BaseTestCase):
         ret = jinja_cfg._transform_pool(in_pool)
         self.assertEqual(sample_configs.RET_POOL, ret)
 
+    def test_transform_pool_admin_state_down(self):
+        in_pool = sample_configs.sample_pool_tuple(hm_admin_state=False)
+        ret = jinja_cfg._transform_pool(in_pool)
+        result = sample_configs.RET_POOL
+        result['health_monitor'] = ''
+        self.assertEqual(result, ret)
+
     def test_transform_listener(self):
         in_listener = sample_configs.sample_listener_tuple()
         ret = jinja_cfg._transform_listener(in_listener, '/v2')

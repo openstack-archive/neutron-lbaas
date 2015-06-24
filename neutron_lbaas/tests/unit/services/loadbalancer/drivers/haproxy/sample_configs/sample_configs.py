@@ -202,12 +202,13 @@ def sample_tls_container_tuple(id='cont_id_1', certificate=None,
 
 
 def sample_pool_tuple(proto=None, monitor=True, persistence=True,
-                      persistence_type=None):
+                      persistence_type=None, hm_admin_state=True):
     proto = 'HTTP' if proto is None else proto
     in_pool = collections.namedtuple(
         'pool', 'id, protocol, lb_algorithm, members, healthmonitor,'
                 'sessionpersistence, admin_state_up, provisioning_status')
-    mon = sample_health_monitor_tuple(proto=proto) if monitor is True else None
+    mon = (sample_health_monitor_tuple(proto=proto, admin_state=hm_admin_state)
+           if monitor is True else None)
     persis = sample_session_persistence_tuple(
         persistence_type=persistence_type) if persistence is True else None
     return in_pool(
@@ -245,7 +246,7 @@ def sample_session_persistence_tuple(persistence_type=None):
                         cookie_name=pt)
 
 
-def sample_health_monitor_tuple(proto='HTTP'):
+def sample_health_monitor_tuple(proto='HTTP', admin_state=True):
     proto = 'HTTP' if proto is 'TERMINATED_HTTPS' else proto
     monitor = collections.namedtuple(
         'monitor', 'id, type, delay, timeout, max_retries, http_method, '
@@ -254,7 +255,7 @@ def sample_health_monitor_tuple(proto='HTTP'):
     return monitor(id='sample_monitor_id_1', type=proto, delay=30,
                    timeout=31, max_retries=3, http_method='GET',
                    url_path='/index.html', expected_codes='500, 405, 404',
-                   admin_state_up=True)
+                   admin_state_up=admin_state)
 
 
 def sample_base_expected_config(backend, frontend=None):
