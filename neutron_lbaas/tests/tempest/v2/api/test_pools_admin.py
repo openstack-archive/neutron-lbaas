@@ -13,6 +13,7 @@
 # under the License.
 
 from tempest_lib.common.utils import data_utils
+from tempest_lib import decorators
 
 from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
@@ -69,6 +70,7 @@ class TestPools(base.BaseAdminTestCase):
                                      **kwargs)
         return response
 
+    @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
     def test_create_pool_using_empty_tenant_field(self):
         """Test create pool with empty tenant field"""
@@ -79,6 +81,7 @@ class TestPools(base.BaseAdminTestCase):
         self.assertEqual(pool_tenant, '')
         self._delete_pool(new_pool.get('id'))
 
+    @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
     def test_create_pool_missing_tenant_id_for_other_tenant(self):
         """
@@ -94,6 +97,7 @@ class TestPools(base.BaseAdminTestCase):
         self.assertNotEqual(pool_tenant, self.subnet['tenant_id'])
         self._delete_pool(new_pool.get('id'))
 
+    @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
     def test_create_pool_missing_tenant_id_for_admin(self):
         """
@@ -108,6 +112,7 @@ class TestPools(base.BaseAdminTestCase):
         self.assertEqual(pool_tenant, pool.get('tenant_id'))
         self._delete_pool(new_pool.get('id'))
 
+    @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
     def test_create_pool_for_another_tenant(self):
         """Test create pool for other tenant field"""
