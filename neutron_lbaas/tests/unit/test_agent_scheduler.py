@@ -29,7 +29,8 @@ from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
 import neutron.tests.unit.extensions
 from neutron.tests.unit.extensions import test_agent
-from neutron.tests.unit.plugins.openvswitch import test_agent_scheduler
+from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
+    import test_agent_scheduler
 from oslo_config import cfg
 from oslo_utils import timeutils
 import six
