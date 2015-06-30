@@ -22,11 +22,11 @@ eventlet.monkey_patch()
 from neutron.agent.common import config
 from neutron.agent.linux import interface
 from neutron.common import config as common_config
-from neutron.common import rpc as n_rpc
-from neutron.openstack.common import service
 from oslo_config import cfg
+from oslo_service import service
 
 from neutron_lbaas.agent import agent_manager as manager
+from neutron_lbaas.agent import common_rpc as n_rpc
 from neutron_lbaas.services.loadbalancer import constants
 
 OPTS = [
@@ -67,4 +67,4 @@ def main():
         topic=constants.LOADBALANCER_AGENTV2,
         manager=mgr
     )
-    service.launch(svc).wait()
+    service.launch(cfg.CONF, svc).wait()

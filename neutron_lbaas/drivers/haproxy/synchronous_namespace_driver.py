@@ -25,11 +25,11 @@ from neutron.common import exceptions
 from neutron import context as ncontext
 from neutron.extensions import portbindings
 from neutron.i18n import _LE, _LW
-from neutron.openstack.common import service
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
+from oslo_service import service
 from oslo_utils import excutils
 from oslo_utils import importutils
 

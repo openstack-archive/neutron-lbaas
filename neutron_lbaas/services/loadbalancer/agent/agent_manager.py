@@ -18,13 +18,13 @@ from neutron.common import exceptions as n_exc
 from neutron.common import topics
 from neutron import context as ncontext
 from neutron.i18n import _LE, _LI
-from neutron.openstack.common import loopingcall
-from neutron.openstack.common import periodic_task
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconfig
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging
+from oslo_service import loopingcall
+from oslo_service import periodic_task
 from oslo_utils import importutils
 
 from neutron_lbaas.services.loadbalancer.agent import agent_api
@@ -59,7 +59,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
     target = oslo_messaging.Target(version='2.0')
 
     def __init__(self, conf):
-        super(LbaasAgentManager, self).__init__()
+        super(LbaasAgentManager, self).__init__(conf)
         self.conf = conf
         self.context = ncontext.get_admin_context_without_session()
         self.plugin_rpc = agent_api.LbaasAgentApi(
