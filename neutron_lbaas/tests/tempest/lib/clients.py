@@ -20,7 +20,7 @@ from tempest_lib.services.identity.v2.token_client import TokenClientJSON
 from tempest_lib.services.identity.v3.token_client import V3TokenClientJSON
 
 from neutron_lbaas.tests.tempest.lib.common import cred_provider
-from neutron_lbaas.tests.tempest.lib.common import negative_rest_client
+# from neutron_lbaas.tests.tempest.lib.common import negative_rest_client
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import exceptions
 from neutron_lbaas.tests.tempest.lib import manager
@@ -40,44 +40,44 @@ from neutron_lbaas.tests.tempest.lib import manager
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.extensions_client import \
 #     ExtensionsClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.fixed_ips_client import FixedIPsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.flavors_client import FlavorsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.floating_ips_client import \
-#     FloatingIPsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.flavors_client import FlavorsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.floating_ips_client import \
+    FloatingIPsClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.hosts_client import HostsClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.hypervisor_client import \
 #     HypervisorClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.images_client import ImagesClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.images_client import ImagesClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.instance_usage_audit_log_client import \
 #     InstanceUsagesAuditLogClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.interfaces_client import \
-#     InterfacesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.keypairs_client import KeyPairsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.interfaces_client import \
+    InterfacesClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.keypairs_client import KeyPairsClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.limits_client import LimitsClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.migrations_client import \
 #     MigrationsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.networks_client import NetworksClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.networks_client import NetworksClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.quotas_client import QuotaClassesClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.quotas_client import QuotasClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.security_group_default_rules_client import \
 #     SecurityGroupDefaultRulesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.security_groups_client import \
-#     SecurityGroupsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.servers_client import ServersClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.security_groups_client import \
+    SecurityGroupsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.servers_client import ServersClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.services_client import ServicesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.tenant_networks_client import \
-#     TenantNetworksClientJSON
+from neutron_lbaas.tests.tempest.lib.services.compute.json.tenant_networks_client import \
+    TenantNetworksClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.tenant_usages_client import \
 #     TenantUsagesClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.compute.json.volumes_extensions_client import \
 #     VolumesExtensionsClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.data_processing.v1_1.data_processing_client import \
 #     DataProcessingClient
-# from neutron_lbaas.tests.tempest.lib.services.database.json.flavors_client import \
-#     DatabaseFlavorsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.database.json.limits_client import \
-#     DatabaseLimitsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.database.json.versions_client import \
-#     DatabaseVersionsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.database.json.flavors_client import \
+    DatabaseFlavorsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.database.json.limits_client import \
+    DatabaseLimitsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.database.json.versions_client import \
+    DatabaseVersionsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.identity.v2.json.identity_client import \
     IdentityClientJSON
 from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.credentials_client import \
@@ -90,16 +90,16 @@ from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.policy_client imp
 from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.region_client import RegionClientJSON
 from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.service_client import \
     ServiceClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.image.v1.json.image_client import ImageClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.image.v2.json.image_client import ImageClientV2JSON
+from neutron_lbaas.tests.tempest.lib.services.image.v1.json.image_client import ImageClientJSON
+from neutron_lbaas.tests.tempest.lib.services.image.v2.json.image_client import ImageClientV2JSON
 # from neutron_lbaas.tests.tempest.lib.services.messaging.json.messaging_client import \
 #     MessagingClientJSON
 from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import NetworkClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.object_storage.account_client import AccountClient
 # from neutron_lbaas.tests.tempest.lib.services.object_storage.container_client import ContainerClient
 # from neutron_lbaas.tests.tempest.lib.services.object_storage.object_client import ObjectClient
-# from neutron_lbaas.tests.tempest.lib.services.orchestration.json.orchestration_client import \
-#     OrchestrationClient
+from neutron_lbaas.tests.tempest.lib.services.orchestration.json.orchestration_client import \
+    OrchestrationClient
 # from neutron_lbaas.tests.tempest.lib.services.telemetry.json.telemetry_client import \
 #     TelemetryClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.volume.json.admin.volume_hosts_client import \
@@ -116,8 +116,8 @@ from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import
 # from neutron_lbaas.tests.tempest.lib.services.volume.json.extensions_client import \
 #     ExtensionsClientJSON as VolumeExtensionClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.volume.json.qos_client import QosSpecsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.snapshots_client import SnapshotsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.volumes_client import VolumesClientJSON
+from neutron_lbaas.tests.tempest.lib.services.volume.json.snapshots_client import SnapshotsClientJSON
+from neutron_lbaas.tests.tempest.lib.services.volume.json.volumes_client import VolumesClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.admin.volume_hosts_client import \
 #     VolumeHostsV2ClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.admin.volume_quotas_client import \
@@ -132,9 +132,9 @@ from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import
 # from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.extensions_client import \
 #     ExtensionsV2ClientJSON as VolumeV2ExtensionClientJSON
 # from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.qos_client import QosSpecsV2ClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.snapshots_client import \
-#     SnapshotsV2ClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.volumes_client import VolumesV2ClientJSON
+from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.snapshots_client import \
+    SnapshotsV2ClientJSON
+from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.volumes_client import VolumesV2ClientJSON
 
 CONF = config.CONF
 LOG = logging.getLogger(__name__)
@@ -164,10 +164,10 @@ class Manager(manager.Manager):
     def __init__(self, credentials=None, service=None):
         super(Manager, self).__init__(credentials=credentials)
 
-        # self._set_compute_clients()
-        # self._set_database_clients()
+        self._set_compute_clients()
+        self._set_database_clients()
         self._set_identity_clients()
-        # self._set_volume_clients()
+        self._set_volume_clients()
         # self._set_object_storage_clients()
 
         # self.baremetal_client = BaremetalClientJSON(
@@ -196,31 +196,31 @@ class Manager(manager.Manager):
         #         CONF.identity.region,
         #         endpoint_type=CONF.telemetry.endpoint_type,
         #         **self.default_params_with_timeout_values)
-        # if CONF.service_available.glance:
-        #     self.image_client = ImageClientJSON(
-        #         self.auth_provider,
-        #         CONF.image.catalog_type,
-        #         CONF.image.region or CONF.identity.region,
-        #         endpoint_type=CONF.image.endpoint_type,
-        #         build_interval=CONF.image.build_interval,
-        #         build_timeout=CONF.image.build_timeout,
-        #         **self.default_params)
-        #     self.image_client_v2 = ImageClientV2JSON(
-        #         self.auth_provider,
-        #         CONF.image.catalog_type,
-        #         CONF.image.region or CONF.identity.region,
-        #         endpoint_type=CONF.image.endpoint_type,
-        #         build_interval=CONF.image.build_interval,
-        #         build_timeout=CONF.image.build_timeout,
-        #         **self.default_params)
-        # self.orchestration_client = OrchestrationClient(
-        #     self.auth_provider,
-        #     CONF.orchestration.catalog_type,
-        #     CONF.orchestration.region or CONF.identity.region,
-        #     endpoint_type=CONF.orchestration.endpoint_type,
-        #     build_interval=CONF.orchestration.build_interval,
-        #     build_timeout=CONF.orchestration.build_timeout,
-        #     **self.default_params)
+        if CONF.service_available.glance:
+            self.image_client = ImageClientJSON(
+                self.auth_provider,
+                CONF.image.catalog_type,
+                CONF.image.region or CONF.identity.region,
+                endpoint_type=CONF.image.endpoint_type,
+                build_interval=CONF.image.build_interval,
+                build_timeout=CONF.image.build_timeout,
+                **self.default_params)
+            self.image_client_v2 = ImageClientV2JSON(
+                self.auth_provider,
+                CONF.image.catalog_type,
+                CONF.image.region or CONF.identity.region,
+                endpoint_type=CONF.image.endpoint_type,
+                build_interval=CONF.image.build_interval,
+                build_timeout=CONF.image.build_timeout,
+                **self.default_params)
+        self.orchestration_client = OrchestrationClient(
+            self.auth_provider,
+            CONF.orchestration.catalog_type,
+            CONF.orchestration.region or CONF.identity.region,
+            endpoint_type=CONF.orchestration.endpoint_type,
+            build_interval=CONF.orchestration.build_interval,
+            build_timeout=CONF.orchestration.build_timeout,
+            **self.default_params)
         # self.data_processing_client = DataProcessingClient(
         #     self.auth_provider,
         #     CONF.data_processing.catalog_type,
@@ -239,44 +239,43 @@ class Manager(manager.Manager):
         #     self.ec2api_client = botoclients.APIClientEC2(self.identity_client)
         #     self.s3_client = botoclients.ObjectClientS3(self.identity_client)
 
-    # def _set_compute_clients(self):
-    #     params = {
-    #         'service': CONF.compute.catalog_type,
-    #         'region': CONF.compute.region or CONF.identity.region,
-    #         'endpoint_type': CONF.compute.endpoint_type,
-    #         'build_interval': CONF.compute.build_interval,
-    #         'build_timeout': CONF.compute.build_timeout
-    #     }
-    #     params.update(self.default_params)
+    def _set_compute_clients(self):
+        params = {
+            'service': CONF.compute.catalog_type,
+            'region': CONF.compute.region or CONF.identity.region,
+            'endpoint_type': CONF.compute.endpoint_type,
+            'build_interval': CONF.compute.build_interval,
+            'build_timeout': CONF.compute.build_timeout
+        }
+        params.update(self.default_params)
 
     #     self.agents_client = AgentsClientJSON(self.auth_provider, **params)
-    #     self.networks_client = NetworksClientJSON(self.auth_provider, **params)
+        self.networks_client = NetworksClientJSON(self.auth_provider, **params)
     #     self.migrations_client = MigrationsClientJSON(self.auth_provider,
     #                                                   **params)
     #     self.security_group_default_rules_client = (
     #         SecurityGroupDefaultRulesClientJSON(self.auth_provider, **params))
     #     self.certificates_client = CertificatesClientJSON(self.auth_provider,
     #                                                       **params)
-    #     self.servers_client = ServersClientJSON(
-    #         self.auth_provider,
-    #         enable_instance_password=CONF.compute_feature_enabled
-    #             .enable_instance_password,
-    #         **params)
+        self.servers_client = ServersClientJSON(
+            self.auth_provider,
+            enable_instance_password=CONF.compute_feature_enabled
+                .enable_instance_password, **params)
     #     self.limits_client = LimitsClientJSON(self.auth_provider, **params)
-    #     self.images_client = ImagesClientJSON(self.auth_provider, **params)
-    #     self.keypairs_client = KeyPairsClientJSON(self.auth_provider, **params)
+        self.images_client = ImagesClientJSON(self.auth_provider, **params)
+        self.keypairs_client = KeyPairsClientJSON(self.auth_provider, **params)
     #     self.quotas_client = QuotasClientJSON(self.auth_provider, **params)
     #     self.quota_classes_client = QuotaClassesClientJSON(self.auth_provider,
     #                                                        **params)
-    #     self.flavors_client = FlavorsClientJSON(self.auth_provider, **params)
+        self.flavors_client = FlavorsClientJSON(self.auth_provider, **params)
     #     self.extensions_client = ExtensionsClientJSON(self.auth_provider,
     #                                                   **params)
-    #     self.floating_ips_client = FloatingIPsClientJSON(self.auth_provider,
-    #                                                      **params)
-    #     self.security_groups_client = SecurityGroupsClientJSON(
-    #         self.auth_provider, **params)
-    #     self.interfaces_client = InterfacesClientJSON(self.auth_provider,
-    #                                                   **params)
+        self.floating_ips_client = FloatingIPsClientJSON(self.auth_provider,
+                                                         **params)
+        self.security_groups_client = SecurityGroupsClientJSON(
+            self.auth_provider, **params)
+        self.interfaces_client = InterfacesClientJSON(self.auth_provider,
+                                                      **params)
     #     self.fixed_ips_client = FixedIPsClientJSON(self.auth_provider,
     #                                                **params)
     #     self.availability_zone_client = AvailabilityZoneClientJSON(
@@ -291,8 +290,8 @@ class Manager(manager.Manager):
     #                                                   **params)
     #     self.instance_usages_audit_log_client = \
     #         InstanceUsagesAuditLogClientJSON(self.auth_provider, **params)
-    #     self.tenant_networks_client = \
-    #         TenantNetworksClientJSON(self.auth_provider, **params)
+        self.tenant_networks_client = \
+            TenantNetworksClientJSON(self.auth_provider, **params)
     #     self.baremetal_nodes_client = BaremetalNodesClientJSON(
     #         self.auth_provider, **params)
 
@@ -307,22 +306,22 @@ class Manager(manager.Manager):
     #         self.auth_provider, default_volume_size=CONF.volume.volume_size,
     #         **params_volume)
 
-    # def _set_database_clients(self):
-    #     self.database_flavors_client = DatabaseFlavorsClientJSON(
-    #         self.auth_provider,
-    #         CONF.database.catalog_type,
-    #         CONF.identity.region,
-    #         **self.default_params_with_timeout_values)
-    #     self.database_limits_client = DatabaseLimitsClientJSON(
-    #         self.auth_provider,
-    #         CONF.database.catalog_type,
-    #         CONF.identity.region,
-    #         **self.default_params_with_timeout_values)
-    #     self.database_versions_client = DatabaseVersionsClientJSON(
-    #         self.auth_provider,
-    #         CONF.database.catalog_type,
-    #         CONF.identity.region,
-    #         **self.default_params_with_timeout_values)
+    def _set_database_clients(self):
+        self.database_flavors_client = DatabaseFlavorsClientJSON(
+            self.auth_provider,
+            CONF.database.catalog_type,
+            CONF.identity.region,
+            **self.default_params_with_timeout_values)
+        self.database_limits_client = DatabaseLimitsClientJSON(
+            self.auth_provider,
+            CONF.database.catalog_type,
+            CONF.identity.region,
+            **self.default_params_with_timeout_values)
+        self.database_versions_client = DatabaseVersionsClientJSON(
+            self.auth_provider,
+            CONF.database.catalog_type,
+            CONF.identity.region,
+            **self.default_params_with_timeout_values)
 
     def _set_identity_clients(self):
         params = {
@@ -361,15 +360,15 @@ class Manager(manager.Manager):
                 msg = 'Identity v3 API enabled, but no identity.uri_v3 set'
                 raise exceptions.InvalidConfiguration(msg)
 
-    # def _set_volume_clients(self):
-    #     params = {
-    #         'service': CONF.volume.catalog_type,
-    #         'region': CONF.volume.region or CONF.identity.region,
-    #         'endpoint_type': CONF.volume.endpoint_type,
-    #         'build_interval': CONF.volume.build_interval,
-    #         'build_timeout': CONF.volume.build_timeout
-    #     }
-    #     params.update(self.default_params)
+    def _set_volume_clients(self):
+        params = {
+            'service': CONF.volume.catalog_type,
+            'region': CONF.volume.region or CONF.identity.region,
+            'endpoint_type': CONF.volume.endpoint_type,
+            'build_interval': CONF.volume.build_interval,
+            'build_timeout': CONF.volume.build_timeout
+        }
+        params.update(self.default_params)
 
     #     self.volume_qos_client = QosSpecsClientJSON(self.auth_provider,
     #                                                 **params)
@@ -380,16 +379,16 @@ class Manager(manager.Manager):
     #     self.backups_client = BackupsClientJSON(self.auth_provider, **params)
     #     self.backups_v2_client = BackupsClientV2JSON(self.auth_provider,
     #                                                  **params)
-    #     self.snapshots_client = SnapshotsClientJSON(self.auth_provider,
-    #                                                 **params)
-    #     self.snapshots_v2_client = SnapshotsV2ClientJSON(self.auth_provider,
-    #                                                      **params)
-    #     self.volumes_client = VolumesClientJSON(
-    #         self.auth_provider, default_volume_size=CONF.volume.volume_size,
-    #         **params)
-    #     self.volumes_v2_client = VolumesV2ClientJSON(
-    #         self.auth_provider, default_volume_size=CONF.volume.volume_size,
-    #         **params)
+        self.snapshots_client = SnapshotsClientJSON(self.auth_provider,
+                                                    **params)
+        self.snapshots_v2_client = SnapshotsV2ClientJSON(self.auth_provider,
+                                                         **params)
+        self.volumes_client = VolumesClientJSON(
+            self.auth_provider, default_volume_size=CONF.volume.volume_size,
+            **params)
+        self.volumes_v2_client = VolumesV2ClientJSON(
+            self.auth_provider, default_volume_size=CONF.volume.volume_size,
+            **params)
     #     self.volume_types_client = VolumeTypesClientJSON(self.auth_provider,
     #                                                      **params)
     #     self.volume_services_client = VolumesServicesClientJSON(
