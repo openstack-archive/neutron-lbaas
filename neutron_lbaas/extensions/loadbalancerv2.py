@@ -30,6 +30,8 @@ from neutron.services import service_base
 
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
+LOADBALANCERV2_PREFIX = "/lbaas"
+
 
 # Loadbalancer Exceptions
 # This exception is only for a workaround when having v1 and v2 lbaas extension
@@ -431,8 +433,7 @@ class Loadbalancerv2(extensions.ExtensionDescriptor):
             resource = extensions.ResourceExtension(
                 collection_name,
                 controller, parent,
-                path_prefix=constants.COMMON_PREFIXES[
-                    constants.LOADBALANCERV2],
+                path_prefix=LOADBALANCERV2_PREFIX,
                 attr_map=params)
             resources.append(resource)
 

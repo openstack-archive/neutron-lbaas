@@ -105,8 +105,7 @@ class Lbaas_agentscheduler(extensions.ExtensionDescriptor):
                                        base.FAULT_MAP)
         exts.append(extensions.ResourceExtension(
             LOADBALANCER_AGENT, controller, parent,
-            path_prefix=plugin_const.
-            COMMON_PREFIXES[plugin_const.LOADBALANCER]))
+            path_prefix=loadbalancer.LOADBALANCER_PREFIX))
         return exts
 
     def get_extended_resources(self, version):

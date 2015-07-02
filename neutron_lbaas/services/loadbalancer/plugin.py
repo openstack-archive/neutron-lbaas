@@ -67,6 +67,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
     supported_extension_aliases = ["lbaas",
                                    "lbaas_agent_scheduler",
                                    "service-type"]
+    path_prefix = lb_ext.LOADBALANCER_PREFIX
 
     # lbaas agent notifiers to handle agent update operations;
     # can be updated by plugin drivers while loading;
@@ -374,6 +375,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     supported_extension_aliases = ["lbaasv2",
                                    "lbaas_agent_schedulerv2",
                                    "service-type"]
+    path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
 
     agent_notifiers = (
         agent_scheduler_v2.LbaasAgentSchedulerDbMixin.agent_notifiers)

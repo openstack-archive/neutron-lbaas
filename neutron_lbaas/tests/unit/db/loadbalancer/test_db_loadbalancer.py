@@ -110,7 +110,7 @@ class NoopLbaaSDriver(abstract_driver.LoadBalancerAbstractDriver):
 
 class LoadBalancerTestMixin(object):
     resource_prefix_map = dict(
-        (k, constants.COMMON_PREFIXES[constants.LOADBALANCER])
+        (k, loadbalancer.LOADBALANCER_PREFIX)
         for k in loadbalancer.RESOURCE_ATTRIBUTE_MAP.keys()
     )
 

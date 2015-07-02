@@ -27,6 +27,8 @@ from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
 
+LOADBALANCER_PREFIX = "/lb"
+
 
 # Loadbalancer Exceptions
 class DelayOrTimeoutInvalid(nexception.BadRequest):
@@ -378,7 +380,7 @@ class Loadbalancer(extensions.ExtensionDescriptor):
             resource = extensions.ResourceExtension(
                 collection_name,
                 controller, parent,
-                path_prefix=constants.COMMON_PREFIXES[constants.LOADBALANCER],
+                path_prefix=LOADBALANCER_PREFIX,
                 attr_map=params)
             resources.append(resource)
 
