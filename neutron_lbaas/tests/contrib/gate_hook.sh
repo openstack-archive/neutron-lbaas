@@ -2,12 +2,16 @@
 
 set -ex
 
-testenv=${1:-"apiv2"}
+testenv=${2:-"apiv2"}
 
-if [ "$testenv" = "lbaasv1" ]; then
+if [ "$1" = "lbaasv1" ]; then
     testenv="apiv1"
-elif [ "$testenv" = "lbaasv2" ]; then
-    testenv="apiv2"
+elif [ "$1" = "lbaasv2" ]; then
+    if [ "$2" = "api" ]; then
+        testenv="apiv2"
+    elif [ "$2" = "scenario" ]; then
+          testenv="scenario"
+    fi
 fi
 
 export DEVSTACK_LOCAL_CONFIG="enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas"
