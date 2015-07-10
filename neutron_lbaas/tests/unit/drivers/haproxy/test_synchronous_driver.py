@@ -455,8 +455,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             device_exists.return_value = True
             self.driver._cleanup_namespace(self._sample_in_loadbalancer().id)
             device_exists.assert_called_once_with(device.name)
-            vif_driver.unplug.assert_any_calls(
-                [mock.call(device.name, ns_name.return_value)])
+            vif_driver.unplug.assert_any_call(
+                device.name, namespace=ns_name.return_value)
             self.assertEqual(1, vif_driver.unplug.call_count)
 
     def test_kill_processes(self):
