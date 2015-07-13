@@ -144,6 +144,11 @@ class TestLBaaSDriverBase(
 
 class TestLBaaSDriverRestClient(TestLBaaSDriverBase):
     def setUp(self):
+
+        cfg.CONF.set_override('vdirect_address', '1.1.1.1',
+                              group='radwarev2')
+        cfg.CONF.set_override('ha_secondary_address', '1.1.1.2',
+                              group='radwarev2')
         super(TestLBaaSDriverRestClient, self).setUp()
 
         self.flip_servers_mock = mock.Mock(
@@ -165,14 +170,13 @@ class TestLBaaSDriverRestClient(TestLBaaSDriverBase):
                                                   None, None, False)
 
     def test_flip_servers(self):
-        self.skipTest('Test incorrectly using assert method that does not '
-                      'exist.')
         server = self.driver.rest_client.server
         sec_server = self.driver.rest_client.secondary_server
+
         self.driver.rest_client._recover = self.orig_recover
+        self.driver.rest_client._flip_servers = self.orig_flip_servers
         self.driver.rest_client.call('GET', '/api/workflowTemplate',
                                      None, None)
-        self.flip_servers_mock.assert_called_once()
         self.assertEqual(server, self.driver.rest_client.secondary_server)
         self.assertEqual(sec_server, self.driver.rest_client.server)
 
@@ -256,19 +260,26 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
             self.assertTrue(False)
 
     def test_wf_created_on_first_member_creation(self):
-        self.skipTest('Test incorrectly using assert method that does not '
-                      'exist.')
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
             with self.loadbalancer(subnet=vip_sub) as lb:
+                lb_id = lb['loadbalancer']['id']
                 with self.listener(
-                    loadbalancer_id=lb['loadbalancer']['id']) as listener:
+                    loadbalancer_id=lb_id) as listener:
                     with self.pool(
                         protocol=lb_const.PROTOCOL_HTTP,
                         listener_id=listener['listener']['id']) as pool:
                         self.driver_rest_call_mock.assert_has_calls([])
                         with self.member(pool_id=pool['pool']['id'],
                                          subnet=vip_sub, address='10.0.1.10'):
-                            self.driver_rest_call_mock.assert_called_once()
+                            calls = [
+                                mock.call(
+                                    'POST',
+                                    '/api/workflow/LB_' + lb_id +
+                                    '/action/apply',
+                                    mock.ANY,
+                                    v2_driver.TEMPLATE_HEADER)
+                            ]
+                            self.driver_rest_call_mock.assert_has_calls(calls)
 
     def test_wf_deleted_on_lb_deletion(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
