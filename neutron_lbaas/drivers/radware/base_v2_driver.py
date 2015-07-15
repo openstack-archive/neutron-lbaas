@@ -117,6 +117,8 @@ class RadwareLBaaSBaseV2Driver(driver_base.LoadBalancerBaseDriver):
 
         self.load_balancer = LoadBalancerManager(self)
         self.listener = ListenerManager(self)
+        self.l7policy = L7PolicyManager(self)
+        self.l7rule = L7RuleManager(self)
         self.pool = PoolManager(self)
         self.member = MemberManager(self)
         self.health_monitor = HealthMonitorManager(self)
@@ -185,8 +187,61 @@ class ListenerManager(driver_base.BaseListenerManager):
             self.driver.execute_workflow(
                 context, self, listener, delete=True)
         else:
-            self.successful_completion(context, listener,
-                                       delete=True)
+            self.successful_completion(context, listener, delete=True)
+
+
+class L7PolicyManager(driver_base.BaseL7PolicyManager):
+
+    @log_helpers.log_method_call
+    def create(self, context, policy):
+        if self.driver.workflow_exists(policy.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, policy)
+        else:
+            self.successful_completion(context, policy)
+
+    @log_helpers.log_method_call
+    def update(self, context, old_policy, policy):
+        if self.driver.workflow_exists(old_policy.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, policy, old_data_model=old_policy)
+        else:
+            self.successful_completion(context, policy)
+
+    @log_helpers.log_method_call
+    def delete(self, context, policy):
+        if self.driver.workflow_exists(policy.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, policy, delete=True)
+        else:
+            self.successful_completion(context, policy, delete=True)
+
+
+class L7RuleManager(driver_base.BaseL7RuleManager):
+
+    @log_helpers.log_method_call
+    def create(self, context, rule):
+        if self.driver.workflow_exists(rule.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, rule)
+        else:
+            self.successful_completion(context, rule)
+
+    @log_helpers.log_method_call
+    def update(self, context, old_rule, rule):
+        if self.driver.workflow_exists(old_rule.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, rule, old_data_model=old_rule)
+        else:
+            self.successful_completion(context, rule)
+
+    @log_helpers.log_method_call
+    def delete(self, context, rule):
+        if self.driver.workflow_exists(rule.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, rule, delete=True)
+        else:
+            self.successful_completion(context, rule, delete=True)
 
 
 class PoolManager(driver_base.BasePoolManager):

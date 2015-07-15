@@ -103,11 +103,6 @@ class DriverError(nexception.NeutronException):
     message = _("An error happened in the driver")
 
 
-class LBConfigurationUnsupported(nexception.NeutronException):
-    message = _("Load balancer %(load_balancer_id)s configuration is not "
-                "supported by driver %(driver_name)s")
-
-
 class SessionPersistenceConfigurationInvalid(nexception.BadRequest):
     message = _("Session Persistence Invalid: %(msg)s")
 

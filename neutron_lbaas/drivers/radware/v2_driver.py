@@ -55,6 +55,14 @@ PROPERTY_DEFAULTS = {'type': 'none',
 LOADBALANCER_PROPERTIES = ['vip_address', 'admin_state_up']
 LISTENER_PROPERTIES = ['id', 'protocol_port', 'protocol',
                        'connection_limit', 'admin_state_up']
+DEFAULT_CERT_PROPERTIES = ['id', 'certificate', 'intermediates',
+                           'private_key', 'passphrase']
+SNI_CERT_PROPERTIES = DEFAULT_CERT_PROPERTIES + ['position']
+L7_RULE_PROPERTIES = ['id', 'type', 'compare_type',
+                      'key', 'value', 'admin_state_up']
+L7_POLICY_PROPERTIES = ['id', 'action', 'redirect_pool_id',
+                        'redirect_url', 'position', 'admin_state_up']
+DEFAULT_POOL_PROPERTIES = ['id']
 POOL_PROPERTIES = ['id', 'protocol', 'lb_algorithm', 'admin_state_up']
 MEMBER_PROPERTIES = ['id', 'address', 'protocol_port', 'weight',
                      'admin_state_up', 'subnet', 'mask', 'gw']
@@ -343,13 +351,13 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                     resource_ref=cert_mgr.get_service_url(
                         listener.loadbalancer_id),
                     service_name='Neutron LBaaS v2 Radware provider')
-                cert_dict = {
+                def_cert_dict = {
                     'id': listener.default_tls_container_id,
                     'certificate': default_cert.get_certificate(),
                     'intermediates': default_cert.get_intermediates(),
                     'private_key': default_cert.get_private_key(),
                     'passphrase': default_cert.get_private_key_passphrase()}
-                listener_dict['default_tls_certificate'] = cert_dict
+                listener_dict['default_tls_certificate'] = def_cert_dict
 
             if listener.sni_containers:
                 listener_dict['sni_tls_certificates'] = []
@@ -368,24 +376,32 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                          'private_key': sni_cert.get_private_key(),
                          'passphrase': sni_cert.get_private_key_passphrase()})
 
+            listener_dict['l7_policies'] = []
+            policies = [
+                policy for policy in listener.l7_policies
+                if policy.provisioning_status != constants.PENDING_DELETE]
+            for policy in policies:
+                policy_dict = {}
+                for prop in L7_POLICY_PROPERTIES:
+                    policy_dict[prop] = getattr(
+                        policy, prop, PROPERTY_DEFAULTS.get(prop))
+                policy_dict['rules'] = []
+                rules = [
+                    rule for rule in policy.rules
+                    if rule.provisioning_status != constants.PENDING_DELETE]
+                for rule in rules:
+                    rule_dict = {}
+                    for prop in L7_RULE_PROPERTIES:
+                        rule_dict[prop] = getattr(
+                            rule, prop, PROPERTY_DEFAULTS.get(prop))
+                    policy_dict['rules'].append(rule_dict)
+                if policy_dict['rules']:
+                    listener_dict['l7_policies'].append(policy_dict)
+
             if (listener.default_pool and
                 listener.default_pool.provisioning_status !=
                     constants.PENDING_DELETE):
-                pool_dict = {}
-                for prop in POOL_PROPERTIES:
-                    pool_dict[prop] = getattr(
-                        listener.default_pool, prop,
-                        PROPERTY_DEFAULTS.get(prop))
-
-                if (listener.default_pool.healthmonitor and
-                   listener.default_pool.healthmonitor.provisioning_status !=
-                    constants.PENDING_DELETE):
-                    hm_dict = {}
-                    for prop in HEALTH_MONITOR_PROPERTIES:
-                        hm_dict[prop] = getattr(
-                            listener.default_pool.healthmonitor, prop,
-                            PROPERTY_DEFAULTS.get(prop))
-                    pool_dict['healthmonitor'] = hm_dict
+                def_pool_dict = {'id': listener.default_pool.id}
 
                 if listener.default_pool.session_persistence:
                     sess_pers_dict = {}
@@ -393,28 +409,51 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                         sess_pers_dict[prop] = getattr(
                             listener.default_pool.session_persistence, prop,
                             PROPERTY_DEFAULTS.get(prop))
-                    pool_dict['sessionpersistence'] = sess_pers_dict
+                    def_pool_dict['sessionpersistence'] = sess_pers_dict
+                listener_dict['default_pool'] = def_pool_dict
 
-                pool_dict['members'] = []
-                members = [
-                    member for member in listener.default_pool.members
-                    if member.provisioning_status != constants.PENDING_DELETE]
-                for member in members:
-                    member_dict = {}
-                    for prop in MEMBER_PROPERTIES:
-                        member_dict[prop] = getattr(
-                            member, prop,
-                            PROPERTY_DEFAULTS.get(prop))
-                    if (proxy_port_address != lb.vip_address and
-                        netaddr.IPAddress(member.address)
-                        not in netaddr.IPNetwork(proxy_subnet['cidr'])):
-                        self._accomplish_member_static_route_data(
-                            ctx, member, member_dict,
-                            proxy_subnet['gateway_ip'])
-                    pool_dict['members'].append(member_dict)
-
-                listener_dict['default_pool'] = pool_dict
             graph['listeners'].append(listener_dict)
+
+        graph['pools'] = []
+        pools = [
+            pool for pool in lb.pools
+            if pool.provisioning_status != constants.PENDING_DELETE]
+        for pool in pools:
+            pool_dict = {}
+            for prop in POOL_PROPERTIES:
+                pool_dict[prop] = getattr(
+                    pool, prop,
+                    PROPERTY_DEFAULTS.get(prop))
+
+            if (pool.healthmonitor and
+                pool.healthmonitor.provisioning_status !=
+                constants.PENDING_DELETE):
+                hm_dict = {}
+                for prop in HEALTH_MONITOR_PROPERTIES:
+                    hm_dict[prop] = getattr(
+                        pool.healthmonitor, prop,
+                        PROPERTY_DEFAULTS.get(prop))
+                pool_dict['healthmonitor'] = hm_dict
+
+            pool_dict['members'] = []
+            members = [
+                member for member in pool.members
+                if member.provisioning_status != constants.PENDING_DELETE]
+            for member in members:
+                member_dict = {}
+                for prop in MEMBER_PROPERTIES:
+                    member_dict[prop] = getattr(
+                        member, prop,
+                        PROPERTY_DEFAULTS.get(prop))
+                if (proxy_port_address != lb.vip_address and
+                    netaddr.IPAddress(member.address)
+                    not in netaddr.IPNetwork(proxy_subnet['cidr'])):
+                    self._accomplish_member_static_route_data(
+                        ctx, member, member_dict,
+                        proxy_subnet['gateway_ip'])
+                pool_dict['members'].append(member_dict)
+            graph['pools'].append(pool_dict)
+
         return graph
 
     def _get_proxy_port_subnet_id(self, lb):
