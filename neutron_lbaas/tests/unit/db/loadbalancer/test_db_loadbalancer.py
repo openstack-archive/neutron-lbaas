@@ -26,7 +26,6 @@ from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.tests.unit.db import test_db_base_plugin_v2
-from oslo_config import cfg
 import testtools
 import webob.exc
 
@@ -311,11 +310,9 @@ class LoadBalancerPluginDbTestCase(LoadBalancerTestMixin,
             lbaas_provider = (
                 constants.LOADBALANCER +
                 ':lbaas:' + NOOP_DRIVER_KLASS + ':default')
-        cfg.CONF.set_override('service_provider',
-                              [lbaas_provider],
-                              'service_providers')
-        #force service type manager to reload configuration:
-        sdb.ServiceTypeManager._instance = None
+
+        # override the default service provider
+        self.set_override([lbaas_provider])
 
         # removing service-type because it resides in neutron and tests
         # dont care
@@ -659,10 +656,9 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                  ':haproxy:neutron_lbaas.services.loadbalancer.'
                  'drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver'
                  ':default')
-        cfg.CONF.set_override('service_provider',
-                              [prov1, prov2],
-                              'service_providers')
-        sdb.ServiceTypeManager._instance = None
+        # override the default service provider
+        self.set_override([prov1, prov2])
+
         self.plugin = loadbalancer_plugin.LoadBalancerPlugin()
         with self.subnet() as subnet:
             ctx = context.get_admin_context()
@@ -1608,12 +1604,11 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
             qry = ctx.session.query(sdb.ProviderResourceAssociation)
             self.assertEqual(qry.count(), 2)
             #removing driver
-            cfg.CONF.set_override('service_provider',
-                                  [constants.LOADBALANCER +
-                                   ':lbaas1:' + NOOP_DRIVER_KLASS +
-                                   ':default'],
-                                  'service_providers')
-            sdb.ServiceTypeManager._instance = None
+            self.set_override([
+                constants.LOADBALANCER +
+                ':lbaas1:' + NOOP_DRIVER_KLASS +
+                ':default'
+            ])
             # calling _remove_orphan... in constructor
             self.assertRaises(
                 SystemExit,

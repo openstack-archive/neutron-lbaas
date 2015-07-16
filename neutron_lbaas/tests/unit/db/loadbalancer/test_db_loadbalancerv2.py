@@ -25,10 +25,8 @@ from neutron.common import constants as n_constants
 from neutron.common import exceptions as n_exc
 from neutron import context
 import neutron.db.l3_db  # noqa
-from neutron.db import servicetype_db as sdb
 from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
-from oslo_config import cfg
 from oslo_utils import uuidutils
 import testtools
 import webob.exc
@@ -308,11 +306,8 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             lbaas_provider = (
                 constants.LOADBALANCERV2 +
                 ':lbaas:' + NOOP_DRIVER_CLASS + ':default')
-        cfg.CONF.set_override('service_provider',
-                              [lbaas_provider],
-                              'service_providers')
-        # force service type manager to reload configuration:
-        sdb.ServiceTypeManager._instance = None
+        # override the default service provider
+        self.set_override([lbaas_provider])
 
         # removing service-type because it resides in neutron and tests
         # dont care
