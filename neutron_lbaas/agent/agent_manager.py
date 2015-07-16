@@ -46,7 +46,7 @@ OPTS = [
 
 
 class DeviceNotFoundOnAgent(n_exc.NotFound):
-    msg = _('Unknown device with loadbalancer_id %(loadbalancer_id)s')
+    message = _('Unknown device with loadbalancer_id %(loadbalancer_id)s')
 
 
 class LbaasAgentManager(periodic_task.PeriodicTasks):
