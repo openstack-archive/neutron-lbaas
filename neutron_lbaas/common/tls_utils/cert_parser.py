@@ -13,13 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from cryptography.hazmat import backends
+from cryptography.hazmat.primitives import serialization
 import neutron_lbaas.common.exceptions as exceptions
 from OpenSSL import crypto
 from OpenSSL import SSL
 import pyasn1.codec.der.decoder as decoder
 import pyasn1_modules.rfc2459 as rfc2459
 import six
-
 
 X509_BEG = "-----BEGIN CERTIFICATE-----"
 X509_END = "-----END CERTIFICATE-----"
@@ -58,7 +59,10 @@ def validate_cert(certificate, private_key=None,
 def _read_privatekey(privatekey_pem, passphrase=None):
     def cb(*args):
         if passphrase:
-            return six.b(passphrase).encode('utf-8')
+            if six.PY2:
+                return passphrase.encode("utf-8")
+            elif six.PY3:
+                return six.b(passphrase)
         else:
             raise exceptions.NeedsPassphrase
     return crypto.load_privatekey(crypto.FILETYPE_PEM, privatekey_pem, cb)
@@ -89,16 +93,37 @@ def _split_x509s(x509Str):
                 inside_x509 = True
 
 
+def _read_pyca_private_key(private_key, private_key_passphrase=None):
+    kw = {"password": None,
+          "backend": backends.default_backend()}
+    if private_key_passphrase is not None:
+        kw["password"] = private_key_passphrase.encode("utf-8")
+    else:
+        kw["password"] = None
+    try:
+        pk = serialization.load_pem_private_key(six.b(private_key), **kw)
+        return pk
+    except TypeError as ex:
+        if len(ex.args) > 0 and ex.args[0].startswith("Password"):
+            raise exceptions.NeedsPassphrase
+
+
 def dump_private_key(private_key, private_key_passphrase=None):
     """
-    Parses encrypted key to provide an unencrypted version
+    Parses encrypted key to provide an unencrypted version in PKCS8
 
     :param private_key: private key
     :param private_key_passphrase: private key passphrase
-    :return: Unencrypted private key
+    :return: Unencrypted private key in PKCS8
     """
-    pkey = _read_privatekey(private_key, private_key_passphrase)
-    return crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey)
+
+    # re encode the key as unencrypted PKCS8
+    pk = _read_pyca_private_key(private_key,
+                                private_key_passphrase=private_key_passphrase)
+    key = pk.private_bytes(encoding=serialization.Encoding.PEM,
+                           format=serialization.PrivateFormat.PKCS8,
+                           encryption_algorithm=serialization.NoEncryption())
+    return key
 
 
 def get_host_names(certificate):
@@ -121,15 +146,17 @@ def get_host_names(certificate):
     num_exts = x509.get_extension_count()
     for i in range(0, num_exts):
         ext = x509.get_extension(i)
-        if ext.get_short_name() == 'subjectAltName':
+        short_name = ext.get_short_name()
+        if short_name == six.b('subjectAltName'):
             data = ext.get_data()
-
             general_names_container = decoder.decode(
                 data, asn1Spec=rfc2459.GeneralNames())
             for general_names in general_names_container[0]:
-                if general_names.getName() == 'dNSName':
+                currName = general_names.getName()
+                if currName == 'dNSName':
                     octets = general_names.getComponent().asOctets()
-                    hostNames['dns_names'].append(octets.encode('utf-8'))
+                    decoded = octets.decode("utf-8")
+                    hostNames['dns_names'].append(decoded)
     return hostNames
 
 
