@@ -210,6 +210,30 @@ uJIQ
 -----END CERTIFICATE-----"""
 
 
+def _get_rsa_numbers(private_key, private_key_passphrase=None):
+    """
+    Grabs the private and public numbers as a dictionary
+    from an RSA private key used for the dump_private_key test case
+
+    :param private_key:
+    :param private_key_passphrase:
+    :return: a dictionary with keys (p,q,e,d,t,e,n)
+    """
+    kw = {"private_key_passphrase": private_key_passphrase}
+    pk = cert_parser._read_pyca_private_key(private_key, **kw)
+    p = pk.private_numbers().p
+    q = pk.private_numbers().q
+    d = pk.private_numbers().d
+    t = (p - 1) * (q - 1)
+    e = pk.private_numbers().public_numbers.e
+    n = pk.private_numbers().public_numbers.n  # should be p*q
+    # Force a canonical representation for comparison algos
+    # by swapping p and q if q is bigger
+    if p < q:
+        (p, q) = (q, p)
+    return {"p": p, "q": q, "d": d, "t": t, "e": e, "n": n}
+
+
 class TestTLSParseUtils(base.BaseTestCase):
     def test_alt_subject_name_parses(self):
         hosts = cert_parser.get_host_names(ALT_EXT_CRT)
@@ -254,16 +278,17 @@ class TestTLSParseUtils(base.BaseTestCase):
         self.assertRaises(exceptions.NeedsPassphrase,
                           cert_parser.dump_private_key,
                           ENCRYPTED_PKCS8_CRT_KEY)
-        self.assertEqual(UNENCRYPTED_PKCS8_CRT_KEY,
-                         cert_parser.dump_private_key(
-                             ENCRYPTED_PKCS8_CRT_KEY,
-                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE
-                         ))
+        striped_rsa_key = _get_rsa_numbers(
+            UNENCRYPTED_PKCS8_CRT_KEY)
+        decrypted_rsa_key = _get_rsa_numbers(
+            cert_parser.dump_private_key(ENCRYPTED_PKCS8_CRT_KEY,
+                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
+
+        self.assertEqual(striped_rsa_key, decrypted_rsa_key)
         self.assertIsNot(ENCRYPTED_PKCS8_CRT_KEY,
                          cert_parser.dump_private_key(
                              ENCRYPTED_PKCS8_CRT_KEY,
-                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE
-                         ))
+                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
 
     def test_validate_cert_and_key_match(self):
         self.assertTrue(cert_parser.validate_cert(ALT_EXT_CRT,
