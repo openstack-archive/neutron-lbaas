@@ -9,8 +9,9 @@ function neutron_agent_lbaas_install_agent_packages {
     if is_ubuntu; then
         sudo add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse" -y
         sudo apt-get update
+        sudo apt-get install haproxy -t trusty-backports
     fi
-    if is_ubuntu || is_fedora || is_suse; then
+    if is_fedora || is_suse; then
         install_package haproxy
     fi
 }
