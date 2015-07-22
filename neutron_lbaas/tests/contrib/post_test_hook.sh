@@ -6,12 +6,16 @@ NEUTRON_LBAAS_DIR="$BASE/new/neutron-lbaas"
 TEMPEST_CONFIG_DIR="$BASE/new/tempest/etc"
 SCRIPTS_DIR="/usr/local/jenkins/slave_scripts"
 
-testenv=${1:-"apiv2"}
+testenv=${2:-"apiv2"}
 
-if [ "$testenv" = "lbaasv1" ]; then
+if [ "$1" = "lbaasv1" ]; then
     testenv="apiv1"
-elif [ "$testenv" = "lbaasv2" ]; then
-    testenv="apiv2"
+elif [ "$1" = "lbaasv2" ]; then
+    if [ "$2" = "api" ]; then
+        testenv="apiv2"
+    elif [ "$2" = "scenario" ]; then
+          testenv="scenario"
+    fi
 fi
 
 function generate_testr_results {
@@ -42,6 +46,8 @@ if [ "$testenv" = "apiv2" ]; then
     sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v2/api"
 elif [ "$testenv" = "apiv1" ]; then
     sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v1/api"
+elif ["$testenv" = "scenario" ]; then
+    sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v2/scenario"
 else
     echo "ERROR: unsupported testenv: $testenv"
     exit 1
