@@ -39,14 +39,14 @@ sudo chown -R $owner:stack $NEUTRON_LBAAS_DIR
 
 sudo_env=" OS_TESTR_CONCURRENCY=1"
 
-# Configure the api tests to use the tempest.conf set by devstack
+# Configure the api and scenario tests to use the tempest.conf set by devstack
 sudo_env+=" TEMPEST_CONFIG_DIR=$TEMPEST_CONFIG_DIR"
 
 if [ "$testenv" = "apiv2" ]; then
     sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v2/api"
 elif [ "$testenv" = "apiv1" ]; then
     sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v1/api"
-elif ["$testenv" = "scenario" ]; then
+elif [ "$testenv" = "scenario" ]; then
     sudo_env+=" OS_TEST_PATH=$NEUTRON_LBAAS_DIR/neutron_lbaas/tests/tempest/v2/scenario"
 else
     echo "ERROR: unsupported testenv: $testenv"
