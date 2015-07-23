@@ -272,7 +272,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         confs_dir = os.path.abspath(os.path.normpath(self.state_path))
         conf_dir = os.path.join(confs_dir, loadbalancer_id)
         if ensure_state_dir:
-            linux_utils.ensure_dir(conf_dir)
+            n_utils.ensure_dir(conf_dir)
         return os.path.join(conf_dir, kind)
 
     def _plug(self, namespace, port, vip_address, reuse_existing=True):

@@ -355,7 +355,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         ret_val = self.driver.deployable(self.lb)
         self.assertTrue(ret_val)
 
-    @mock.patch('neutron.agent.linux.utils.ensure_dir')
+    @mock.patch('neutron.common.utils.ensure_dir')
     def test_get_state_file_path(self, ensure_dir):
         path = self.driver._get_state_file_path(self.lb.id, 'conf',
                                                 ensure_state_dir=False)
@@ -410,7 +410,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.vif_driver.unplug.assert_called_once_with(interface_name,
                                                        namespace='ns1')
 
-    @mock.patch('neutron.agent.linux.utils.ensure_dir')
+    @mock.patch('neutron.common.utils.ensure_dir')
     @mock.patch('neutron_lbaas.services.loadbalancer.drivers.haproxy.'
                 'jinja_cfg.save_config')
     @mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
