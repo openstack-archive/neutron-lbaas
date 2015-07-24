@@ -136,8 +136,11 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
 
     @log_helpers.log_method_call
     def delete(self, context, lb):
-        self.driver.remove_workflow(
-            context, self, lb)
+        if self.driver.workflow_exists(lb):
+            self.driver.remove_workflow(
+                context, self, lb)
+        else:
+            self.successful_completion(context, lb)
 
     @log_helpers.log_method_call
     def refresh(self, context, lb):
