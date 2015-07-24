@@ -48,6 +48,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
     def resource_setup(cls):
         super(BaseTestCase, cls).resource_setup()
         cls.servers_keypairs = {}
+        cls.servers = {}
         cls.members = []
         cls.floating_ips = {}
         cls.servers_floating_ips = {}
@@ -136,8 +137,24 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
     def _create_servers(self):
         for count in range(2):
-            self._create_server(name=("server%s" % (count + 1)))
+            self.server = self._create_server(name=("server%s" % (count + 1)))
+            if count == 0:
+                self.servers['primary'] = self.server['id']
+            else:
+                self.servers['secondary'] = self.server['id']
         self.assertEqual(len(self.servers_keypairs), 2)
+
+    def _stop_server(self):
+        for name, value in six.iteritems(self.servers):
+            if name == 'primary':
+                self.servers_client.stop(value)
+                self.servers_client.wait_for_server_status(value, 'SHUTOFF')
+
+    def _start_server(self):
+        for name, value in six.iteritems(self.servers):
+            if name == 'primary':
+                self.servers_client.start(value)
+                self.servers_client.wait_for_server_status(value, 'ACTIVE')
 
     def _start_servers(self):
         """
@@ -216,6 +233,14 @@ class BaseTestCase(manager.NetworkScenarioTest):
             protocol='HTTP', protocol_port=80)
         self.assertTrue(self.listener)
         return self.listener
+
+    def _create_health_monitor(self, pool_id):
+        """Create a pool with ROUND_ROBIN algorithm."""
+        self.hm = self.health_monitors_client.create_health_monitor(
+            type='HTTP', max_retries=5, delay=3, timeout=5,
+            pool_id=pool_id)
+        self.assertTrue(self.hm)
+        return self.hm
 
     def _create_pool(self, listener_id):
         """Create a pool with ROUND_ROBIN algorithm."""
@@ -362,3 +387,28 @@ class BaseTestCase(manager.NetworkScenarioTest):
         # Assert that each member of the pool gets balanced at least once
         for member, counter in six.iteritems(counters):
             self.assertGreater(counter, 0, 'Member %s never balanced' % member)
+
+    def _check_load_balancing_after_stopping_server(self):
+        """
+        1. Send NUM requests on the floating ip associated with the VIP
+        2. Check that the requests is shared in one ACTIVE server
+        """
+
+        self._check_connection(self.vip_ip)
+        self._check_requests_after_stopping_server(self.vip_ip,
+                                                   ["server1", "server2"])
+
+    def _check_requests_after_stopping_server(self, vip_ip, servers):
+        counters = dict.fromkeys(servers, 0)
+        for i in range(self.num):
+            try:
+                server = urllib2.urlopen("http://{0}/".format(vip_ip)).read()
+                counters[server] += 1
+            # HTTP exception means fail of server, so don't increase counter
+            # of success and continue connection tries
+            except urllib2.HTTPError:
+                continue
+        # Assert that each member of the pool gets balanced only once
+        for member, counter in six.iteritems(counters):
+            if member == 'server1':
+                self.assertEqual(counter, 0, 'Member %s not balanced' % member)
