@@ -652,8 +652,8 @@ class PayloadPreparer(object):
             'lb_algorithm': pool.lb_algorithm,
             'admin_state_up': pool.admin_state_up
         }
-        if pool.sessionpersistence:
-            peristence = pool.sessionpersistence
+        if pool.session_persistence:
+            peristence = pool.session_persistence
             peristence_payload = self.prepare_sessionpersistence(peristence)
             update_attrs['sessionpersistence'] = peristence_payload
         return update_attrs

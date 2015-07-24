@@ -65,11 +65,15 @@ class BaseDataModel(object):
 
     @classmethod
     def from_sqlalchemy_model(cls, sa_model, calling_class=None):
+        attr_mapping = vars(cls).get("attr_mapping")
         instance = cls()
         for attr_name in vars(instance):
             if attr_name.startswith('_'):
                 continue
-            attr = getattr(sa_model, attr_name)
+            if attr_mapping and attr_name in attr_mapping.keys():
+                attr = getattr(sa_model, attr_mapping[attr_name])
+            else:
+                attr = getattr(sa_model, attr_name)
             # Handles M:1 or 1:1 relationships
             if isinstance(attr, model_base.BASEV2):
                 if hasattr(instance, attr_name):
@@ -304,11 +308,14 @@ class HealthMonitor(BaseDataModel):
 
 class Pool(BaseDataModel):
 
+    # Map deprecated attribute names to new ones.
+    attr_mapping = {'sessionpersistence': 'session_persistence'}
+
     def __init__(self, id=None, tenant_id=None, name=None, description=None,
                  healthmonitor_id=None, protocol=None, lb_algorithm=None,
                  admin_state_up=None, operating_status=None,
                  provisioning_status=None, members=None, healthmonitor=None,
-                 sessionpersistence=None, listener=None):
+                 session_persistence=None, listener=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -321,7 +328,10 @@ class Pool(BaseDataModel):
         self.provisioning_status = provisioning_status
         self.members = members or []
         self.healthmonitor = healthmonitor
-        self.sessionpersistence = sessionpersistence
+        self.session_persistence = session_persistence
+        # NOTE(eezhova): Old attribute name is kept for backwards
+        # compatibility with out-of-tree drivers.
+        self.sessionpersistence = self.session_persistence
         self.listener = listener
 
     def attached_to_loadbalancer(self):
@@ -337,9 +347,9 @@ class Pool(BaseDataModel):
         if self.listener:
             ret_dict['listeners'].append({'id': self.listener.id})
         ret_dict['session_persistence'] = None
-        if self.sessionpersistence:
+        if self.session_persistence:
             ret_dict['session_persistence'] = (
-                self.sessionpersistence.to_api_dict())
+                self.session_persistence.to_api_dict())
         ret_dict['members'] = [{'id': member.id} for member in self.members]
         return ret_dict
 
@@ -347,6 +357,7 @@ class Pool(BaseDataModel):
     def from_dict(cls, model_dict):
         healthmonitor = model_dict.pop('healthmonitor', None)
         session_persistence = model_dict.pop('session_persistence', None)
+        model_dict.pop('sessionpersistence', None)
         listener = model_dict.pop('listener', [])
         members = model_dict.pop('members', [])
         model_dict['members'] = [Member.from_dict(member)

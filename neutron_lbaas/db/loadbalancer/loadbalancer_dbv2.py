@@ -404,7 +404,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             if session_info:
                 s_p = self._create_session_persistence_db(session_info,
                                                           pool_db.id)
-                pool_db.sessionpersistence = s_p
+                pool_db.session_persistence = s_p
 
             context.session.add(pool_db)
         return data_models.Pool.from_sqlalchemy_model(pool_db)
@@ -514,11 +514,6 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             # do not want listener, members, or healthmonitor in dict
             pool_dict = pool.to_dict(listener=False, members=False,
                                      healthmonitor=False)
-            # have to rename sessionpersistence key to session_persistence
-            # for compatibility with what is acceptable by the extension
-            pool_dict['session_persistence'] = pool_dict.get(
-                'sessionpersistence')
-            del pool_dict['sessionpersistence']
             pool_dict['healthmonitor_id'] = hm_db.id
             self.update_pool(context, pool_id, pool_dict)
             hm_db = self._get_resource(context, models.HealthMonitorV2,

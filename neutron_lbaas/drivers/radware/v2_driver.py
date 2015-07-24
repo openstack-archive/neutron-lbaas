@@ -363,11 +363,11 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                             PROPERTY_DEFAULTS.get(prop))
                     pool_dict['healthmonitor'] = hm_dict
 
-                if listener.default_pool.sessionpersistence:
+                if listener.default_pool.session_persistence:
                     sess_pers_dict = {}
                     for prop in SESSION_PERSISTENCY_PROPERTIES:
                         sess_pers_dict[prop] = getattr(
-                            listener.default_pool.sessionpersistence, prop,
+                            listener.default_pool.session_persistence, prop,
                             PROPERTY_DEFAULTS.get(prop))
                     pool_dict['sessionpersistence'] = sess_pers_dict
 

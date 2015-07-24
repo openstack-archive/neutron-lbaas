@@ -145,7 +145,7 @@ class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
         HealthMonitorV2,
         backref=orm.backref("pool", uselist=False),
         lazy='joined')
-    sessionpersistence = orm.relationship(
+    session_persistence = orm.relationship(
         SessionPersistenceV2,
         uselist=False,
         backref=orm.backref("pool", uselist=False),
