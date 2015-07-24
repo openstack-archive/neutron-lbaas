@@ -254,10 +254,10 @@ class PoolManager(driver_base.BasePoolManager):
             'protocol': pool.protocol,
             'lb_algorithm': pool.lb_algorithm,
         }
-        if pool.sessionpersistence:
+        if pool.session_persistence:
             args['session_persistence'] = {
-                'type': pool.sessionpersistence.type,
-                'cookie_name': pool.sessionpersistence.cookie_name,
+                'type': pool.session_persistence.type,
+                'cookie_name': pool.session_persistence.cookie_name,
             }
         write_func(cls._url(pool), args)
 

@@ -294,9 +294,9 @@ def _transform_pool(pool):
     if pool.healthmonitor and pool.healthmonitor.admin_state_up:
         ret_value['health_monitor'] = _transform_health_monitor(
             pool.healthmonitor)
-    if pool.sessionpersistence:
+    if pool.session_persistence:
         ret_value['session_persistence'] = _transform_session_persistence(
-            pool.sessionpersistence)
+            pool.session_persistence)
     return ret_value
 
 

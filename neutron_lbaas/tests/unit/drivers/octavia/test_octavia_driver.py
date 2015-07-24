@@ -177,10 +177,10 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'protocol': pool.protocol,
             'lb_algorithm': pool.lb_algorithm,
         }
-        if pool.sessionpersistence:
+        if pool.session_persistence:
             args['session_persistence'] = {
-                'type': pool.sessionpersistence.type,
-                'cookie_name': pool.sessionpersistence.cookie_name,
+                'type': pool.session_persistence.type,
+                'cookie_name': pool.session_persistence.cookie_name,
             }
         m.create(pool, pool_url, args)
 

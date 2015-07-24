@@ -799,7 +799,6 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                             "protocol_port": 80,
                                             "protocol": "HTTP",
                                             "connection_limit": -1,
-                                            "admin_state_up": True,
                                             "default_pool": {
                                                 "id": pool['pool']['id'],
                                                 "protocol": "HTTP",
