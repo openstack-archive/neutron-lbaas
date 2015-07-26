@@ -15,6 +15,7 @@
 # limitations under the License.
 
 import copy
+from datetime import datetime
 
 import mock
 from neutron.api import extensions
@@ -32,7 +33,6 @@ from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
     import test_agent_scheduler
 from oslo_config import cfg
-from oslo_utils import timeutils
 import six
 from webob import exc
 
@@ -89,10 +89,10 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             callback = agents_db.AgentExtRpcCallback()
             callback.report_state(self.adminContext,
                                   agent_state={'agent_state': lbaas_hosta},
-                                  time=timeutils.strtime())
+                                  time=datetime.utcnow().isoformat())
             callback.report_state(self.adminContext,
                                   agent_state={'agent_state': lbaas_hostb},
-                                  time=timeutils.strtime())
+                                  time=datetime.utcnow().isoformat())
             res += [lbaas_hosta, lbaas_hostb]
         return res
 
