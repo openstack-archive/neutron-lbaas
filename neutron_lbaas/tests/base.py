@@ -22,7 +22,6 @@ from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import base as ext_base
 from neutron.tests.unit.extensions import test_quotasv2
 from neutron.tests.unit import testlib_api
-from oslo_config import cfg
 from testtools import matchers
 
 
@@ -34,18 +33,12 @@ class NeutronDbPluginV2TestCase(
     test_db_base_plugin_v2.NeutronDbPluginV2TestCase):
 
     def set_override(self, lbaas_provider):
-        # TODO(armax): remove this if branch as soon as the ServiceTypeManager
-        # API for adding provider configurations becomes available
-        if not hasattr(st_db.ServiceTypeManager, 'add_provider_configuration'):
-            cfg.CONF.set_override(
-                'service_provider', lbaas_provider, 'service_providers')
-        else:
-            # override the default service provider
-            self.service_providers = (
-                mock.patch.object(st_db.ServiceTypeManager,
-                                  'get_service_providers').start())
-            self.service_providers.return_value = (
-                self._to_provider_dicts(lbaas_provider))
+        # override the default service provider
+        self.service_providers = (
+            mock.patch.object(st_db.ServiceTypeManager,
+                              'get_service_providers').start())
+        self.service_providers.return_value = (
+            self._to_provider_dicts(lbaas_provider))
 
         # need to reload provider configuration
         st_db.ServiceTypeManager._instance = None
