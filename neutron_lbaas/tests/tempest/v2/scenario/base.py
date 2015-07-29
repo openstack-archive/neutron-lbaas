@@ -17,6 +17,7 @@ import tempfile
 import time
 
 import six
+from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
 
 from neutron_lbaas.tests.tempest.lib.common import commands
@@ -217,7 +218,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 return False
             except IOError:
                 return False
-            except urllib2.HTTPError:
+            except error.HTTPError:
                 return False
         timeout = config.compute.ping_timeout
         start = time.time()
@@ -382,7 +383,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 counters[server] += 1
             # HTTP exception means fail of server, so don't increase counter
             # of success and continue connection tries
-            except urllib2.HTTPError:
+            except error.HTTPError:
                 continue
         # Assert that each member of the pool gets balanced at least once
         for member, counter in six.iteritems(counters):
@@ -406,7 +407,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 counters[server] += 1
             # HTTP exception means fail of server, so don't increase counter
             # of success and continue connection tries
-            except urllib2.HTTPError:
+            except error.HTTPError:
                 continue
         # Assert that each member of the pool gets balanced only once
         for member, counter in six.iteritems(counters):
