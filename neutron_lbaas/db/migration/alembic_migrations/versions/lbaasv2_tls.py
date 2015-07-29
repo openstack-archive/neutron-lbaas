@@ -52,10 +52,3 @@ def upgrade():
     op.add_column('lbaas_listeners',
                   sa.Column(u'default_tls_container_id', sa.String(128),
                             nullable=True))
-
-
-def downgrade():
-    migration.alter_enum('lbaas_listeners', 'protocol', old_listener_protocols,
-                         nullable=False)
-    op.drop_table('lbaas_sni')
-    op.drop_column('lbaas_listeners', 'default_tls_container_id')

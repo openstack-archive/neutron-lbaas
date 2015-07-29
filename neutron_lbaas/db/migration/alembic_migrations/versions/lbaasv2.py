@@ -151,18 +151,3 @@ def upgrade():
         sa.ForeignKeyConstraint([u'loadbalancer_id'],
                                 [u'lbaas_loadbalancers.id'])
     )
-
-
-def downgrade():
-    op.drop_table(u'lbaas_loadbalancer_statistics')
-    op.drop_table(u'lbaas_listeners')
-    listener_protocols.drop(op.get_bind(), checkfirst=False)
-    op.drop_table(u'lbaas_loadbalancers')
-    op.drop_table(u'lbaas_members')
-    op.drop_table(u'lbaas_sessionpersistences')
-    sesssionpersistences_type.drop(op.get_bind(), checkfirst=False)
-    op.drop_table(u'lbaas_pools')
-    pool_protocols.drop(op.get_bind(), checkfirst=False)
-    lb_algorithms.drop(op.get_bind(), checkfirst=False)
-    op.drop_table(u'lbaas_healthmonitors')
-    healthmonitors_type.drop(op.get_bind(), checkfirst=False)

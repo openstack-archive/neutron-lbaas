@@ -75,35 +75,3 @@ def upgrade():
         u'lbaas_healthmonitors',
         sa.Column(PROVISIONING_STATUS, sa.String(16), nullable=False)
     )
-
-
-def downgrade():
-    op.add_column(
-        u'lbaas_loadbalancers',
-        sa.Column(STATUS, sa.String(16), nullable=False)
-    )
-    op.drop_column(u'lbaas_loadbalancers', PROVISIONING_STATUS)
-    op.drop_column(u'lbaas_loadbalancers', OPERATING_STATUS)
-    op.add_column(
-        u'lbaas_listeners',
-        sa.Column(STATUS, sa.String(16), nullable=False)
-    )
-    op.drop_column(u'lbaas_listeners', PROVISIONING_STATUS)
-    op.drop_column(u'lbaas_listeners', OPERATING_STATUS)
-    op.add_column(
-        u'lbaas_pools',
-        sa.Column(STATUS, sa.String(16), nullable=False)
-    )
-    op.drop_column(u'lbaas_pools', PROVISIONING_STATUS)
-    op.drop_column(u'lbaas_pools', OPERATING_STATUS)
-    op.add_column(
-        u'lbaas_members',
-        sa.Column(STATUS, sa.String(16), nullable=False)
-    )
-    op.drop_column(u'lbaas_members', PROVISIONING_STATUS)
-    op.drop_column(u'lbaas_members', OPERATING_STATUS)
-    op.add_column(
-        u'lbaas_healthmonitors',
-        sa.Column(STATUS, sa.String(16), nullable=False)
-    )
-    op.drop_column(u'lbaas_healthmonitors', PROVISIONING_STATUS)
