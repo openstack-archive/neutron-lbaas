@@ -108,6 +108,17 @@ class BaseTestCase(manager.NetworkScenarioTest):
             tenant_id=self.tenant_id,
             **rule)
 
+    def _ipv6_subnet(self, address6_mode):
+        router = self._get_router(tenant_id=self.tenant_id)
+        self.network = self._create_network(tenant_id=self.tenant_id)
+        self.subnet = self._create_subnet(network=self.network,
+                                          namestart='sub6',
+                                          ip_version=6,
+                                          ipv6_ra_mode=address6_mode,
+                                          ipv6_address_mode=address6_mode)
+        self.subnet.add_to_router(router_id=router['id'])
+        self.addCleanup(self.subnet.delete)
+
     def _create_server(self, name):
         keypair = self.create_keypair()
         security_groups = [{'name': self.security_group['name']}]
@@ -209,24 +220,6 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                       'script': 'script2'}
                 ssh_client.exec_command(cmd)
 
-    def _check_connection(self, check_ip, port=80):
-        def try_connect(ip, port):
-            try:
-                resp = urllib2.urlopen("http://{0}:{1}/".format(ip, port))
-                if resp.getcode() == 200:
-                    return True
-                return False
-            except IOError:
-                return False
-            except error.HTTPError:
-                return False
-        timeout = config.compute.ping_timeout
-        start = time.time()
-        while not try_connect(check_ip, port):
-            if (time.time() - start) > timeout:
-                message = "Timed out trying to connect to %s" % check_ip
-                raise exceptions.TimeoutException(message)
-
     def _create_listener(self, load_balancer_id):
         """Create a listener with HTTP protocol listening on port 80."""
         self.listener = self.listeners_client.create_listener(
@@ -235,11 +228,11 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.assertTrue(self.listener)
         return self.listener
 
-    def _create_health_monitor(self, pool_id):
+    def _create_health_monitor(self):
         """Create a pool with ROUND_ROBIN algorithm."""
         self.hm = self.health_monitors_client.create_health_monitor(
             type='HTTP', max_retries=5, delay=3, timeout=5,
-            pool_id=pool_id)
+            pool_id=self.pool['id'])
         self.assertTrue(self.hm)
         return self.hm
 
@@ -295,7 +288,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         # Check for floating ip status before you check load-balancer
         self.check_floating_ip_status(floating_ip, "ACTIVE")
 
-    def _create_load_balancer(self):
+    def _create_load_balancer(self, ip_version=4):
         self.create_lb_kwargs = {'tenant_id': self.tenant_id,
                                  'vip_subnet_id': self.subnet['id']}
         self.load_balancer = self.load_balancers_client.create_load_balancer(
@@ -313,15 +306,17 @@ class BaseTestCase(manager.NetworkScenarioTest):
                              pool_id=self.pool['id'],
                              subnet_id=self.subnet['id'])
 
-        if (config.network.public_network_id and not
-                config.network.tenant_networks_reachable):
-            load_balancer = net_resources.AttributeDict(self.load_balancer)
-            self._assign_floating_ip_to_lb_vip(load_balancer)
-            self.vip_ip = self.floating_ips[
-                load_balancer.id][0]['floating_ip_address']
+        self.vip_ip = self.load_balancer.get('vip_address')
 
-        else:
-            self.vip_ip = self.lb.vip_address
+        # if the ipv4 is used for lb, then fetch the right values from
+        # tempest.conf file
+        if ip_version == 4:
+            if (config.network.public_network_id and not
+                    config.network.tenant_networks_reachable):
+                load_balancer = net_resources.AttributeDict(self.load_balancer)
+                self._assign_floating_ip_to_lb_vip(load_balancer)
+                self.vip_ip = self.floating_ips[
+                    load_balancer.id][0]['floating_ip_address']
 
         # Currently the ovs-agent is not enforcing security groups on the
         # vip port - see https://bugs.launchpad.net/neutron/+bug/1163569
@@ -373,7 +368,28 @@ class BaseTestCase(manager.NetworkScenarioTest):
         """
 
         self._check_connection(self.vip_ip)
-        self._send_requests(self.vip_ip, ["server1", "server2"])
+        counters = self._send_requests(self.vip_ip, ["server1", "server2"])
+        for member, counter in six.iteritems(counters):
+            self.assertGreater(counter, 0, 'Member %s never balanced' % member)
+
+    def _check_connection(self, check_ip, port=80):
+        def try_connect(check_ip, port):
+            try:
+                resp = urllib2.urlopen("http://{0}:{1}/".format(check_ip,
+                                                                port))
+                if resp.getcode() == 200:
+                    return True
+                return False
+            except IOError:
+                return False
+            except error.HTTPError:
+                return False
+        timeout = config.compute.ping_timeout
+        start = time.time()
+        while not try_connect(check_ip, port):
+            if (time.time() - start) > timeout:
+                message = "Timed out trying to connect to %s" % check_ip
+                raise exceptions.TimeoutException(message)
 
     def _send_requests(self, vip_ip, servers):
         counters = dict.fromkeys(servers, 0)
@@ -385,31 +401,15 @@ class BaseTestCase(manager.NetworkScenarioTest):
             # of success and continue connection tries
             except error.HTTPError:
                 continue
-        # Assert that each member of the pool gets balanced at least once
-        for member, counter in six.iteritems(counters):
-            self.assertGreater(counter, 0, 'Member %s never balanced' % member)
+        return counters
 
-    def _check_load_balancing_after_stopping_server(self):
+    def _traffic_validation_after_stopping_server(self):
         """
-        1. Send NUM requests on the floating ip associated with the VIP
-        2. Check that the requests is shared in one ACTIVE server
+        Check that the requests are sent only to one ACTIVE server
+        Assert that no traffic is sent to server1
         """
-
-        self._check_connection(self.vip_ip)
-        self._check_requests_after_stopping_server(self.vip_ip,
-                                                   ["server1", "server2"])
-
-    def _check_requests_after_stopping_server(self, vip_ip, servers):
-        counters = dict.fromkeys(servers, 0)
-        for i in range(self.num):
-            try:
-                server = urllib2.urlopen("http://{0}/".format(vip_ip)).read()
-                counters[server] += 1
-            # HTTP exception means fail of server, so don't increase counter
-            # of success and continue connection tries
-            except error.HTTPError:
-                continue
-        # Assert that each member of the pool gets balanced only once
+        counters = self._send_requests(self.vip_ip, ["server1", "server2"])
         for member, counter in six.iteritems(counters):
             if member == 'server1':
-                self.assertEqual(counter, 0, 'Member %s not balanced' % member)
+                self.assertEqual(counter, 0,
+                                 'Member %s is not balanced' % member)
