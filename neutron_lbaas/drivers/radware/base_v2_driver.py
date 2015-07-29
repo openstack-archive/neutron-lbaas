@@ -139,8 +139,6 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         if self.driver.workflow_exists(lb):
             self.driver.remove_workflow(
                 context, self, lb)
-        else:
-            self.successful_completion(context, lb)
 
     @log_helpers.log_method_call
     def refresh(self, context, lb):
@@ -163,7 +161,11 @@ class ListenerManager(driver_base.BaseListenerManager):
 
     @log_helpers.log_method_call
     def create(self, context, listener):
-        self.successful_completion(context, listener)
+        if self.driver.workflow_exists(listener.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, listener)
+        else:
+            self.successful_completion(context, listener)
 
     @log_helpers.log_method_call
     def update(self, context, old_listener, listener):
@@ -187,7 +189,11 @@ class PoolManager(driver_base.BasePoolManager):
 
     @log_helpers.log_method_call
     def create(self, context, pool):
-        self.successful_completion(context, pool)
+        if self.driver.workflow_exists(pool.root_loadbalancer):
+            self.driver.execute_workflow(
+                context, self, pool)
+        else:
+            self.successful_completion(context, pool)
 
     @log_helpers.log_method_call
     def update(self, context, old_pool, pool):
