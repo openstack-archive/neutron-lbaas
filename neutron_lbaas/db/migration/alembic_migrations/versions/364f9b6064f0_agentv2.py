@@ -38,7 +38,3 @@ def upgrade():
         sa.ForeignKeyConstraint(['agent_id'], ['agents.id'],
                                 ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('loadbalancer_id'))
-
-
-def downgrade():
-    op.drop_table('lbaas_loadbalanceragentbindings')

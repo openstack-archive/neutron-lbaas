@@ -60,9 +60,3 @@ def upgrade():
         sa.UniqueConstraint('monitor_id', 'edge_id',
                             name='uniq_nsxv_edge_monitor_mappings')
     )
-
-
-def downgrade():
-    op.drop_table('nsxv_edge_pool_mappings')
-    op.drop_table('nsxv_edge_vip_mappings')
-    op.drop_table('nsxv_edge_monitor_mappings')
