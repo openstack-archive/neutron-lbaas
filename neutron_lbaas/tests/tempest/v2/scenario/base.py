@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import cookielib
 import socket
 import tempfile
 import time
@@ -206,11 +207,13 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
             # Write a backend's response into a file
             resp = ('echo -ne "HTTP/1.1 200 OK\r\nContent-Length: 7\r\n'
-                    'Connection: close\r\nContent-Type: text/html; '
-                    'charset=UTF-8\r\n\r\n%s"; cat >/dev/null')
+                    'Set-Cookie:JSESSIONID=%(s_id)s\r\nConnection: close\r\n'
+                    'Content-Type: text/html; '
+                    'charset=UTF-8\r\n\r\n%(server)s"; cat >/dev/null')
 
             with tempfile.NamedTemporaryFile() as script:
-                script.write(resp % server_name)
+                script.write(resp % {'s_id': server_name[-1],
+                                     'server': server_name})
                 script.flush()
                 with tempfile.NamedTemporaryFile() as key:
                     key.write(private_key)
@@ -230,7 +233,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
             if len(self.server_ips) == 1:
                 with tempfile.NamedTemporaryFile() as script:
-                    script.write(resp % 'server2')
+                    script.write(resp % {'s_id': 2,
+                                         'server': 'server2'})
                     script.flush()
                     with tempfile.NamedTemporaryFile() as key:
                         key.write(private_key)
@@ -262,12 +266,19 @@ class BaseTestCase(manager.NetworkScenarioTest):
                         self.hm.get('id'),
                         load_balancer_id=self.load_balancer['id'])
 
-    def _create_pool(self, listener_id):
+    def _create_pool(self, listener_id, persistence_type=None,
+                     cookie_name=None):
         """Create a pool with ROUND_ROBIN algorithm."""
-        self.pool = self.pools_client.create_pool(
-            protocol='HTTP',
-            lb_algorithm='ROUND_ROBIN',
-            listener_id=listener_id)
+        pool = {
+            "listener_id": listener_id,
+            "lb_algorithm": "ROUND_ROBIN",
+            "protocol": "HTTP"
+        }
+        if persistence_type:
+            pool.update({'session_persistence': {'type': persistence_type}})
+        if cookie_name:
+            pool.update({'session_persistence': {"cookie_name": cookie_name}})
+        self.pool = self.pools_client.create_pool(**pool)
         self.assertTrue(self.pool)
         self.addCleanup(self._cleanup_pool, self.pool['id'],
                         load_balancer_id=self.load_balancer['id'])
@@ -337,7 +348,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         # Check for floating ip status before you check load-balancer
         self.check_floating_ip_status(floating_ip, "ACTIVE")
 
-    def _create_load_balancer(self, ip_version=4):
+    def _create_load_balancer(self, ip_version=4, persistence_type=None):
         self.create_lb_kwargs = {'tenant_id': self.tenant_id,
                                  'vip_subnet_id': self.subnet['id']}
         self.load_balancer = self.load_balancers_client.create_load_balancer(
@@ -349,7 +360,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
         listener = self._create_listener(load_balancer_id=load_balancer_id)
         self._wait_for_load_balancer_status(load_balancer_id)
 
-        self.pool = self._create_pool(listener_id=listener.get('id'))
+        self.pool = self._create_pool(listener_id=listener.get('id'),
+                                      persistence_type=persistence_type)
         self._wait_for_load_balancer_status(load_balancer_id)
 
         self._create_members(load_balancer_id=load_balancer_id,
@@ -419,6 +431,25 @@ class BaseTestCase(manager.NetworkScenarioTest):
                       operating_status=operating_status))
         return lb
 
+    def _wait_for_pool_session_persistence(self, pool_id, sp_type=None):
+        interval_time = 1
+        timeout = 10
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            pool = self.pools_client.get_pool(pool_id)
+            sp = pool.get('session_persistence', None)
+            if (not (sp_type or sp) or
+                    pool['session_persistence']['type'] == sp_type):
+                return pool
+            time.sleep(interval_time)
+        raise Exception(
+            _("Wait for pool ran for {timeout} seconds and did "
+              "not observe {pool_id} update session persistence type "
+              "to {type}.").format(
+                  timeout=timeout,
+                  pool_id=pool_id,
+                  type=sp_type))
+
     def _check_load_balancing(self):
         """
         1. Send NUM requests on the floating ip associated with the VIP
@@ -480,3 +511,56 @@ class BaseTestCase(manager.NetworkScenarioTest):
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
         for member, counter in six.iteritems(counters):
             self.assertEqual(counter, 0, 'Member %s is balanced' % member)
+
+    def _check_source_ip_persistence(self):
+        """Check source ip session persistence.
+
+        Verify that all requests from our ip are answered by the same server
+        that handled it the first time.
+        """
+        # Check that backends are reachable
+        self._check_connection(self.vip_ip)
+
+        resp = []
+        for count in range(10):
+            resp.append(
+                urllib2.urlopen("http://{0}/".format(self.vip_ip)).read())
+        self.assertEqual(len(set(resp)), 1)
+
+    def _update_pool_session_persistence(self, persistence_type=None,
+                                         cookie_name=None):
+        """Update a pool with new session persistence type and cookie name."""
+
+        update_data = {}
+        if persistence_type:
+            update_data = {"session_persistence": {
+                "type": persistence_type}}
+        if cookie_name:
+            update_data['session_persistence'].update(
+                {"cookie_name": cookie_name})
+        self.pools_client.update_pool(self.pool['id'], **update_data)
+        self.pool = self._wait_for_pool_session_persistence(self.pool['id'],
+                                                            persistence_type)
+        self._wait_for_load_balancer_status(self.load_balancer['id'])
+        if persistence_type:
+            self.assertEqual(persistence_type,
+                             self.pool['session_persistence']['type'])
+        if cookie_name:
+            self.assertEqual(cookie_name,
+                             self.pool['session_persistence']['cookie_name'])
+
+    def _check_cookie_session_persistence(self):
+        """Check cookie persistence types by injecting cookies in requests."""
+
+        # Send first request and get cookie from the server's response
+        cj = cookielib.CookieJar()
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+        opener.open("http://{0}/".format(self.vip_ip))
+        resp = []
+        # Send 10 subsequent requests with the cookie inserted in the headers.
+        for count in range(10):
+            request = urllib2.Request("http://{0}/".format(self.vip_ip))
+            cj.add_cookie_header(request)
+            response = urllib2.urlopen(request)
+            resp.append(response.read())
+        self.assertEqual(len(set(resp)), 1, message=resp)
