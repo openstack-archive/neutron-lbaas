@@ -39,6 +39,15 @@ function neutron_lbaas_configure_common {
         iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
     fi
 
+    if is_service_enabled $BARBICAN; then
+        # Ensure config is set up properly for use with barbican
+        iniset $NEUTRON_CONF keystone_authtoken auth_uri $AUTH_URI
+        iniset $NEUTRON_CONF keystone_authtoken admin_tenant_name $ADMIN_TENANT_NAME
+        iniset $NEUTRON_CONF keystone_authtoken admin_user $ADMIN_USER
+        iniset $NEUTRON_CONF keystone_authtoken admin_password $ADMIN_PASSWORD
+        iniset $NEUTRON_CONF keystone_authtoken auth_version $AUTH_VERSION
+    fi
+
     _neutron_deploy_rootwrap_filters $NEUTRON_LBAAS_DIR
 
     $NEUTRON_BIN_DIR/neutron-db-manage --service lbaas --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
