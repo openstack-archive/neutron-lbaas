@@ -14,11 +14,15 @@
 #    under the License.
 #
 
+import mock
+
+from neutron.db import servicetype_db as st_db
 from neutron.tests import base as n_base
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import base as ext_base
 from neutron.tests.unit.extensions import test_quotasv2
 from neutron.tests.unit import testlib_api
+from oslo_config import cfg
 from testtools import matchers
 
 
@@ -28,6 +32,23 @@ class BaseTestCase(n_base.BaseTestCase):
 
 class NeutronDbPluginV2TestCase(
     test_db_base_plugin_v2.NeutronDbPluginV2TestCase):
+
+    def set_override(self, lbaas_provider):
+        # TODO(armax): remove this if branch as soon as the ServiceTypeManager
+        # API for adding provider configurations becomes available
+        if not hasattr(st_db.ServiceTypeManager, 'add_provider_configuration'):
+            cfg.CONF.set_override(
+                'service_provider', lbaas_provider, 'service_providers')
+        else:
+            # override the default service provider
+            self.service_providers = (
+                mock.patch.object(st_db.ServiceTypeManager,
+                                  'get_service_providers').start())
+            self.service_providers.return_value = (
+                self._to_provider_dicts(lbaas_provider))
+
+        # need to reload provider configuration
+        st_db.ServiceTypeManager._instance = None
 
     def new_list_request(self, resource, fmt=None, params=None, id=None,
                          subresource=None):
@@ -51,6 +72,20 @@ class NeutronDbPluginV2TestCase(
             'PUT', resource, data, fmt, id=id, subresource=subresource,
             context=context, sub_id=sub_id
         )
+
+    def _to_provider_dicts(self, lbaas_provider):
+        provider_dicts = []
+        for provider in lbaas_provider:
+            bits = provider.split(':')
+            p = {
+                'service_type': bits[0],
+                'name': bits[1],
+                'driver': bits[2]
+            }
+            if len(bits) == 4:
+                p['default'] = True
+            provider_dicts.append(p)
+        return provider_dicts
 
     def _test_list_with_sort(self, resource,
                              items, sorts, resources=None,

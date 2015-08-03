@@ -22,7 +22,6 @@ from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron import context
 from neutron.db import agents_db
-from neutron.db import servicetype_db as st_db
 from neutron.extensions import agent
 from neutron import manager
 from neutron.plugins.common import constants as plugin_const
@@ -32,7 +31,6 @@ import neutron.tests.unit.extensions
 from neutron.tests.unit.extensions import test_agent
 from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
     import test_agent_scheduler
-from oslo_config import cfg
 import six
 from webob import exc
 
@@ -105,14 +103,9 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             'lb_plugin_name': test_db_loadbalancerv2.DB_LB_PLUGIN_CLASS}
 
         # default provider should support agent scheduling
-        cfg.CONF.set_override(
-            'service_provider',
+        self.set_override(
             [('LOADBALANCERV2:lbaas:neutron_lbaas.drivers.haproxy.'
-              'plugin_driver.HaproxyOnHostPluginDriver:default')],
-            'service_providers')
-
-        # need to reload provider configuration
-        st_db.ServiceTypeManager._instance = None
+              'plugin_driver.HaproxyOnHostPluginDriver:default')])
 
         super(LBaaSAgentSchedulerTestCase, self).setUp(
             self.plugin_str, service_plugins=service_plugins)
