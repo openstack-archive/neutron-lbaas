@@ -101,7 +101,8 @@ def _read_pyca_private_key(private_key, private_key_passphrase=None):
     else:
         kw["password"] = None
     try:
-        pk = serialization.load_pem_private_key(six.b(private_key), **kw)
+        pk = serialization.load_pem_private_key(private_key.encode('ascii'),
+                                                **kw)
         return pk
     except TypeError as ex:
         if len(ex.args) > 0 and ex.args[0].startswith("Password"):
