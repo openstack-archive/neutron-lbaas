@@ -54,6 +54,16 @@ class LoggingNoopCommonManager(object):
 class LoggingNoopLoadBalancerManager(LoggingNoopCommonManager,
                                      driver_base.BaseLoadBalancerManager):
 
+    @property
+    def allocates_vip(self):
+        LOG.debug('allocates_vip queried')
+        return False
+
+    def create_and_allocate_vip(self, context, obj):
+        LOG.debug("LB %s no-op, create_and_allocate_vip %s",
+                  self.__class__.__name__, obj.id)
+        self.create(context, obj)
+
     def refresh(self, context, obj):
         # This is intended to trigger the backend to check and repair
         # the state of this load balancer and all of its dependent objects

@@ -202,7 +202,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                     model_db.operating_status != operating_status):
                 model_db.operating_status = operating_status
 
-    def create_loadbalancer(self, context, loadbalancer):
+    def create_loadbalancer(self, context, loadbalancer, allocate_vip=True):
         with context.session.begin(subtransactions=True):
             self._load_id_and_tenant_id(context, loadbalancer)
             vip_address = loadbalancer.pop('vip_address')
@@ -217,12 +217,15 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
         # create port outside of lb create transaction since it can sometimes
         # cause lock wait timeouts
-        try:
-            self._create_port_for_load_balancer(context, lb_db, vip_address)
-        except Exception:
-            with excutils.save_and_reraise_exception():
-                context.session.delete(lb_db)
-                context.session.flush()
+        if allocate_vip:
+            LOG.debug("Plugin will allocate the vip as a neutron port.")
+            try:
+                self._create_port_for_load_balancer(context, lb_db,
+                                                    vip_address)
+            except Exception:
+                with excutils.save_and_reraise_exception():
+                    context.session.delete(lb_db)
+                    context.session.flush()
         return data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
 
     def update_loadbalancer(self, context, id, loadbalancer):

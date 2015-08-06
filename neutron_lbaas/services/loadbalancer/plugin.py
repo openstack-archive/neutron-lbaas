@@ -519,14 +519,18 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def create_loadbalancer(self, context, loadbalancer):
         loadbalancer = loadbalancer.get('loadbalancer')
         provider_name = self._get_provider_name(loadbalancer)
-        lb_db = self.db.create_loadbalancer(context, loadbalancer)
+        driver = self.drivers[provider_name]
+        lb_db = self.db.create_loadbalancer(
+            context, loadbalancer,
+            allocate_vip=not driver.load_balancer.allocates_vip)
         self.service_type_manager.add_resource_association(
             context,
             constants.LOADBALANCERV2,
             provider_name, lb_db.id)
-        driver = self.drivers[provider_name]
-        self._call_driver_operation(
-            context, driver.load_balancer.create, lb_db)
+        create_method = (driver.load_balancer.create_and_allocate_vip
+                         if driver.load_balancer.allocates_vip
+                         else driver.load_balancer.create)
+        self._call_driver_operation(context, create_method, lb_db)
         return self.db.get_loadbalancer(context, lb_db.id).to_api_dict()
 
     def update_loadbalancer(self, context, id, loadbalancer):

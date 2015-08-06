@@ -35,6 +35,7 @@ from neutron import manager
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.drivers.logging_noop import driver as noop_driver
 import neutron_lbaas.extensions
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -673,6 +674,46 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                               self.plugin.db.prevent_lbaasv2_port_deletion,
                               ctx,
                               port['id'])
+
+
+class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
+
+    def setUp(self):
+        driver_patcher = mock.patch.object(
+            noop_driver.LoggingNoopLoadBalancerManager,
+            'allocates_vip', new_callable=mock.PropertyMock)
+        driver_patcher.start().return_value = True
+        super(LoadBalancerDelegateVIPCreation, self).setUp()
+
+    def test_create_loadbalancer(self):
+        expected = {
+            'name': 'vip1',
+            'description': '',
+            'admin_state_up': True,
+            'provisioning_status': constants.ACTIVE,
+            'operating_status': lb_const.ONLINE,
+            'tenant_id': self._tenant_id,
+            'listeners': [],
+            'provider': 'lbaas'
+        }
+
+        with self.subnet() as subnet:
+            expected['vip_subnet_id'] = subnet['subnet']['id']
+            name = expected['name']
+
+            with self.loadbalancer(name=name, subnet=subnet) as lb:
+                lb_id = lb['loadbalancer']['id']
+                for k in ('id', 'vip_subnet_id'):
+                    self.assertTrue(lb['loadbalancer'].get(k, None))
+
+                self.assertIsNone(lb['loadbalancer'].get('vip_address'))
+                expected['vip_port_id'] = lb['loadbalancer']['vip_port_id']
+                actual = dict((k, v)
+                              for k, v in lb['loadbalancer'].items()
+                              if k in expected)
+                self.assertEqual(actual, expected)
+                self._validate_statuses(lb_id)
+            return lb
 
 
 class ListenerTestBase(LbaasPluginDbTestCase):

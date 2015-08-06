@@ -111,6 +111,14 @@ class BaseManagerMixin(object):
             context, models.LoadBalancer, obj.root_loadbalancer.id,
             provisioning_status=constants.ACTIVE)
 
+    def update_vip(self, context, loadbalancer_id, vip_address,
+                   vip_port_id=None):
+        lb_update = {'vip_address': vip_address}
+        if vip_port_id:
+            lb_update['vip_port_id'] = vip_port_id
+        self.driver.plugin.db.update_loadbalancer(context, loadbalancer_id,
+                                                  lb_update)
+
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseRefreshMixin(object):
