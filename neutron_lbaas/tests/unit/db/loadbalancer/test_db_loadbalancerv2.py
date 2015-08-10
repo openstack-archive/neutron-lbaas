@@ -1555,8 +1555,24 @@ class MemberTestBase(PoolTestBase):
                                  lb_const.SESSION_PERSISTENCE_HTTP_COOKIE})
         self.pool = self.deserialize(self.fmt, pool_res)
         self.pool_id = self.pool['pool']['id']
+        alt_listener_res = self._create_listener(
+            self.fmt, lb_const.PROTOCOL_HTTP,
+            self.def_listener['listener']['protocol_port'] + 1,
+            self.lb_id
+        )
+        self.alt_listener = self.deserialize(self.fmt, alt_listener_res)
+        self.alt_listener_id = self.alt_listener['listener']['id']
+        alt_pool_res = self._create_pool(
+            self.fmt, lb_const.PROTOCOL_HTTP,
+            lb_const.LB_METHOD_ROUND_ROBIN,
+            self.alt_listener_id,
+            session_persistence={'type':
+                                 lb_const.SESSION_PERSISTENCE_HTTP_COOKIE})
+        self.alt_pool = self.deserialize(self.fmt, alt_pool_res)
+        self.alt_pool_id = self.alt_pool['pool']['id']
 
     def tearDown(self):
+        self._delete('pools', self.alt_pool_id)
         self._delete('pools', self.pool_id)
         super(MemberTestBase, self).tearDown()
 
@@ -1683,6 +1699,14 @@ class LbaasMemberTests(MemberTestBase):
         with self.member(pool_id=self.pool_id, protocol_port=81):
             resp, body = self._list_members_api(self.pool_id)
             self.assertEqual(len(body['members']), 1)
+
+    def test_list_members_only_for_pool(self):
+        with self.member(pool_id=self.alt_pool_id):
+            with self.member(pool_id=self.pool_id,
+                             protocol_port=81) as in_member:
+                resp, body = self._list_members_api(self.pool_id)
+                self.assertEqual(len(body['members']), 1)
+                self.assertIn(in_member['member'], body['members'])
 
     def test_list_members_with_sort_emulated(self):
         with self.member(pool_id=self.pool_id, protocol_port=81) as m1:
