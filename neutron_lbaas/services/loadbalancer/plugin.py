@@ -826,6 +826,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def get_pool_members(self, context, pool_id, filters=None, fields=None):
         self._check_pool_exists(context, pool_id)
+        if not filters:
+            filters = {}
+        filters['pool_id'] = [pool_id]
         return [mem.to_api_dict() for mem in self.db.get_pool_members(
             context, filters=filters)]
 
