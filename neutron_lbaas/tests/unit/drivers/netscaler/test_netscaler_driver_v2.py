@@ -74,7 +74,7 @@ class ManagerTest(object):
         self.delete_failure(model)
 
     def _check_success_completion(self):
-        """Check if sucess_completion is called"""
+        """Check if success_completion is called"""
         successful_completion_mock = self.successful_completion_mock
         successful_completion_mock.assert_called_once_with(
             mock.ANY, self.model)
