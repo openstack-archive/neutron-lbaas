@@ -1,4 +1,4 @@
-# Copyright ${create_date.year} <PUT YOUR NAME/COMPANY HERE>
+# Copyright 2015 OpenStack Foundation
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -11,26 +11,21 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-#
 
-"""${message}
+"""Initial Liberty no-op contract revision.
 
-Revision ID: ${up_revision}
-Revises: ${down_revision}
-Create Date: ${create_date}
+Revision ID: 130ebfdef43
+Revises: None
+Create Date: 2015-07-18 14:35:22.242794
 
 """
 
 # revision identifiers, used by Alembic.
-revision = ${repr(up_revision)}
-down_revision = ${repr(down_revision)}
-% if branch_labels:
-branch_labels = ${repr(branch_labels)}
-%endif
+revision = '130ebfdef43'
+down_revision = None
+branch_labels = ('liberty_contract',)
+depends_on = ('kilo',)
 
-from alembic import op
-import sqlalchemy as sa
-${imports if imports else ""}
 
 def upgrade():
-    ${upgrades if upgrades else "pass"}
+    pass
