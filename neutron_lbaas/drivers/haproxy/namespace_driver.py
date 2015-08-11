@@ -302,7 +302,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         ]
         self.vif_driver.init_l3(interface_name, cidrs, namespace=namespace)
 
-        # Haproxy socket binding to IPv6 VIP address will fail if this adress
+        # Haproxy socket binding to IPv6 VIP address will fail if this address
         # is not yet ready(i.e tentative address).
         if netaddr.IPAddress(vip_address).version == 6:
             device = ip_lib.IPDevice(interface_name, namespace=namespace)
