@@ -136,7 +136,7 @@ class Subnet(BaseDataModel):
                  ip_version=None, cidr=None, gateway_ip=None, enable_dhcp=None,
                  ipv6_ra_mode=None, ipv6_address_mode=None, shared=None,
                  dns_nameservers=None, host_routes=None, allocation_pools=None,
-                 subnetpool_id=None, ipv6_pd_enabled=False):
+                 subnetpool_id=None):
         self.id = id
         self.name = name
         self.tenant_id = tenant_id
@@ -152,7 +152,6 @@ class Subnet(BaseDataModel):
         self.host_routes = host_routes
         self.allocation_pools = allocation_pools
         self.subnetpool_id = subnetpool_id
-        self.ipv6_pd_enabled = ipv6_pd_enabled
 
     @classmethod
     def from_dict(cls, model_dict):
