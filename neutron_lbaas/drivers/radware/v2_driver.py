@@ -78,7 +78,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
     # 6) Async operations are handled by a different thread
     #
     def __init__(self, plugin):
-        super(RadwareLBaaSV2Driver, self).__init__(plugin)
+        base_v2_driver.RadwareLBaaSBaseV2Driver.__init__(self, plugin)
         rad = cfg.CONF.radwarev2
         rad_debug = cfg.CONF.radwarev2_debug
         self.plugin = plugin
@@ -241,20 +241,28 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         lb_subnet = self.plugin.db._core_plugin.get_subnet(
             ctx, lb.vip_subnet_id)
         proxy_subnet = lb_subnet
-        proxy_port_subnet_id = self._get_proxy_port_subnet_id(lb)
-        if proxy_port_subnet_id == lb.vip_subnet_id:
-            proxy_port_address = lb.vip_address
-        else:
-            proxy_port_address = self._create_proxy_port_and_get_address(
-                ctx, lb, proxy_port_subnet_id)
-            proxy_subnet = self.plugin.db._core_plugin.get_subnet(
-                ctx, proxy_port_subnet_id)
+        proxy_port_address = lb.vip_address
 
-        # Check if workflow exist, create if not
         if not self.workflow_exists(lb):
+            # Create proxy port if needed
+            proxy_port_subnet_id = self._get_proxy_port_subnet_id(lb)
+            if proxy_port_subnet_id != lb.vip_subnet_id:
+                proxy_port = self._create_proxy_port(
+                    ctx, lb, proxy_port_subnet_id)
+                proxy_subnet = self.plugin.db._core_plugin.get_subnet(
+                    ctx, proxy_port['subnet_id'])
+                proxy_port_address = proxy_port['ip_address']
+
             self._create_workflow(lb,
                                   lb_subnet['network_id'],
                                   proxy_subnet['network_id'])
+        else:
+            # Check if proxy port exists
+            proxy_port = self._get_proxy_port(ctx, lb)
+            if proxy_port:
+                proxy_subnet = self.plugin.db._core_plugin.get_subnet(
+                    ctx, proxy_port['subnet_id'])
+                proxy_port_address = proxy_port['ip_address']
 
         # Build objects graph
         objects_graph = self._build_objects_graph(ctx, lb, data_model,
@@ -298,7 +306,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             oper = OperationAttributes(
                 manager, response['uri'], lb,
                 lb, old_data_model=None,
-                delete=True)
+                delete=True,
+                post_operation_function=self._delete_proxy_port)
 
             self._start_completion_handling_thread()
             self.queue.put_nowait(oper)
@@ -351,14 +360,18 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                          'private_key': sni_cert.get_private_key(),
                          'passphrase': sni_cert.get_private_key_passphrase()})
 
-            if listener.default_pool:
+            if (listener.default_pool and
+                listener.default_pool.provisioning_status !=
+                    constants.PENDING_DELETE):
                 pool_dict = {}
                 for prop in POOL_PROPERTIES:
                     pool_dict[prop] = getattr(
                         listener.default_pool, prop,
                         PROPERTY_DEFAULTS.get(prop))
 
-                if listener.default_pool.healthmonitor:
+                if (listener.default_pool.healthmonitor and
+                   listener.default_pool.healthmonitor.provisioning_status !=
+                    constants.PENDING_DELETE):
                     hm_dict = {}
                     for prop in HEALTH_MONITOR_PROPERTIES:
                         hm_dict[prop] = getattr(
@@ -396,9 +409,6 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             graph['listeners'].append(listener_dict)
         return graph
 
-    def _get_lb_proxy_port_name(self, lb):
-        return 'proxy_' + lb.id
-
     def _get_proxy_port_subnet_id(self, lb):
         """Look for at least one member of any listener's pool
         that is located on subnet different than loabalancer's subnet.
@@ -412,61 +422,76 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                         return member.subnet_id
         return lb.vip_subnet_id
 
-    def _create_proxy_port_and_get_address(self,
+    def _create_proxy_port(self,
         ctx, lb, proxy_port_subnet_id):
         """Check if proxy port was created earlier.
         If not, create a new port on proxy subnet and return its ip address.
         Returns port IP address
         """
-        proxy_port_name = self._get_lb_proxy_port_name(lb)
-        ports = self.plugin.db._core_plugin.get_ports(
-            ctx, filters={'name': [proxy_port_name], })
-        if not ports:
-            # Create pip port. Use the subnet
-            # determined before by _get_pip_port_subnet_id() function
-            proxy_port_subnet = self.plugin.db._core_plugin.get_subnet(
-                ctx, proxy_port_subnet_id)
-            proxy_port_data = {
-                'tenant_id': lb.tenant_id,
-                'name': proxy_port_name,
-                'network_id': proxy_port_subnet['network_id'],
-                'mac_address': attributes.ATTR_NOT_SPECIFIED,
-                'admin_state_up': False,
-                'device_id': '',
-                'device_owner': 'neutron:' + constants.LOADBALANCERV2,
-                'fixed_ips': [{'subnet_id': proxy_port_subnet_id}]
-            }
-            proxy_port = self.plugin.db._core_plugin.create_port(
-                ctx, {'port': proxy_port_data})
-        else:
-            proxy_port = ports[0]
+        proxy_port = self._get_proxy_port(ctx, lb)
+        if proxy_port:
+            LOG.info(_LI('LB %(lb_id)s proxy port exists on subnet \
+                     %(subnet_id)s with ip address %(ip_address)s') %
+                     {'lb_id': lb.id, 'subnet_id': proxy_port['subnet_id'],
+                      'ip_address': proxy_port['ip_address']})
+            return proxy_port
 
-        ips_on_subnet = [ip for ip in proxy_port['fixed_ips']
-                         if ip['subnet_id'] == proxy_port_subnet_id]
-        if not ips_on_subnet:
-            raise Exception(_('Could not find or allocate '
-                              'IP address on subnet id %s for proxy port'),
-                            proxy_port_subnet_id)
-        else:
-            return ips_on_subnet[0]['ip_address']
+        proxy_port_name = 'proxy_' + lb.id
+        proxy_port_subnet = self.plugin.db._core_plugin.get_subnet(
+            ctx, proxy_port_subnet_id)
+        proxy_port_data = {
+            'tenant_id': lb.tenant_id,
+            'name': proxy_port_name,
+            'network_id': proxy_port_subnet['network_id'],
+            'mac_address': attributes.ATTR_NOT_SPECIFIED,
+            'admin_state_up': False,
+            'device_id': '',
+            'device_owner': 'neutron:' + constants.LOADBALANCERV2,
+            'fixed_ips': [{'subnet_id': proxy_port_subnet_id}]
+        }
+        proxy_port = self.plugin.db._core_plugin.create_port(
+            ctx, {'port': proxy_port_data})
+        proxy_port_ip_data = proxy_port['fixed_ips'][0]
+
+        LOG.info(_LI('LB %(lb_id)s proxy port created on subnet %(subnet_id)s \
+                 with ip address %(ip_address)s') %
+                 {'lb_id': lb.id, 'subnet_id': proxy_port_ip_data['subnet_id'],
+                  'ip_address': proxy_port_ip_data['ip_address']})
+
+        return proxy_port_ip_data
+
+    def _get_proxy_port(self, ctx, lb):
+        ports = self.plugin.db._core_plugin.get_ports(
+            ctx, filters={'name': ['proxy_' + lb.id], })
+        if not ports:
+            return None
+
+        proxy_port = ports[0]
+        return proxy_port['fixed_ips'][0]
 
     def _delete_proxy_port(self, ctx, lb):
         port_filter = {
-            'name': [self._get_lb_proxy_port_name(lb)],
+            'name': ['proxy_' + lb.id],
         }
         ports = self.plugin.db._core_plugin.get_ports(
             ctx, filters=port_filter)
         if ports:
-            for port in ports:
-                try:
-                    self.plugin.db._core_plugin.delete_port(
-                        ctx, port['id'])
+            proxy_port = ports[0]
+            proxy_port_ip_data = proxy_port['fixed_ips'][0]
+            try:
+                LOG.info(_LI('Deleting LB %(lb_id)s proxy port on subnet  \
+                             %(subnet_id)s with ip address %(ip_address)s') %
+                         {'lb_id': lb.id,
+                          'subnet_id': proxy_port_ip_data['subnet_id'],
+                          'ip_address': proxy_port_ip_data['ip_address']})
+                self.plugin.db._core_plugin.delete_port(
+                    ctx, proxy_port['id'])
 
-                except Exception as exception:
-                    # stop exception propagation, nport may have
-                    # been deleted by other means
-                    LOG.warning(_LW('proxy port deletion failed: %r'),
-                                exception)
+            except Exception as exception:
+                # stop exception propagation, nport may have
+                # been deleted by other means
+                LOG.warning(_LW('Proxy port deletion failed: %r'),
+                            exception)
 
     def _accomplish_member_static_route_data(self,
         ctx, member, member_data, proxy_gateway_ip):
@@ -475,9 +500,13 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             filters={'fixed_ips': {'ip_address': [member.address]},
                      'tenant_id': [member.tenant_id]})
         if len(member_ports) == 1:
-            member_subnet = self.plugin._core_plugin.get_subnet(
+            member_port = member_ports[0]
+            member_port_ip_data = member_port['fixed_ips'][0]
+            LOG.debug('member_port_ip_data:' + repr(member_port_ip_data))
+            member_subnet = self.plugin.db._core_plugin.get_subnet(
                 ctx,
-                member_ports[0]['fixed_ips'][0]['subnet_id'])
+                member_port_ip_data['subnet_id'])
+            LOG.debug('member_subnet:' + repr(member_subnet))
             member_network = netaddr.IPNetwork(member_subnet['cidr'])
             member_data['subnet'] = str(member_network.network)
             member_data['mask'] = str(member_network.netmask)
@@ -580,6 +609,8 @@ class OperationCompletionHandler(threading.Thread):
     def _run_post_success_function(oper):
         try:
             ctx = context.get_admin_context(load_admin_roles=False)
+            if oper.post_operation_function:
+                oper.post_operation_function(ctx, oper.data_model)
             oper.manager.successful_completion(ctx, oper.data_model,
                                                delete=oper.delete)
             LOG.debug('Post-operation success function completed '
@@ -616,13 +647,15 @@ class OperationAttributes(object):
                  lb,
                  data_model=None,
                  old_data_model=None,
-                 delete=False):
+                 delete=False,
+                 post_operation_function=None):
         self.manager = manager
         self.operation_url = operation_url
         self.lb = lb
         self.data_model = data_model
         self.old_data_model = old_data_model
         self.delete = delete
+        self.post_operation_function = post_operation_function
         self.creation_time = time.time()
 
     def __repr__(self):
