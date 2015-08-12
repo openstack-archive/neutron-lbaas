@@ -206,8 +206,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
                 if host_route['destination'] == "0.0.0.0/0":
                     gw_ip = host_route['nexthop']
                     break
-
-        if gw_ip:
+        else:
             cmd = ['route', 'add', 'default', 'gw', gw_ip]
             ip_wrapper = ip_lib.IPWrapper(namespace=namespace)
             ip_wrapper.netns.execute(cmd, check_exit_code=False)
