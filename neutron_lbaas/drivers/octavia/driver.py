@@ -11,10 +11,15 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from datetime import datetime
+from functools import wraps
+import threading
+import time
 
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
+from oslo_utils import excutils
 import requests
 
 from neutron_lbaas.drivers import driver_base
@@ -28,8 +33,64 @@ OPTS = [
         default='http://127.0.0.1:9876',
         help=_('URL of Octavia controller root'),
     ),
+    cfg.IntOpt(
+        'request_poll_interval',
+        default=3,
+        help=_('Interval in seconds to poll octavia when an entity is created,'
+               ' updated, or deleted.')
+    ),
+    cfg.IntOpt(
+        'request_poll_timeout',
+        default=100,
+        help=_('Time to stop polling octavia when a status of an entity does '
+               'not change.')
+    )
 ]
 cfg.CONF.register_opts(OPTS, 'octavia')
+
+
+def thread_op(manager, context, entity, delete=False):
+    poll_interval = cfg.CONF.octavia.request_poll_interval
+    poll_timeout = cfg.CONF.octavia.request_poll_timeout
+    start_dt = datetime.now()
+    prov_status = None
+    while (datetime.now() - start_dt).seconds < poll_timeout:
+        octavia_lb = manager.driver.load_balancer.get(entity.root_loadbalancer)
+        prov_status = octavia_lb.get('provisioning_status')
+        LOG.debug("Octavia reports load balancer {0} has provisioning status "
+                  "of {1}".format(entity.root_loadbalancer.id, prov_status))
+        if prov_status == 'ACTIVE' or prov_status == 'DELETED':
+            manager.successful_completion(context, entity, delete=delete)
+            return
+        elif prov_status == 'ERROR':
+            manager.failed_completion(context, entity)
+            return
+        time.sleep(poll_interval)
+    LOG.debug("Timeout has expired for load balancer {0} to complete an "
+              "operation.  The last reported status was "
+              "{1}".format(entity.root_loadbalancer.id, prov_status))
+    manager.failed_completion(context, entity)
+
+
+# A decorator for wrapping driver operations, which will automatically
+# set the neutron object's status based on whether it sees an exception
+
+def async_op(func):
+    @wraps(func)
+    def func_wrapper(*args, **kwargs):
+        d = (func.__name__ == 'delete')
+        try:
+            r = func(*args, **kwargs)
+            thread = threading.Thread(target=thread_op,
+                                      args=(args[0], args[1], args[2]),
+                                      kwargs={'delete': d})
+            thread.setDaemon(True)
+            thread.start()
+            return r
+        except Exception:
+            with excutils.save_and_reraise_exception():
+                args[0].failed_completion(args[1], args[2])
+    return func_wrapper
 
 
 class OctaviaRequest(object):
@@ -63,6 +124,9 @@ class OctaviaRequest(object):
     def delete(self, url):
         self.request('DELETE', url)
 
+    def get(self, url):
+        return self.request('GET', url)
+
 
 class OctaviaDriver(driver_base.LoadBalancerBaseDriver):
 
@@ -89,7 +153,7 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
             s += '/%s' % id
         return s
 
-    @driver_base.driver_op
+    @async_op
     def create(self, context, lb):
         args = {
             'id': lb.id,
@@ -104,7 +168,7 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         }
         self.driver.req.post(self._url(lb), args)
 
-    @driver_base.driver_op
+    @async_op
     def update(self, context, old_lb, lb):
         args = {
             'name': lb.name,
@@ -113,17 +177,20 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         }
         self.driver.req.put(self._url(lb, lb.id), args)
 
-    @driver_base.driver_op
+    @async_op
     def delete(self, context, lb):
         self.driver.req.delete(self._url(lb, lb.id))
 
-    @driver_base.driver_op
+    @async_op
     def refresh(self, context, lb):
         pass
 
-    @driver_base.driver_op
+    @async_op
     def stats(self, context, lb):
         return {}  # todo
+
+    def get(self, lb):
+        return self.driver.req.get(self._url(lb, lb.id))
 
 
 class ListenerManager(driver_base.BaseListenerManager):
@@ -152,16 +219,16 @@ class ListenerManager(driver_base.BaseListenerManager):
         }
         write_func(cls._url(listener), args)
 
-    @driver_base.driver_op
+    @async_op
     def create(self, context, listener):
         self._write(self.driver.req.post, self._url(listener), listener)
 
-    @driver_base.driver_op
+    @async_op
     def update(self, context, old_listener, listener):
         self._write(self.driver.req.put, self._url(listener, listener.id),
                     listener)
 
-    @driver_base.driver_op
+    @async_op
     def delete(self, context, listener):
         self.driver.req.delete(self._url(listener, listener.id))
 
@@ -194,15 +261,15 @@ class PoolManager(driver_base.BasePoolManager):
             }
         write_func(cls._url(pool), args)
 
-    @driver_base.driver_op
+    @async_op
     def create(self, context, pool):
         self._write(self.driver.req.post, self._url(pool), pool)
 
-    @driver_base.driver_op
+    @async_op
     def update(self, context, old_pool, pool):
         self._write(self.driver.req.put, self._url(pool, pool.id), pool)
 
-    @driver_base.driver_op
+    @async_op
     def delete(self, context, pool):
         self.driver.req.delete(self._url(pool, pool.id))
 
@@ -219,7 +286,7 @@ class MemberManager(driver_base.BaseMemberManager):
             s += '/%s' % id
         return s
 
-    @driver_base.driver_op
+    @async_op
     def create(self, context, member):
         args = {
             'id': member.id,
@@ -231,7 +298,7 @@ class MemberManager(driver_base.BaseMemberManager):
         }
         self.driver.req.post(self._url(member), args)
 
-    @driver_base.driver_op
+    @async_op
     def update(self, context, old_member, member):
         args = {
             'enabled': member.admin_state_up,
@@ -240,7 +307,7 @@ class MemberManager(driver_base.BaseMemberManager):
         }
         self.driver.req.put(self._url(member, member.id), args)
 
-    @driver_base.driver_op
+    @async_op
     def delete(self, context, member):
         self.driver.req.delete(self._url(member, member.id))
 
@@ -271,14 +338,14 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         }
         write_func(cls._url(hm), args)
 
-    @driver_base.driver_op
+    @async_op
     def create(self, context, hm):
         self._write(self.driver.req.post, self._url(hm), hm)
 
-    @driver_base.driver_op
+    @async_op
     def update(self, context, old_hm, hm):
         self._write(self.driver.req.put, self._url(hm, hm.id), hm)
 
-    @driver_base.driver_op
+    @async_op
     def delete(self, context, hm):
         self.driver.req.delete(self._url(hm, hm.id))
