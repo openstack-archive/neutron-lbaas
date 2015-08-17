@@ -716,6 +716,28 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
                 self._validate_statuses(lb_id)
             return lb
 
+    def test_delete_loadbalancer(self):
+        with self.subnet() as subnet:
+            with self.loadbalancer(subnet=subnet, no_delete=True) as lb:
+                lb_id = lb['loadbalancer']['id']
+                acontext = context.get_admin_context()
+                db_port = self.plugin.db._core_plugin.create_port(
+                    acontext,
+                    {'port': {'network_id': subnet['subnet']['network_id'],
+                              'name': '', 'admin_state_up': True,
+                              'device_id': lb_id, 'device_owner': '',
+                              'mac_address': '', 'fixed_ips': []}})
+                port_id = db_port['id']
+                self.addCleanup(self.plugin.db._core_plugin.delete_port,
+                                acontext, port_id)
+                self.plugin.db.update_loadbalancer(
+                    acontext, lb_id,
+                    {'loadbalancer': {'vip_port_id': port_id}})
+                self.plugin.db.delete_loadbalancer(
+                    acontext, lb_id, delete_vip_port=True)
+                port = self.plugin.db._core_plugin.get_port(acontext, port_id)
+                self.assertIsNotNone(port)
+
 
 class ListenerTestBase(LbaasPluginDbTestCase):
     def setUp(self):
