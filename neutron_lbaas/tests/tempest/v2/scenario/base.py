@@ -401,6 +401,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
             # of success and continue connection tries
             except error.HTTPError:
                 continue
+            except error.URLError:
+                continue
         return counters
 
     def _traffic_validation_after_stopping_server(self):
@@ -413,3 +415,12 @@ class BaseTestCase(manager.NetworkScenarioTest):
             if member == 'server1':
                 self.assertEqual(counter, 0,
                                  'Member %s is not balanced' % member)
+
+    def _check_load_balancing_after_deleting_resources(self):
+        """
+        Check that the requests are not sent to any servers
+        Assert that no traffic is sent to any servers
+        """
+        counters = self._send_requests(self.vip_ip, ["server1", "server2"])
+        for member, counter in six.iteritems(counters):
+            self.assertEqual(counter, 0, 'Member %s is balanced' % member)
