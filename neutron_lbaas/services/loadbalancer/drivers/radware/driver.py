@@ -944,7 +944,7 @@ def _update_vip_graph_status(plugin, oper, status):
 
     """
 
-    ctx = ncontext.get_admin_context(load_admin_roles=False)
+    ctx = ncontext.get_admin_context()
 
     LOG.debug('_update: %s ', oper)
     if oper.lbaas_entity == lb_db.PoolMonitorAssociation:
@@ -988,7 +988,7 @@ def _remove_object_from_db(plugin, oper):
     """Remove a specific entity from db."""
     LOG.debug('_remove_object_from_db %s', oper)
 
-    ctx = ncontext.get_admin_context(load_admin_roles=False)
+    ctx = ncontext.get_admin_context()
 
     if oper.lbaas_entity == lb_db.PoolMonitorAssociation:
         plugin._delete_db_pool_health_monitor(ctx,
