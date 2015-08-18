@@ -13,19 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
-from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
 from neutron_lbaas.tests.tempest.v2.clients import pools_client
 from neutron_lbaas.tests.tempest.v2.scenario import base
-
-CONF = config.CONF
-
-LOG = logging.getLogger(__name__)
 
 
 class TestLoadBalancerBasic(base.BaseTestCase):

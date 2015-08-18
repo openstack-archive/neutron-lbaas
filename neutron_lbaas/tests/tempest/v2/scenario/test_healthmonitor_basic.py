@@ -13,9 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
-from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
@@ -23,10 +20,6 @@ from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
 from neutron_lbaas.tests.tempest.v2.clients import pools_client
 from neutron_lbaas.tests.tempest.v2.scenario import base
-
-CONF = config.CONF
-
-LOG = logging.getLogger(__name__)
 
 
 class TestHealthMonitorBasic(base.BaseTestCase):
@@ -67,20 +60,17 @@ class TestHealthMonitorBasic(base.BaseTestCase):
     def tearDown(self):
         super(TestHealthMonitorBasic, self).tearDown()
 
-    def _create_hm(self):
-        self.hm = self._create_health_monitor(pool_id=self.pool['id'])
-
     @test.services('compute', 'network')
     def test_hm_basic(self):
         self._create_servers()
         self._start_servers()
         self._create_load_balancer()
-        self._create_hm()
+        self._create_health_monitor()
         self._check_load_balancing()
         # stopping the primary server
         self._stop_server()
         # Asserting the traffic is sent only to secondary server
-        self._check_load_balancing_after_stopping_server()
+        self._traffic_validation_after_stopping_server()
 
         lbs = self.load_balancers_client.list_load_balancers()
         for lb_entity in lbs:
