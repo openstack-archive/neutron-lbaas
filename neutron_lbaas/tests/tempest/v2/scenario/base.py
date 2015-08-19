@@ -26,12 +26,45 @@ from neutron_lbaas.tests.tempest.lib import exceptions
 from neutron_lbaas.tests.tempest.lib.services.network import resources as \
     net_resources
 from neutron_lbaas.tests.tempest.lib import test
+from neutron_lbaas.tests.tempest.v2.clients import listeners_client
+from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
+from neutron_lbaas.tests.tempest.v2.clients import members_client
+from neutron_lbaas.tests.tempest.v2.clients import pools_client
 from neutron_lbaas.tests.tempest.v2.scenario import manager
 
 config = config.CONF
 
 
 class BaseTestCase(manager.NetworkScenarioTest):
+
+    def setUp(self):
+        super(BaseTestCase, self).setUp()
+        self.servers_keypairs = {}
+        self.servers = {}
+        self.members = []
+        self.floating_ips = {}
+        self.servers_floating_ips = {}
+        self.server_ips = {}
+        self.port1 = 80
+        self.port2 = 88
+        self.num = 50
+        self.server_ips = {}
+        self.server_fixed_ips = {}
+
+        self._create_security_group_for_test()
+        self._set_net_and_subnet()
+
+        mgr = self.get_client_manager()
+        auth_provider = mgr.auth_provider
+        self.client_args = [auth_provider, 'network', 'regionOne']
+
+        self.load_balancers_client = (
+            load_balancers_client.LoadBalancersClientJSON(*self.client_args))
+        self.listeners_client = (
+            listeners_client.ListenersClientJSON(*self.client_args))
+        self.pools_client = pools_client.PoolsClientJSON(*self.client_args)
+        self.members_client = members_client.MembersClientJSON(
+            *self.client_args)
 
     @classmethod
     def skip_checks(cls):
@@ -44,23 +77,6 @@ class BaseTestCase(manager.NetworkScenarioTest):
             msg = ('Either tenant_networks_reachable must be "true", or '
                    'public_network_id must be defined.')
             raise cls.skipException(msg)
-
-    @classmethod
-    def resource_setup(cls):
-        super(BaseTestCase, cls).resource_setup()
-        cls.servers_keypairs = {}
-        cls.servers = {}
-        cls.members = []
-        cls.floating_ips = {}
-        cls.servers_floating_ips = {}
-        cls.server_ips = {}
-        cls.port1 = 80
-        cls.port2 = 88
-        cls.num = 50
-
-    @classmethod
-    def resource_cleanup(cls):
-        super(BaseTestCase, cls).resource_cleanup()
 
     def _set_net_and_subnet(self):
         """
@@ -226,6 +242,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
             loadbalancer_id=load_balancer_id,
             protocol='HTTP', protocol_port=80)
         self.assertTrue(self.listener)
+        self.addCleanup(self.delete_wrapper,
+                        self.listeners_client.delete_listener,
+                        self.listener.get('id'))
         return self.listener
 
     def _create_health_monitor(self):
@@ -234,7 +253,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
             type='HTTP', max_retries=5, delay=3, timeout=5,
             pool_id=self.pool['id'])
         self.assertTrue(self.hm)
-        return self.hm
+        self.addCleanup(self.delete_wrapper,
+                        self.health_monitors_client.delete_health_monitor,
+                        self.hm.get('id'))
 
     def _create_pool(self, listener_id):
         """Create a pool with ROUND_ROBIN algorithm."""
@@ -243,6 +264,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
             lb_algorithm='ROUND_ROBIN',
             listener_id=listener_id)
         self.assertTrue(self.pool)
+        self.addCleanup(self.delete_wrapper, self.pools_client.delete_pool,
+                        self.pool['id'])
         return self.pool
 
     def _create_members(self, load_balancer_id=None, pool_id=None,
@@ -294,6 +317,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.load_balancer = self.load_balancers_client.create_load_balancer(
             **self.create_lb_kwargs)
         load_balancer_id = self.load_balancer['id']
+        self.addCleanup(self.delete_wrapper,
+                        self.load_balancers_client.delete_load_balancer,
+                        load_balancer_id)
         self._wait_for_load_balancer_status(load_balancer_id)
 
         listener = self._create_listener(load_balancer_id=load_balancer_id)
@@ -329,8 +355,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
     def _wait_for_load_balancer_status(self, load_balancer_id,
                                        provisioning_status='ACTIVE',
                                        operating_status='ONLINE'):
-        interval_time = 10
-        timeout = 300
+        interval_time = 1
+        timeout = 10
         end_time = time.time() + timeout
         while time.time() < end_time:
             lb = self.load_balancers_client.get_load_balancer(load_balancer_id)
@@ -404,11 +430,10 @@ class BaseTestCase(manager.NetworkScenarioTest):
         return counters
 
     def _traffic_validation_after_stopping_server(self):
-        """
-        Check that the requests are sent only to one ACTIVE server
-        Assert that no traffic is sent to server1
-        """
+        """Check that the requests are sent to the only ACTIVE server."""
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
+
+        # Assert that no traffic is sent to server1.
         for member, counter in six.iteritems(counters):
             if member == 'server1':
                 self.assertEqual(counter, 0,

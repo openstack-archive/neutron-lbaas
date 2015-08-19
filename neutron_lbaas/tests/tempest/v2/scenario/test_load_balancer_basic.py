@@ -14,65 +14,25 @@
 #    under the License.
 
 from neutron_lbaas.tests.tempest.lib import test
-from neutron_lbaas.tests.tempest.v2.clients import listeners_client
-from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
-from neutron_lbaas.tests.tempest.v2.clients import members_client
-from neutron_lbaas.tests.tempest.v2.clients import pools_client
 from neutron_lbaas.tests.tempest.v2.scenario import base
 
 
 class TestLoadBalancerBasic(base.BaseTestCase):
 
-    """
-    This test checks basic load balancing.
-    The following is the scenario outline:
-    1. Create an instance
-    2. SSH to the instance and start two servers
-    3. Create a load balancer with two members and with ROUND_ROBIN algorithm
-       associate the VIP with a floating ip
-    4. Send NUM requests to the floating ip and check that they are shared
-       between the two servers.
-    """
-    def setUp(self):
-        super(TestLoadBalancerBasic, self).setUp()
-        self.server_ips = {}
-        self.server_fixed_ips = {}
-        self._create_security_group_for_test()
-        self._set_net_and_subnet()
-
-        mgr = self.get_client_manager()
-        auth_provider = mgr.auth_provider
-        client_args = [auth_provider, 'network', 'regionOne']
-
-        self.load_balancers_client = (
-            load_balancers_client.LoadBalancersClientJSON(*client_args))
-        self.listeners_client = (
-            listeners_client.ListenersClientJSON(*client_args))
-        self.pools_client = pools_client.PoolsClientJSON(*client_args)
-        self.members_client = members_client.MembersClientJSON(*client_args)
-
-    def tearDown(self):
-        super(TestLoadBalancerBasic, self).tearDown()
-
     @test.services('compute', 'network')
     def test_load_balancer_basic(self):
-        self._create_servers()
+        """This test checks basic load balancing.
+
+        The following is the scenario outline:
+        1. Create an instance.
+        2. SSH to the instance and start two servers.
+        3. Create a load balancer with two members and with ROUND_ROBIN
+           algorithm.
+        4. Associate the VIP with a floating ip.
+        5. Send NUM requests to the floating ip and check that they are shared
+           between the two servers.
+        """
+        self._create_server('server1')
         self._start_servers()
         self._create_load_balancer()
         self._check_load_balancing()
-
-        lbs = self.load_balancers_client.list_load_balancers()
-        for lb_entity in lbs:
-            lb_id = lb_entity['id']
-            lb = self.load_balancers_client.get_load_balancer_status_tree(
-                lb_id).get('loadbalancer')
-            for listener in lb.get('listeners'):
-                for pool in listener.get('pools'):
-                    self.delete_wrapper(self.pools_client.delete_pool,
-                                        pool.get('id'))
-                    self._wait_for_load_balancer_status(lb_id)
-                self.delete_wrapper(self.listeners_client.delete_listener,
-                                    listener.get('id'))
-                self._wait_for_load_balancer_status(lb_id)
-            self.delete_wrapper(
-                self.load_balancers_client.delete_load_balancer, lb_id)
