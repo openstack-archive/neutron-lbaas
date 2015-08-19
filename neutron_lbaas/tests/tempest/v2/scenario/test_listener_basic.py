@@ -14,10 +14,6 @@
 #    under the License.
 
 from neutron_lbaas.tests.tempest.lib import test
-from neutron_lbaas.tests.tempest.v2.clients import listeners_client
-from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
-from neutron_lbaas.tests.tempest.v2.clients import members_client
-from neutron_lbaas.tests.tempest.v2.clients import pools_client
 from neutron_lbaas.tests.tempest.v2.scenario import base
 
 
@@ -33,71 +29,21 @@ class TestListenerBasic(base.BaseTestCase):
        between the two servers.
     5. Delete listener and validate the traffic is not sent to any members
     """
-    def setUp(self):
-        super(TestListenerBasic, self).setUp()
-        self.server_ips = {}
-        self.servers = {}
-        self.server_fixed_ips = {}
-        self._create_security_group_for_test()
-        self._set_net_and_subnet()
-
-        mgr = self.get_client_manager()
-        auth_provider = mgr.auth_provider
-        client_args = [auth_provider, 'network', 'regionOne']
-
-        self.load_balancers_client = (
-            load_balancers_client.LoadBalancersClientJSON(*client_args))
-        self.listeners_client = (
-            listeners_client.ListenersClientJSON(*client_args))
-        self.pools_client = pools_client.PoolsClientJSON(*client_args)
-        self.members_client = members_client.MembersClientJSON(*client_args)
-
-    def tearDown(self):
-        super(TestListenerBasic, self).tearDown()
 
     def _delete_listener(self):
         """Delete a listener to test listener scenario."""
-        lbs = self.load_balancers_client.list_load_balancers()
-        for lb_entity in lbs:
-            lb_id = lb_entity['id']
-            lb = self.load_balancers_client.get_load_balancer_status_tree(
-                lb_id).get('loadbalancer')
-            for listener in lb.get('listeners'):
-                for pool in listener.get('pools'):
-                    self.delete_wrapper(self.pools_client.delete_pool,
-                                        pool.get('id'))
-                    self._wait_for_load_balancer_status(lb_id)
-                self.delete_wrapper(self.listeners_client.delete_listener,
-                                    listener.get('id'))
-                self._wait_for_load_balancer_status(lb_id)
-
-    def _clean_up_resources(self):
-        lbs = self.load_balancers_client.list_load_balancers()
-        for lb_entity in lbs:
-            lb_id = lb_entity['id']
-            lb = self.load_balancers_client.get_load_balancer_status_tree(
-                lb_id).get('loadbalancer')
-            for listener in lb.get('listeners'):
-                for pool in listener.get('pools'):
-                    for hm in pool.get('healthmonitor'):
-                        self.delete_wrapper(self.health_monitors_client.
-                                            delete_health_monitor,
-                                            self.hm.get('id'))
-                    self.delete_wrapper(self.pools_client.delete_pool,
-                                        pool.get('id'))
-                    self._wait_for_load_balancer_status(lb_id)
-                self.delete_wrapper(self.listeners_client.delete_listener,
-                                    listener.get('id'))
-                self._wait_for_load_balancer_status(lb_id)
-            self.delete_wrapper(
-                self.load_balancers_client.delete_load_balancer, lb_id)
+        self.delete_wrapper(self.pools_client.delete_pool,
+                            self.pool['id'])
+        self._wait_for_load_balancer_status(self.load_balancer['id'])
+        self.delete_wrapper(self.listeners_client.delete_listener,
+                            self.listener['id'])
+        self._wait_for_load_balancer_status(self.load_balancer['id'])
 
     @test.services('compute', 'network')
     def test_listener_basic(self):
-        self._create_servers()
+        self._create_server('server1')
         self._start_servers()
         self._create_load_balancer()
         self._check_load_balancing()
         self._delete_listener()
         self._check_load_balancing_after_deleting_resources()
-        self._clean_up_resources()
