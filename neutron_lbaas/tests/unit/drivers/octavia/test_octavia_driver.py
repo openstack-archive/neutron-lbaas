@@ -13,6 +13,7 @@
 #    under the License.
 
 import mock
+from oslo_config import cfg
 
 from neutron import context
 from neutron_lbaas.drivers.octavia import driver
@@ -49,7 +50,7 @@ class ManagerTest(object):
         pass
 
 
-class TestOctaviaDriver(test_db_loadbalancerv2.LbaasPluginDbTestCase):
+class BaseOctaviaDriverTest(test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
     # Copied it from Brocade's test code :/
     def _create_fake_models(self):
@@ -69,13 +70,16 @@ class TestOctaviaDriver(test_db_loadbalancerv2.LbaasPluginDbTestCase):
         return lb
 
     def setUp(self):
-        super(TestOctaviaDriver, self).setUp()
+        super(BaseOctaviaDriverTest, self).setUp()
         self.context = context.get_admin_context()
         self.plugin = mock.Mock()
         self.driver = driver.OctaviaDriver(self.plugin)
         # mock of rest call.
         self.driver.req = mock.Mock()
         self.lb = self._create_fake_models()
+
+
+class TestOctaviaDriver(BaseOctaviaDriverTest):
 
     def test_load_balancer_ops(self):
         m = ManagerTest(self, self.driver.load_balancer,
@@ -255,3 +259,56 @@ class TestOctaviaDriver(test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
         # Test HM delete
         m.delete(hm, hm_url_id)
+
+
+class TestThreadedDriver(BaseOctaviaDriverTest):
+
+        def setUp(self):
+            super(TestThreadedDriver, self).setUp()
+            cfg.CONF.set_override('request_poll_interval', 1, group='octavia')
+            cfg.CONF.set_override('request_poll_timeout', 5, group='octavia')
+            self.driver.req.get = mock.MagicMock()
+            self.succ_completion = mock.MagicMock()
+            self.fail_completion = mock.MagicMock()
+            self.driver.load_balancer.successful_completion = (
+                self.succ_completion)
+            self.driver.load_balancer.failed_completion = self.fail_completion
+
+        def test_thread_op_goes_active(self):
+            self.driver.req.get.side_effect = [
+                {'provisioning_status': 'PENDING_CREATE'},
+                {'provisioning_status': 'ACTIVE'}
+            ]
+            driver.thread_op(self.driver.load_balancer, self.context, self.lb)
+            self.succ_completion.assert_called_once_with(self.context, self.lb,
+                                                         delete=False)
+            self.assertEqual(0, self.fail_completion.call_count)
+
+        def test_thread_op_goes_deleted(self):
+            self.driver.req.get.side_effect = [
+                {'provisioning_status': 'PENDING_DELETE'},
+                {'provisioning_status': 'DELETED'}
+            ]
+            driver.thread_op(self.driver.load_balancer, self.context, self.lb,
+                             delete=True)
+            self.succ_completion.assert_called_once_with(self.context, self.lb,
+                                                         delete=True)
+            self.assertEqual(0, self.fail_completion.call_count)
+
+        def test_thread_op_goes_error(self):
+            self.driver.req.get.side_effect = [
+                {'provisioning_status': 'PENDING_CREATE'},
+                {'provisioning_status': 'ERROR'}
+            ]
+            driver.thread_op(self.driver.load_balancer, self.context, self.lb)
+            self.fail_completion.assert_called_once_with(self.context, self.lb)
+            self.assertEqual(0, self.succ_completion.call_count)
+
+        def test_thread_op_a_times_out(self):
+            cfg.CONF.set_override('request_poll_timeout', 1, group='octavia')
+            self.driver.req.get.side_effect = [
+                {'provisioning_status': 'PENDING_CREATE'}
+            ]
+            driver.thread_op(self.driver.load_balancer, self.context, self.lb)
+            self.fail_completion.assert_called_once_with(self.context, self.lb)
+            self.assertEqual(0, self.succ_completion.call_count)
