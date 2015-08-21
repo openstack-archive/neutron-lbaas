@@ -17,6 +17,9 @@ import contextlib
 
 import mock
 from neutron.api import extensions
+from neutron.callbacks import events
+from neutron.callbacks import registry
+from neutron.callbacks import resources
 from neutron.common import config
 from neutron.common import constants as n_constants
 from neutron.common import exceptions as n_exc
@@ -138,9 +141,9 @@ class LoadBalancerTestMixin(object):
         return vip_res
 
     def _create_pool(self, fmt, name, lb_method, protocol, admin_state_up,
-                     expected_res_status=None, **kwargs):
+                     subnet_id, expected_res_status=None, **kwargs):
         data = {'pool': {'name': name,
-                         'subnet_id': _subnet_id,
+                         'subnet_id': subnet_id,
                          'lb_method': lb_method,
                          'protocol': protocol,
                          'admin_state_up': admin_state_up,
@@ -227,14 +230,16 @@ class LoadBalancerTestMixin(object):
     @contextlib.contextmanager
     def pool(self, fmt=None, name='pool1', lb_method='ROUND_ROBIN',
              protocol='HTTP', admin_state_up=True, do_delete=True,
-             **kwargs):
+             subnet_id=None, **kwargs):
         if not fmt:
             fmt = self.fmt
+        subnet_id = subnet_id or _subnet_id
         res = self._create_pool(fmt,
                                 name,
                                 lb_method,
                                 protocol,
                                 admin_state_up,
+                                subnet_id,
                                 **kwargs)
         if res.status_int >= webob.exc.HTTPClientError.code:
             raise webob.exc.HTTPClientError(
@@ -762,6 +767,25 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                                  constants.PENDING_CREATE)
             req = self.new_delete_request('pools',
                                           pool['pool']['id'])
+
+    def test_delete_subnet_with_pool(self):
+        registry.subscribe(ldb.is_subnet_in_use_callback,
+                           resources.SUBNET, events.BEFORE_DELETE)
+
+        try:
+            with self.subnet() as subnet:
+                with self.pool(subnet_id=subnet['subnet']['id']):
+                    req = self.new_delete_request('subnets',
+                                                  subnet['subnet']['id'])
+                    res = req.get_response(self.api)
+
+                    self.assertTrue('NeutronError' in res.json)
+                    self.assertEqual('SubnetInUse',
+                                     res.json['NeutronError']['type'])
+                    self.assertEqual(409, res.status_code)
+        finally:
+            registry.unsubscribe(ldb.is_subnet_in_use_callback,
+                                 resources.SUBNET, events.BEFORE_DELETE)
 
     def test_show_pool(self):
         name = "pool1"

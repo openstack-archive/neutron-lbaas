@@ -23,6 +23,7 @@ from neutron.db import common_db_mixin as base_db
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.db import servicetype_db as st_db
+from neutron.i18n import _LE
 from neutron import manager
 from neutron.plugins.common import constants
 from oslo_db import exception
@@ -838,6 +839,13 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
                                     self._make_health_monitor_dict,
                                     filters=filters, fields=fields)
 
+    def check_subnet_in_use(self, context, subnet_id):
+        query = context.session.query(Pool).filter_by(subnet_id=subnet_id)
+        if query.count():
+            pool_id = query.one().id
+            raise n_exc.SubnetInUse(
+                reason=_LE("Subnet is used by loadbalancer pool %s") % pool_id)
+
 
 def _prevent_lbaas_port_delete_callback(resource, event, trigger, **kwargs):
     context = kwargs['context']
@@ -847,3 +855,20 @@ def _prevent_lbaas_port_delete_callback(resource, event, trigger, **kwargs):
                          constants.LOADBALANCER)
     if lbaasplugin and port_check:
         lbaasplugin.prevent_lbaas_port_deletion(context, port_id)
+
+
+def is_subnet_in_use_callback(resource, event, trigger, **kwargs):
+    service = manager.NeutronManager.get_service_plugins().get(
+        constants.LOADBALANCER)
+    if service:
+        context = kwargs.get('context')
+        subnet_id = kwargs.get('subnet_id')
+        service.check_subnet_in_use(context, subnet_id)
+
+
+def subscribe():
+    registry.subscribe(is_subnet_in_use_callback,
+                       resources.SUBNET, events.BEFORE_DELETE)
+
+
+subscribe()
