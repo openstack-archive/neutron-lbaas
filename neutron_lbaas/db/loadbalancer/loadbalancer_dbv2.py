@@ -293,7 +293,20 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                     id=listenerpools[0].id,
                     entity_in_use=models.PoolV2.NAME)
 
+    def _convert_api_to_db(self, listener):
+        # NOTE(blogan): Converting the values for db models for now to
+        # limit the scope of this change
+        if 'default_tls_container_ref' in listener:
+            tls_cref = listener.get('default_tls_container_ref')
+            del listener['default_tls_container_ref']
+            listener['default_tls_container_id'] = tls_cref
+        if 'sni_container_refs' in listener:
+            sni_crefs = listener.get('sni_container_refs')
+            del listener['sni_container_refs']
+            listener['sni_container_ids'] = sni_crefs
+
     def create_listener(self, context, listener):
+        self._convert_api_to_db(listener)
         try:
             with context.session.begin(subtransactions=True):
                 self._load_id_and_tenant_id(context, listener)
@@ -323,6 +336,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
     def update_listener(self, context, id, listener,
                         tls_containers_changed=False):
+        self._convert_api_to_db(listener)
         with context.session.begin(subtransactions=True):
             listener_db = self._get_resource(context, models.Listener, id)
 

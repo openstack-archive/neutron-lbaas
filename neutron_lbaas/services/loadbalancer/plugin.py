@@ -594,26 +594,26 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                 validate_tls_container(container_ref)
 
         to_validate = []
-        if not listener['default_tls_container_id']:
+        if not listener['default_tls_container_ref']:
             raise loadbalancerv2.TLSDefaultContainerNotSpecified()
         if not curr_listener:
-            to_validate.extend([listener['default_tls_container_id']])
-            to_validate.extend(listener['sni_container_ids'])
+            to_validate.extend([listener['default_tls_container_ref']])
+            to_validate.extend(listener['sni_container_refs'])
         elif curr_listener['provisioning_status'] == constants.ERROR:
             to_validate.extend(curr_listener['default_tls_container_id'])
             to_validate.extend([
-                    container.tls_container_id for container in (
-                        curr_listener['sni_containers'])])
+                container['tls_container_id'] for container in (
+                    curr_listener['sni_containers'])])
         else:
             if (curr_listener['default_tls_container_id'] !=
-                    listener['default_tls_container_id']):
-                to_validate.extend(listener['default_tls_container_id'])
+                    listener['default_tls_container_ref']):
+                to_validate.extend(listener['default_tls_container_ref'])
 
-            if (listener['sni_container_ids'] is not None and
+            if (listener['sni_container_refs'] is not None and
                     [container['tls_container_id'] for container in (
                         curr_listener['sni_containers'])] !=
-                    listener['sni_container_ids']):
-                to_validate.extend(listener['sni_container_ids'])
+                    listener['sni_container_refs']):
+                to_validate.extend(listener['sni_container_refs'])
 
         if len(to_validate) > 0:
             validate_tls_containers(to_validate)
@@ -650,13 +650,15 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         try:
             curr_listener = curr_listener_db.to_dict()
 
-            default_tls_container_id = listener.get(
-                'default_tls_container_id')
-            sni_container_ids = listener.get('sni_container_ids')
-            if not default_tls_container_id:
-                listener['default_tls_container_id'] = (
+            default_tls_container_ref = listener.get(
+                'default_tls_container_ref')
+            sni_container_refs = listener.get('sni_container_refs')
+            if not default_tls_container_ref:
+                listener['default_tls_container_ref'] = (
+                    # NOTE(blogan): not changing to ref bc this dictionary is
+                    # created from a data model
                     curr_listener['default_tls_container_id'])
-            if not sni_container_ids:
+            if not sni_container_refs:
                 listener['sni_container_ids'] = [
                     container.tls_container_id for container in (
                         curr_listener['sni_containers'])]
@@ -665,7 +667,6 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             if curr_listener['protocol'] == lb_const.PROTOCOL_TERMINATED_HTTPS:
                 tls_containers_changed = self._validate_tls(
                     listener, curr_listener=curr_listener)
-
             listener_db = self.db.update_listener(
                 context, id, listener,
                 tls_containers_changed=tls_containers_changed)

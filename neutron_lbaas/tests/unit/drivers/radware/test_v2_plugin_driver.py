@@ -561,8 +561,8 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.listener(
                         protocol=lb_const.PROTOCOL_TERMINATED_HTTPS,
                         loadbalancer_id=lb_id,
-                        default_tls_container_id='def1',
-                        sni_container_ids=['sni1', 'sni2']) as listener:
+                        default_tls_container_ref='def1',
+                        sni_container_refs=['sni1', 'sni2']) as listener:
                         with self.pool(
                             protocol=lb_const.PROTOCOL_HTTP,
                             listener_id=listener['listener']['id']) as pool:

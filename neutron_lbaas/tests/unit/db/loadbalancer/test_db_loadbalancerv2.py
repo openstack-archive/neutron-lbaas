@@ -84,7 +84,7 @@ class LbaasTestMixin(object):
     def _get_listener_optional_args(self):
         return ('name', 'description', 'default_pool_id', 'loadbalancer_id',
                 'connection_limit', 'admin_state_up',
-                'default_tls_container_id', 'sni_container_ids')
+                'default_tls_container_ref', 'sni_container_refs')
 
     def _create_listener(self, fmt, protocol, protocol_port, loadbalancer_id,
                          expected_res_status=None, **kwargs):
@@ -815,7 +815,7 @@ class LbaasListenerTests(ListenerTestBase):
     def test_create_listener_with_tls_no_default_container(self, **extras):
         listener_data = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
-            'default_tls_container_id': None,
+            'default_tls_container_ref': None,
             'protocol_port': 443,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
@@ -830,11 +830,11 @@ class LbaasListenerTests(ListenerTestBase):
                         {'listener': listener_data})
 
     def test_create_listener_with_tls_missing_container(self, **extras):
-        default_tls_container_id = uuidutils.generate_uuid()
+        default_tls_container_ref = uuidutils.generate_uuid()
         listener_data = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
-            'default_tls_container_id': default_tls_container_id,
-            'sni_container_ids': [],
+            'default_tls_container_ref': default_tls_container_ref,
+            'sni_container_refs': [],
             'protocol_port': 443,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
@@ -853,11 +853,11 @@ class LbaasListenerTests(ListenerTestBase):
                               {'listener': listener_data})
 
     def test_create_listener_with_tls_invalid_container(self, **extras):
-        default_tls_container_id = uuidutils.generate_uuid()
+        default_tls_container_ref = uuidutils.generate_uuid()
         listener_data = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
-            'default_tls_container_id': default_tls_container_id,
-            'sni_container_ids': [],
+            'default_tls_container_ref': default_tls_container_ref,
+            'sni_container_refs': [],
             'protocol_port': 443,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
@@ -881,19 +881,19 @@ class LbaasListenerTests(ListenerTestBase):
                               {'listener': listener_data})
 
     def test_create_listener_with_tls(self, **extras):
-        default_tls_container_id = uuidutils.generate_uuid()
-        sni_tls_container_id_1 = uuidutils.generate_uuid()
-        sni_tls_container_id_2 = uuidutils.generate_uuid()
+        default_tls_container_ref = uuidutils.generate_uuid()
+        sni_tls_container_ref_1 = uuidutils.generate_uuid()
+        sni_tls_container_ref_2 = uuidutils.generate_uuid()
 
         expected = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
-            'default_tls_container_id': default_tls_container_id,
-            'sni_container_ids': [sni_tls_container_id_1,
-                                  sni_tls_container_id_2]}
+            'default_tls_container_ref': default_tls_container_ref,
+            'sni_container_refs': [sni_tls_container_ref_1,
+                                   sni_tls_container_ref_2]}
 
-        extras['default_tls_container_id'] = default_tls_container_id
-        extras['sni_container_ids'] = [sni_tls_container_id_1,
-                                       sni_tls_container_id_2]
+        extras['default_tls_container_ref'] = default_tls_container_ref
+        extras['sni_container_refs'] = [sni_tls_container_ref_1,
+                                        sni_tls_container_ref_2]
 
         with contextlib.nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
@@ -942,18 +942,18 @@ class LbaasListenerTests(ListenerTestBase):
                                     listener_disabled=True)
 
     def test_update_listener_with_tls(self):
-        default_tls_container_id = uuidutils.generate_uuid()
-        sni_tls_container_id_1 = uuidutils.generate_uuid()
-        sni_tls_container_id_2 = uuidutils.generate_uuid()
-        sni_tls_container_id_3 = uuidutils.generate_uuid()
-        sni_tls_container_id_4 = uuidutils.generate_uuid()
-        sni_tls_container_id_5 = uuidutils.generate_uuid()
+        default_tls_container_ref = uuidutils.generate_uuid()
+        sni_tls_container_ref_1 = uuidutils.generate_uuid()
+        sni_tls_container_ref_2 = uuidutils.generate_uuid()
+        sni_tls_container_ref_3 = uuidutils.generate_uuid()
+        sni_tls_container_ref_4 = uuidutils.generate_uuid()
+        sni_tls_container_ref_5 = uuidutils.generate_uuid()
 
         listener_data = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
-            'default_tls_container_id': default_tls_container_id,
-            'sni_container_ids': [sni_tls_container_id_1,
-                                  sni_tls_container_id_2],
+            'default_tls_container_ref': default_tls_container_ref,
+            'sni_container_refs': [sni_tls_container_ref_1,
+                                   sni_tls_container_ref_2],
             'protocol_port': 443,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
@@ -974,8 +974,9 @@ class LbaasListenerTests(ListenerTestBase):
             # Test order and validation behavior.
             listener = self.plugin.create_listener(context.get_admin_context(),
                                                    {'listener': listener_data})
-            self.assertEqual(listener['sni_container_ids'],
-                             [sni_tls_container_id_1, sni_tls_container_id_2])
+            self.assertEqual(listener['sni_container_refs'],
+                             [sni_tls_container_ref_1,
+                              sni_tls_container_ref_2])
 
             # Default container and two other SNI containers
             # Test order and validation behavior.
@@ -983,29 +984,31 @@ class LbaasListenerTests(ListenerTestBase):
             listener_data.pop('protocol')
             listener_data.pop('provisioning_status')
             listener_data.pop('operating_status')
-            listener_data['sni_container_ids'] = [sni_tls_container_id_3,
-                                                  sni_tls_container_id_4]
+            listener_data['sni_container_refs'] = [sni_tls_container_ref_3,
+                                                   sni_tls_container_ref_4]
             listener = self.plugin.update_listener(
                 context.get_admin_context(),
                 listener['id'],
                 {'listener': listener_data}
             )
-            self.assertEqual(listener['sni_container_ids'],
-                             [sni_tls_container_id_3, sni_tls_container_id_4])
+            self.assertEqual(listener['sni_container_refs'],
+                             [sni_tls_container_ref_3,
+                              sni_tls_container_ref_4])
 
             # Default container, two old SNI containers ordered differently
             # and one new SNI container.
             # Test order and validation behavior.
             listener_data.pop('protocol')
-            listener_data['sni_container_ids'] = [sni_tls_container_id_4,
-                                                  sni_tls_container_id_3,
-                                                  sni_tls_container_id_5]
+            listener_data['sni_container_refs'] = [sni_tls_container_ref_4,
+                                                   sni_tls_container_ref_3,
+                                                   sni_tls_container_ref_5]
             listener = self.plugin.update_listener(context.get_admin_context(),
                                                    listener['id'],
                                                    {'listener': listener_data})
-            self.assertEqual(listener['sni_container_ids'],
-                             [sni_tls_container_id_4, sni_tls_container_id_3,
-                              sni_tls_container_id_5])
+            self.assertEqual(listener['sni_container_refs'],
+                             [sni_tls_container_ref_4,
+                              sni_tls_container_ref_3,
+                              sni_tls_container_ref_5])
 
     def test_delete_listener(self):
         with self.listener(no_delete=True,

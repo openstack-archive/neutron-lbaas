@@ -466,8 +466,9 @@ class Listener(BaseDataModel):
         ret_dict['loadbalancers'] = []
         if self.loadbalancer:
             ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
-        ret_dict['sni_container_ids'] = [container.tls_container_id
-            for container in self.sni_containers]
+        ret_dict['sni_container_refs'] = [container.tls_container_id
+                                          for container in self.sni_containers]
+        ret_dict['default_tls_container_ref'] = self.default_tls_container_id
         return ret_dict
 
     @classmethod
