@@ -2,6 +2,8 @@
 
 set -ex
 
+GATE_DEST=$BASE/new
+
 testenv=${2:-"apiv2"}
 
 if [ "$1" = "lbaasv1" ]; then
@@ -14,15 +16,18 @@ elif [ "$1" = "lbaasv2" ]; then
     fi
 fi
 
-export DEVSTACK_LOCAL_CONFIG="enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas"
+export DEVSTACK_LOCAL_CONFIG+="
+enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas
+enable_plugin barbican https://git.openstack.org/openstack/barbican
+"
 
 if [ "$testenv" != "apiv1" ]; then
   # Override enabled services, so we can turn on lbaasv2.
   # While we're at it, disable cinder and swift, since we don't need them.
-  ENABLED_SERVICES="q-lbaasv2,-q-lbaas"
+  ENABLED_SERVICES+="q-lbaasv2,-q-lbaas"
   ENABLED_SERVICES+=",-c-api,-c-bak,-c-sch,-c-vol,-cinder"
   ENABLED_SERVICES+=",-s-account,-s-container,-s-object,-s-proxy"
   export ENABLED_SERVICES
 fi
 
-$BASE/new/devstack-gate/devstack-vm-gate.sh
+$GATE_DEST/devstack-gate/devstack-vm-gate.sh
