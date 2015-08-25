@@ -26,7 +26,7 @@ from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.services.loadbalancer import constants
 from neutron_lbaas.services.loadbalancer import data_models
 
-CERT_MANAGER_PLUGIN = cert_manager.CERT_MANAGER_PLUGIN
+CERT_MANAGER_PLUGIN = cert_manager.get_backend()
 
 PROTOCOL_MAP = {
     constants.PROTOCOL_TCP: 'tcp',

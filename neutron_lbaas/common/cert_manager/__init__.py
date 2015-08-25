@@ -12,17 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import importlib
-
 from oslo_config import cfg
+from stevedore import driver
 
 CONF = cfg.CONF
 
-CERT_MANAGER_DEFAULT = ('neutron_lbaas.common.cert_manager.'
-                        'barbican_cert_manager')
+CERT_MANAGER_DEFAULT = 'barbican'
 
 cert_manager_opts = [
-    cfg.StrOpt('cert_manager_class',
+    cfg.StrOpt('cert_manager_type',
                default=CERT_MANAGER_DEFAULT,
                help='Certificate Manager plugin. '
                     'Defaults to {0}.'.format(CERT_MANAGER_DEFAULT))
@@ -30,9 +28,13 @@ cert_manager_opts = [
 
 CONF.register_opts(cert_manager_opts, group='certificates')
 
-# Use CERT_MANAGER_PLUGIN.CertManager and CERT_MANAGER_PLUGIN.Cert to reference
-#   the Certificate plugin chosen via the service configuration.
-# TODO(rm_work): Investigate using Stevedore here.
-CERT_MANAGER_PLUGIN = importlib.import_module(
-    CONF.certificates.cert_manager_class
-)
+_CERT_MANAGER_PLUGIN = None
+
+
+def get_backend():
+    global _CERT_MANAGER_PLUGIN
+    if not _CERT_MANAGER_PLUGIN:
+        _CERT_MANAGER_PLUGIN = driver.DriverManager(
+            "neutron_lbaas.cert_manager.backend",
+            cfg.CONF.certificates.cert_manager_type).driver
+    return _CERT_MANAGER_PLUGIN

@@ -32,7 +32,7 @@ from neutron_lbaas.drivers.radware import base_v2_driver
 from neutron_lbaas.drivers.radware import exceptions as r_exc
 from neutron_lbaas.drivers.radware import rest_client as rest
 
-CERT_MANAGER_PLUGIN = neutron_lbaas.common.cert_manager.CERT_MANAGER_PLUGIN
+CERT_MANAGER_PLUGIN = neutron_lbaas.common.cert_manager.get_backend()
 TEMPLATE_HEADER = {'Content-Type':
                    'application/vnd.com.radware.vdirect.'
                    'template-parameters+json'}

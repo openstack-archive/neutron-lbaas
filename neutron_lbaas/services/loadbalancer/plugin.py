@@ -40,7 +40,7 @@ from neutron_lbaas.services.loadbalancer import agent_scheduler
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 LOG = logging.getLogger(__name__)
-CERT_MANAGER_PLUGIN = neutron_lbaas.common.cert_manager.CERT_MANAGER_PLUGIN
+CERT_MANAGER_PLUGIN = neutron_lbaas.common.cert_manager.get_backend()
 
 
 def verify_lbaas_mutual_exclusion():
