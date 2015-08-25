@@ -23,9 +23,8 @@ from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
+from neutron.tests.unit.db import test_agentschedulers_db
 from neutron.tests.unit.extensions import test_agent
-from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
-    import test_agent_scheduler
 from oslo_config import cfg
 import six
 from webob import exc
@@ -38,7 +37,7 @@ from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 LBAAS_HOSTA = 'hosta'
 
 
-class AgentSchedulerTestMixIn(test_agent_scheduler.AgentSchedulerTestMixIn):
+class AgentSchedulerTestMixIn(test_agentschedulers_db.AgentSchedulerTestMixIn):
     def _list_pools_hosted_by_lbaas_agent(self, agent_id,
                                           expected_code=exc.HTTPOk.code,
                                           admin_context=True):

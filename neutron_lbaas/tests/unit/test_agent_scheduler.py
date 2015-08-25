@@ -27,10 +27,9 @@ from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
+from neutron.tests.unit.db import test_agentschedulers_db
 import neutron.tests.unit.extensions
 from neutron.tests.unit.extensions import test_agent
-from neutron.tests.unit.plugins.ml2.drivers.openvswitch.agent \
-    import test_agent_scheduler
 import six
 from webob import exc
 
@@ -44,7 +43,7 @@ LBAAS_HOSTA = 'hosta'
 extensions_path = ':'.join(neutron.tests.unit.extensions.__path__)
 
 
-class AgentSchedulerTestMixIn(test_agent_scheduler.AgentSchedulerTestMixIn):
+class AgentSchedulerTestMixIn(test_agentschedulers_db.AgentSchedulerTestMixIn):
     def _list_loadbalancers_hosted_by_agent(
             self, agent_id, expected_code=exc.HTTPOk.code, admin_context=True):
         path = "/agents/%s/%s.%s" % (agent_id,
