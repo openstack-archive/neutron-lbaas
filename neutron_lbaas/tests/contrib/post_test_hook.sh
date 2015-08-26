@@ -4,7 +4,7 @@ set -xe
 
 NEUTRON_LBAAS_DIR="$BASE/new/neutron-lbaas"
 TEMPEST_CONFIG_DIR="$BASE/new/tempest/etc"
-SCRIPTS_DIR="/usr/local/jenkins/slave_scripts"
+SCRIPTS_DIR="/usr/os-testr-env/bin"
 
 testenv=${2:-"apiv2"}
 
@@ -24,7 +24,7 @@ function generate_testr_results {
     sudo -H -u $owner chmod o+rw -R .testrepository
     if [ -f ".testrepository/0" ] ; then
         subunit-1to2 < .testrepository/0 > ./testrepository.subunit
-        python $SCRIPTS_DIR/subunit2html.py ./testrepository.subunit testr_results.html
+        $SCRIPTS_DIR/subunit2html ./testrepository.subunit testr_results.html
         gzip -9 ./testrepository.subunit
         gzip -9 ./testr_results.html
         sudo mv ./*.gz /opt/stack/logs/
