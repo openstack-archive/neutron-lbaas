@@ -15,16 +15,18 @@
 """Initial Liberty no-op contract revision.
 
 Revision ID: 130ebfdef43
-Revises: None
+Revises: kilo
 Create Date: 2015-07-18 14:35:22.242794
 
 """
 
+from neutron.db.migration import cli
+
+
 # revision identifiers, used by Alembic.
 revision = '130ebfdef43'
-down_revision = None
-branch_labels = ('liberty_contract',)
-depends_on = ('kilo',)
+down_revision = 'kilo'
+branch_labels = (cli.CONTRACT_BRANCH,)
 
 
 def upgrade():
