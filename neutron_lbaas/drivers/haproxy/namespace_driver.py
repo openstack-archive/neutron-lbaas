@@ -419,14 +419,17 @@ class ListenerManager(agent_device_driver.BaseListenerManager):
 class PoolManager(agent_device_driver.BasePoolManager):
 
     def update(self, old_pool, new_pool):
-        self.driver.loadbalancer.refresh(new_pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(new_pool.loadbalancer)
 
     def create(self, pool):
-        self.driver.loadbalancer.refresh(pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(pool.loadbalancer)
 
     def delete(self, pool):
-        loadbalancer = pool.listener.loadbalancer
-        pool.listener.default_pool = None
+        loadbalancer = pool.loadbalancer
+        for l in loadbalancer.listeners:
+            if l.default_pool == pool:
+                l.default_pool = None
+        # TODO(sbalukoff): Will need to do this or L7Policies as well
         # just refresh because haproxy is fine if only frontend is listed
         self.driver.loadbalancer.refresh(loadbalancer)
 
@@ -441,27 +444,27 @@ class MemberManager(agent_device_driver.BaseMemberManager):
         pool.members.pop(index_to_remove)
 
     def update(self, old_member, new_member):
-        self.driver.loadbalancer.refresh(new_member.pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(new_member.pool.loadbalancer)
 
     def create(self, member):
-        self.driver.loadbalancer.refresh(member.pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(member.pool.loadbalancer)
 
     def delete(self, member):
         self._remove_member(member.pool, member.id)
-        self.driver.loadbalancer.refresh(member.pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(member.pool.loadbalancer)
 
 
 class HealthMonitorManager(agent_device_driver.BaseHealthMonitorManager):
 
     def update(self, old_hm, new_hm):
-        self.driver.loadbalancer.refresh(new_hm.pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(new_hm.pool.loadbalancer)
 
     def create(self, hm):
-        self.driver.loadbalancer.refresh(hm.pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(hm.pool.loadbalancer)
 
     def delete(self, hm):
         hm.pool.healthmonitor = None
-        self.driver.loadbalancer.refresh(hm.pool.listener.loadbalancer)
+        self.driver.loadbalancer.refresh(hm.pool.loadbalancer)
 
 
 def kill_pids_in_file(pid_path):

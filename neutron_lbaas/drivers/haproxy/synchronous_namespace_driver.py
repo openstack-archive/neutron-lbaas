@@ -554,7 +554,7 @@ class PoolManager(driver_base.BasePoolManager):
         super(PoolManager, self).update(context, old_pool, new_pool)
         try:
             self.driver.load_balancer.refresh(context,
-                                              new_pool.listener.loadbalancer)
+                                              new_pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, new_pool)
             raise e
@@ -565,7 +565,7 @@ class PoolManager(driver_base.BasePoolManager):
         super(PoolManager, self).delete(context, pool)
         try:
             self.driver.load_balancer.refresh(context,
-                                              pool.listener.loadbalancer)
+                                              pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, pool)
             raise e
@@ -574,8 +574,11 @@ class PoolManager(driver_base.BasePoolManager):
 
     def delete(self, context, pool):
         super(PoolManager, self).delete(context, pool)
-        loadbalancer = pool.listener.loadbalancer
-        pool.listener.default_pool = None
+        loadbalancer = pool.loadbalancer
+        # TODO(sbalukoff): clear out L7policies referencing the pool, too.
+        for l in loadbalancer.listeners:
+            if l.default_pool == pool:
+                l.default_pool = None
         try:
             # just refresh because haproxy is fine if only frontend is listed
             self.driver.load_balancer.refresh(context, loadbalancer)
@@ -599,7 +602,7 @@ class MemberManager(driver_base.BaseMemberManager):
         super(MemberManager, self).update(context, old_member, new_member)
         try:
             self.driver.load_balancer.refresh(
-                context, new_member.pool.listener.loadbalancer)
+                context, new_member.pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, new_member)
             raise e
@@ -610,7 +613,7 @@ class MemberManager(driver_base.BaseMemberManager):
         super(MemberManager, self).create(context, member)
         try:
             self.driver.load_balancer.refresh(
-                context, member.pool.listener.loadbalancer)
+                context, member.pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, member)
             raise e
@@ -622,7 +625,7 @@ class MemberManager(driver_base.BaseMemberManager):
         self._remove_member(member.pool, member.id)
         try:
             self.driver.load_balancer.refresh(
-                context, member.pool.listener.loadbalancer)
+                context, member.pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, member)
             raise e
@@ -636,7 +639,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         super(HealthMonitorManager, self).update(context, old_hm, new_hm)
         try:
             self.driver.load_balancer.refresh(
-                context, new_hm.pool.listener.loadbalancer)
+                context, new_hm.pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, new_hm)
             raise e
@@ -647,7 +650,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         super(HealthMonitorManager, self).create(context, hm)
         try:
             self.driver.load_balancer.refresh(
-                context, hm.pool.listener.loadbalancer)
+                context, hm.pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, hm)
             raise e
@@ -659,7 +662,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         hm.pool.healthmonitor = None
         try:
             self.driver.load_balancer.refresh(context,
-                                              hm.pool.listener.loadbalancer)
+                                              hm.pool.loadbalancer)
         except Exception as e:
             self.failed_completion(context, hm)
             raise e

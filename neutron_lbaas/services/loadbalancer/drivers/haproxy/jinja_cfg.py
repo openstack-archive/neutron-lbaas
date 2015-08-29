@@ -247,10 +247,12 @@ def _transform_loadbalancer(loadbalancer, haproxy_base_dir):
     """
     listeners = [_transform_listener(
         x, haproxy_base_dir) for x in loadbalancer.listeners]
+    pools = [_transform_pool(x) for x in loadbalancer.pools]
     return {
         'name': loadbalancer.name,
         'vip_address': loadbalancer.vip_address,
-        'listeners': listeners
+        'listeners': listeners,
+        'pools': pools
     }
 
 

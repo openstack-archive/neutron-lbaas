@@ -91,7 +91,7 @@ class MemberV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
 
     @property
     def root_loadbalancer(self):
-        return self.pool.listener.loadbalancer
+        return self.pool.loadbalancer
 
 
 class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
@@ -116,49 +116,7 @@ class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
 
     @property
     def root_loadbalancer(self):
-        return self.pool.listener.loadbalancer
-
-
-class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
-    """Represents a v2 neutron load balancer pool."""
-
-    NAME = 'pool'
-
-    __tablename__ = "lbaas_pools"
-
-    name = sa.Column(sa.String(255), nullable=True)
-    description = sa.Column(sa.String(255), nullable=True)
-    healthmonitor_id = sa.Column(sa.String(36),
-                                 sa.ForeignKey("lbaas_healthmonitors.id"),
-                                 unique=True,
-                                 nullable=True)
-    protocol = sa.Column(sa.Enum(*lb_const.POOL_SUPPORTED_PROTOCOLS,
-                                 name="pool_protocolsv2"),
-                         nullable=False)
-    lb_algorithm = sa.Column(sa.Enum(*lb_const.SUPPORTED_LB_ALGORITHMS,
-                                     name="lb_algorithmsv2"),
-                             nullable=False)
-    admin_state_up = sa.Column(sa.Boolean(), nullable=False)
-    provisioning_status = sa.Column(sa.String(16), nullable=False)
-    operating_status = sa.Column(sa.String(16), nullable=False)
-    members = orm.relationship(MemberV2,
-                               backref=orm.backref("pool", uselist=False),
-                               cascade="all, delete-orphan",
-                               lazy='joined')
-    healthmonitor = orm.relationship(
-        HealthMonitorV2,
-        backref=orm.backref("pool", uselist=False),
-        lazy='joined')
-    session_persistence = orm.relationship(
-        SessionPersistenceV2,
-        uselist=False,
-        backref=orm.backref("pool", uselist=False),
-        cascade="all, delete-orphan",
-        lazy='joined')
-
-    @property
-    def root_loadbalancer(self):
-        return self.listener.loadbalancer
+        return self.pool.loadbalancer
 
 
 class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
@@ -201,6 +159,63 @@ class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     @property
     def root_loadbalancer(self):
         return self
+
+
+class PoolV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+    """Represents a v2 neutron load balancer pool."""
+
+    NAME = 'pool'
+
+    __tablename__ = "lbaas_pools"
+
+    name = sa.Column(sa.String(255), nullable=True)
+    description = sa.Column(sa.String(255), nullable=True)
+    loadbalancer_id = sa.Column(sa.String(36), sa.ForeignKey(
+        "lbaas_loadbalancers.id"))
+    healthmonitor_id = sa.Column(sa.String(36),
+                                 sa.ForeignKey("lbaas_healthmonitors.id"),
+                                 unique=True,
+                                 nullable=True)
+    protocol = sa.Column(sa.Enum(*lb_const.POOL_SUPPORTED_PROTOCOLS,
+                                 name="pool_protocolsv2"),
+                         nullable=False)
+    lb_algorithm = sa.Column(sa.Enum(*lb_const.SUPPORTED_LB_ALGORITHMS,
+                                     name="lb_algorithmsv2"),
+                             nullable=False)
+    admin_state_up = sa.Column(sa.Boolean(), nullable=False)
+    provisioning_status = sa.Column(sa.String(16), nullable=False)
+    operating_status = sa.Column(sa.String(16), nullable=False)
+    members = orm.relationship(MemberV2,
+                               backref=orm.backref("pool", uselist=False),
+                               cascade="all, delete-orphan",
+                               lazy='joined')
+    healthmonitor = orm.relationship(
+        HealthMonitorV2,
+        backref=orm.backref("pool", uselist=False),
+        lazy='joined')
+    session_persistence = orm.relationship(
+        SessionPersistenceV2,
+        uselist=False,
+        backref=orm.backref("pool", uselist=False),
+        cascade="all, delete-orphan",
+        lazy='joined')
+    loadbalancer = orm.relationship(
+        LoadBalancer, uselist=False,
+        backref=orm.backref("pools", uselist=True),
+        lazy='joined')
+
+    @property
+    def root_loadbalancer(self):
+        return self.loadbalancer
+
+    # No real relationship here. But we want to fake a pool having a
+    # 'listener_id' sometimes for API back-ward compatibility purposes.
+    @property
+    def listener(self):
+        if self.listeners:
+            return self.listeners[0]
+        else:
+            return None
 
 
 class SNI(model_base.BASEV2):
@@ -268,9 +283,11 @@ class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     operating_status = sa.Column(sa.String(16), nullable=False)
     default_pool = orm.relationship(
-        PoolV2, backref=orm.backref("listener", uselist=False), lazy='joined')
+        PoolV2, backref=orm.backref("listeners"), lazy='joined')
     loadbalancer = orm.relationship(
-        LoadBalancer, backref=orm.backref("listeners"), lazy='joined')
+        LoadBalancer,
+        backref=orm.backref("listeners", uselist=True),
+        lazy='joined')
 
     @property
     def root_loadbalancer(self):

@@ -257,6 +257,7 @@ class ListenerManager(driver_base.BaseListenerManager):
             'protocol_port': listener.protocol_port,
             'connection_limit': listener.connection_limit,
             'tls_certificate_id': listener.default_tls_container_id,
+            'default_pool_id': listener.default_pool_id,
             'sni_containers': sni_container_ids
         }
         if create:
@@ -282,9 +283,8 @@ class PoolManager(driver_base.BasePoolManager):
 
     @staticmethod
     def _url(pool, id=None):
-        s = '/v1/loadbalancers/%s/listeners/%s/pools' % (
-            pool.listener.loadbalancer.id,
-            pool.listener.id)
+        s = '/v1/loadbalancers/%s/pools' % (
+            pool.loadbalancer.id)
         if id:
             s += '/%s' % id
         return s
@@ -306,6 +306,8 @@ class PoolManager(driver_base.BasePoolManager):
         if create:
             args['project_id'] = pool.tenant_id
             args['id'] = pool.id
+            if pool.listeners:
+                args['listener_id'] = pool.listeners[0].id
         write_func(url, args)
 
     @async_op
@@ -326,9 +328,8 @@ class MemberManager(driver_base.BaseMemberManager):
 
     @staticmethod
     def _url(member, id=None):
-        s = '/v1/loadbalancers/%s/listeners/%s/pools/%s/members' % (
-            member.pool.listener.loadbalancer.id,
-            member.pool.listener.id,
+        s = '/v1/loadbalancers/%s/pools/%s/members' % (
+            member.pool.loadbalancer.id,
             member.pool.id)
         if id:
             s += '/%s' % id
@@ -365,9 +366,8 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
     @staticmethod
     def _url(hm):
-        s = '/v1/loadbalancers/%s/listeners/%s/pools/%s/healthmonitor' % (
-            hm.pool.listener.loadbalancer.id,
-            hm.pool.listener.id,
+        s = '/v1/loadbalancers/%s/pools/%s/healthmonitor' % (
+            hm.pool.loadbalancer.id,
             hm.pool.id)
         return s
 

@@ -287,7 +287,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     calls = self.mock_api.create_pool.call_args_list
@@ -311,7 +311,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(loadbalancer_id=lb_id, listener_id=listener_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     old_name = pool['pool']['name']
@@ -343,7 +343,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,
@@ -372,7 +372,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,
@@ -402,7 +402,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,
@@ -446,7 +446,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,
@@ -484,7 +484,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,
@@ -514,7 +514,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,
@@ -558,7 +558,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 listener_id = listener['listener']['id']
                 self._update_status(models.LoadBalancer, constants.ACTIVE,
                                     lb_id)
-                with self.pool(listener_id=listener_id,
+                with self.pool(listener_id=listener_id, loadbalancer_id=lb_id,
                                no_delete=True) as pool:
                     pool_id = pool['pool']['id']
                     self._update_status(models.LoadBalancer, constants.ACTIVE,

@@ -22,8 +22,8 @@
 {% from 'haproxy_proxies.j2' import frontend_macro as frontend_macro, backend_macro%}
 {% for listener in loadbalancer.listeners %}
 {{ frontend_macro(constants, listener, loadbalancer.vip_address) }}
-{% if listener.default_pool %}
-{{ backend_macro(constants, listener, listener.default_pool) }}
-{% endif %}
+{% endfor %}
+{% for pool in loadbalancer.pools %}
+{{ backend_macro(constants, pool) }}
 {% endfor %}
 {% endblock proxies %}

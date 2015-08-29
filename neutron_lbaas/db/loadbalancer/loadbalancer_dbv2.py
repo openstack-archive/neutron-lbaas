@@ -33,6 +33,7 @@ from neutron_lbaas._i18n import _
 from neutron_lbaas import agent_scheduler
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.extensions import loadbalancerv2
+from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 
@@ -274,21 +275,21 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 raise loadbalancerv2.EntityNotFound(
                     name=models.LoadBalancer.NAME, id=lb_id)
         if pool_id:
+            if not self._resource_exists(context, models.PoolV2, pool_id):
+                raise loadbalancerv2.EntityNotFound(
+                    name=models.PoolV2.NAME, id=pool_id)
             pool = self._get_resource(context, models.PoolV2, pool_id)
             if ((pool.protocol, listener.get('protocol'))
                 not in lb_const.LISTENER_POOL_COMPATIBLE_PROTOCOLS):
                 raise loadbalancerv2.ListenerPoolProtocolMismatch(
                     listener_proto=listener['protocol'],
                     pool_proto=pool.protocol)
-            filters = {'default_pool_id': [pool_id]}
-            listenerpools = self._get_resources(context,
-                                                models.Listener,
-                                                filters=filters)
-            if listenerpools:
-                raise loadbalancerv2.EntityInUse(
-                    entity_using=models.Listener.NAME,
-                    id=listenerpools[0].id,
-                    entity_in_use=models.PoolV2.NAME)
+        if lb_id and pool_id:
+            pool = self._get_resource(context, models.PoolV2, pool_id)
+            if pool.loadbalancer_id != lb_id:
+                raise sharedpools.ListenerPoolLoadbalancerMismatch(
+                    pool_id=pool_id,
+                    lb_id=pool.loadbalancer_id)
 
     def _convert_api_to_db(self, listener):
         # NOTE(blogan): Converting the values for db models for now to
@@ -424,14 +425,6 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             context.session.add(pool_db)
         return data_models.Pool.from_sqlalchemy_model(pool_db)
 
-    def create_pool_and_add_to_listener(self, context, pool, listener_id):
-        with context.session.begin(subtransactions=True):
-            db_pool = self.create_pool(context, pool)
-            self.update_listener(context, listener_id,
-                                 {'default_pool_id': db_pool.id})
-            db_pool = self.get_pool(context, db_pool.id)
-        return data_models.Pool.from_sqlalchemy_model(db_pool)
-
     def update_pool(self, context, id, pool):
         with context.session.begin(subtransactions=True):
             pool_db = self._get_resource(context, models.PoolV2, id)
@@ -458,6 +451,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             else:
                 self._delete_session_persistence(context, id)
 
+            # sqlalchemy cries if listeners is defined.
+            listeners = pool.get('listeners')
+            if listeners:
+                del pool['listeners']
             pool_db.update(pool)
         context.session.refresh(pool_db)
         return data_models.Pool.from_sqlalchemy_model(pool_db)
@@ -465,8 +462,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
     def delete_pool(self, context, id):
         with context.session.begin(subtransactions=True):
             pool_db = self._get_resource(context, models.PoolV2, id)
-            self.update_listener(context, pool_db.listener.id,
-                                 {'default_pool_id': None})
+            # TODO(sbalukoff): will need to do this for L7Policies as well
+            for l in pool_db.listeners:
+                self.update_listener(context, l.id,
+                                     {'default_pool_id': None})
             context.session.delete(pool_db)
 
     def get_pools(self, context, filters=None):
@@ -526,9 +525,11 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         with context.session.begin(subtransactions=True):
             hm_db = self.create_healthmonitor(context, healthmonitor)
             pool = self.get_pool(context, pool_id)
-            # do not want listener, members, or healthmonitor in dict
-            pool_dict = pool.to_dict(listener=False, members=False,
-                                     healthmonitor=False)
+            # do not want listener, members, healthmonitor or loadbalancer
+            # in dict
+            pool_dict = pool.to_dict(listeners=False, members=False,
+                                     healthmonitor=False, loadbalancer=False,
+                                     listener=False, loadbalancer_id=False)
             pool_dict['healthmonitor_id'] = hm_db.id
             self.update_pool(context, pool_id, pool_dict)
             hm_db = self._get_resource(context, models.HealthMonitorV2,
@@ -554,6 +555,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         with context.session.begin(subtransactions=True):
             hm_db_entry = self._get_resource(context,
                                              models.HealthMonitorV2, id)
+            # TODO(sbalukoff): Clear out pool.healthmonitor_ids referencing
+            # old healthmonitor ID.
             context.session.delete(hm_db_entry)
 
     def get_healthmonitor(self, context, id):

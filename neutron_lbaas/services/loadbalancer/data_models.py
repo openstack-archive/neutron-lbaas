@@ -65,7 +65,8 @@ class BaseDataModel(object):
         return cls(**model_dict)
 
     @classmethod
-    def from_sqlalchemy_model(cls, sa_model, calling_class=None):
+    def from_sqlalchemy_model(cls, sa_model, calling_classes=None):
+        calling_classes = calling_classes or []
         attr_mapping = vars(cls).get("attr_mapping")
         instance = cls()
         for attr_name in vars(instance):
@@ -79,20 +80,29 @@ class BaseDataModel(object):
             if isinstance(attr, model_base.BASEV2):
                 if hasattr(instance, attr_name):
                     data_class = SA_MODEL_TO_DATA_MODEL_MAP[attr.__class__]
-                    if calling_class != data_class and data_class:
+                    # Don't recurse down object classes too far. If we have
+                    # seen the same object class more than twice, we are
+                    # probably in a loop.
+                    if data_class and calling_classes.count(data_class) < 2:
                         setattr(instance, attr_name,
                                 data_class.from_sqlalchemy_model(
-                                    attr, calling_class=cls))
-            # Handles 1:M or M:M relationships
+                                    attr,
+                                    calling_classes=calling_classes + [cls]))
+            # Handles 1:M or N:M relationships
             elif (isinstance(attr, collections.InstrumentedList) or
                  isinstance(attr, orderinglist.OrderingList)):
                 for item in attr:
                     if hasattr(instance, attr_name):
                         data_class = SA_MODEL_TO_DATA_MODEL_MAP[item.__class__]
-                        attr_list = getattr(instance, attr_name) or []
-                        attr_list.append(data_class.from_sqlalchemy_model(
-                            item, calling_class=cls))
-                        setattr(instance, attr_name, attr_list)
+                        # Don't recurse down object classes too far. If we have
+                        # seen the same object class more than twice, we are
+                        # probably in a loop.
+                        if (data_class and
+                            calling_classes.count(data_class) < 2):
+                            attr_list = getattr(instance, attr_name) or []
+                            attr_list.append(data_class.from_sqlalchemy_model(
+                                item, calling_classes=calling_classes + [cls]))
+                            setattr(instance, attr_name, attr_list)
             # This isn't a relationship so it must be a "primitive"
             else:
                 setattr(instance, attr_name, attr)
@@ -106,12 +116,12 @@ class BaseDataModel(object):
         elif isinstance(self, Listener):
             lb = self.loadbalancer
         elif isinstance(self, Pool):
-            lb = self.listener.loadbalancer
+            lb = self.loadbalancer
         elif isinstance(self, SNI):
             lb = self.listener.loadbalancer
         else:
             # Pool Member or Health Monitor
-            lb = self.pool.listener.loadbalancer
+            lb = self.pool.loadbalancer
         return lb
 
 
@@ -288,8 +298,7 @@ class HealthMonitor(BaseDataModel):
         self.name = name
 
     def attached_to_loadbalancer(self):
-        return bool(self.pool and self.pool.listener and
-                    self.pool.listener.loadbalancer)
+        return bool(self.pool and self.pool.loadbalancer)
 
     def to_api_dict(self):
         ret_dict = super(HealthMonitor, self).to_dict(
@@ -322,7 +331,8 @@ class Pool(BaseDataModel):
                  healthmonitor_id=None, protocol=None, lb_algorithm=None,
                  admin_state_up=None, operating_status=None,
                  provisioning_status=None, members=None, healthmonitor=None,
-                 session_persistence=None, listener=None):
+                 session_persistence=None, loadbalancer_id=None,
+                 loadbalancer=None, listener=None, listeners=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -339,25 +349,33 @@ class Pool(BaseDataModel):
         # NOTE(eezhova): Old attribute name is kept for backwards
         # compatibility with out-of-tree drivers.
         self.sessionpersistence = self.session_persistence
+        self.loadbalancer_id = loadbalancer_id
+        self.loadbalancer = loadbalancer
         self.listener = listener
+        self.listeners = listeners or []
 
     def attached_to_loadbalancer(self):
-        return bool(self.listener and self.listener.loadbalancer)
+        return bool(self.loadbalancer)
 
     def to_api_dict(self):
         ret_dict = super(Pool, self).to_dict(
             provisioning_status=False, operating_status=False,
-            healthmonitor=False, listener=False, session_persistence=False)
-        # NOTE(blogan): Returning a list to future proof for M:N objects
-        # that are not yet implemented.
-        ret_dict['listeners'] = []
-        if self.listener:
-            ret_dict['listeners'].append({'id': self.listener.id})
+            healthmonitor=False, session_persistence=False,
+            loadbalancer_id=False, loadbalancer=False, listener_id=False)
+        ret_dict['loadbalancers'] = []
+        if self.loadbalancer:
+            ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
         ret_dict['session_persistence'] = None
         if self.session_persistence:
             ret_dict['session_persistence'] = (
                 self.session_persistence.to_api_dict())
         ret_dict['members'] = [{'id': member.id} for member in self.members]
+        ret_dict['listeners'] = [{'id': listener.id}
+                                 for listener in self.listeners]
+        if self.listener:
+            ret_dict['listener_id'] = self.listener.id
+        else:
+            ret_dict['listener_id'] = None
         return ret_dict
 
     @classmethod
@@ -365,18 +383,22 @@ class Pool(BaseDataModel):
         healthmonitor = model_dict.pop('healthmonitor', None)
         session_persistence = model_dict.pop('session_persistence', None)
         model_dict.pop('sessionpersistence', None)
-        listener = model_dict.pop('listener', [])
+        loadbalancer = model_dict.pop('loadbalancer', None)
         members = model_dict.pop('members', [])
         model_dict['members'] = [Member.from_dict(member)
                                  for member in members]
-        if listener:
-            model_dict['listener'] = Listener.from_dict(listener)
+        listeners = model_dict.pop('listeners', [])
+        model_dict['listeners'] = [Listener.from_dict(listener)
+                                   for listener in listeners]
+
         if healthmonitor:
             model_dict['healthmonitor'] = HealthMonitor.from_dict(
                 healthmonitor)
         if session_persistence:
             model_dict['session_persistence'] = SessionPersistence.from_dict(
                 session_persistence)
+        if loadbalancer:
+            model_dict['loadbalancer'] = LoadBalancer.from_dict(loadbalancer)
         return Pool(**model_dict)
 
 
@@ -400,8 +422,7 @@ class Member(BaseDataModel):
         self.name = name
 
     def attached_to_loadbalancer(self):
-        return bool(self.pool and self.pool.listener and
-                    self.pool.listener.loadbalancer)
+        return bool(self.pool and self.pool.loadbalancer)
 
     def to_api_dict(self):
         return super(Member, self).to_dict(
@@ -510,7 +531,7 @@ class LoadBalancer(BaseDataModel):
                  vip_subnet_id=None, vip_port_id=None, vip_address=None,
                  provisioning_status=None, operating_status=None,
                  admin_state_up=None, vip_port=None, stats=None,
-                 provider=None, listeners=None, flavor_id=None):
+                 provider=None, listeners=None, pools=None, flavor_id=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -526,6 +547,7 @@ class LoadBalancer(BaseDataModel):
         self.provider = provider
         self.listeners = listeners or []
         self.flavor_id = flavor_id
+        self.pools = pools or []
 
     def attached_to_loadbalancer(self):
         return True
@@ -535,6 +557,7 @@ class LoadBalancer(BaseDataModel):
             vip_port=False, stats=False, listeners=False)
         ret_dict['listeners'] = [{'id': listener.id}
                                  for listener in self.listeners]
+        ret_dict['pools'] = [{'id': pool.id} for pool in self.pools]
         if self.provider:
             ret_dict['provider'] = self.provider.provider_name
 
@@ -546,11 +569,14 @@ class LoadBalancer(BaseDataModel):
     @classmethod
     def from_dict(cls, model_dict):
         listeners = model_dict.pop('listeners', [])
+        pools = model_dict.pop('pools', [])
         vip_port = model_dict.pop('vip_port', None)
         provider = model_dict.pop('provider', None)
         model_dict.pop('stats', None)
         model_dict['listeners'] = [Listener.from_dict(listener)
                                    for listener in listeners]
+        model_dict['pools'] = [Pool.from_dict(pool)
+                               for pool in pools]
         if vip_port:
             model_dict['vip_port'] = Port.from_dict(vip_port)
         if provider:

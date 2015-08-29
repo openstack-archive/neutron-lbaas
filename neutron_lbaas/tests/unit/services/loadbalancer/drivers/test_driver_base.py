@@ -52,18 +52,19 @@ class TestBaseManager(test_db_loadbalancerv2.LbaasPluginDbTestCase):
             context, {'admin_state_up': True,
                       'type': lb_const.HEALTH_MONITOR_HTTP,
                       'delay': 1, 'timeout': 1, 'max_retries': 1})
-        pool = self.plugin.db.create_pool(
-            context, {'protocol': lb_const.PROTOCOL_HTTP,
-                      'session_persistence': None,
-                      'lb_algorithm': lb_const.LB_METHOD_ROUND_ROBIN,
-                      'admin_state_up': True, 'healthmonitor_id': hm.id})
-        self.plugin.db.create_pool_member(
-            context, {'address': '10.0.0.1', 'protocol_port': 80,
-                      'admin_state_up': True}, pool.id)
         lb = self.plugin.db.create_loadbalancer(
             context, {'vip_address': '10.0.0.1',
                       'vip_subnet_id': self.subnet_id,
                       'admin_state_up': True})
+        pool = self.plugin.db.create_pool(
+            context, {'protocol': lb_const.PROTOCOL_HTTP,
+                      'session_persistence': None,
+                      'lb_algorithm': lb_const.LB_METHOD_ROUND_ROBIN,
+                      'admin_state_up': True, 'healthmonitor_id': hm.id,
+                      'loadbalancer_id': lb.id})
+        self.plugin.db.create_pool_member(
+            context, {'address': '10.0.0.1', 'protocol_port': 80,
+                      'admin_state_up': True}, pool.id)
         listener = self.plugin.db.create_listener(
             context, {'protocol_port': 80, 'protocol': lb_const.PROTOCOL_HTTP,
                       'admin_state_up': True, 'loadbalancer_id': lb.id,

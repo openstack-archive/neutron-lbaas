@@ -101,17 +101,20 @@ RET_LISTENER_TLS_SNI = {
 RET_LB = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
-    'listeners': [RET_LISTENER]}
+    'listeners': [RET_LISTENER],
+    'pools': [RET_POOL]}
 
 RET_LB_TLS = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
-    'listeners': [RET_LISTENER_TLS]}
+    'listeners': [RET_LISTENER_TLS],
+    'pools': [RET_POOL]}
 
 RET_LB_TLS_SNI = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
-    'listeners': [RET_LISTENER_TLS_SNI]}
+    'listeners': [RET_LISTENER_TLS_SNI],
+    'pools': [RET_POOL]}
 
 
 def sample_loadbalancer_tuple(proto=None, monitor=True, persistence=True,
@@ -119,7 +122,7 @@ def sample_loadbalancer_tuple(proto=None, monitor=True, persistence=True,
     proto = 'HTTP' if proto is None else proto
     in_lb = collections.namedtuple(
         'loadbalancer', 'id, name, vip_address, protocol, vip_port, '
-                        'listeners')
+                        'listeners, pools')
     return in_lb(
         id='sample_loadbalancer_id_1',
         name='test-lb',
@@ -130,7 +133,10 @@ def sample_loadbalancer_tuple(proto=None, monitor=True, persistence=True,
                                          persistence=persistence,
                                          persistence_type=persistence_type,
                                          tls=tls,
-                                         sni=sni)]
+                                         sni=sni)],
+        pools=[sample_pool_tuple(proto=proto, monitor=monitor,
+                                 persistence=persistence,
+                                 persistence_type=persistence_type)]
     )
 
 
