@@ -15,6 +15,7 @@
 
 import contextlib
 import copy
+import exceptions as ex
 import mock
 import six
 
@@ -27,6 +28,7 @@ from neutron import context
 import neutron.db.l3_db  # noqa
 from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
+from oslo_config import cfg
 from oslo_utils import uuidutils
 import testtools
 import webob.exc
@@ -780,6 +782,12 @@ class CertMock(cert_manager.Cert):
         return "mock"
 
 
+class Exceptions(object):
+    def __iter__(self):
+        return self
+    pass
+
+
 class LbaasListenerTests(ListenerTestBase):
 
     def test_create_listener(self, **extras):
@@ -831,6 +839,19 @@ class LbaasListenerTests(ListenerTestBase):
 
     def test_create_listener_with_tls_missing_container(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()
+
+        class ReplaceClass(ex.Exception):
+            def __init__(self, status_code, message):
+                self.status_code = status_code
+                self.message = message
+                pass
+
+        cfg.CONF.set_override('service_name',
+                              'lbaas',
+                              'service_auth')
+        cfg.CONF.set_override('region',
+                              'RegionOne',
+                              'service_auth')
         listener_data = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
             'default_tls_container_ref': default_tls_container_ref,
@@ -842,18 +863,70 @@ class LbaasListenerTests(ListenerTestBase):
         }
         listener_data.update(extras)
 
-        with mock.patch(
-            'neutron_lbaas.services.loadbalancer.plugin.'
-            'CERT_MANAGER_PLUGIN.CertManager.get_cert') as get_cert_mock:
-            get_cert_mock.side_effect = LookupError
+        with contextlib.nested(
+            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                       'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
+            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                       'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
+        ) as (get_cert_mock, rm_consumer_mock):
+            ex.Exception = ReplaceClass(status_code=404,
+                                        message='Cert Not Found')
+            get_cert_mock.side_effect = ex.Exception
 
             self.assertRaises(loadbalancerv2.TLSContainerNotFound,
                               self.plugin.create_listener,
                               context.get_admin_context(),
                               {'listener': listener_data})
 
+    def test_create_listener_with_tls_invalid_service_acct(self, **extras):
+        default_tls_container_ref = uuidutils.generate_uuid()
+        listener_data = {
+            'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
+            'default_tls_container_ref': default_tls_container_ref,
+            'sni_container_refs': [],
+            'protocol_port': 443,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'loadbalancer_id': self.lb_id
+        }
+        listener_data.update(extras)
+
+        with contextlib.nested(
+            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                       'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
+            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                       'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
+        ) as (get_cert_mock, rm_consumer_mock):
+            get_cert_mock.side_effect = Exception('RandomFailure')
+
+            self.assertRaises(loadbalancerv2.CertManagerError,
+                              self.plugin.create_listener,
+                              context.get_admin_context(),
+                              {'listener': listener_data})
+
+    def test_get_service_url(self):
+        # Format: <servicename>://<region>/<resource>/<object_id>
+        cfg.CONF.set_override('service_name',
+                              'lbaas',
+                              'service_auth')
+        cfg.CONF.set_override('region',
+                              'RegionOne',
+                              'service_auth')
+        listner = {
+            'loadbalancer_id': self.lb_id
+        }
+        self.assertEqual(
+            'lbaas://RegionOne/LOADBALANCER/{0}'.format(self.lb_id),
+            self.plugin._get_service_url(listner))
+
     def test_create_listener_with_tls_invalid_container(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()
+        cfg.CONF.set_override('service_name',
+                              'lbaas',
+                              'service_auth')
+        cfg.CONF.set_override('region',
+                              'RegionOne',
+                              'service_auth')
         listener_data = {
             'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
             'default_tls_container_ref': default_tls_container_ref,
@@ -869,8 +942,10 @@ class LbaasListenerTests(ListenerTestBase):
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'cert_parser.validate_cert'),
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert')
-        ) as (validate_cert_mock, get_cert_mock):
+                       'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
+            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                       'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
+        ) as (validate_cert_mock, get_cert_mock, rm_consumer_mock):
             get_cert_mock.start().return_value = CertMock(
                 'mock_cert')
             validate_cert_mock.side_effect = exceptions.MisMatchedKey
@@ -879,6 +954,9 @@ class LbaasListenerTests(ListenerTestBase):
                               self.plugin.create_listener,
                               context.get_admin_context(),
                               {'listener': listener_data})
+            rm_consumer_mock.assert_called_once_with(
+                listener_data['default_tls_container_ref'],
+                'lbaas://RegionOne/LOADBALANCER/{0}'.format(self.lb_id))
 
     def test_create_listener_with_tls(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()

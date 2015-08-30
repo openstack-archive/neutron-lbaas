@@ -573,10 +573,17 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             cert_container = None
             try:
                 cert_container = CERT_MANAGER_PLUGIN.CertManager.get_cert(
-                    container_ref, check_only=True)
-            except Exception:
-                raise loadbalancerv2.TLSContainerNotFound(
-                    container_id=container_ref)
+                    container_ref,
+                    resource_ref=self._get_service_url(listener))
+            except Exception as e:
+                if hasattr(e, 'status_code') and e.status_code == 404:
+                    raise loadbalancerv2.TLSContainerNotFound(
+                        container_id=container_ref)
+                else:
+                    # Could be a keystone configuration error...
+                    raise loadbalancerv2.CertManagerError(
+                        ref=container_ref, reason=e.message
+                    )
 
             try:
                 cert_parser.validate_cert(
@@ -586,6 +593,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                         cert_container.get_private_key_passphrase()),
                     intermediates=cert_container.get_intermediates())
             except Exception as e:
+                CERT_MANAGER_PLUGIN.CertManager.delete_cert(
+                    container_ref, self._get_service_url(listener))
                 raise loadbalancerv2.TLSContainerInvalid(
                     container_id=container_ref, reason=str(e))
 
@@ -619,6 +628,14 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             validate_tls_containers(to_validate)
 
         return len(to_validate) > 0
+
+    def _get_service_url(self, listener):
+        # Format: <servicename>://<region>/<resource>/<object_id>
+        return "{0}://{1}/{2}/{3}".format(
+            cfg.CONF.service_auth.service_name,
+            cfg.CONF.service_auth.region,
+            constants.LOADBALANCER,
+            listener.get('loadbalancer_id'))
 
     def create_listener(self, context, listener):
         listener = listener.get('listener')

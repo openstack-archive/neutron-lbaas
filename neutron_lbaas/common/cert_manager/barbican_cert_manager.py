@@ -13,20 +13,17 @@
 #    under the License.
 
 from barbicanclient import client as barbican_client
-from keystoneclient import session
-from keystoneclient.v2_0 import client as v2_client
-from keystoneclient.v3 import client as v3_client
 from neutron.i18n import _LI, _LW, _LE
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
 from neutron_lbaas.common.cert_manager import cert_manager
+from neutron_lbaas.common import keystone
 
 LOG = logging.getLogger(__name__)
 
 CONF = cfg.CONF
-cfg.CONF.import_group('keystone_authtoken', 'keystonemiddleware.auth_token')
 
 
 class Cert(cert_manager.Cert):
@@ -64,40 +61,6 @@ class BarbicanKeystoneAuth(object):
     _barbican_client = None
 
     @classmethod
-    def _get_keystone_session(cls):
-        """Initializes a Keystone session.
-
-        :return: a Keystone Session object
-        :raises Exception: if the session cannot be established
-        """
-        if not cls._keystone_session:
-            try:
-                if CONF.keystone_authtoken.auth_version.lower() == 'v2':
-                    kc = v2_client.Client(
-                        username=CONF.keystone_authtoken.admin_user,
-                        password=CONF.keystone_authtoken.admin_password,
-                        tenant_name=CONF.keystone_authtoken.admin_tenant_name,
-                        auth_url=CONF.keystone_authtoken.auth_uri
-                    )
-                elif CONF.keystone_authtoken.auth_version.lower() == 'v3':
-                    kc = v3_client.Client(
-                        username=CONF.keystone_authtoken.admin_user,
-                        password=CONF.keystone_authtoken.admin_password,
-                        tenant_name=CONF.keystone_authtoken.admin_tenant_name,
-                        auth_url=CONF.keystone_authtoken.auth_uri
-                    )
-                else:
-                    raise Exception('Unknown authentication version')
-                cls._keystone_session = session.Session(auth=kc)
-            except Exception:
-                # Keystone sometimes masks exceptions strangely -- this will
-                #  reraise the original exception, while also providing useful
-                #  feedback in the logs for debugging
-                with excutils.save_and_reraise_exception():
-                    LOG.exception(_LE("Error creating Keystone session"))
-        return cls._keystone_session
-
-    @classmethod
     def get_barbican_client(cls):
         """Creates a Barbican client object.
 
@@ -106,8 +69,9 @@ class BarbicanKeystoneAuth(object):
         """
         if not cls._barbican_client:
             try:
+                cls._keystone_session = keystone.get_session()
                 cls._barbican_client = barbican_client.Client(
-                    session=cls._get_keystone_session()
+                    session=cls._keystone_session
                 )
             except Exception:
                 # Barbican (because of Keystone-middleware) sometimes masks
@@ -204,7 +168,8 @@ class CertManager(cert_manager.CertManager):
                 LOG.exception(_LE("Error storing certificate data"))
 
     @staticmethod
-    def get_cert(cert_ref, service_name='Octavia', resource_ref=None,
+    def get_cert(cert_ref, service_name='lbaas',
+                 resource_ref=None,
                  check_only=False, **kwargs):
         """Retrieves the specified cert and registers as a consumer.
 
@@ -239,8 +204,7 @@ class CertManager(cert_manager.CertManager):
                 LOG.exception(_LE("Error getting {0}").format(cert_ref))
 
     @staticmethod
-    def delete_cert(cert_ref, service_name='Octavia', resource_ref=None,
-                    **kwargs):
+    def delete_cert(cert_ref, resource_ref, service_name='lbaas', **kwargs):
         """Deregister as a consumer for the specified cert.
 
         :param cert_ref: the UUID of the cert to retrieve

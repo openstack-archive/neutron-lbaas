@@ -120,6 +120,10 @@ class TLSContainerInvalid(nexception.NeutronException):
     message = _("TLS container %(container_id)s is invalid. %(reason)s")
 
 
+class CertManagerError(nexception.NeutronException):
+    message = _("Could not process TLS container %(ref)s, %(reason)s")
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
