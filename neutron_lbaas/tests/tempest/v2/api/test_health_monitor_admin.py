@@ -14,6 +14,7 @@
 
 from oslo_log import log as logging
 from oslo_utils import uuidutils
+from tempest_lib import exceptions as ex
 
 from neutron_lbaas.tests.tempest.lib.common.utils import data_utils
 from neutron_lbaas.tests.tempest.lib import config
@@ -74,18 +75,17 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         hm_tenant_id = hm.get('tenant_id')
         self.assertEqual(admin_tenant_id, hm_tenant_id)
 
-    @test.attr(type='smoke')
+    @test.attr(type='negative')
     def test_create_health_monitor_empty_tenant_id_field(self):
         """
-        Test with admin user create health monitor with an empty tenant id
-        field.
+        Test with admin user creating health monitor with an empty tenant id
+        field should fail.
         """
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
-                                         pool_id=self.pool.get('id'),
-                                         tenant_id="")
-
-        self.assertEqual(hm.get('tenant_id'), "")
+        self.assertRaises(ex.BadRequest, self._create_health_monitor,
+                          type='HTTP', delay=3, max_retries=10,
+                          timeout=5,
+                          pool_id=self.pool.get('id'),
+                          tenant_id="")
 
     @test.attr(type='smoke')
     def test_create_health_monitor_for_another_tenant_id_field(self):
