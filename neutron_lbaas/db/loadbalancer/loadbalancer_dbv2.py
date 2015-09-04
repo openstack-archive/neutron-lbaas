@@ -319,8 +319,9 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                         listener[id] = None
 
                 self._validate_listener_data(context, listener)
-
-                sni_container_ids = listener.pop('sni_container_ids')
+                sni_container_ids = []
+                if 'sni_container_ids' in listener:
+                    sni_container_ids = listener.pop('sni_container_ids')
                 listener_db_entry = models.Listener(**listener)
                 for container_id in sni_container_ids:
                     sni = models.SNI(listener_id=listener_db_entry.id,

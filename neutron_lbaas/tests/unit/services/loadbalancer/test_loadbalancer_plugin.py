@@ -589,6 +589,39 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         self.assertIn('listener', res)
         self.assertEqual(res['listener'], return_value)
 
+    def test_listener_create_with_tls(self):
+        listener_id = _uuid()
+        tls_ref = 'http://example.ref/uuid'
+        sni_refs = ['http://example.ref/uuid',
+                    'http://example.ref/uuid1']
+        data = {'listener': {'tenant_id': _uuid(),
+                             'name': 'listen-name-1',
+                             'description': 'listen-1-desc',
+                             'protocol': 'HTTP',
+                             'protocol_port': 80,
+                             'default_tls_container_ref': tls_ref,
+                             'sni_container_refs': sni_refs,
+                             'connection_limit': 100,
+                             'admin_state_up': True,
+                             'loadbalancer_id': _uuid()}}
+        return_value = copy.copy(data['listener'])
+        return_value.update({'id': listener_id})
+        del return_value['loadbalancer_id']
+
+        instance = self.plugin.return_value
+        instance.create_listener.return_value = return_value
+
+        res = self.api.post(_get_path('lbaas/listeners', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/{0}'.format(self.fmt))
+        instance.create_listener.assert_called_with(mock.ANY,
+                                                    listener=data)
+
+        self.assertEqual(res.status_int, exc.HTTPCreated.code)
+        res = self.deserialize(res)
+        self.assertIn('listener', res)
+        self.assertEqual(res['listener'], return_value)
+
     def test_listener_list(self):
         listener_id = _uuid()
         return_value = [{'admin_state_up': True,
@@ -612,6 +645,34 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
                         'id': listener_id}
+
+        instance = self.plugin.return_value
+        instance.update_listener.return_value = return_value
+
+        res = self.api.put(_get_path('lbaas/listeners',
+                                     id=listener_id,
+                                     fmt=self.fmt),
+                           self.serialize(update_data))
+
+        instance.update_listener.assert_called_with(
+            mock.ANY, listener_id, listener=update_data)
+        self.assertEqual(res.status_int, exc.HTTPOk.code)
+        res = self.deserialize(res)
+        self.assertIn('listener', res)
+        self.assertEqual(res['listener'], return_value)
+
+    def test_listener_update_with_tls(self):
+        listener_id = _uuid()
+        tls_ref = 'http://example.ref/uuid'
+        sni_refs = ['http://example.ref/uuid',
+                    'http://example.ref/uuid1']
+        update_data = {'listener': {'admin_state_up': False}}
+        return_value = {'name': 'listener1',
+                        'admin_state_up': False,
+                        'tenant_id': _uuid(),
+                        'id': listener_id,
+                        'default_tls_container_ref': tls_ref,
+                        'sni_container_refs': sni_refs}
 
         instance = self.plugin.return_value
         instance.update_listener.return_value = return_value
