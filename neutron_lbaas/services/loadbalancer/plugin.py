@@ -566,10 +566,14 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def _validate_tls(self, listener, curr_listener=None):
         def validate_tls_container(container_ref):
             cert_container = None
+            if curr_listener:
+                service_url = self._get_service_url(curr_listener)
+            else:
+                service_url = self._get_service_url(listener)
             try:
                 cert_container = CERT_MANAGER_PLUGIN.CertManager.get_cert(
                     container_ref,
-                    resource_ref=self._get_service_url(listener))
+                    resource_ref=service_url)
             except Exception as e:
                 if hasattr(e, 'status_code') and e.status_code == 404:
                     raise loadbalancerv2.TLSContainerNotFound(
@@ -602,7 +606,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             raise loadbalancerv2.TLSDefaultContainerNotSpecified()
         if not curr_listener:
             to_validate.extend([listener['default_tls_container_ref']])
-            to_validate.extend(listener['sni_container_refs'])
+            if 'sni_container_refs' in listener:
+                to_validate.extend(listener['sni_container_refs'])
         elif curr_listener['provisioning_status'] == constants.ERROR:
             to_validate.extend(curr_listener['default_tls_container_id'])
             to_validate.extend([
@@ -611,9 +616,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         else:
             if (curr_listener['default_tls_container_id'] !=
                     listener['default_tls_container_ref']):
-                to_validate.extend(listener['default_tls_container_ref'])
+                to_validate.extend([listener['default_tls_container_ref']])
 
-            if (listener['sni_container_refs'] is not None and
+            if ('sni_container_refs' in listener and
                     [container['tls_container_id'] for container in (
                         curr_listener['sni_containers'])] !=
                     listener['sni_container_refs']):
@@ -630,7 +635,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             cfg.CONF.service_auth.service_name,
             cfg.CONF.service_auth.region,
             constants.LOADBALANCER,
-            listener.get('loadbalancer_id'))
+            listener['loadbalancer_id'])
 
     def create_listener(self, context, listener):
         listener = listener.get('listener')
@@ -664,13 +669,12 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
             default_tls_container_ref = listener.get(
                 'default_tls_container_ref')
-            sni_container_refs = listener.get('sni_container_refs')
             if not default_tls_container_ref:
                 listener['default_tls_container_ref'] = (
                     # NOTE(blogan): not changing to ref bc this dictionary is
                     # created from a data model
                     curr_listener['default_tls_container_id'])
-            if not sni_container_refs:
+            if 'sni_container_refs' not in listener:
                 listener['sni_container_ids'] = [
                     container.tls_container_id for container in (
                         curr_listener['sni_containers'])]
