@@ -327,6 +327,10 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
                     self.plugin.db.update_status(
                         context, self.member.model_class, member.id,
                         operating_status=lb_const.ONLINE)
+                elif status and status == lb_const.NO_CHECK:
+                    self.plugin.db.update_status(
+                        context, self.member.model_class, member.id,
+                        operating_status=lb_const.NO_MONITOR)
                 else:
                     self.plugin.db.update_status(
                         context, self.member.model_class, member.id,

@@ -1076,7 +1076,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             if obj.provisioning_status == constants.ERROR:
                 return True
         if "operating_status" not in exclude:
-            if obj.operating_status != lb_const.ONLINE:
+            if ((obj.operating_status != lb_const.ONLINE) and
+                (obj.operating_status != lb_const.NO_MONITOR)):
                 return True
         return False
 
