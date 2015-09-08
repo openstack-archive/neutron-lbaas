@@ -77,6 +77,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
         """Initialization for the loadbalancer service plugin."""
         self.service_type_manager = st_db.ServiceTypeManager.get_instance()
         self._load_drivers()
+        super(LoadBalancerPlugin, self).subscribe()
 
     def _load_drivers(self):
         """Loads plugin-drivers specified in configuration."""
@@ -382,6 +383,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         self.db = ldbv2.LoadBalancerPluginDbv2()
         self.service_type_manager = st_db.ServiceTypeManager.get_instance()
         self._load_drivers()
+        self.db.subscribe()
 
     def _load_drivers(self):
         """Loads plugin-drivers specified in configuration."""

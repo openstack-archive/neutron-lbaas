@@ -14,6 +14,11 @@
 #    under the License.
 
 from neutron.api.v2 import attributes
+from neutron.callbacks import events
+from neutron.callbacks import registry
+from neutron.callbacks import resources
+from neutron.common import constants as n_constants
+from neutron.common import exceptions as n_exc
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
 from neutron.plugins.common import constants
@@ -94,7 +99,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             'mac_address': attributes.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': '',
-            'device_owner': '',
+            'device_owner': n_constants.DEVICE_OWNER_LOADBALANCERV2,
             'fixed_ips': [fixed_ip]
         }
 
@@ -232,6 +237,23 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             context.session.delete(lb_db)
         if lb_db.vip_port:
             self._core_plugin.delete_port(context, lb_db.vip_port_id)
+
+    def prevent_lbaasv2_port_deletion(self, context, port_id):
+        try:
+            port_db = self._core_plugin._get_port(context, port_id)
+        except n_exc.PortNotFound:
+            return
+        if port_db['device_owner'] == n_constants.DEVICE_OWNER_LOADBALANCERV2:
+            filters = {'vip_port_id': [port_id]}
+            if len(self.get_loadbalancers(context, filters=filters)) > 0:
+                reason = _('has device owner %s') % port_db['device_owner']
+                raise n_exc.ServicePortInUse(port_id=port_db['id'],
+                                             reason=reason)
+
+    def subscribe(self):
+        registry.subscribe(
+            _prevent_lbaasv2_port_delete_callback, resources.PORT,
+            events.BEFORE_DELETE)
 
     def get_loadbalancers(self, context, filters=None):
         lb_dbs = self._get_resources(context, models.LoadBalancer,
@@ -549,3 +571,13 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                                           loadbalancer_id)
         return data_models.LoadBalancerStatistics.from_sqlalchemy_model(
             loadbalancer.stats)
+
+
+def _prevent_lbaasv2_port_delete_callback(resource, event, trigger, **kwargs):
+    context = kwargs['context']
+    port_id = kwargs['port_id']
+    port_check = kwargs['port_check']
+    lbaasv2plugin = manager.NeutronManager.get_service_plugins().get(
+                         constants.LOADBALANCERV2)
+    if lbaasv2plugin and port_check:
+        lbaasv2plugin.db.prevent_lbaasv2_port_deletion(context, port_id)
