@@ -15,7 +15,6 @@
 
 import collections
 import contextlib
-import uuid
 
 import mock
 from neutron.common import exceptions
@@ -138,9 +137,6 @@ class TestHaproxyNSDriver(base.BaseTestCase):
     def test_build_port_dict(self):
         self.driver.conf.host = 'host1'
         ret = {'admin_state_up': True,
-               'device_owner': 'neutron:LOADBALANCER',
-               'device_id': str(uuid.uuid5(uuid.NAMESPACE_DNS,
-                                           str(self.conf.host))),
                portbindings.HOST_ID: self.conf.host}
         self.assertEqual(ret, self.driver._build_port_dict())
 
