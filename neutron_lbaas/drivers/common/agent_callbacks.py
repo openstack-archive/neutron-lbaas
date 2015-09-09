@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import uuid
-
 from neutron.common import exceptions as n_exc
 from neutron.extensions import portbindings
 from neutron.i18n import _LW
@@ -166,8 +164,6 @@ class LoadBalancerCallbacks(object):
             return
 
         port['admin_state_up'] = True
-        port['device_owner'] = 'neutron:' + constants.LOADBALANCERV2
-        port['device_id'] = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(host)))
         port[portbindings.HOST_ID] = host
         self.plugin.db._core_plugin.update_port(
             context,

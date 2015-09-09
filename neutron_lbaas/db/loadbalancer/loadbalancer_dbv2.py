@@ -98,7 +98,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             'network_id': subnet['network_id'],
             'mac_address': attributes.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
-            'device_id': '',
+            'device_id': lb_db.id,
             'device_owner': n_constants.DEVICE_OWNER_LOADBALANCERV2,
             'fixed_ips': [fixed_ip]
         }

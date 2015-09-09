@@ -15,7 +15,6 @@
 import os
 import shutil
 import socket
-import uuid
 
 import netaddr
 from neutron.agent.common import config
@@ -148,10 +147,6 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
 
     def _build_port_dict(self):
         return {'admin_state_up': True,
-                'device_owner': 'neutron:{0}'.format(
-                    constants.LOADBALANCER),
-                'device_id': str(uuid.uuid5(uuid.NAMESPACE_DNS,
-                                            str(self.conf.host))),
                 portbindings.HOST_ID: self.conf.host}
 
     def _get_state_file_path(self, loadbalancer_id, kind,
