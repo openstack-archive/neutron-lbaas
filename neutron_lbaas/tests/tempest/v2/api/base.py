@@ -95,6 +95,9 @@ class BaseTestCase(base.BaseNetworkTest):
                 cls._wait_for_load_balancer_status(lb_id)
             cls._try_delete_resource(
                 cls.load_balancers_client.delete_load_balancer, lb_id)
+
+        for lb_id in cls._lbs_to_delete:
+            cls._wait_for_load_balancer_status(lb_id, delete=True)
         super(BaseTestCase, cls).resource_cleanup()
 
     @classmethod
