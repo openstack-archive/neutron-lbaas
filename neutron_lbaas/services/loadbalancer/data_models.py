@@ -504,7 +504,7 @@ class LoadBalancer(BaseDataModel):
                  vip_subnet_id=None, vip_port_id=None, vip_address=None,
                  provisioning_status=None, operating_status=None,
                  admin_state_up=None, vip_port=None, stats=None,
-                 provider=None, listeners=None):
+                 provider=None, listeners=None, flavor_id=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -519,6 +519,7 @@ class LoadBalancer(BaseDataModel):
         self.stats = stats
         self.provider = provider
         self.listeners = listeners or []
+        self.flavor_id = flavor_id
 
     def attached_to_loadbalancer(self):
         return True
@@ -530,6 +531,10 @@ class LoadBalancer(BaseDataModel):
                                  for listener in self.listeners]
         if self.provider:
             ret_dict['provider'] = self.provider.provider_name
+
+        if not self.flavor_id:
+            del ret_dict['flavor_id']
+
         return ret_dict
 
     @classmethod

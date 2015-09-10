@@ -290,6 +290,23 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           tenant_id=tenant)
 
+    @test.attr(type='negative')
+    def test_create_load_balancer_invalid_flavor_field(self):
+        """Test create load balancer with an invalid flavor field"""
+        self.assertRaises(exceptions.NotFound,
+                          self.load_balancers_client.create_load_balancer,
+                          vip_subnet_id=self.subnet['id'],
+                          flavor_id="NO_SUCH_FLAVOR")
+
+    @test.attr(type='negative')
+    def test_create_load_balancer_provider_flavor_conflict(self):
+        """Test create load balancer with both a provider and a flavor"""
+        self.assertRaises(exceptions.Conflict,
+                          self.load_balancers_client.create_load_balancer,
+                          vip_subnet_id=self.subnet['id'],
+                          flavor_id="NO_SUCH_FLAVOR",
+                          provider="NO_SUCH_PROVIDER")
+
     @test.attr(type='smoke')
     def test_update_load_balancer(self):
         """Test update load balancer"""

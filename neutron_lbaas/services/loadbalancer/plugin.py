@@ -19,7 +19,10 @@ from neutron.api.v2 import attributes as attrs
 from neutron.common import exceptions as n_exc
 from neutron import context as ncontext
 from neutron.db import servicetype_db as st_db
+from neutron.extensions import flavors
+from neutron import manager
 from neutron.plugins.common import constants
+from neutron.services.flavors import flavors_plugin
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
 from oslo_config import cfg
@@ -507,8 +510,52 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def get_plugin_description(self):
         return "Neutron LoadBalancer Service Plugin v2"
 
+    def _insert_provider_name_from_flavor(self, context, loadbalancer):
+        """Select provider based on flavor."""
+
+        # TODO(jwarendt) Support passing flavor metainfo from the
+        # selected flavor profile into the provider, not just selecting
+        # the provider, when flavor templating arrives.
+
+        if ('provider' in loadbalancer and
+            loadbalancer['provider'] != attrs.ATTR_NOT_SPECIFIED):
+            raise loadbalancerv2.ProviderFlavorConflict()
+
+        plugin = manager.NeutronManager.get_service_plugins().get(
+            constants.FLAVORS)
+        if not plugin:
+            raise loadbalancerv2.FlavorsPluginNotLoaded()
+
+        # Will raise FlavorNotFound if doesn't exist
+        fl_db = flavors_plugin.FlavorsPlugin.get_flavor(
+            plugin,
+            context,
+            loadbalancer['flavor_id'])
+
+        if fl_db['service_type'] != constants.LOADBALANCERV2:
+            raise flavors.InvalidFlavorServiceType(
+                service_type=fl_db['service_type'])
+
+        if not fl_db['enabled']:
+            raise flavors.FlavorDisabled()
+
+        providers = flavors_plugin.FlavorsPlugin.get_flavor_next_provider(
+            plugin,
+            context,
+            fl_db['id'])
+
+        provider = providers[0].get('provider')
+
+        LOG.debug("Selected provider %s" % provider)
+
+        loadbalancer['provider'] = provider
+
     def create_loadbalancer(self, context, loadbalancer):
         loadbalancer = loadbalancer.get('loadbalancer')
+        if loadbalancer['flavor_id'] != attrs.ATTR_NOT_SPECIFIED:
+            self._insert_provider_name_from_flavor(context, loadbalancer)
+        else:
+            del loadbalancer['flavor_id']
         provider_name = self._get_provider_name(loadbalancer)
         driver = self.drivers[provider_name]
         lb_db = self.db.create_loadbalancer(

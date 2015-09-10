@@ -172,6 +172,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             'loadbalancer': {
                 'vip_subnet_id': subnet['id'],
                 'provider': 'lbaas',
+                'flavor_id': attributes.ATTR_NOT_SPECIFIED,
                 'vip_address': attributes.ATTR_NOT_SPECIFIED,
                 'admin_state_up': True,
                 'tenant_id': self._tenant_id}}
@@ -206,6 +207,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                 'loadbalancer': {
                     'vip_subnet_id': subnet['id'],
                     'provider': 'lbaas',
+                    'flavor_id': attributes.ATTR_NOT_SPECIFIED,
                     'vip_address': attributes.ATTR_NOT_SPECIFIED,
                     'admin_state_up': True,
                     'tenant_id': self._tenant_id}}

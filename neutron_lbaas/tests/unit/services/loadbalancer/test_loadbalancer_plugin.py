@@ -486,7 +486,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.api.post(_get_path('lbaas/loadbalancers', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/{0}'.format(self.fmt))
-        data['loadbalancer'].update({'provider': attr.ATTR_NOT_SPECIFIED})
+        data['loadbalancer'].update({'provider': attr.ATTR_NOT_SPECIFIED,
+                                     'flavor_id': attr.ATTR_NOT_SPECIFIED})
         instance.create_loadbalancer.assert_called_with(mock.ANY,
                                                         loadbalancer=data)
 
@@ -494,6 +495,34 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('loadbalancer', res)
         self.assertEqual(return_value, res['loadbalancer'])
+
+    def test_loadbalancer_create_invalid_flavor(self):
+        data = {'loadbalancer': {'name': 'lb1',
+                                 'description': 'descr_lb1',
+                                 'tenant_id': _uuid(),
+                                 'vip_subnet_id': _uuid(),
+                                 'admin_state_up': True,
+                                 'flavor_id': 123,
+                                 'vip_address': '127.0.0.1'}}
+        res = self.api.post(_get_path('lbaas/loadbalancers', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/{0}'.format(self.fmt),
+                            expect_errors=True)
+        self.assertEqual(400, res.status_int)
+
+    def test_loadbalancer_create_valid_flavor(self):
+        data = {'loadbalancer': {'name': 'lb1',
+                                 'description': 'descr_lb1',
+                                 'tenant_id': _uuid(),
+                                 'vip_subnet_id': _uuid(),
+                                 'admin_state_up': True,
+                                 'flavor_id': _uuid(),
+                                 'vip_address': '127.0.0.1'}}
+        res = self.api.post(_get_path('lbaas/loadbalancers', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/{0}'.format(self.fmt),
+                            expect_errors=True)
+        self.assertEqual(201, res.status_int)
 
     def test_loadbalancer_list(self):
         lb_id = _uuid()

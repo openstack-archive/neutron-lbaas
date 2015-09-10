@@ -194,6 +194,8 @@ class LoadBalancer(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
         # balancer ID and should not be cleared out in this table
         viewonly=True
     )
+    flavor_id = sa.Column(sa.String(36), sa.ForeignKey(
+        'flavors.id', name='fk_lbaas_loadbalancers_flavors_id'))
 
     @property
     def root_loadbalancer(self):

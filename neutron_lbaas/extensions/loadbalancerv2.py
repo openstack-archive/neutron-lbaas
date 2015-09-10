@@ -124,6 +124,14 @@ class CertManagerError(nexception.NeutronException):
     message = _("Could not process TLS container %(ref)s, %(reason)s")
 
 
+class ProviderFlavorConflict(nexception.Conflict):
+    message = _("Cannot specify both a flavor and a provider")
+
+
+class FlavorsPluginNotLoaded(nexception.NotFound):
+    message = _("Flavors plugin not found")
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -162,7 +170,11 @@ RESOURCE_ATTRIBUTE_MAP = {
         'provisioning_status': {'allow_post': False, 'allow_put': False,
                                 'is_visible': True},
         'operating_status': {'allow_post': False, 'allow_put': False,
-                             'is_visible': True}
+                             'is_visible': True},
+        'flavor_id': {'allow_post': True, 'allow_put': False,
+                      'is_visible': True,
+                      'validate': {'type:string': attr.NAME_MAX_LEN},
+                      'default': attr.ATTR_NOT_SPECIFIED}
     },
     'listeners': {
         'id': {'allow_post': False, 'allow_put': False,
