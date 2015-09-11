@@ -238,15 +238,15 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             hm.pool.listener.loadbalancer.id,
             hm.pool.listener.id,
             hm.pool.id)
-        hm_url_id = hm_url + "/%s" % hm.id
 
         # Test HM create.
         # args for create and update assert.
         args = {
-            'id': hm.id,
             'type': hm.type,
             'delay': hm.delay,
             'timeout': hm.timeout,
+            'rise_threshold': hm.max_retries,
+            'fall_threshold': hm.max_retries,
             'http_method': hm.http_method,
             'url_path': hm.url_path,
             'expected_codes': hm.expected_codes,
@@ -258,7 +258,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m.update(hm, hm, hm_url, args)
 
         # Test HM delete
-        m.delete(hm, hm_url_id)
+        m.delete(hm, hm_url)
 
 
 class TestThreadedDriver(BaseOctaviaDriverTest):

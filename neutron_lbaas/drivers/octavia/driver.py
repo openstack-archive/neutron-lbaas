@@ -315,22 +315,21 @@ class MemberManager(driver_base.BaseMemberManager):
 class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
     @staticmethod
-    def _url(hm, id=None):
+    def _url(hm):
         s = '/v1/loadbalancers/%s/listeners/%s/pools/%s/healthmonitor' % (
             hm.pool.listener.loadbalancer.id,
             hm.pool.listener.id,
             hm.pool.id)
-        if id:
-            s += '/%s' % id
         return s
 
     @classmethod
     def _write(cls, write_func, url, hm):
         args = {
-            'id': hm.id,
             'type': hm.type,
             'delay': hm.delay,
             'timeout': hm.timeout,
+            'rise_threshold': hm.max_retries,
+            'fall_threshold': hm.max_retries,
             'http_method': hm.http_method,
             'url_path': hm.url_path,
             'expected_codes': hm.expected_codes,
@@ -344,8 +343,8 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
     @async_op
     def update(self, context, old_hm, hm):
-        self._write(self.driver.req.put, self._url(hm, hm.id), hm)
+        self._write(self.driver.req.put, self._url(hm), hm)
 
     @async_op
     def delete(self, context, hm):
-        self.driver.req.delete(self._url(hm, hm.id))
+        self.driver.req.delete(self._url(hm))
