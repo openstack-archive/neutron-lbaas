@@ -356,7 +356,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                        provisioning_status='ACTIVE',
                                        operating_status='ONLINE'):
         interval_time = 1
-        timeout = 10
+        timeout = 50
         end_time = time.time() + timeout
         while time.time() < end_time:
             lb = self.load_balancers_client.get_load_balancer(load_balancer_id)

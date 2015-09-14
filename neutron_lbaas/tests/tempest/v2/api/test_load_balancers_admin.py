@@ -65,6 +65,7 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
             load_balancer.get('id'))
         self.assertEqual(load_balancer.get('tenant_id'),
                          admin_lb.get('tenant_id'))
+        self._wait_for_load_balancer_status(load_balancer['id'])
         self._delete_load_balancer(load_balancer['id'])
 
     @test.attr(type='smoke')
@@ -78,6 +79,7 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
             vip_subnet_id=self.subnet['id'])
         self.assertNotEqual(load_balancer.get('tenant_id'),
                             self.subnet['tenant_id'])
+        self._wait_for_load_balancer_status(load_balancer['id'])
         self._delete_load_balancer(load_balancer['id'])
 
     @test.attr(type='smoke')
@@ -87,6 +89,7 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
             vip_subnet_id=self.subnet['id'],
             tenant_id="")
         self.assertEqual(load_balancer.get('tenant_id'), "")
+        self._wait_for_load_balancer_status(load_balancer['id'])
         self._delete_load_balancer(load_balancer['id'])
 
     @test.attr(type='smoke')
@@ -97,4 +100,5 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
             vip_subnet_id=self.subnet['id'],
             tenant_id=tenant)
         self.assertEqual(load_balancer.get('tenant_id'), tenant)
+        self._wait_for_load_balancer_status(load_balancer['id'])
         self._delete_load_balancer(load_balancer['id'])

@@ -185,7 +185,6 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
     def refresh(self, context, lb):
         pass
 
-    @async_op
     def stats(self, context, lb):
         return {}  # todo
 
@@ -203,11 +202,10 @@ class ListenerManager(driver_base.BaseListenerManager):
         return s
 
     @classmethod
-    def _write(cls, write_func, url, listener):
+    def _write(cls, write_func, url, listener, create=True):
         sni_container_ids = [sni.tls_container_id
                              for sni in listener.sni_containers]
         args = {
-            'id': listener.id,
             'name': listener.name,
             'description': listener.description,
             'enabled': listener.admin_state_up,
@@ -217,7 +215,9 @@ class ListenerManager(driver_base.BaseListenerManager):
             'tls_certificate_id': listener.default_tls_container_id,
             'sni_containers': sni_container_ids,
         }
-        write_func(cls._url(listener), args)
+        if create:
+            args['id'] = listener.id
+        write_func(url, args)
 
     @async_op
     def create(self, context, listener):
@@ -225,12 +225,12 @@ class ListenerManager(driver_base.BaseListenerManager):
 
     @async_op
     def update(self, context, old_listener, listener):
-        self._write(self.driver.req.put, self._url(listener, listener.id),
-                    listener)
+        self._write(self.driver.req.put, self._url(listener, id=listener.id),
+                    listener, create=False)
 
     @async_op
     def delete(self, context, listener):
-        self.driver.req.delete(self._url(listener, listener.id))
+        self.driver.req.delete(self._url(listener, id=listener.id))
 
 
 class PoolManager(driver_base.BasePoolManager):
@@ -245,9 +245,8 @@ class PoolManager(driver_base.BasePoolManager):
         return s
 
     @classmethod
-    def _write(cls, write_func, url, pool):
+    def _write(cls, write_func, url, pool, create=True):
         args = {
-            'id': pool.id,
             'name': pool.name,
             'description': pool.description,
             'enabled': pool.admin_state_up,
@@ -259,7 +258,9 @@ class PoolManager(driver_base.BasePoolManager):
                 'type': pool.session_persistence.type,
                 'cookie_name': pool.session_persistence.cookie_name,
             }
-        write_func(cls._url(pool), args)
+        if create:
+            args['id'] = pool.id
+        write_func(url, args)
 
     @async_op
     def create(self, context, pool):
@@ -267,11 +268,12 @@ class PoolManager(driver_base.BasePoolManager):
 
     @async_op
     def update(self, context, old_pool, pool):
-        self._write(self.driver.req.put, self._url(pool, pool.id), pool)
+        self._write(self.driver.req.put, self._url(pool, id=pool.id), pool,
+                    create=False)
 
     @async_op
     def delete(self, context, pool):
-        self.driver.req.delete(self._url(pool, pool.id))
+        self.driver.req.delete(self._url(pool, id=pool.id))
 
 
 class MemberManager(driver_base.BaseMemberManager):

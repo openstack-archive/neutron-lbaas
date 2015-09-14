@@ -46,7 +46,8 @@ class TestPools(base.BaseTestCase):
         cls.subnet = cls.create_subnet(cls.network)
         cls.load_balancer = cls._create_load_balancer(
             tenant_id=cls.subnet.get('tenant_id'),
-            vip_subnet_id=cls.subnet.get('id'))
+            vip_subnet_id=cls.subnet.get('id'),
+            wait=True)
 
     def increment_protocol_port(self):
         global PROTOCOL_PORT
@@ -54,6 +55,7 @@ class TestPools(base.BaseTestCase):
 
     def _prepare_and_create_pool(self, protocol=None, lb_algorithm=None,
                                  listener_id=None, **kwargs):
+        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.increment_protocol_port()
         if not protocol:
             protocol = 'HTTP'
@@ -62,11 +64,13 @@ class TestPools(base.BaseTestCase):
         if not listener_id:
             listener = self._create_listener(
                 loadbalancer_id=self.load_balancer.get('id'),
-                protocol='HTTP', protocol_port=PROTOCOL_PORT)
+                protocol='HTTP', protocol_port=PROTOCOL_PORT,
+                wait=True)
             listener_id = listener.get('id')
         response = self._create_pool(protocol=protocol,
                                      lb_algorithm=lb_algorithm,
                                      listener_id=listener_id,
+                                     wait=True,
                                      **kwargs)
         return response
 
@@ -96,6 +100,7 @@ class TestPools(base.BaseTestCase):
         self.assertIn(new_pool1, pools)
         self.assertIn(new_pool2, pools)
         self._delete_pool(new_pool1.get('id'))
+        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self._delete_pool(new_pool2.get('id'))
 
     @test.attr(type='smoke')
@@ -141,6 +146,7 @@ class TestPools(base.BaseTestCase):
         listener = self.listeners_client.create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
             protocol='HTTP', protocol_port=PROTOCOL_PORT)
+        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         listener_id = listener.get('id')
         tenant_id = self.subnet.get('tenant_id')
         self.assertRaises(ex.BadRequest, self._create_pool,
@@ -155,6 +161,7 @@ class TestPools(base.BaseTestCase):
         listener = self.listeners_client.create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
             protocol='HTTP', protocol_port=PROTOCOL_PORT)
+        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         listener_id = listener.get('id')
         tenant_id = self.subnet.get('tenant_id')
         self.assertRaises(ex.BadRequest, self._create_pool,
@@ -258,6 +265,7 @@ class TestPools(base.BaseTestCase):
         listener = self.listeners_client.create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
             protocol='HTTP', protocol_port=PROTOCOL_PORT)
+        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         listener_id = listener.get('id')
         self.assertRaises(ex.BadRequest, self._create_pool,
                           tenant_id="*&7653^%&",
@@ -286,8 +294,7 @@ class TestPools(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_create_pool_empty_description_field(self):
         """Test create pool with empty description field"""
-        new_pool = self._prepare_and_create_pool(
-            description="")
+        new_pool = self._prepare_and_create_pool(description="")
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_desc = pool.get('description')
         self.assertEqual(pool_desc, '')
@@ -296,8 +303,7 @@ class TestPools(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_create_pool_empty_name_field(self):
         """Test create pool with empty name field"""
-        new_pool = self._prepare_and_create_pool(
-            name="")
+        new_pool = self._prepare_and_create_pool(name="")
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_name = pool.get('name')
         self.assertEqual(pool_name, '')
@@ -430,7 +436,8 @@ class TestPools(base.BaseTestCase):
         new_pool = self._prepare_and_create_pool()
         desc = 'testing update with new description'
         pool = self._update_pool(new_pool.get('id'),
-                                 description=desc)
+                                 description=desc,
+                                 wait=True)
         self.assertEqual(desc, pool.get('description'))
         self._delete_pool(new_pool.get('id'))
 
@@ -474,8 +481,8 @@ class TestPools(base.BaseTestCase):
         pool_initial = self.pools_client.get_pool(new_pool.get('id'))
         sess_pers = pool_initial.get('session_persistence')
         pool = self.pools_client.update_pool(new_pool.get('id'))
-        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertAlmostEqual(sess_pers, pool.get('session_persistence'))
+        self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self._delete_pool(new_pool.get('id'))
 
     @decorators.skip_because(bug="1434717")
@@ -518,8 +525,7 @@ class TestPools(base.BaseTestCase):
     def test_update_pool_empty_name(self):
         """Test update pool with empty name"""
         new_pool = self._prepare_and_create_pool()
-        pool = self.pools_client.update_pool(new_pool.get('id'),
-                                             name="")
+        pool = self.pools_client.update_pool(new_pool.get('id'), name="")
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertEqual(pool.get('name'), "")
         self._delete_pool(new_pool.get('id'))
