@@ -71,14 +71,31 @@ if is_service_enabled nova; then
 
 fi
 
+function wait_for_lb_active {
+    echo "Waiting for $1 to become ACTIVE..."
+    status=$(neutron lbaas-loadbalancer-show $1 | awk '/provisioning_status/ {print $4}')
+    while  [ "$status" != "ACTIVE" ]
+     do
+        sleep 2
+        status=$(neutron lbaas-loadbalancer-show $1 | awk '/provisioning_status/ {print $4}')
+        if [ $status == "ERROR" ]
+         then
+            echo "$1 ERRORED. Exiting."
+            exit 1;
+        fi
+     done
+}
+
 if is_service_enabled q-lbaasv2; then
 
     neutron lbaas-loadbalancer-create --name lb1 ${SUBNET_NAME}
-    sleep 10
+    wait_for_lb_active "lb1"
     neutron lbaas-listener-create --loadbalancer lb1 --protocol HTTP --protocol-port 80 --name listener1
     sleep 10
     neutron lbaas-pool-create --lb-algorithm ROUND_ROBIN --listener listener1 --protocol HTTP --name pool1
+    sleep 10
     neutron lbaas-member-create  --subnet ${SUBNET_NAME} --address ${IP1} --protocol-port 80 pool1
+    sleep 10
     neutron lbaas-member-create  --subnet ${SUBNET_NAME} --address ${IP2} --protocol-port 80 pool1
 
 fi
