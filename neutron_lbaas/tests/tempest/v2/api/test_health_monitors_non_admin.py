@@ -16,7 +16,6 @@ from tempest_lib import exceptions as ex
 
 from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
-from tempest_lib import decorators
 
 
 class TestHealthMonitors(base.BaseTestCase):
@@ -278,7 +277,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           pool_id=self.pool.get('id'), expected_codes='blah'
                           )
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_create_health_monitor_invalid_url_path(self):
         """Test if a non_admin user can create a health monitor with invalid
@@ -289,7 +287,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           pool_id=self.pool.get('id'), url_path='blah'
                           )
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_create_health_monitor_invalid_http_method(self):
         """Test if a non_admin user can create a health monitor with invalid
@@ -341,7 +338,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           type='HTTP', delay=3, max_retries=10, timeout=5,
                           pool_id=self.pool.get('id'), admin_state_up='')
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_create_health_monitor_empty_max_http_method(self):
         """Test create health monitor with empty http_method"""
@@ -349,7 +345,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           type='HTTP', delay=3, max_retries=10, timeout=5,
                           pool_id=self.pool.get('id'), http_method='')
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_create_health_monitor_empty_max_url_path(self):
         """Test create health monitor with empty url_path"""
@@ -436,7 +431,6 @@ class TestHealthMonitors(base.BaseTestCase):
         # cleanup test
         self._delete_health_monitor(new_hm.get('id'))
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_http_method(self):
         """Test update health monitor with missing http_method field"""
@@ -449,7 +443,6 @@ class TestHealthMonitors(base.BaseTestCase):
         # cleanup test
         self._delete_health_monitor(new_hm.get('id'))
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_url_path(self):
         """Test update health monitor with missing url_path field"""
@@ -530,7 +523,6 @@ class TestHealthMonitors(base.BaseTestCase):
         # cleanup test
         self._delete_health_monitor(hm.get('id'))
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_udpate_health_monitor_invalid_http_method(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
@@ -542,7 +534,6 @@ class TestHealthMonitors(base.BaseTestCase):
         # cleanup test
         self._delete_health_monitor(hm.get('id'))
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_udpate_health_monitor_invalid_url_path(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
@@ -609,7 +600,6 @@ class TestHealthMonitors(base.BaseTestCase):
         # cleanup test
         self._delete_health_monitor(hm.get('id'))
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_update_health_monitor_empty_empty_http_method(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
@@ -621,7 +611,6 @@ class TestHealthMonitors(base.BaseTestCase):
         # cleanup test
         self._delete_health_monitor(hm.get('id'))
 
-    @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
     def test_update_health_monitor_empty_url_path(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,

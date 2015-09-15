@@ -295,11 +295,13 @@ RESOURCE_ATTRIBUTE_MAP = {
                         'convert_to': attr.convert_to_int,
                         'is_visible': True},
         'http_method': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string': None},
+                        'validate': {'type:values':
+                                     lb_const.SUPPORTED_HTTP_METHODS},
                         'default': 'GET',
                         'is_visible': True},
         'url_path': {'allow_post': True, 'allow_put': True,
-                     'validate': {'type:string': None},
+                     'validate': {'type:regex_or_none':
+                                  lb_const.SUPPORTED_URL_PATH},
                      'default': '/',
                      'is_visible': True},
         'expected_codes': {
