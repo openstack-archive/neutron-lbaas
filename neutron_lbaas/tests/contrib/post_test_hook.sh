@@ -6,16 +6,45 @@ NEUTRON_LBAAS_DIR="$BASE/new/neutron-lbaas"
 TEMPEST_CONFIG_DIR="$BASE/new/tempest/etc"
 SCRIPTS_DIR="/usr/os-testr-env/bin"
 
-testenv=${2:-"apiv2"}
+LBAAS_VERSION=$1
+LBAAS_TEST=$2
 
-if [ "$1" = "lbaasv1" ]; then
+if [ "$LBAAS_VERSION" = "lbaasv1" ]; then
     testenv="apiv1"
-elif [ "$1" = "lbaasv2" ]; then
-    if [ "$2" = "api" ]; then
-        testenv="apiv2"
-    elif [ "$2" = "scenario" ]; then
-          testenv="scenario"
-    fi
+else
+    testenv="apiv2"
+    case "$LBAAS_TEST" in
+        api)
+            # Temporarily only test a small subset
+            # Remove this once zuul/layout.yaml is updated
+            test_subset="load_balancers"
+            ;;
+        minimal)
+            # Temporarily just do LBs until we pick a representative subset
+            test_subset="load_balancers"
+            ;;
+        healthmonitor)
+            test_subset="health_monitor"
+            ;;
+        listener)
+            test_subset="listeners"
+            ;;
+        loadbalancer)
+            test_subset="load_balancers"
+            ;;
+        member)
+            test_subset="members"
+            ;;
+        pool)
+            test_subset="pools"
+            ;;
+        scenario)
+            testenv="scenario"
+            ;;
+        *)
+            testenv=${LBAAS_TEST:-"apiv2"}
+            ;;
+    esac
 fi
 
 function generate_testr_results {
@@ -57,7 +86,7 @@ fi
 echo "Running neutron lbaas $testenv test suite"
 set +e
 
-sudo -H -u $owner $sudo_env tox -e $testenv
+sudo -H -u $owner $sudo_env tox -e $testenv -- $test_subset
 # sudo -H -u $owner $sudo_env testr init
 # sudo -H -u $owner $sudo_env testr run
 
