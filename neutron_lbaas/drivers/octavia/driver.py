@@ -16,6 +16,7 @@ from functools import wraps
 import threading
 import time
 
+from neutron import context as ncontext
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
@@ -49,7 +50,8 @@ OPTS = [
 cfg.CONF.register_opts(OPTS, 'octavia')
 
 
-def thread_op(manager, context, entity, delete=False):
+def thread_op(manager, entity, delete=False):
+    context = ncontext.get_admin_context()
     poll_interval = cfg.CONF.octavia.request_poll_interval
     poll_timeout = cfg.CONF.octavia.request_poll_timeout
     start_dt = datetime.now()
@@ -82,7 +84,7 @@ def async_op(func):
         try:
             r = func(*args, **kwargs)
             thread = threading.Thread(target=thread_op,
-                                      args=(args[0], args[1], args[2]),
+                                      args=(args[0], args[2]),
                                       kwargs={'delete': d})
             thread.setDaemon(True)
             thread.start()
@@ -111,7 +113,9 @@ class OctaviaRequest(object):
                              '%s%s' % (self.base_url, str(url)),
                              data=args,
                              headers=headers)
-        LOG.debug("r = %s", r)
+        LOG.debug("Octavia Response Code: {0}".format(r.status_code))
+        LOG.debug("Octavia Response Body: {0}".format(r.content))
+        LOG.debug("Octavia Response Headers: {0}".format(r.headers))
         if method != 'DELETE':
             return r.json()
 

@@ -272,6 +272,11 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
             self.driver.req.get = mock.MagicMock()
             self.succ_completion = mock.MagicMock()
             self.fail_completion = mock.MagicMock()
+            self.context = mock.MagicMock()
+            ctx_patcher = mock.patch('neutron.context.get_admin_context',
+                                     return_value=self.context)
+            ctx_patcher.start()
+            self.addCleanup(ctx_patcher.stop)
             self.driver.load_balancer.successful_completion = (
                 self.succ_completion)
             self.driver.load_balancer.failed_completion = self.fail_completion
@@ -281,7 +286,7 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
                 {'provisioning_status': 'PENDING_CREATE'},
                 {'provisioning_status': 'ACTIVE'}
             ]
-            driver.thread_op(self.driver.load_balancer, self.context, self.lb)
+            driver.thread_op(self.driver.load_balancer, self.lb)
             self.succ_completion.assert_called_once_with(self.context, self.lb,
                                                          delete=False)
             self.assertEqual(0, self.fail_completion.call_count)
@@ -291,8 +296,7 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
                 {'provisioning_status': 'PENDING_DELETE'},
                 {'provisioning_status': 'DELETED'}
             ]
-            driver.thread_op(self.driver.load_balancer, self.context, self.lb,
-                             delete=True)
+            driver.thread_op(self.driver.load_balancer, self.lb, delete=True)
             self.succ_completion.assert_called_once_with(self.context, self.lb,
                                                          delete=True)
             self.assertEqual(0, self.fail_completion.call_count)
@@ -302,7 +306,7 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
                 {'provisioning_status': 'PENDING_CREATE'},
                 {'provisioning_status': 'ERROR'}
             ]
-            driver.thread_op(self.driver.load_balancer, self.context, self.lb)
+            driver.thread_op(self.driver.load_balancer, self.lb)
             self.fail_completion.assert_called_once_with(self.context, self.lb)
             self.assertEqual(0, self.succ_completion.call_count)
 
@@ -311,6 +315,6 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
             self.driver.req.get.side_effect = [
                 {'provisioning_status': 'PENDING_CREATE'}
             ]
-            driver.thread_op(self.driver.load_balancer, self.context, self.lb)
+            driver.thread_op(self.driver.load_balancer, self.lb)
             self.fail_completion.assert_called_once_with(self.context, self.lb)
             self.assertEqual(0, self.succ_completion.call_count)

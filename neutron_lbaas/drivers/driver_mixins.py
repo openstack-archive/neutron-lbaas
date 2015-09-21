@@ -14,6 +14,7 @@
 
 import abc
 from neutron.plugins.common import constants
+from oslo_log import log as logging
 import six
 
 from neutron_lbaas.db.loadbalancer import models
@@ -21,7 +22,8 @@ from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 
 
-# Mixin classes
+LOG = logging.getLogger(__name__)
+
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseManagerMixin(object):
@@ -57,8 +59,12 @@ class BaseManagerMixin(object):
         :param delete: set True if being called from a delete method.  Will
                        most likely result in the obj being deleted from the db.
         """
+        LOG.debug("Starting successful_completion method after a successful "
+                  "driver action.")
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
         if delete:
+            LOG.debug("Deleting object type {0} with id of {1}.".format(
+                obj.__class__, obj.id))
             self.db_delete_method(context, obj.id)
         if obj == obj.root_loadbalancer and delete:
             # Load balancer was deleted and no longer exists
@@ -69,6 +75,9 @@ class BaseManagerMixin(object):
             # only set the status to online if this an operation on the
             # load balancer
             lb_op_status = lb_const.ONLINE
+        LOG.debug("Updating load balancer {0} to provisioning_status = {1}, "
+                  "operating_status = {2}.".format(obj.root_loadbalancer.id,
+                                                   lb_p_status, lb_op_status))
         self.driver.plugin.db.update_status(
             context, models.LoadBalancer, obj.root_loadbalancer.id,
             provisioning_status=lb_p_status,
@@ -82,6 +91,9 @@ class BaseManagerMixin(object):
         if isinstance(obj, data_models.HealthMonitor):
             # Health Monitor does not have an operating status
             obj_op_status = None
+        LOG.debug("Updating object of type {0} with id of {1} to "
+                  "provisioning_status = {2}, operating_status = {3}".format(
+                      obj.__class__, obj.id, constants.ACTIVE, obj_op_status))
         self.driver.plugin.db.update_status(
             context, obj_sa_cls, obj.id,
             provisioning_status=constants.ACTIVE,
@@ -98,17 +110,30 @@ class BaseManagerMixin(object):
         :param obj: instance of a
                     neutron_lbaas.services.loadbalancer.data_model
         """
+        LOG.debug("Starting failed_completion method after a failed driver "
+                  "action.")
         if isinstance(obj, data_models.LoadBalancer):
+            LOG.debug("Updating load balancer {0} to provisioning_status = "
+                      "{1}, operating_status = {2}.".format(
+                          obj.root_loadbalancer.id, constants.ERROR,
+                          lb_const.OFFLINE))
             self.driver.plugin.db.update_status(
                 context, models.LoadBalancer, obj.root_loadbalancer.id,
                 provisioning_status=constants.ERROR,
                 operating_status=lb_const.OFFLINE)
             return
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
+        LOG.debug("Updating object of type {0} with id of {1} to "
+                  "provisioning_status = {2}, operating_status = {3}".format(
+                      obj.__class__, obj.id, constants.ERROR,
+                      lb_const.OFFLINE))
         self.driver.plugin.db.update_status(
             context, obj_sa_cls, obj.id,
             provisioning_status=constants.ERROR,
             operating_status=lb_const.OFFLINE)
+        LOG.debug("Updating load balancer {0} to "
+                  "provisioning_status = {1}".format(obj.root_loadbalancer.id,
+                                                     constants.ACTIVE))
         self.driver.plugin.db.update_status(
             context, models.LoadBalancer, obj.root_loadbalancer.id,
             provisioning_status=constants.ACTIVE)
