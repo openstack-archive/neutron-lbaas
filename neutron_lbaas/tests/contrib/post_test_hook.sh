@@ -5,6 +5,7 @@ set -xe
 NEUTRON_LBAAS_DIR="$BASE/new/neutron-lbaas"
 TEMPEST_CONFIG_DIR="$BASE/new/tempest/etc"
 SCRIPTS_DIR="/usr/os-testr-env/bin"
+OCTAVIA_DIR="$BASE/new/octavia"
 
 LBAAS_VERSION=$1
 LBAAS_TEST=$2
@@ -20,8 +21,14 @@ else
             test_subset="load_balancers"
             ;;
         minimal)
-            # Temporarily just do LBs until we pick a representative subset
-            test_subset="load_balancers"
+            # Temporarily just do the happy path
+            test_subset="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_create_load_balancer "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_get_load_balancer_stats "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_get_load_balancer_status_tree "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_listeners_non_admin.ListenersTestJSON.test_create_listener "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_pools_non_admin.TestPools.test_create_pool "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_members_non_admin.MemberTestJSON.test_add_member "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_health_monitors_non_admin.TestHealthMonitors.test_create_health_monitor"
             ;;
         healthmonitor)
             test_subset="health_monitor"
@@ -65,6 +72,7 @@ owner=tempest
 # Set owner permissions according to job's requirements.
 cd $NEUTRON_LBAAS_DIR
 sudo chown -R $owner:stack $NEUTRON_LBAAS_DIR
+sudo chown -R $owner:stack $OCTAVIA_DIR
 
 sudo_env=" OS_TESTR_CONCURRENCY=1"
 
