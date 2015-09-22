@@ -476,7 +476,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self._delete_health_monitor(new_hm.get('id'))
 
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_attribute(self):
+    def test_update_health_monitor_invalid_attribute(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                          timeout=5,
                                          pool_id=self.pool.get('id'))
@@ -487,7 +487,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_admin_state_up(self):
+    def test_update_health_monitor_invalid_admin_state_up(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
@@ -498,7 +498,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_delay(self):
+    def test_update_health_monitor_invalid_delay(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
@@ -509,7 +509,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_timeout(self):
+    def test_update_health_monitor_invalid_timeout(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
@@ -520,7 +520,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_max_retries(self):
+    def test_update_health_monitor_invalid_max_retries(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
@@ -532,7 +532,7 @@ class TestHealthMonitors(base.BaseTestCase):
 
     @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_http_method(self):
+    def test_update_health_monitor_invalid_http_method(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
@@ -544,7 +544,7 @@ class TestHealthMonitors(base.BaseTestCase):
 
     @decorators.skip_because(bug="1437086")
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_url_path(self):
+    def test_update_health_monitor_invalid_url_path(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
@@ -555,7 +555,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='negative')
-    def test_udpate_health_monitor_invalid_expected_codes(self):
+    def test_update_health_monitor_invalid_expected_codes(self):
         hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
                                         timeout=5, pool_id=self.pool.get('id'))
 
