@@ -3,13 +3,14 @@
 set -ex
 
 GATE_DEST=$BASE/new
+DEVSTACK_PATH=$GATE_DEST/devstack
 
 testenv=${2:-"apiv2"}
 
 if [ "$1" = "lbaasv1" ]; then
     testenv="apiv1"
 elif [ "$1" = "lbaasv2" ]; then
-    if [ "$2" = "api" ]; then
+    if [ "$2" = "healthmonitor" ] || [ "$2" = "listener" ] || [ "$2" = "loadbalancer" ] || [ "$2" = "member" ] || [ "$2" = "pool" ]; then
         testenv="apiv2"
     elif [ "$2" = "scenario" ]; then
           testenv="scenario"
@@ -33,6 +34,19 @@ if [ "$testenv" != "apiv1" ]; then
   export ENABLED_SERVICES
   VOLUME_BACKING_FILE_SIZE=24G
   export VOLUME_BACKING_FILE_SIZE
+fi
+
+if [ "$testenv" = "apiv2" ]; then
+   cat > $DEVSTACK_PATH/local.conf <<EOF
+[[post-config|/etc/octavia/octavia.conf]]
+
+[controller_worker]
+amphora_driver = amphora_noop_driver
+compute_driver = compute_noop_driver
+network_driver = network_noop_driver
+
+EOF
+
 fi
 
 $GATE_DEST/devstack-gate/devstack-vm-gate.sh

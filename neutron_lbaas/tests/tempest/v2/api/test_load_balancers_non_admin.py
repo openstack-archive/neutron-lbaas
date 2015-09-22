@@ -321,10 +321,10 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_load_balancer_missing_name(self):
         """Test update load balancer with missing name"""
-        self._update_load_balancer(self.load_balancer_id)
         loadbalancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         load_balancer_initial = loadbalancer['name']
+        self._update_load_balancer(self.load_balancer_id)
         load_balancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         load_balancer_new = load_balancer['name']
@@ -352,10 +352,10 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_load_balancer_missing_description(self):
         """Test update load balancer with missing description"""
-        self._update_load_balancer(self.load_balancer_id)
         loadbalancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         load_balancer_initial = loadbalancer['description']
+        self._update_load_balancer(self.load_balancer_id)
         load_balancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         load_balancer_new = load_balancer['description']
@@ -382,10 +382,10 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_load_balancer_missing_admin_state_up(self):
         """Test update load balancer with missing admin state field"""
-        self._update_load_balancer(self.load_balancer_id)
         loadbalancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         load_balancer_initial = loadbalancer['admin_state_up']
+        self._update_load_balancer(self.load_balancer_id)
         self.assertEqual(load_balancer_initial, True)
 
     @test.attr(type='negative')
