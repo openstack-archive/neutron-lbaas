@@ -22,13 +22,13 @@ else
             ;;
         minimal)
             # Temporarily just do the happy path
-            test_subset="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_create_load_balancer "
-            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_get_load_balancer_stats "
-            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_get_load_balancer_status_tree "
-            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_listeners_non_admin.ListenersTestJSON.test_create_listener "
-            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_pools_non_admin.TestPools.test_create_pool "
-            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_members_non_admin.MemberTestJSON.test_add_member "
-            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_health_monitors_non_admin.TestHealthMonitors.test_create_health_monitor"
+            test_subset="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_create_load_balancer(?!_) "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_get_load_balancer_stats(?!_) "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_load_balancers_non_admin.LoadBalancersTestJSON.test_get_load_balancer_status_tree(?!_) "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_listeners_non_admin.ListenersTestJSON.test_create_listener(?!_) "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_pools_non_admin.TestPools.test_create_pool(?!_) "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_members_non_admin.MemberTestJSON.test_add_member(?!_) "
+            test_subset+="neutron_lbaas.tests.tempest.v2.api.test_health_monitors_non_admin.TestHealthMonitors.test_create_health_monitor(?!_)"
             ;;
         healthmonitor)
             test_subset="health_monitor"
