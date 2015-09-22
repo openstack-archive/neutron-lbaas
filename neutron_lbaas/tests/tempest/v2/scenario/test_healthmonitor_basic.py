@@ -14,17 +14,10 @@
 #    under the License.
 
 from neutron_lbaas.tests.tempest.lib import test
-from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.scenario import base
 
 
 class TestHealthMonitorBasic(base.BaseTestCase):
-
-    def setUp(self):
-        super(TestHealthMonitorBasic, self).setUp()
-        self.health_monitors_client = (
-            health_monitors_client.HealthMonitorsClientJSON(
-                *self.client_args))
 
     @test.services('compute', 'network')
     def test_health_monitor_basic(self):
