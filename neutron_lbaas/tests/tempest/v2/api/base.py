@@ -93,11 +93,8 @@ class BaseTestCase(base.BaseNetworkTest):
                 cls._try_delete_resource(cls.listeners_client.delete_listener,
                                          listener.get('id'))
                 cls._wait_for_load_balancer_status(lb_id)
-            cls._try_delete_resource(
-                cls.load_balancers_client.delete_load_balancer, lb_id)
+            cls._try_delete_resource(cls._delete_load_balancer, lb_id)
 
-        for lb_id in cls._lbs_to_delete:
-            cls._wait_for_load_balancer_status(lb_id, delete=True)
         super(BaseTestCase, cls).resource_cleanup()
 
     @classmethod
@@ -122,6 +119,8 @@ class BaseTestCase(base.BaseNetworkTest):
         except Exception:
             raise Exception(_("Failed to create load balancer..."))
         cls._lbs_to_delete.append(lb.get('id'))
+        port = cls.client.show_port(lb['vip_port_id'])
+        cls.ports.append(port['port'])
         return lb
 
     @classmethod
@@ -151,7 +150,7 @@ class BaseTestCase(base.BaseNetworkTest):
                                        provisioning_status='ACTIVE',
                                        operating_status='ONLINE',
                                        delete=False):
-        interval_time = 10
+        interval_time = 1
         timeout = 600
         end_time = time.time() + timeout
         lb = {}
