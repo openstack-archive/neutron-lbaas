@@ -68,6 +68,7 @@ class TestPools(base.BaseAdminTestCase):
                                      lb_algorithm=lb_algorithm,
                                      listener_id=listener_id,
                                      **kwargs)
+        self.addCleanup(self._delete_pool, response['id'])
         return response
 
     @decorators.skip_because(bug="1468457")
@@ -79,7 +80,6 @@ class TestPools(base.BaseAdminTestCase):
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool.get('tenant_id')
         self.assertEqual(pool_tenant, '')
-        self._delete_pool(new_pool.get('id'))
 
     @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
@@ -95,7 +95,6 @@ class TestPools(base.BaseAdminTestCase):
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool['tenant_id']
         self.assertNotEqual(pool_tenant, self.subnet['tenant_id'])
-        self._delete_pool(new_pool.get('id'))
 
     @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
@@ -110,7 +109,6 @@ class TestPools(base.BaseAdminTestCase):
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool['tenant_id']
         self.assertEqual(pool_tenant, pool.get('tenant_id'))
-        self._delete_pool(new_pool.get('id'))
 
     @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
@@ -122,4 +120,3 @@ class TestPools(base.BaseAdminTestCase):
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool.get('tenant_id')
         self.assertEqual(pool_tenant, tenant)
-        self._delete_pool(new_pool.get('id'))

@@ -59,8 +59,7 @@ class ListenersTestJSON(base.BaseTestCase):
         cls.create_listener_kwargs = {'loadbalancer_id': cls.load_balancer_id,
                                       'protocol': cls.protocol,
                                       'protocol_port': cls.port}
-        cls.listener = cls._create_listener(
-            **cls.create_listener_kwargs)
+        cls.listener = cls._create_listener(**cls.create_listener_kwargs)
         cls.listener_id = cls.listener['id']
 
     @test.attr(type='smoke')
@@ -89,6 +88,7 @@ class ListenersTestJSON(base.BaseTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -97,7 +97,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertIn(self.listener, listeners)
         self.assertIn(new_listener, listeners)
         self.assertNotEqual(self.listener, new_listener)
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='smoke')
     def test_create_listener(self):
@@ -107,6 +106,7 @@ class ListenersTestJSON(base.BaseTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -114,7 +114,6 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
         self.assertNotEqual(self.listener, new_listener)
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='negative')
     def test_create_listener_missing_field_loadbalancer(self):
@@ -154,6 +153,7 @@ class ListenersTestJSON(base.BaseTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
@@ -161,7 +161,6 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
         self.assertTrue(new_listener['admin_state_up'])
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='negative')
     def test_create_listener_invalid_load_balancer_id(self):
@@ -324,13 +323,13 @@ class ListenersTestJSON(base.BaseTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
         self.assertEqual(new_listener, listener)
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='smoke')
     def test_create_listener_empty_description(self):
@@ -341,13 +340,13 @@ class ListenersTestJSON(base.BaseTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
         self.assertEqual(new_listener, listener)
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='negative')
     def test_create_listener_empty_connection_limit(self):
@@ -564,8 +563,7 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test delete listener"""
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8083
-        new_listener = self._create_listener(
-            **create_new_listener_kwargs)
+        new_listener = self._create_listener(**create_new_listener_kwargs)
         new_listener_id = new_listener['id']
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,

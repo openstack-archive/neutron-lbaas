@@ -70,10 +70,9 @@ class MemberTestJSON(base.BaseAdminTestCase):
         member_opts['subnet_id'] = self.subnet_id
         member_opts['tenant_id'] = "$232!$pw"
         member = self._create_member(self.pool_id, **member_opts)
+        self.addCleanup(self._delete_member, self.pool_id, member['id'])
         self.assertEqual(member['subnet_id'], self.subnet_id)
         self.assertEqual(member['tenant_id'], "$232!$pw")
-        self._delete_member(self.pool_id, member['id'])
-        self.assertEmpty(self.members_client.list_members(self.pool_id))
 
     @test.attr(type='smoke')
     def test_create_member_empty_tenant_id(self):
@@ -84,7 +83,6 @@ class MemberTestJSON(base.BaseAdminTestCase):
         member_opts['subnet_id'] = self.subnet_id
         member_opts['tenant_id'] = ""
         member = self._create_member(self.pool_id, **member_opts)
+        self.addCleanup(self._delete_member, self.pool_id, member['id'])
         self.assertEqual(member['subnet_id'], self.subnet_id)
         self.assertEqual(member['tenant_id'], "")
-        self._delete_member(self.pool_id, member['id'])
-        self.assertEmpty(self.members_client.list_members(self.pool_id))

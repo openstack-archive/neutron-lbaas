@@ -74,9 +74,6 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         hm_tenant_id = hm.get('tenant_id')
         self.assertEqual(admin_tenant_id, hm_tenant_id)
 
-        # cleanup test
-        self._delete_health_monitor(hm.get('id'))
-
     @test.attr(type='smoke')
     def test_create_health_monitor_empty_tenant_id_field(self):
         """
@@ -89,9 +86,6 @@ class TestHealthMonitors(base.BaseAdminTestCase):
                                          tenant_id="")
 
         self.assertEqual(hm.get('tenant_id'), "")
-
-        # cleanup test
-        self._delete_health_monitor(hm.get('id'))
 
     @test.attr(type='smoke')
     def test_create_health_monitor_for_another_tenant_id_field(self):
@@ -107,5 +101,3 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         self.assertEqual(hm.get('tenant_id'), tenantid)
         self.assertNotEqual(hm.get('tenant_id'),
                             self.subnet.get('tenant_id'))
-        # cleanup test
-        self._delete_health_monitor(hm.get('id'))

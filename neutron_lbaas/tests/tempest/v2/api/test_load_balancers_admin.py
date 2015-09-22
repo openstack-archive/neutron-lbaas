@@ -61,12 +61,12 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
         """
         load_balancer = self.load_balancers_client.create_load_balancer(
             vip_subnet_id=self.subnet['id'])
+        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         admin_lb = self.load_balancers_client.get_load_balancer(
             load_balancer.get('id'))
         self.assertEqual(load_balancer.get('tenant_id'),
                          admin_lb.get('tenant_id'))
         self._wait_for_load_balancer_status(load_balancer['id'])
-        self._delete_load_balancer(load_balancer['id'])
 
     @test.attr(type='smoke')
     def test_create_load_balancer_missing_tenant_id_for_other_tenant(self):
@@ -77,10 +77,10 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
         """
         load_balancer = self.load_balancers_client.create_load_balancer(
             vip_subnet_id=self.subnet['id'])
+        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         self.assertNotEqual(load_balancer.get('tenant_id'),
                             self.subnet['tenant_id'])
         self._wait_for_load_balancer_status(load_balancer['id'])
-        self._delete_load_balancer(load_balancer['id'])
 
     @test.attr(type='smoke')
     def test_create_load_balancer_empty_tenant_id_field(self):
@@ -88,9 +88,9 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
         load_balancer = self.load_balancers_client.create_load_balancer(
             vip_subnet_id=self.subnet['id'],
             tenant_id="")
+        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         self.assertEqual(load_balancer.get('tenant_id'), "")
         self._wait_for_load_balancer_status(load_balancer['id'])
-        self._delete_load_balancer(load_balancer['id'])
 
     @test.attr(type='smoke')
     def test_create_load_balancer_for_another_tenant(self):
@@ -99,6 +99,6 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
         load_balancer = self.load_balancers_client.create_load_balancer(
             vip_subnet_id=self.subnet['id'],
             tenant_id=tenant)
+        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         self.assertEqual(load_balancer.get('tenant_id'), tenant)
         self._wait_for_load_balancer_status(load_balancer['id'])
-        self._delete_load_balancer(load_balancer['id'])

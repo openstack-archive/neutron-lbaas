@@ -69,13 +69,13 @@ class ListenersTestJSON(base.BaseAdminTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
         self.assertEqual(new_listener, listener)
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='smoke')
     def test_create_listener_invalid_tenant_id(self):
@@ -86,13 +86,13 @@ class ListenersTestJSON(base.BaseAdminTestCase):
         new_listener = self._create_listener(
             **create_new_listener_kwargs)
         new_listener_id = new_listener['id']
+        self.addCleanup(self._delete_listener, new_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
         self.assertEqual(new_listener, listener)
-        self._delete_listener(new_listener_id)
 
     @test.attr(type='smoke')
     def test_create_listener_missing_tenant_id(self):
@@ -107,6 +107,7 @@ class ListenersTestJSON(base.BaseAdminTestCase):
         admin_listener = self._create_listener(
             **create_new_listener_kwargs)
         admin_listener_id = admin_listener['id']
+        self.addCleanup(self._delete_listener, admin_listener_id)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id, admin_listener_id])
@@ -115,4 +116,3 @@ class ListenersTestJSON(base.BaseAdminTestCase):
         self.assertEqual(admin_listener, listener)
         self.assertEqual(admin_listener.get('tenant_id'),
                          listener.get('tenant_id'))
-        self._delete_listener(admin_listener_id)

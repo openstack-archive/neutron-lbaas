@@ -234,28 +234,28 @@ class BaseTestCase(base.BaseNetworkTest):
                 cls.load_balancer.get('id'))
         return pool
 
-    @classmethod
-    def _create_health_monitor(cls, wait=True, **health_monitor_kwargs):
-        hm = cls.health_monitors_client.create_health_monitor(
+    def _create_health_monitor(self, wait=True, cleanup=True,
+                               **health_monitor_kwargs):
+        hm = self.health_monitors_client.create_health_monitor(
             **health_monitor_kwargs)
+        if cleanup:
+            self.addCleanup(self._delete_health_monitor, hm.get('id'))
         if wait:
-            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+            self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         return hm
 
-    @classmethod
-    def _delete_health_monitor(cls, health_monitor_id, wait=True):
-        cls.health_monitors_client.delete_health_monitor(health_monitor_id)
+    def _delete_health_monitor(self, health_monitor_id, wait=True):
+        self.health_monitors_client.delete_health_monitor(health_monitor_id)
         if wait:
-            cls._wait_for_load_balancer_status(cls.load_balancer.get('id'))
+            self._wait_for_load_balancer_status(self.load_balancer.get('id'))
 
-    @classmethod
-    def _update_health_monitor(cls, health_monitor_id, wait=True,
+    def _update_health_monitor(self, health_monitor_id, wait=True,
                                **health_monitor_kwargs):
-        health_monitor = cls.health_monitors_client.update_health_monitor(
+        health_monitor = self.health_monitors_client.update_health_monitor(
             health_monitor_id, **health_monitor_kwargs)
         if wait:
-            cls._wait_for_load_balancer_status(
-                cls.load_balancer.get('id'))
+            self._wait_for_load_balancer_status(
+                self.load_balancer.get('id'))
         return health_monitor
 
     @classmethod
