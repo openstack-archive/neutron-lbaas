@@ -15,7 +15,6 @@
 
 from oslo_log import log as logging
 from tempest_lib.common.utils import data_utils
-from tempest_lib import decorators
 from tempest_lib import exceptions
 
 from neutron_lbaas.tests.tempest.lib import config
@@ -218,7 +217,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_listener_invalid_name(self):
         """Test create listener with an invalid name"""
@@ -231,7 +229,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_create_listener_invalid_description(self):
         """Test create listener with an invalid description"""
@@ -403,7 +400,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_listener_invalid_name(self):
         """Test update a listener with an invalid name"""
@@ -414,7 +410,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @decorators.skip_because(bug="1434717")
     @test.attr(type='negative')
     def test_update_listener_invalid_description(self):
         """Test update a listener with an invalid description"""
