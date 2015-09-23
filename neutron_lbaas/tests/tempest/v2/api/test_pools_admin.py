@@ -14,6 +14,7 @@
 
 from tempest_lib.common.utils import data_utils
 from tempest_lib import decorators
+from tempest_lib import exceptions as ex
 
 from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
@@ -70,16 +71,13 @@ class TestPools(base.BaseAdminTestCase):
                                      **kwargs)
         return response
 
-    @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
     def test_create_pool_using_empty_tenant_field(self):
-        """Test create pool with empty tenant field"""
-        new_pool = self._prepare_and_create_pool(
-            tenant_id="")
-        pool = self.pools_client.get_pool(new_pool.get('id'))
-        pool_tenant = pool.get('tenant_id')
-        self.assertEqual(pool_tenant, '')
-        self._delete_pool(new_pool.get('id'))
+        """Test create pool with empty tenant field should fail"""
+        self.assertRaises(ex.BadRequest, self._create_pool,
+                          protocol='HTTP',
+                          tenant_id="",
+                          lb_algorithm='ROUND_ROBIN')
 
     @decorators.skip_because(bug="1468457")
     @test.attr(type='smoke')
