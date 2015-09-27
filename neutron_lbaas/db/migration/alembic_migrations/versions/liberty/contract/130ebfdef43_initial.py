@@ -20,6 +20,7 @@ Create Date: 2015-07-18 14:35:22.242794
 
 """
 
+from neutron.db import migration
 from neutron.db.migration import cli
 
 
@@ -27,6 +28,9 @@ from neutron.db.migration import cli
 revision = '130ebfdef43'
 down_revision = 'kilo'
 branch_labels = (cli.CONTRACT_BRANCH,)
+
+# milestone identifier, used by neutron-db-manage
+neutron_milestone = [migration.LIBERTY]
 
 
 def upgrade():
