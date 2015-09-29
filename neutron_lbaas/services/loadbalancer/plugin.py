@@ -393,7 +393,16 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         add_provider_configuration(
             self.service_type_manager, constants.LOADBALANCERV2)
         self._load_drivers()
+        self.start_rpc_listeners()
         self.db.subscribe()
+
+    def start_rpc_listeners(self):
+        listeners = []
+        for driver in self.drivers.values():
+            if hasattr(driver, 'start_rpc_listeners'):
+                listener = driver.start_rpc_listeners()
+                listeners.append(listener)
+        return listeners
 
     def _load_drivers(self):
         """Loads plugin-drivers specified in configuration."""

@@ -318,7 +318,13 @@ class AgentDriverBase(driver_base.LoadBalancerBaseDriver):
 
         self.agent_rpc = LoadBalancerAgentApi(lb_const.LOADBALANCER_AGENTV2)
 
-        self._set_callbacks_on_plugin()
+        self.agent_endpoints = [
+            agent_callbacks.LoadBalancerCallbacks(self.plugin),
+            agents_db.AgentExtRpcCallback(self.plugin.db)
+        ]
+
+        self.conn = None
+
         # Setting this on the db because the plugin no longer inherts from
         # database classes, the db does.
         self.plugin.db.agent_notifiers.update(
@@ -329,21 +335,16 @@ class AgentDriverBase(driver_base.LoadBalancerBaseDriver):
         self.loadbalancer_scheduler = importutils.import_object(
             lb_sched_driver)
 
-    def _set_callbacks_on_plugin(self):
+    def start_rpc_listeners(self):
         # other agent based plugin driver might already set callbacks on plugin
         if hasattr(self.plugin, 'agent_callbacks'):
             return
 
-        self.plugin.agent_endpoints = [
-            agent_callbacks.LoadBalancerCallbacks(self.plugin),
-            agents_db.AgentExtRpcCallback(self.plugin.db)
-        ]
-        self.plugin.conn = n_rpc.create_connection()
-        self.plugin.conn.create_consumer(
-            lb_const.LOADBALANCER_PLUGINV2,
-            self.plugin.agent_endpoints,
-            fanout=False)
-        self.plugin.conn.consume_in_threads()
+        self.conn = n_rpc.create_connection()
+        self.conn.create_consumer(lb_const.LOADBALANCER_PLUGINV2,
+                                  self.agent_endpoints,
+                                  fanout=False)
+        return self.conn.consume_in_threads()
 
     def get_loadbalancer_agent(self, context, loadbalancer_id):
         agent = self.plugin.db.get_agent_hosting_loadbalancer(
