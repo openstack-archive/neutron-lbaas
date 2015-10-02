@@ -58,7 +58,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         return mock.call(**kwargs)
 
     def test_get_name(self):
-        self.assertEqual(self.driver.get_name(), namespace_driver.DRIVER_NAME)
+        self.assertEqual(namespace_driver.DRIVER_NAME, self.driver.get_name())
 
     def test_create(self):
         with mock.patch.object(self.driver, '_plug') as plug:

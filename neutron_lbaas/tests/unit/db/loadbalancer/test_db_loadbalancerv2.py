@@ -79,7 +79,7 @@ class LbaasTestMixin(object):
         lb_req = self.new_create_request('loadbalancers', data, fmt)
         lb_res = lb_req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(lb_res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, lb_res.status_int)
 
         return lb_res
 
@@ -102,7 +102,7 @@ class LbaasTestMixin(object):
         listener_req = self.new_create_request('listeners', data, fmt)
         listener_res = listener_req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(listener_res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, listener_res.status_int)
 
         return listener_res
 
@@ -124,7 +124,7 @@ class LbaasTestMixin(object):
         pool_req = self.new_create_request('pools', data, fmt)
         pool_res = pool_req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(pool_res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, pool_res.status_int)
 
         return pool_res
 
@@ -150,7 +150,7 @@ class LbaasTestMixin(object):
                                              subresource='members')
         member_res = member_req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(member_res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, member_res.status_int)
 
         return member_res
 
@@ -175,7 +175,7 @@ class LbaasTestMixin(object):
         hm_req = self.new_create_request('healthmonitors', data, fmt=fmt)
         hm_res = hm_req.get_response(self.ext_api)
         if expected_res_status:
-            self.assertEqual(hm_res.status_int, expected_res_status)
+            self.assertEqual(expected_res_status, hm_res.status_int)
 
         return hm_res
 
@@ -270,8 +270,7 @@ class LbaasTestMixin(object):
                 subresource='members',
                 sub_id=member['member']['id'])
             del_res = del_req.get_response(self.ext_api)
-            self.assertEqual(del_res.status_int,
-                             webob.exc.HTTPNoContent.code)
+            self.assertEqual(webob.exc.HTTPNoContent.code, del_res.status_int)
 
     @contextlib.contextmanager
     def healthmonitor(self, fmt=None, pool_id='pool1id', type='TCP', delay=1,
@@ -298,7 +297,7 @@ class LbaasTestMixin(object):
                 'healthmonitors', fmt=fmt,
                 id=healthmonitor['healthmonitor']['id'])
             del_res = del_req.get_response(self.ext_api)
-            self.assertEqual(del_res.status_int, webob.exc.HTTPNoContent.code)
+            self.assertEqual(webob.exc.HTTPNoContent.code, del_res.status_int)
 
 
 class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
@@ -469,7 +468,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                 actual = dict((k, v)
                               for k, v in lb['loadbalancer'].items()
                               if k in expected)
-                self.assertEqual(actual, expected)
+                self.assertEqual(expected, actual)
                 self._validate_statuses(lb_id)
             return lb
 
@@ -502,8 +501,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                 resp, res = self._update_loadbalancer_api(loadbalancer_id,
                                                           data)
                 for k in expected_values:
-                    self.assertEqual(res['loadbalancer'][k],
-                                     expected_values[k])
+                    self.assertEqual(expected_values[k],
+                                     res['loadbalancer'][k])
                 self._validate_statuses(loadbalancer_id,
                                         loadbalancer_disabled=True)
 
@@ -513,7 +512,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                                    no_delete=True) as loadbalancer:
                 loadbalancer_id = loadbalancer['loadbalancer']['id']
                 resp = self._delete_loadbalancer_api(loadbalancer_id)
-                self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+                self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
 
     def test_delete_loadbalancer_when_loadbalancer_in_use(self):
         with self.subnet() as subnet:
@@ -550,8 +549,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                     lb['loadbalancer']['vip_port_id'])
                 resp, body = self._get_loadbalancer_api(lb_id)
                 for k in expected_values:
-                    self.assertEqual(body['loadbalancer'][k],
-                                     expected_values[k])
+                    self.assertEqual(expected_values[k],
+                                     body['loadbalancer'][k])
 
     def test_list_loadbalancers(self):
         name = 'lb_show'
@@ -576,10 +575,10 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                 expected_values['vip_port_id'] = (
                     lb['loadbalancer']['vip_port_id'])
                 resp, body = self._list_loadbalancers_api()
-                self.assertEqual(len(body['loadbalancers']), 1)
+                self.assertEqual(1, len(body['loadbalancers']))
                 for k in expected_values:
-                    self.assertEqual(body['loadbalancers'][0][k],
-                                     expected_values[k])
+                    self.assertEqual(expected_values[k],
+                                     body['loadbalancers'][0][k])
 
     def test_list_loadbalancers_with_sort_emulated(self):
         with self.subnet() as subnet:
@@ -623,7 +622,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
             with self.loadbalancer(subnet=subnet) as lb:
                 lb_id = lb['loadbalancer']['id']
                 resp, body = self._get_loadbalancer_stats_api(lb_id)
-                self.assertEqual(body, expected_values)
+                self.assertEqual(expected_values, body)
 
     def test_show_loadbalancer_with_listeners(self):
         name = 'lb_show'
@@ -655,8 +654,8 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                             {'id': listener2_id})
                         resp, body = self._get_loadbalancer_api(lb_id)
                         for k in expected_values:
-                            self.assertEqual(body['loadbalancer'][k],
-                                             expected_values[k])
+                            self.assertEqual(expected_values[k],
+                                             body['loadbalancer'][k])
 
     def test_port_delete_via_port_api(self):
         port = {
@@ -713,7 +712,7 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
                 actual = dict((k, v)
                               for k, v in lb['loadbalancer'].items()
                               if k in expected)
-                self.assertEqual(actual, expected)
+                self.assertEqual(expected, actual)
                 self._validate_statuses(lb_id)
             return lb
 
@@ -809,7 +808,7 @@ class LbaasListenerTests(ListenerTestBase):
             for k, v in listener['listener'].items():
                 if k in expected:
                     actual[k] = v
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected, actual)
             self._validate_statuses(self.lb_id, listener_id)
         return listener
 
@@ -987,10 +986,10 @@ class LbaasListenerTests(ListenerTestBase):
                                loadbalancer_id=self.lb_id, protocol_port=443,
                                **extras) as listener:
                 self.assertEqual(
+                    expected,
                     dict((k, v)
                          for k, v in listener['listener'].items()
-                         if k in expected),
-                    expected
+                         if k in expected)
                 )
 
     def test_create_listener_loadbalancer_id_does_not_exist(self):
@@ -1015,7 +1014,7 @@ class LbaasListenerTests(ListenerTestBase):
                                  'admin_state_up': False}}
             resp, body = self._update_listener_api(listener_id, data)
             for k in expected_values:
-                self.assertEqual(body['listener'][k], expected_values[k])
+                self.assertEqual(expected_values[k], body['listener'][k])
             self._validate_statuses(self.lb_id, listener_id,
                                     listener_disabled=True)
 
@@ -1052,9 +1051,9 @@ class LbaasListenerTests(ListenerTestBase):
             # Test order and validation behavior.
             listener = self.plugin.create_listener(context.get_admin_context(),
                                                    {'listener': listener_data})
-            self.assertEqual(listener['sni_container_refs'],
-                             [sni_tls_container_ref_1,
-                              sni_tls_container_ref_2])
+            self.assertEqual([sni_tls_container_ref_1,
+                              sni_tls_container_ref_2],
+                             listener['sni_container_refs'])
 
             # Default container and two other SNI containers
             # Test order and validation behavior.
@@ -1069,9 +1068,9 @@ class LbaasListenerTests(ListenerTestBase):
                 listener['id'],
                 {'listener': listener_data}
             )
-            self.assertEqual(listener['sni_container_refs'],
-                             [sni_tls_container_ref_3,
-                              sni_tls_container_ref_4])
+            self.assertEqual([sni_tls_container_ref_3,
+                              sni_tls_container_ref_4],
+                             listener['sni_container_refs'])
 
             # Default container, two old SNI containers ordered differently
             # and one new SNI container.
@@ -1083,17 +1082,17 @@ class LbaasListenerTests(ListenerTestBase):
             listener = self.plugin.update_listener(context.get_admin_context(),
                                                    listener['id'],
                                                    {'listener': listener_data})
-            self.assertEqual(listener['sni_container_refs'],
-                             [sni_tls_container_ref_4,
+            self.assertEqual([sni_tls_container_ref_4,
                               sni_tls_container_ref_3,
-                              sni_tls_container_ref_5])
+                              sni_tls_container_ref_5],
+                             listener['sni_container_refs'])
 
     def test_delete_listener(self):
         with self.listener(no_delete=True,
                            loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
             resp = self._delete_listener_api(listener_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+            self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
             resp, body = self._get_loadbalancer_api(self.lb_id)
             self.assertEqual(0, len(body['loadbalancer']['listeners']))
 
@@ -1112,7 +1111,7 @@ class LbaasListenerTests(ListenerTestBase):
             listener_id = listener['listener']['id']
             resp, body = self._get_listener_api(listener_id)
             for k in expected_values:
-                self.assertEqual(body['listener'][k], expected_values[k])
+                self.assertEqual(expected_values[k], body['listener'][k])
 
     def test_list_listeners(self):
         name = 'list_listeners'
@@ -1129,9 +1128,9 @@ class LbaasListenerTests(ListenerTestBase):
             expected_values['id'] = listener_id
             resp, body = self._list_listeners_api()
             listener_list = body['listeners']
-            self.assertEqual(len(listener_list), 1)
+            self.assertEqual(1, len(listener_list))
             for k in expected_values:
-                self.assertEqual(listener_list[0][k], expected_values[k])
+                self.assertEqual(expected_values[k], listener_list[0][k])
 
     def test_cannot_delete_listener_with_pool(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
@@ -1258,7 +1257,7 @@ class LbaasPoolTests(PoolTestBase):
             for k, v in pool['pool'].items():
                 if k in expected:
                     actual[k] = v
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected, actual)
             self._validate_statuses(self.lb_id, self.listener_id, pool_id)
         return pool
 
@@ -1325,7 +1324,7 @@ class LbaasPoolTests(PoolTestBase):
             self.assertIsNotNone(qry.first())
 
             resp = self._delete_pool_api(pool_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+            self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
             qry = ctx.session.query(models.PoolV2)
             qry = qry.filter_by(id=pool['pool']['id'])
             self.assertIsNone(qry.first())
@@ -1356,7 +1355,7 @@ class LbaasPoolTests(PoolTestBase):
                              'tenant_id': self._tenant_id,
                              'listener_id': self.listener_id}}
             resp, body = self._create_pool_api(data)
-            self.assertEqual(resp.status_int, webob.exc.HTTPConflict.code)
+            self.assertEqual(webob.exc.HTTPConflict.code, resp.status_int)
 
     def test_create_pool_with_pool_protocol_mismatch(self):
         with self.listener(protocol=lb_const.PROTOCOL_HTTPS,
@@ -1368,7 +1367,7 @@ class LbaasPoolTests(PoolTestBase):
                              'lb_algorithm': lb_const.LB_METHOD_ROUND_ROBIN,
                              'tenant_id': self._tenant_id}}
             resp, body = self._create_pool_api(data)
-            self.assertEqual(resp.status_int, webob.exc.HTTPConflict.code)
+            self.assertEqual(webob.exc.HTTPConflict.code, resp.status_int)
 
     def test_create_pool_with_protocol_invalid(self):
         data = {'pool': {
@@ -1467,9 +1466,9 @@ class LbaasPoolTests(PoolTestBase):
             expected_values['id'] = pool_id
             resp, body = self._list_pools_api()
             pool_list = body['pools']
-            self.assertEqual(len(pool_list), 1)
+            self.assertEqual(1, len(pool_list))
             for k in expected_values:
-                self.assertEqual(pool_list[0][k], expected_values[k])
+                self.assertEqual(expected_values[k], pool_list[0][k])
 
     def test_list_pools_with_sort_emulated(self):
         with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
@@ -1617,7 +1616,7 @@ class LbaasMemberTests(MemberTestBase):
             for k, v in member['member'].items():
                 if k in expected:
                     actual[k] = v
-            self.assertEqual(actual, expected)
+            self.assertEqual(expected, actual)
             self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
                                     member_id)
         return member
@@ -1649,13 +1648,13 @@ class LbaasMemberTests(MemberTestBase):
         with self.member(pool_id=self.pool_id) as member:
             member_id = member['member']['id']
             resp, pool1_update = self._get_pool_api(self.pool_id)
-            self.assertEqual(len(pool1_update['pool']['members']), 1)
+            self.assertEqual(1, len(pool1_update['pool']['members']))
             data = {'member': {'weight': 10, 'admin_state_up': False}}
             resp, body = self._update_member_api(self.pool_id, member_id, data)
             for k, v in keys:
-                self.assertEqual(body['member'][k], v)
+                self.assertEqual(v, body['member'][k])
             resp, pool1_update = self._get_pool_api(self.pool_id)
-            self.assertEqual(len(pool1_update['pool']['members']), 1)
+            self.assertEqual(1, len(pool1_update['pool']['members']))
             self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
                                     member_id, member_disabled=True)
 
@@ -1663,9 +1662,9 @@ class LbaasMemberTests(MemberTestBase):
         with self.member(pool_id=self.pool_id, no_delete=True) as member:
             member_id = member['member']['id']
             resp = self._delete_member_api(self.pool_id, member_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+            self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
             resp, pool_update = self._get_pool_api(self.pool_id)
-            self.assertEqual(len(pool_update['pool']['members']), 0)
+            self.assertEqual(0, len(pool_update['pool']['members']))
 
     def test_show_member(self):
         keys = [('address', "127.0.0.1"),
@@ -1677,12 +1676,12 @@ class LbaasMemberTests(MemberTestBase):
             member_id = member['member']['id']
             resp, body = self._get_member_api(self.pool_id, member_id)
             for k, v in keys:
-                self.assertEqual(body['member'][k], v)
+                self.assertEqual(v, body['member'][k])
 
     def test_list_members(self):
         with self.member(pool_id=self.pool_id, protocol_port=81):
             resp, body = self._list_members_api(self.pool_id)
-            self.assertEqual(len(body['members']), 1)
+            self.assertEqual(1, len(body['members']))
 
     def test_list_members_with_sort_emulated(self):
         with self.member(pool_id=self.pool_id, protocol_port=81) as m1:
@@ -1716,17 +1715,17 @@ class LbaasMemberTests(MemberTestBase):
 
     def test_list_members_invalid_pool_id(self):
         resp, body = self._list_members_api('WRONG_POOL_ID')
-        self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+        self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
         resp, body = self._list_members_api(self.pool_id)
-        self.assertEqual(resp.status_int, webob.exc.HTTPOk.code)
+        self.assertEqual(webob.exc.HTTPOk.code, resp.status_int)
 
     def test_get_member_invalid_pool_id(self):
         with self.member(pool_id=self.pool_id) as member:
             member_id = member['member']['id']
             resp, body = self._get_member_api('WRONG_POOL_ID', member_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+            self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
             resp, body = self._get_member_api(self.pool_id, member_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPOk.code)
+            self.assertEqual(webob.exc.HTTPOk.code, resp.status_int)
 
     def test_create_member_invalid_pool_id(self):
         data = {'member': {'address': '127.0.0.1',
@@ -1736,7 +1735,7 @@ class LbaasMemberTests(MemberTestBase):
                            'tenant_id': self._tenant_id,
                            'subnet_id': self.test_subnet_id}}
         resp, body = self._create_member_api('WRONG_POOL_ID', data)
-        self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+        self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
     def test_update_member_invalid_pool_id(self):
         with self.member(pool_id=self.pool_id) as member:
@@ -1744,13 +1743,13 @@ class LbaasMemberTests(MemberTestBase):
             data = {'member': {'weight': 1}}
             resp, body = self._update_member_api(
                 'WRONG_POOL_ID', member_id, data)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+            self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
     def test_delete_member_invalid_pool_id(self):
         with self.member(pool_id=self.pool_id) as member:
             member_id = member['member']['id']
             resp = self._delete_member_api('WRONG_POOL_ID', member_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+            self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
     def test_get_pool_shows_members(self):
         with self.member(pool_id=self.pool_id) as member:
@@ -1822,9 +1821,9 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                     hm_id=hm_id)
             _, pool = self._get_pool_api(self.pool_id)
             self.assertEqual(
-                pool['pool'].get('session_persistence'),
                 {'type': lb_const.SESSION_PERSISTENCE_HTTP_COOKIE,
-                 'cookie_name': None})
+                 'cookie_name': None},
+                pool['pool'].get('session_persistence'))
         return healthmonitor
 
     def test_show_healthmonitor(self, **extras):
@@ -1893,7 +1892,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                 no_delete=True) as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             resp = self._delete_healthmonitor_api(hm_id)
-            self.assertEqual(resp.status_int, webob.exc.HTTPNoContent.code)
+            self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
 
     def test_create_health_monitor_with_timeout_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -2011,7 +2010,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                   'tenant_id': self._tenant_id,
                                   'pool_id': uuidutils.generate_uuid()}}
         resp, body = self._create_healthmonitor_api(data)
-        self.assertEqual(resp.status_int, webob.exc.HTTPNotFound.code)
+        self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
     def test_only_one_healthmonitor_per_pool(self):
         with self.healthmonitor(pool_id=self.pool_id):
@@ -2022,7 +2021,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                       'tenant_id': self._tenant_id,
                                       'pool_id': self.pool_id}}
             resp, body = self._create_healthmonitor_api(data)
-            self.assertEqual(resp.status_int, webob.exc.HTTPConflict.code)
+            self.assertEqual(webob.exc.HTTPConflict.code, resp.status_int)
 
     def test_get_healthmonitor(self):
         expected = {
@@ -2079,7 +2078,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                          provisioning_status=constants.ACTIVE,
                                          operating_status=lb_const.DEGRADED)
             db_hm = self.plugin.db.get_healthmonitor(ctx, hm_id)
-            self.assertEqual(db_hm.provisioning_status, constants.ACTIVE)
+            self.assertEqual(constants.ACTIVE, db_hm.provisioning_status)
             self.assertFalse(hasattr(db_hm, 'operating_status'))
 
 

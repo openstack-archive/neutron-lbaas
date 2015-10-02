@@ -51,19 +51,19 @@ class TestA10ThunderDriver(test_db_loadbalancer.LoadBalancerPluginDbTestCase):
 
     def test__hm_binding_count(self):
         n = self.driver._hm_binding_count(self.context, 'hm01')
-        self.assertEqual(n, 0)
+        self.assertEqual(0, n)
 
     def test__member_count(self):
         self.m = fake_member('mem1')
         n = self.driver._member_count(self.context, self.m)
-        self.assertEqual(n, 0)
+        self.assertEqual(0, n)
 
     def test__member_get_ip(self):
         self.m = fake_member('mem1')
         z = self.driver._member_get_ip(self.context, self.m, False)
-        self.assertEqual(z, '1.1.1.1')
+        self.assertEqual('1.1.1.1', z)
         z = self.driver._member_get_ip(self.context, self.m, True)
-        self.assertEqual(z, '1.1.1.1')
+        self.assertEqual('1.1.1.1', z)
 
     def test__pool_get_hm(self):
         self.driver._pool_get_hm(self.context, 'hm01')
@@ -72,16 +72,16 @@ class TestA10ThunderDriver(test_db_loadbalancer.LoadBalancerPluginDbTestCase):
 
     def test__pool_get_tenant_id(self):
         z = self.driver._pool_get_tenant_id(self.context, 'pool1')
-        self.assertEqual(z, '')
+        self.assertEqual('', z)
 
     def test__pool_get_vip_id(self):
         z = self.driver._pool_get_vip_id(self.context, 'pool1')
-        self.assertEqual(z, '')
+        self.assertEqual('', z)
 
     def test__pool_total(self):
         n = self.driver._pool_total(self.context,
                                     tenant_id='whatareyoudoingdave')
-        self.assertEqual(n, 0)
+        self.assertEqual(0, n)
 
     def test__active(self):
         self.driver._active(self.context, 'vip', 'vip1')

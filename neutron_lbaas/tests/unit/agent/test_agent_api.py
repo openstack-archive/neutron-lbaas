@@ -28,8 +28,8 @@ class TestApiCache(base.BaseTestCase):
         self.api = api.LbaasAgentApi('topic', mock.sentinel.context, 'host')
 
     def test_init(self):
-        self.assertEqual(self.api.host, 'host')
-        self.assertEqual(self.api.context, mock.sentinel.context)
+        self.assertEqual('host', self.api.host)
+        self.assertEqual(mock.sentinel.context, self.api.context)
 
     def _test_method(self, method, **kwargs):
         add_host = ('get_ready_devices', 'plug_vip_port', 'unplug_vip_port')
@@ -47,7 +47,7 @@ class TestApiCache(base.BaseTestCase):
             rpc_mock.return_value = 'foo'
             rv = getattr(self.api, method)(**kwargs)
 
-        self.assertEqual(rv, 'foo')
+        self.assertEqual('foo', rv)
 
         prepare_args = {}
         prepare_mock.assert_called_once_with(**prepare_args)

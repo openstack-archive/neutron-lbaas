@@ -60,7 +60,7 @@ class TestLoadBalancerCallbacks(
                 ready = self.callbacks.get_ready_devices(
                     context.get_admin_context(),
                 )
-                self.assertEqual(ready, [lb_id])
+                self.assertEqual([lb_id], ready)
 
     def test_get_ready_devices_multiple_listeners_and_loadbalancers(self):
         ctx = context.get_admin_context()
@@ -95,14 +95,14 @@ class TestLoadBalancerCallbacks(
 
         ctx.session.flush()
 
-        self.assertEqual(ctx.session.query(ldb.models.LoadBalancer).count(), 3)
-        self.assertEqual(ctx.session.query(ldb.models.Listener).count(), 2)
+        self.assertEqual(3, ctx.session.query(ldb.models.LoadBalancer).count())
+        self.assertEqual(2, ctx.session.query(ldb.models.Listener).count())
         with mock.patch(
                 'neutron_lbaas.agent_scheduler.LbaasAgentSchedulerDbMixin'
                 '.list_loadbalancers_on_lbaas_agent') as mock_agent_lbs:
             mock_agent_lbs.return_value = loadbalancers
             ready = self.callbacks.get_ready_devices(ctx)
-            self.assertEqual(len(ready), 3)
+            self.assertEqual(3, len(ready))
             self.assertIn(loadbalancers[0].id, ready)
             self.assertIn(loadbalancers[1].id, ready)
             self.assertIn(loadbalancers[2].id, ready)
@@ -172,7 +172,7 @@ class TestLoadBalancerCallbacks(
             func(ctx, port_id=db_lb.vip_port_id, **kwargs)
             db_port = core.get_port(ctx, db_lb.vip_port_id)
             for k, v in six.iteritems(expected):
-                self.assertEqual(db_port[k], v)
+                self.assertEqual(v, db_port[k])
 
     def test_plug_vip_port(self):
         exp = {

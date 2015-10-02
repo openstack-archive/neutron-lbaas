@@ -321,7 +321,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                     context.get_admin_context(),
                     vip['id']
                 )
-                self.assertEqual(new_vip['status'], constants.ACTIVE)
+                self.assertEqual(constants.ACTIVE, new_vip['status'])
 
                 # Delete VIP
                 self.plugin_instance.delete_vip(
@@ -397,7 +397,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                         context.get_admin_context(),
                         vip['id']
                     )
-                    self.assertEqual(new_vip['status'], constants.ACTIVE)
+                    self.assertEqual(constants.ACTIVE, new_vip['status'])
 
                     # Test that PIP neutron port was created
                     pip_port_filter = {
@@ -457,7 +457,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
                 updated_vip = self.plugin_instance.get_vip(
                     context.get_admin_context(), vip['id'])
-                self.assertEqual(updated_vip['status'], constants.ACTIVE)
+                self.assertEqual(constants.ACTIVE, updated_vip['status'])
 
                 # delete VIP
                 self.plugin_instance.delete_vip(
@@ -501,7 +501,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
                     updated_vip = self.plugin_instance.get_vip(
                         context.get_admin_context(), vip['id'])
-                    self.assertEqual(updated_vip['status'], constants.ACTIVE)
+                    self.assertEqual(constants.ACTIVE, updated_vip['status'])
 
                     # delete VIP
                     self.plugin_instance.delete_vip(
@@ -547,11 +547,11 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                             context.get_admin_context(),
                             hm['health_monitor']['id'], pool['pool']['id'])
 
-                        self.assertEqual(u_vip['status'], constants.ERROR)
-                        self.assertEqual(u_pool['status'], constants.ACTIVE)
-                        self.assertEqual(u_mem1['status'], constants.ACTIVE)
-                        self.assertEqual(u_mem2['status'], constants.ACTIVE)
-                        self.assertEqual(u_phm['status'], constants.ACTIVE)
+                        self.assertEqual(constants.ERROR, u_vip['status'])
+                        self.assertEqual(constants.ACTIVE, u_pool['status'])
+                        self.assertEqual(constants.ACTIVE, u_mem1['status'])
+                        self.assertEqual(constants.ACTIVE, u_mem2['status'])
+                        self.assertEqual(constants.ACTIVE, u_phm['status'])
 
     def test_delete_vip(self):
         with self.subnet() as subnet:
@@ -647,7 +647,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                     pool['pool']['id'], pool)
                 pool_db = self.plugin_instance.get_pool(
                     context.get_admin_context(), pool['pool']['id'])
-                self.assertEqual(pool_db['status'], constants.PENDING_UPDATE)
+                self.assertEqual(constants.PENDING_UPDATE, pool_db['status'])
 
     def test_delete_pool_with_vip(self):
         with self.subnet() as subnet:
@@ -722,19 +722,19 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                             member_subnet_array = params['member_subnet_array']
                             member_mask_array = params['member_mask_array']
                             member_gw_array = params['member_gw_array']
-                            self.assertEqual(member_subnet_array,
-                                             ['10.0.0.0',
+                            self.assertEqual(['10.0.0.0',
                                               '255.255.255.255',
-                                              '30.0.0.0'])
-                            self.assertEqual(member_mask_array,
-                                             ['255.255.255.0',
+                                              '30.0.0.0'],
+                                             member_subnet_array)
+                            self.assertEqual(['255.255.255.0',
                                               '255.255.255.255',
-                                              '255.255.255.0'])
+                                              '255.255.255.0'],
+                                             member_mask_array)
                             self.assertEqual(
-                                member_gw_array,
                                 [pool_sub['subnet']['gateway_ip'],
                                  '255.255.255.255',
-                                 pool_sub['subnet']['gateway_ip']])
+                                 pool_sub['subnet']['gateway_ip']],
+                                member_gw_array)
 
     def test_create_member_on_different_subnet_no_port(self):
         with contextlib.nested(
@@ -763,12 +763,12 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                         member_subnet_array = params['member_subnet_array']
                         member_mask_array = params['member_mask_array']
                         member_gw_array = params['member_gw_array']
-                        self.assertEqual(member_subnet_array,
-                                         ['30.0.0.2'])
-                        self.assertEqual(member_mask_array,
-                                         ['255.255.255.255'])
-                        self.assertEqual(member_gw_array,
-                                         [pool_sub['subnet']['gateway_ip']])
+                        self.assertEqual(['30.0.0.2'],
+                                         member_subnet_array)
+                        self.assertEqual(['255.255.255.255'],
+                                         member_mask_array)
+                        self.assertEqual([pool_sub['subnet']['gateway_ip']],
+                                         member_gw_array)
 
     def test_create_member_on_different_subnet_multiple_ports(self):
         cfg.CONF.set_override("allow_overlapping_ips", 'true')
@@ -805,13 +805,13 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                                 m_sub_array = params['member_subnet_array']
                                 m_mask_array = params['member_mask_array']
                                 m_gw_array = params['member_gw_array']
-                                self.assertEqual(m_sub_array,
-                                                 ['30.0.0.2'])
-                                self.assertEqual(m_mask_array,
-                                                 ['255.255.255.255'])
+                                self.assertEqual(['30.0.0.2'],
+                                                 m_sub_array)
+                                self.assertEqual(['255.255.255.255'],
+                                                 m_mask_array)
                                 self.assertEqual(
-                                    m_gw_array,
-                                    [pool_sub['subnet']['gateway_ip']])
+                                    [pool_sub['subnet']['gateway_ip']],
+                                    m_gw_array)
 
     def test_update_member_with_vip(self):
         with self.subnet() as subnet:
@@ -847,8 +847,8 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                             context.get_admin_context(),
                             member['member']['id']
                         )
-                        self.assertEqual(updated_member['status'],
-                                         constants.ACTIVE)
+                        self.assertEqual(constants.ACTIVE,
+                                         updated_member['status'])
 
     def test_update_member_without_vip(self):
         with self.subnet():
@@ -859,8 +859,8 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                         context.get_admin_context(),
                         member['member']['id'], member
                     )
-                    self.assertEqual(updated_member['status'],
-                                     constants.PENDING_UPDATE)
+                    self.assertEqual(constants.PENDING_UPDATE,
+                                     updated_member['status'])
 
     def test_delete_member_with_vip(self):
         with self.subnet() as subnet:
@@ -950,7 +950,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                             context.get_admin_context(),
                             hm['health_monitor']['id'], pool['pool']['id']
                         )
-                        self.assertEqual(phm['status'], constants.ACTIVE)
+                        self.assertEqual(constants.ACTIVE, phm['status'])
 
     def test_delete_pool_hm_with_vip(self):
         with self.subnet() as subnet:

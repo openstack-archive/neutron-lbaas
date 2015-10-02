@@ -60,8 +60,8 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.driver.vif_driver = self.vif_driver
 
     def test_get_ns_name(self):
-        self.assertEqual(namespace_driver.get_ns_name('ns_id_1'),
-                         namespace_driver.NS_PREFIX + 'ns_id_1')
+        self.assertEqual(namespace_driver.NS_PREFIX + 'ns_id_1',
+                         namespace_driver.get_ns_name('ns_id_1'))
 
     def test_deploy_existing_instance(self):
         dirs = ['lbid1', 'lbid2']
@@ -138,7 +138,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.driver.conf.host = 'host1'
         ret = {'admin_state_up': True,
                portbindings.HOST_ID: self.conf.host}
-        self.assertEqual(ret, self.driver._build_port_dict())
+        self.assertEqual(self.driver._build_port_dict(), ret)
 
     def test_get_state_file_path(self):
         with mock.patch('os.makedirs') as mkdir:
@@ -156,7 +156,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                'get_subnet', return_value=ret_subnet):
             self.driver._populate_subnets(self.context_mock, port)
             for fixed_ip in port.fixed_ips:
-                self.assertEqual(ret_subnet, fixed_ip.subnet)
+                self.assertEqual(fixed_ip.subnet, ret_subnet)
 
     def test_plug(self):
         fixed_ips = [data_models.IPAllocation(ip_address='10.0.0.2',
@@ -402,7 +402,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         listener = data_models.Listener(default_pool=pool)
         lb = data_models.LoadBalancer(listeners=[listener])
         ret_members = [member for member in self.driver._get_members(lb)]
-        self.assertEqual(len(ret_members), len(members))
+        self.assertEqual(len(members), len(ret_members))
         self.assertIn(members[0], ret_members)
         self.assertIn(members[1], ret_members)
 
@@ -1120,7 +1120,7 @@ class TestPoolManager(BaseTestManager):
                 self.pool.delete(self.context, pool)
                 refresh_instance.assert_called_once_with(self.context,
                                                          loadbalancer)
-                self.assertEqual(listener.default_pool, None)
+                self.assertEqual(None, listener.default_pool)
                 success.assert_called_once_with(self.context, pool,
                                                 delete=True)
 

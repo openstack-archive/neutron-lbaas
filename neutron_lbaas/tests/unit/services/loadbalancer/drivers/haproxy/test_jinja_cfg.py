@@ -477,28 +477,28 @@ class TestHaproxyCfg(base.BaseTestCase):
 
     def test_expand_expected_codes(self):
         exp_codes = ''
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes), set([]))
+        self.assertEqual(set([]), jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200'
-        self.assertEqual(
-            jinja_cfg._expand_expected_codes(exp_codes), set(['200']))
+        self.assertEqual(set(['200']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201'
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201']))
+        self.assertEqual(set(['200', '201']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201,202'
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202']))
+        self.assertEqual(set(['200', '201', '202']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200-202'
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202']))
+        self.assertEqual(set(['200', '201', '202']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200-202, 205'
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202', '205']))
+        self.assertEqual(set(['200', '201', '202', '205']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201-203'
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202', '203']))
+        self.assertEqual(set(['200', '201', '202', '203']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201-203, 205'
-        self.assertEqual(jinja_cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202', '203', '205']))
+        self.assertEqual(set(['200', '201', '202', '203', '205']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
         exp_codes = '201-200, 205'
-        self.assertEqual(
-            jinja_cfg._expand_expected_codes(exp_codes), set(['205']))
+        self.assertEqual(set(['205']),
+                         jinja_cfg._expand_expected_codes(exp_codes))
