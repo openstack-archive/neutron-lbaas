@@ -101,6 +101,18 @@ class AdminStateTests(testscenarios.TestWithScenarios,
         cls.member_id = cls.member['id']
 
     @classmethod
+    def resource_set_health_monitor(cls, admin_state_up_flag):
+        cls.create_hm_kwargs = {'type': cls.protocol,
+                                'delay': 3,
+                                'max_retries': 10,
+                                'timeout': 5,
+                                'pool_id': cls.pool_id,
+                                'admin_state_up': admin_state_up_flag}
+        cls.health_monitor = cls._create_health_monitor(
+            **cls.create_hm_kwargs)
+        cls.health_monitor_id = cls.health_monitor['id']
+
+    @classmethod
     def resource_cleanup(cls):
         super(AdminStateTests, cls).resource_cleanup()
 
@@ -177,6 +189,16 @@ class AdminStateTests(testscenarios.TestWithScenarios,
                              get('operating_status'), 'DISABLED')
             return False
 
+    def check_health_monitor_provisioning_status(self, health_monitor):
+        if bool(health_monitor) and self.health_monitor.get('admin_state_up'):
+            self.assertEqual(health_monitor.get('provisioning_status'),
+                             'ACTIVE')
+            return True
+        elif bool(health_monitor):
+            self.assertEqual(health_monitor.get('provisioning_status'),
+                             'DISABLED')
+            return False
+
     def check_operating_status(self):
         statuses = (self.load_balancers_client.
                     get_load_balancer_status_tree
@@ -186,11 +208,13 @@ class AdminStateTests(testscenarios.TestWithScenarios,
         listeners = load_balancer['listeners']
         pools = None
         members = None
+        health_monitor = None
 
         if bool(listeners):
             pools = listeners[0]['pools']
         if bool(pools):
             members = pools[0]['members']
+            health_monitor = pools[0]['healthmonitor']
 
         if self.check_lb_operating_status(load_balancer,
                                           listeners,
@@ -202,3 +226,5 @@ class AdminStateTests(testscenarios.TestWithScenarios,
                 if self.check_pool_operating_status(pools,
                                                     members):
                     self.check_member_operating_status(members)
+                    self.check_health_monitor_provisioning_status(
+                        health_monitor)
