@@ -779,7 +779,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                                                   subnet['subnet']['id'])
                     res = req.get_response(self.api)
 
-                    self.assertTrue('NeutronError' in res.json)
+                    self.assertIn('NeutronError', res.json)
                     self.assertEqual('SubnetInUse',
                                      res.json['NeutronError']['type'])
                     self.assertEqual(409, res.status_code)

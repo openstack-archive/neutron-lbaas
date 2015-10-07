@@ -130,8 +130,8 @@ class ManagerTest(object):
     def check_op_status(self, model, delete=False):
         loadbalancer = model.root_loadbalancer
         if hasattr(self, "async_obj_track_list") and self.async_obj_track_list:
-            self.parent.assertTrue(
-                loadbalancer.id in self.async_obj_track_list)
+            self.parent.assertIn(
+                loadbalancer.id, self.async_obj_track_list)
         else:
             if delete:
                 self._check_success_completion_with_delete()
