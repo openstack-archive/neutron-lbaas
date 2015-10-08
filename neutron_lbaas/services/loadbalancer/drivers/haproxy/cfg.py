@@ -13,7 +13,7 @@
 #    under the License.
 
 import itertools
-from neutron.agent.linux import utils
+from neutron.common import utils as n_utils
 from neutron.plugins.common import constants as qconstants
 from six import moves
 
@@ -57,7 +57,7 @@ def save_config(conf_path, logical_config, socket_path=None,
     data.extend(_build_defaults(logical_config))
     data.extend(_build_frontend(logical_config))
     data.extend(_build_backend(logical_config))
-    utils.replace_file(conf_path, '\n'.join(data))
+    n_utils.replace_file(conf_path, '\n'.join(data))
 
 
 def _build_global(config, socket_path=None, user_group='nogroup'):

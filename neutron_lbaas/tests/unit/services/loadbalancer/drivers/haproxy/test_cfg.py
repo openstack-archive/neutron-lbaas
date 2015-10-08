@@ -32,7 +32,7 @@ class TestHaproxyCfg(base.BaseTestCase):
                            'drivers.haproxy.cfg._build_frontend'),
                 mock.patch('neutron_lbaas.services.loadbalancer.'
                            'drivers.haproxy.cfg._build_backend'),
-                mock.patch('neutron.agent.linux.utils.replace_file')
+                mock.patch('neutron.common.utils.replace_file')
         ) as (b_g, b_d, b_f, b_b, replace):
             test_config = ['globals', 'defaults', 'frontend', 'backend']
             b_g.return_value = [test_config[0]]
