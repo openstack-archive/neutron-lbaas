@@ -13,12 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import socket
 import tempfile
 import time
 
 import six
 from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
+from tempest_lib import exceptions as lib_exc
 
 from neutron_lbaas.tests.tempest.lib.common import commands
 from neutron_lbaas.tests.tempest.lib import config
@@ -26,6 +28,7 @@ from neutron_lbaas.tests.tempest.lib import exceptions
 from neutron_lbaas.tests.tempest.lib.services.network import resources as \
     net_resources
 from neutron_lbaas.tests.tempest.lib import test
+from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
@@ -65,6 +68,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.pools_client = pools_client.PoolsClientJSON(*self.client_args)
         self.members_client = members_client.MembersClientJSON(
             *self.client_args)
+        self.health_monitors_client = (
+            health_monitors_client.HealthMonitorsClientJSON(
+                *self.client_args))
 
     @classmethod
     def skip_checks(cls):
@@ -242,9 +248,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
             loadbalancer_id=load_balancer_id,
             protocol='HTTP', protocol_port=80)
         self.assertTrue(self.listener)
-        self.addCleanup(self.delete_wrapper,
-                        self.listeners_client.delete_listener,
-                        self.listener.get('id'))
+        self.addCleanup(self._cleanup_listener, self.listener.get('id'),
+                        load_balancer_id=load_balancer_id)
         return self.listener
 
     def _create_health_monitor(self):
@@ -253,9 +258,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
             type='HTTP', max_retries=5, delay=3, timeout=5,
             pool_id=self.pool['id'])
         self.assertTrue(self.hm)
-        self.addCleanup(self.delete_wrapper,
-                        self.health_monitors_client.delete_health_monitor,
-                        self.hm.get('id'))
+        self.addCleanup(self._cleanup_health_monitor,
+                        self.hm.get('id'),
+                        load_balancer_id=self.load_balancer['id'])
 
     def _create_pool(self, listener_id):
         """Create a pool with ROUND_ROBIN algorithm."""
@@ -264,9 +269,30 @@ class BaseTestCase(manager.NetworkScenarioTest):
             lb_algorithm='ROUND_ROBIN',
             listener_id=listener_id)
         self.assertTrue(self.pool)
-        self.addCleanup(self.delete_wrapper, self.pools_client.delete_pool,
-                        self.pool['id'])
+        self.addCleanup(self._cleanup_pool, self.pool['id'],
+                        load_balancer_id=self.load_balancer['id'])
         return self.pool
+
+    def _cleanup_load_balancer(self, load_balancer_id):
+        self.delete_wrapper(self.load_balancers_client.delete_load_balancer,
+                            load_balancer_id)
+        self._wait_for_load_balancer_status(load_balancer_id, delete=True)
+
+    def _cleanup_listener(self, listener_id, load_balancer_id=None):
+        self.delete_wrapper(self.listeners_client.delete_listener, listener_id)
+        if load_balancer_id:
+            self._wait_for_load_balancer_status(load_balancer_id)
+
+    def _cleanup_pool(self, pool_id, load_balancer_id=None):
+        self.delete_wrapper(self.pools_client.delete_pool, pool_id)
+        if load_balancer_id:
+            self._wait_for_load_balancer_status(load_balancer_id)
+
+    def _cleanup_health_monitor(self, hm_id, load_balancer_id=None):
+        self.delete_wrapper(self.health_monitors_client.delete_health_monitor,
+                            hm_id)
+        if load_balancer_id:
+            self._wait_for_load_balancer_status(load_balancer_id)
 
     def _create_members(self, load_balancer_id=None, pool_id=None,
                         subnet_id=None):
@@ -317,9 +343,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.load_balancer = self.load_balancers_client.create_load_balancer(
             **self.create_lb_kwargs)
         load_balancer_id = self.load_balancer['id']
-        self.addCleanup(self.delete_wrapper,
-                        self.load_balancers_client.delete_load_balancer,
-                        load_balancer_id)
+        self.addCleanup(self._cleanup_load_balancer, load_balancer_id)
         self._wait_for_load_balancer_status(load_balancer_id)
 
         listener = self._create_listener(load_balancer_id=load_balancer_id)
@@ -354,12 +378,20 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
     def _wait_for_load_balancer_status(self, load_balancer_id,
                                        provisioning_status='ACTIVE',
-                                       operating_status='ONLINE'):
+                                       operating_status='ONLINE',
+                                       delete=False):
         interval_time = 1
-        timeout = 50
+        timeout = 600
         end_time = time.time() + timeout
         while time.time() < end_time:
-            lb = self.load_balancers_client.get_load_balancer(load_balancer_id)
+            try:
+                lb = self.load_balancers_client.get_load_balancer(
+                    load_balancer_id)
+            except lib_exc.NotFound as e:
+                if delete:
+                    return
+                else:
+                    raise e
             if (lb.get('provisioning_status') == provisioning_status and
                     lb.get('operating_status') == operating_status):
                 break
@@ -421,13 +453,12 @@ class BaseTestCase(manager.NetworkScenarioTest):
         counters = dict.fromkeys(servers, 0)
         for i in range(self.num):
             try:
-                server = urllib2.urlopen("http://{0}/".format(vip_ip)).read()
+                server = urllib2.urlopen("http://{0}/".format(vip_ip),
+                                         None, 2).read()
                 counters[server] += 1
             # HTTP exception means fail of server, so don't increase counter
             # of success and continue connection tries
-            except error.HTTPError:
-                continue
-            except error.URLError:
+            except (error.HTTPError, error.URLError, socket.timeout):
                 continue
         return counters
 
