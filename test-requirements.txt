@@ -15,5 +15,5 @@ tempest-lib>=0.9.0
 testrepository>=0.0.18
 testtools>=1.4.0
 testscenarios>=0.4
-WebOb>=1.2.3
+WebOb<1.5.0,>=1.2.3
 WebTest>=2.0
