@@ -39,6 +39,8 @@ fi
 if [ "$testenv" = "apiv2" ]; then
    cat > $DEVSTACK_PATH/local.conf <<EOF
 [[post-config|/etc/octavia/octavia.conf]]
+[DEFAULT]
+debug = True
 
 [controller_worker]
 amphora_driver = amphora_noop_driver
