@@ -43,7 +43,7 @@ def patch_manager(func):
         func(*args[:-1])
 
         s = str(log_mock.mock_calls[0])
-        parent.assertEqual(s[:11], "call.debug(")
+        parent.assertEqual("call.debug(", s[:11])
         parent.assertTrue(s.index(model.id) != -1,
                           msg="Model ID not found in log")
 
@@ -123,7 +123,7 @@ class LoadBalancerManagerTest(ManagerTestWithUpdates):
             "total_connections": 0
         }
         h = self.manager.stats(self.parent.context, model)
-        self.parent.assertEqual(h, dummy_stats)
+        self.parent.assertEqual(dummy_stats, h)
 
 
 class TestLoggingNoopLoadBalancerDriver(

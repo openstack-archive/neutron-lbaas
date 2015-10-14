@@ -183,8 +183,8 @@ class TestHaproxyCfg(base.BaseTestCase):
 
     def test_get_session_persistence(self):
         config = {'vip': {'session_persistence': {'type': 'SOURCE_IP'}}}
-        self.assertEqual(cfg._get_session_persistence(config),
-                         ['stick-table type ip size 10k', 'stick on src'])
+        self.assertEqual(['stick-table type ip size 10k', 'stick on src'],
+                         cfg._get_session_persistence(config))
 
         config = {'vip': {'session_persistence': {'type': 'HTTP_COOKIE'}},
                   'members': []}
@@ -195,42 +195,42 @@ class TestHaproxyCfg(base.BaseTestCase):
 
         config = {'vip': {'session_persistence': {'type': 'HTTP_COOKIE'}},
                   'members': [{'id': 'member1_id'}]}
-        self.assertEqual(cfg._get_session_persistence(config),
-                         ['cookie SRV insert indirect nocache'])
+        self.assertEqual(['cookie SRV insert indirect nocache'],
+                         cfg._get_session_persistence(config))
 
         config = {'vip': {'session_persistence': {'type': 'APP_COOKIE',
                                                   'cookie_name': 'test'}}}
-        self.assertEqual(cfg._get_session_persistence(config),
-                         ['appsession test len 56 timeout 3h'])
+        self.assertEqual(['appsession test len 56 timeout 3h'],
+                         cfg._get_session_persistence(config))
 
         config = {'vip': {'session_persistence': {'type': 'APP_COOKIE'}}}
-        self.assertEqual(cfg._get_session_persistence(config), [])
+        self.assertEqual([], cfg._get_session_persistence(config))
 
         config = {'vip': {'session_persistence': {'type': 'UNSUPPORTED'}}}
-        self.assertEqual(cfg._get_session_persistence(config), [])
+        self.assertEqual([], cfg._get_session_persistence(config))
 
     def test_expand_expected_codes(self):
         exp_codes = ''
-        self.assertEqual(cfg._expand_expected_codes(exp_codes), set([]))
+        self.assertEqual(set([]), cfg._expand_expected_codes(exp_codes))
         exp_codes = '200'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes), set(['200']))
+        self.assertEqual(set(['200']), cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201']))
+        self.assertEqual(set(['200', '201']),
+                         cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201,202'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202']))
+        self.assertEqual(set(['200', '201', '202']),
+                         cfg._expand_expected_codes(exp_codes))
         exp_codes = '200-202'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202']))
+        self.assertEqual(set(['200', '201', '202']),
+                         cfg._expand_expected_codes(exp_codes))
         exp_codes = '200-202, 205'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202', '205']))
+        self.assertEqual(set(['200', '201', '202', '205']),
+                         cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201-203'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202', '203']))
+        self.assertEqual(set(['200', '201', '202', '203']),
+                         cfg._expand_expected_codes(exp_codes))
         exp_codes = '200, 201-203, 205'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes),
-                         set(['200', '201', '202', '203', '205']))
+        self.assertEqual(set(['200', '201', '202', '203', '205']),
+                         cfg._expand_expected_codes(exp_codes))
         exp_codes = '201-200, 205'
-        self.assertEqual(cfg._expand_expected_codes(exp_codes), set(['205']))
+        self.assertEqual(set(['205']), cfg._expand_expected_codes(exp_codes))

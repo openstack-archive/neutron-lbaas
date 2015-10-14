@@ -237,11 +237,11 @@ def _get_rsa_numbers(private_key, private_key_passphrase=None):
 class TestTLSParseUtils(base.BaseTestCase):
     def test_alt_subject_name_parses(self):
         hosts = cert_parser.get_host_names(ALT_EXT_CRT)
-        self.assertEqual(hosts['cn'], 'www.CNFromSubject.org')
-        self.assertEqual(hosts['dns_names'][0], 'www.hostFrom_dNSName1.com')
-        self.assertEqual(hosts['dns_names'][1], 'www.hostFrom_dNSName2.com')
-        self.assertEqual(hosts['dns_names'][2], 'www.hostFrom_dNSName3.com')
-        self.assertEqual(hosts['dns_names'][3], 'www.hostFrom_dNSName4.com')
+        self.assertEqual('www.CNFromSubject.org', hosts['cn'])
+        self.assertEqual('www.hostFrom_dNSName1.com', hosts['dns_names'][0])
+        self.assertEqual('www.hostFrom_dNSName2.com', hosts['dns_names'][1])
+        self.assertEqual('www.hostFrom_dNSName3.com', hosts['dns_names'][2])
+        self.assertEqual('www.hostFrom_dNSName4.com', hosts['dns_names'][3])
 
     def test_x509_parses(self):
         self.assertRaises(exceptions.UnreadableCert,

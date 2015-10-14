@@ -247,7 +247,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
         try:
             self.driver._verify_workflow_templates()
         except r_exc.WorkflowTemplateMissing as e:
-            self.assertEqual(e.msg, message)
+            self.assertEqual(message, e.msg)
 
         templates_to_return.append(
             {'name': self.driver.workflow_template_name})
@@ -426,9 +426,10 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
                             stats = self.plugin_instance.stats(
                                 context.get_admin_context(), lb_id,)
-                            self.assertEqual(stats, {'stats': {'bytes_in': 100,
+                            self.assertEqual({'stats': {'bytes_in': 100,
                                 'total_connections': 2,
-                                'active_connections': 1, 'bytes_out': 200}})
+                                'active_connections': 1, 'bytes_out': 200}},
+                                stats)
 
     def test_member_crud(self):
         with self.subnet(cidr='10.0.0.0/24') as s:
@@ -535,8 +536,8 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                             lb = self.plugin_instance.db.get_loadbalancer(
                                 context.get_admin_context(),
                                 lb_id).to_dict(listener=False)
-                            self.assertEqual(lb['provisioning_status'],
-                                             'ACTIVE')
+                            self.assertEqual('ACTIVE',
+                                             lb['provisioning_status'])
 
     def test_build_objects_with_tls(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:

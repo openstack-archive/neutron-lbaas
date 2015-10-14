@@ -58,7 +58,7 @@ class TestLoadBalancerAgentApi(base.BaseTestCase):
         self.api = agent_driver_base.LoadBalancerAgentApi('topic')
 
     def test_init(self):
-        self.assertEqual(self.api.client.target.topic, 'topic')
+        self.assertEqual('topic', self.api.client.target.topic)
 
     def _call_test_helper(self, method_name, method_args):
         with contextlib.nested(
