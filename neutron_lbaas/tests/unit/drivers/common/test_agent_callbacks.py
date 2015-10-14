@@ -161,6 +161,8 @@ class TestLoadBalancerCallbacks(
 
         with self.loadbalancer() as loadbalancer:
             lb_id = loadbalancer['loadbalancer']['id']
+            if 'device_id' not in expected:
+                expected['device_id'] = lb_id
             self.plugin_instance.db.update_loadbalancer_provisioning_status(
                 context.get_admin_context(),
                 loadbalancer['loadbalancer']['id'])
@@ -173,8 +175,6 @@ class TestLoadBalancerCallbacks(
 
     def test_plug_vip_port(self):
         exp = {
-            'device_owner': 'neutron:' + constants.LOADBALANCERV2,
-            'device_id': 'c596ce11-db30-5c72-8243-15acaae8690f',
             'admin_state_up': True
         }
         self._update_port_test_helper(
@@ -185,8 +185,6 @@ class TestLoadBalancerCallbacks(
 
     def test_plug_vip_port_mock_with_host(self):
         exp = {
-            'device_owner': 'neutron:' + constants.LOADBALANCERV2,
-            'device_id': 'c596ce11-db30-5c72-8243-15acaae8690f',
             'admin_state_up': True,
             portbindings.HOST_ID: 'host'
         }
