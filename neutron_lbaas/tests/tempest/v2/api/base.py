@@ -112,12 +112,10 @@ class BaseTestCase(base.BaseNetworkTest):
 
     @classmethod
     def _create_load_balancer(cls, wait=True, **lb_kwargs):
-        try:
-            lb = cls.load_balancers_client.create_load_balancer(**lb_kwargs)
-            if wait:
-                cls._wait_for_load_balancer_status(lb.get('id'))
-        except Exception:
-            raise Exception(_("Failed to create load balancer..."))
+        lb = cls.load_balancers_client.create_load_balancer(**lb_kwargs)
+        if wait:
+            cls._wait_for_load_balancer_status(lb.get('id'))
+
         cls._lbs_to_delete.append(lb.get('id'))
         port = cls.client.show_port(lb['vip_port_id'])
         cls.ports.append(port['port'])
