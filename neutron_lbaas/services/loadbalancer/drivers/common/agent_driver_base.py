@@ -342,7 +342,7 @@ class AgentDriverBase(abstract_driver.LoadBalancerAbstractDriver):
             LoadBalancerCallbacks(self.plugin),
             agents_db.AgentExtRpcCallback(self.plugin)
         ]
-        self.plugin.conn = n_rpc.create_connection(new=True)
+        self.plugin.conn = n_rpc.create_connection()
         self.plugin.conn.create_consumer(
             topics.LOADBALANCER_PLUGIN,
             self.plugin.agent_endpoints,
