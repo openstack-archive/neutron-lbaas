@@ -81,6 +81,13 @@ class BaseOctaviaDriverTest(test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
 class TestOctaviaDriver(BaseOctaviaDriverTest):
 
+    def test_allocates_vip(self):
+        self.addCleanup(cfg.CONF.clear_override,
+                        'allocates_vip', group='octavia')
+        cfg.CONF.set_override('allocates_vip', True, group='octavia')
+        test_driver = driver.OctaviaDriver(self.plugin)
+        self.assertEqual(True, test_driver.load_balancer.allocates_vip)
+
     def test_load_balancer_ops(self):
         m = ManagerTest(self, self.driver.load_balancer,
                         self.driver.req)
@@ -318,3 +325,20 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
             driver.thread_op(self.driver.load_balancer, self.lb)
             self.fail_completion.assert_called_once_with(self.context, self.lb)
             self.assertEqual(0, self.succ_completion.call_count)
+
+        def test_thread_op_updates_vip_when_vip_delegated(self):
+            cfg.CONF.set_override('allocates_vip', True, group='octavia')
+            expected_vip = '10.1.1.1'
+            self.driver.req.get.side_effect = [
+                {'provisioning_status': 'PENDING_CREATE',
+                 'vip': {'ip_address': ''}},
+                {'provisioning_status': 'ACTIVE',
+                 'vip': {'ip_address': expected_vip}}
+            ]
+            driver.thread_op(self.driver.load_balancer,
+                             self.lb,
+                             lb_create=True)
+            self.succ_completion.assert_called_once_with(self.context, self.lb,
+                                                         delete=False,
+                                                         lb_create=True)
+            self.assertEqual(expected_vip, self.lb.vip_address)

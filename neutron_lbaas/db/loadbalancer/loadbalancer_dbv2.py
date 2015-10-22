@@ -234,11 +234,11 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             lb_db.update(loadbalancer)
         return data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
 
-    def delete_loadbalancer(self, context, id):
+    def delete_loadbalancer(self, context, id, delete_vip_port=True):
         with context.session.begin(subtransactions=True):
             lb_db = self._get_resource(context, models.LoadBalancer, id)
             context.session.delete(lb_db)
-        if lb_db.vip_port:
+        if delete_vip_port and lb_db.vip_port:
             self._core_plugin.delete_port(context, lb_db.vip_port_id)
 
     def prevent_lbaasv2_port_deletion(self, context, port_id):

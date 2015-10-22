@@ -45,12 +45,18 @@ OPTS = [
         default=100,
         help=_('Time to stop polling octavia when a status of an entity does '
                'not change.')
-    )
+    ),
+    cfg.BoolOpt(
+        'allocates_vip',
+        default=False,
+        help=_('True if Octavia will be responsible for allocating the VIP.'
+               ' False if neutron-lbaas will allocate it and pass to Octavia.')
+    ),
 ]
 cfg.CONF.register_opts(OPTS, 'octavia')
 
 
-def thread_op(manager, entity, delete=False):
+def thread_op(manager, entity, delete=False, lb_create=False):
     context = ncontext.get_admin_context()
     poll_interval = cfg.CONF.octavia.request_poll_interval
     poll_timeout = cfg.CONF.octavia.request_poll_timeout
@@ -62,7 +68,16 @@ def thread_op(manager, entity, delete=False):
         LOG.debug("Octavia reports load balancer {0} has provisioning status "
                   "of {1}".format(entity.root_loadbalancer.id, prov_status))
         if prov_status == 'ACTIVE' or prov_status == 'DELETED':
-            manager.successful_completion(context, entity, delete=delete)
+            kwargs = {'delete': delete}
+            if manager.driver.allocates_vip and lb_create:
+                kwargs['lb_create'] = lb_create
+                # TODO(blogan): drop fk constraint on vip_port_id to ports
+                # table because the port can't be removed unless the load
+                # balancer has been deleted.  Until then we won't populate the
+                # vip_port_id field.
+                # entity.vip_port_id = octavia_lb.get('vip').get('port_id')
+                entity.vip_address = octavia_lb.get('vip').get('ip_address')
+            manager.successful_completion(context, entity, **kwargs)
             return
         elif prov_status == 'ERROR':
             manager.failed_completion(context, entity)
@@ -81,11 +96,14 @@ def async_op(func):
     @wraps(func)
     def func_wrapper(*args, **kwargs):
         d = (func.__name__ == 'delete')
+        lb_create = ((func.__name__ == 'create') and
+                     isinstance(args[0], LoadBalancerManager))
         try:
             r = func(*args, **kwargs)
             thread = threading.Thread(target=thread_op,
                                       args=(args[0], args[2]),
-                                      kwargs={'delete': d})
+                                      kwargs={'delete': d,
+                                              'lb_create': lb_create})
             thread.setDaemon(True)
             thread.start()
             return r
@@ -147,6 +165,10 @@ class OctaviaDriver(driver_base.LoadBalancerBaseDriver):
 
         LOG.debug("OctaviaDriver: initialized, version=%s", VERSION)
 
+    @property
+    def allocates_vip(self):
+        return self.load_balancer.allocates_vip
+
 
 class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
 
@@ -156,6 +178,13 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         if id:
             s += '/%s' % id
         return s
+
+    @property
+    def allocates_vip(self):
+        return cfg.CONF.octavia.allocates_vip
+
+    def create_and_allocate_vip(self, context, lb):
+        self.create(context, lb)
 
     @async_op
     def create(self, context, lb):

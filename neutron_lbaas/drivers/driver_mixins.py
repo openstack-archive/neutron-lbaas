@@ -47,7 +47,8 @@ class BaseManagerMixin(object):
     def delete(self, context, obj):
         pass
 
-    def successful_completion(self, context, obj, delete=False):
+    def successful_completion(self, context, obj, delete=False,
+                              lb_create=False):
         """
         Sets the provisioning_status of the load balancer and obj to
         ACTIVE.  Should be called last in the implementor's BaseManagerMixin
@@ -58,14 +59,28 @@ class BaseManagerMixin(object):
                     neutron_lbaas.services.loadbalancer.data_model
         :param delete: set True if being called from a delete method.  Will
                        most likely result in the obj being deleted from the db.
+        :param lb_create: set True if this is being called after a successful
+                          load balancer create.
         """
         LOG.debug("Starting successful_completion method after a successful "
                   "driver action.")
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
         if delete:
-            LOG.debug("Deleting object type {0} with id of {1}.".format(
-                obj.__class__, obj.id))
-            self.db_delete_method(context, obj.id)
+            # Check if driver is responsible for vip allocation.  If the driver
+            # is responsible, then it is also responsible for cleaning it up.
+            # At this point, the VIP should already be cleaned up, so we are
+            # just doing neutron lbaas db cleanup.
+            if (obj == obj.root_loadbalancer and
+                    self.driver.load_balancer.allocates_vip):
+                # NOTE(blogan): this is quite dumb to do but it is necessary
+                # so that a false negative pep8 error does not get thrown. An
+                # "unexpected-keyword-argument" pep8 error occurs bc
+                # self.db_delete_method is a @property method that returns a
+                # method.
+                kwargs = {'delete_vip_port': False}
+                self.db_delete_method(context, obj.id, **kwargs)
+            else:
+                self.db_delete_method(context, obj.id)
         if obj == obj.root_loadbalancer and delete:
             # Load balancer was deleted and no longer exists
             return
@@ -75,9 +90,14 @@ class BaseManagerMixin(object):
             # only set the status to online if this an operation on the
             # load balancer
             lb_op_status = lb_const.ONLINE
-        LOG.debug("Updating load balancer {0} to provisioning_status = {1}, "
-                  "operating_status = {2}.".format(obj.root_loadbalancer.id,
-                                                   lb_p_status, lb_op_status))
+
+        # Update the load balancer's vip address and vip port id if the driver
+        # was responsible for allocating the vip.
+        if (self.driver.load_balancer.allocates_vip and lb_create and
+                isinstance(obj, data_models.LoadBalancer)):
+            self.driver.plugin.db.update_loadbalancer(
+                context, obj.id, {'vip_address': obj.vip_address,
+                                  'vip_port_id': obj.vip_port_id})
         self.driver.plugin.db.update_status(
             context, models.LoadBalancer, obj.root_loadbalancer.id,
             provisioning_status=lb_p_status,
