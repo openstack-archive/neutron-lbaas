@@ -118,3 +118,11 @@ LOADBALANCERV2 = "LOADBALANCERV2"
 # for the LBaaS V1 vip and LBaaS V2 listeners. -1 indicates
 # no limit, the value cannot be less than -1.
 MIN_CONNECT_VALUE = -1
+
+# LBaas V2 Table entities
+LISTENER_EVENT = 'listener'
+LISTENER_STATS_EVENT = 'listener_stats'
+LOADBALANCER_EVENT = 'loadbalancer'
+MEMBER_EVENT = 'member'
+OPERATING_STATUS = 'operating_status'
+POOL_EVENT = 'pool'
