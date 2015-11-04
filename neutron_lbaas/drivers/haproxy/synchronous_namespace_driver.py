@@ -21,6 +21,7 @@ from neutron.agent.common import config
 from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
 from neutron.common import exceptions
+from neutron.common import utils as n_utils
 from neutron import context as ncontext
 from neutron.extensions import portbindings
 from neutron.i18n import _LE, _LW
@@ -30,7 +31,6 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_service import service
 from oslo_utils import excutils
-from oslo_utils import importutils
 
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.extensions import loadbalancerv2
@@ -83,8 +83,10 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
         if not self.conf.haproxy.interface_driver:
             self.conf.haproxy.interface_driver = DEFAULT_INTERFACE_DRIVER
         try:
-            vif_driver = importutils.import_object(
-                self.conf.haproxy.interface_driver, self.conf)
+            vif_driver = n_utils.load_class_by_alias_or_classname(
+                'neutron.interface_drivers',
+                self.conf.haproxy.interface_driver)
+
         except ImportError:
             with excutils.save_and_reraise_exception():
                 msg = (_LE('Error importing interface driver: %s')

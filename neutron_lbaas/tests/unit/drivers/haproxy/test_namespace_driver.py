@@ -37,14 +37,13 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         conf.haproxy.user_group = 'test_group'
         conf.haproxy.send_gratuitous_arp = 3
         self.conf = conf
-        self.mock_importer = mock.patch.object(namespace_driver,
-                                               'importutils').start()
-
         self.rpc_mock = mock.Mock()
-        self.driver = namespace_driver.HaproxyNSDriver(
-            conf,
-            self.rpc_mock
-        )
+        with mock.patch(
+                'neutron.common.utils.load_class_by_alias_or_classname'):
+            self.driver = namespace_driver.HaproxyNSDriver(
+                conf,
+                self.rpc_mock
+            )
         self.vif_driver = mock.Mock()
         self.driver.vif_driver = self.vif_driver
         self._build_mock_data_models()

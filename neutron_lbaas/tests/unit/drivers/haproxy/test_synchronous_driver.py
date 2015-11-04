@@ -44,17 +44,16 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         conf.haproxy.periodic_interval = 10
         conf.host = 'host1'
         self.conf = conf
-        self.mock_importer = mock.patch.object(sync_driver,
-                                               'importutils').start()
-
         self.context_mock = mock.Mock()
         self.plugin_mock = mock.Mock()
         self.plugin_mock.db = mock.Mock()
         self.plugin_mock.db._core_plugin = mock.Mock()
         self.mock_service = mock.patch.object(
             sync_driver, 'SimpleHaproxyStatsService').start()
-        self.driver = sync_driver.HaproxyNSDriver(
-            self.plugin_mock)
+        with mock.patch(
+                'neutron.common.utils.load_class_by_alias_or_classname'):
+            self.driver = sync_driver.HaproxyNSDriver(
+                self.plugin_mock)
         self.driver.state_path = '/the/path/v2'
         self.vif_driver = mock.Mock()
         self.driver.vif_driver = self.vif_driver
