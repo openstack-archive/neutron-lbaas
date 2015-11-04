@@ -1119,7 +1119,7 @@ class TestPoolManager(BaseTestManager):
                 self.pool.delete(self.context, pool)
                 refresh_instance.assert_called_once_with(self.context,
                                                          loadbalancer)
-                self.assertEqual(None, listener.default_pool)
+                self.assertIsNone(listener.default_pool)
                 success.assert_called_once_with(self.context, pool,
                                                 delete=True)
 
