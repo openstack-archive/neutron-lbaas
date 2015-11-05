@@ -60,7 +60,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self.state_path = os.path.join(
             self.conf.haproxy.loadbalancer_state_path, STATE_PATH_V2_APPEND)
         try:
-            vif_driver = n_utils.load_class_by_alias_or_classname(
+            vif_driver_class = n_utils.load_class_by_alias_or_classname(
                 'neutron.interface_drivers',
                 conf.interface_driver)
         except ImportError:
@@ -69,7 +69,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                        % conf.interface_driver)
                 LOG.error(msg)
 
-        self.vif_driver = vif_driver
+        self.vif_driver = vif_driver_class(conf)
         self.deployed_loadbalancers = {}
         self._loadbalancer = LoadBalancerManager(self)
         self._listener = ListenerManager(self)

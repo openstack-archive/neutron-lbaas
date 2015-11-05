@@ -83,7 +83,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
         if not self.conf.haproxy.interface_driver:
             self.conf.haproxy.interface_driver = DEFAULT_INTERFACE_DRIVER
         try:
-            vif_driver = n_utils.load_class_by_alias_or_classname(
+            vif_driver_class = n_utils.load_class_by_alias_or_classname(
                 'neutron.interface_drivers',
                 self.conf.haproxy.interface_driver)
 
@@ -92,7 +92,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
                 msg = (_LE('Error importing interface driver: %s')
                        % self.conf.haproxy.interface_driver)
                 LOG.exception(msg)
-        self.vif_driver = vif_driver
+        self.vif_driver = vif_driver_class(self.conf)
 
         # instantiate managers here
         self.load_balancer = LoadBalancerManager(self)
