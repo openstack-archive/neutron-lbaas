@@ -22,6 +22,7 @@ if [ $neutron_installed -eq 0 ]; then
     echo "ALREADY INSTALLED" > /tmp/tox_install.txt
     echo "Neutron already installed; using existing package"
 elif [ -x "$ZUUL_CLONER" ]; then
+    export ZUUL_BRANCH=${ZUUL_BRANCH-$BRANCH}
     echo "ZUUL CLONER" > /tmp/tox_install.txt
     cwd=$(/bin/pwd)
     cd /tmp
