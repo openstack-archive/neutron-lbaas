@@ -14,6 +14,7 @@
 
 from barbicanclient import client as barbican_client
 from neutron.i18n import _LI, _LW, _LE
+from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
@@ -169,13 +170,13 @@ class CertManager(cert_manager.CertManager):
 
     @staticmethod
     def get_cert(cert_ref, service_name='lbaas',
-                 resource_ref=None,
+                 lb_id=None,
                  check_only=False, **kwargs):
         """Retrieves the specified cert and registers as a consumer.
 
         :param cert_ref: the UUID of the cert to retrieve
         :param service_name: Friendly name for the consuming service
-        :param resource_ref: Full HATEOAS reference to the consuming resource
+        :param lb_id: Loadbalancer id for building resource consumer URL
         :param check_only: Read Certificate data without registering
 
         :return: octavia.certificates.common.Cert representation of the
@@ -196,7 +197,7 @@ class CertManager(cert_manager.CertManager):
                 cert_container = connection.containers.register_consumer(
                     container_ref=cert_ref,
                     name=service_name,
-                    url=resource_ref
+                    url=CertManager._get_service_url(lb_id)
                 )
             return Cert(cert_container)
         except Exception:
@@ -204,12 +205,12 @@ class CertManager(cert_manager.CertManager):
                 LOG.exception(_LE("Error getting {0}").format(cert_ref))
 
     @staticmethod
-    def delete_cert(cert_ref, resource_ref, service_name='lbaas', **kwargs):
+    def delete_cert(cert_ref, lb_id, service_name='lbaas', **kwargs):
         """Deregister as a consumer for the specified cert.
 
         :param cert_ref: the UUID of the cert to retrieve
         :param service_name: Friendly name for the consuming service
-        :param resource_ref: Full HATEOAS reference to the consuming resource
+        :param lb_id: Loadbalancer id for building resource consumer URL
 
         :raises Exception: if deregistration fails
         """
@@ -222,7 +223,7 @@ class CertManager(cert_manager.CertManager):
             connection.containers.remove_consumer(
                 container_ref=cert_ref,
                 name=service_name,
-                url=resource_ref
+                url=CertManager._get_service_url(lb_id)
             )
         except Exception:
             with excutils.save_and_reraise_exception():
@@ -256,3 +257,12 @@ class CertManager(cert_manager.CertManager):
                 LOG.exception(_LE(
                     "Error recursively deleting certificate container {0}"
                 ).format(cert_ref))
+
+    @staticmethod
+    def _get_service_url(lb_id):
+        # Format: <servicename>://<region>/<resource>/<object_id>
+        return "{0}://{1}/{2}/{3}".format(
+            cfg.CONF.service_auth.service_name,
+            cfg.CONF.service_auth.region,
+            constants.LOADBALANCER,
+            lb_id)
