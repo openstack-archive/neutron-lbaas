@@ -30,7 +30,7 @@ where
 For example
 
     enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas stable/liberty
-    enable_plugin octavia https://git.openstack.org/openstack/octavia 0.5.2
+    enable_plugin octavia https://git.openstack.org/openstack/octavia stable/liberty
 
 2) Enable the LBaaS services
 
