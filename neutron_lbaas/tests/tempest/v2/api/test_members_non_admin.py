@@ -323,7 +323,7 @@ class MemberTestJSON(base.BaseTestCase):
         member = self._update_member(self.pool_id, member_id,
                                      **member_opts)
         # And make sure they stick
-        self.assertEqual(False, member["admin_state_up"])
+        self.assertFalse(member["admin_state_up"])
         self.assertEqual(10, member["weight"])
 
     @test.attr(type='smoke')
@@ -355,7 +355,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_opts = {"admin_state_up": False}
         member = self._update_member(self.pool_id, member_id,
                                      **member_opts)
-        self.assertEqual(False, member["admin_state_up"])
+        self.assertFalse(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
 
     @test.attr(type='negative')
