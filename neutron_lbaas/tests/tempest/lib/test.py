@@ -463,7 +463,7 @@ class BaseTestCase(testtools.testcase.WithAttributes,
         :param credential_type: string - primary, alt or admin
         :param roles: list of roles
 
-        :returns the created client manager
+        :returns: the created client manager
         :raises skipException: if the requested credentials are not available
         """
         if all([roles, credential_type]):
@@ -565,7 +565,7 @@ class BaseTestCase(testtools.testcase.WithAttributes,
     def get_tenant_network(cls):
         """Get the network to be used in testing
 
-        :return: network dict including 'id' and 'name'
+        :returns: network dict including 'id' and 'name'
         """
         # Make sure isolated_creds exists and get a network client
         networks_client = cls.get_client_manager().networks_client

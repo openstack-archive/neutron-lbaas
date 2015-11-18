@@ -64,7 +64,7 @@ class BarbicanKeystoneAuth(object):
     def get_barbican_client(cls):
         """Creates a Barbican client object.
 
-        :return: a Barbican Client object
+        :returns: a Barbican Client object
         :raises Exception: if the client cannot be created
         """
         if not cls._barbican_client:
@@ -178,7 +178,7 @@ class CertManager(cert_manager.CertManager):
         :param resource_ref: Full HATEOAS reference to the consuming resource
         :param check_only: Read Certificate data without registering
 
-        :return: octavia.certificates.common.Cert representation of the
+        :returns: octavia.certificates.common.Cert representation of the
                  certificate data
         :raises Exception: if certificate retrieval fails
         """

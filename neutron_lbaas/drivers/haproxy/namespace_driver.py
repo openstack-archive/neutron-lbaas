@@ -162,7 +162,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
     def deploy_instance(self, loadbalancer):
         """Deploys loadbalancer if necessary
 
-        :return: True if loadbalancer was deployed, False otherwise
+        :returns: True if loadbalancer was deployed, False otherwise
         """
         if not self.deployable(loadbalancer):
             LOG.info(_LI("Loadbalancer %s is not deployable.") %

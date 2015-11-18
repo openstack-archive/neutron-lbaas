@@ -217,7 +217,7 @@ def _get_rsa_numbers(private_key, private_key_passphrase=None):
 
     :param private_key:
     :param private_key_passphrase:
-    :return: a dictionary with keys (p,q,e,d,t,e,n)
+    :returns: a dictionary with keys (p,q,e,d,t,e,n)
     """
     kw = {"private_key_passphrase": private_key_passphrase}
     pk = cert_parser._read_pyca_private_key(private_key, **kw)

@@ -93,7 +93,7 @@ def save_config(conf_path, loadbalancer, socket_path, user_group,
 def _get_template():
     """Retrieve Jinja template
 
-    :return: Jinja template
+    :returns: Jinja template
     """
     global JINJA_ENV
     if not JINJA_ENV:
@@ -111,7 +111,7 @@ def _store_listener_crt(haproxy_base_dir, listener, cert):
     :param haproxy_base_dir: location of the instances state data
     :param listener: the listener object
     :param cert: the TLS certificate
-    :return: location of the stored certificate
+    :returns: location of the stored certificate
     """
     cert_path = _retrieve_crt_path(haproxy_base_dir, listener,
                                    cert.primary_cn)
@@ -127,7 +127,7 @@ def _retrieve_crt_path(haproxy_base_dir, listener, primary_cn):
     :param haproxy_base_dir: location of the instances state data
     :param listener: the listener object
     :param primary_cn: primary_cn used for identifying TLS certificate
-    :return: TLS certificate location
+    :returns: TLS certificate location
     """
     confs_dir = os.path.abspath(os.path.normpath(haproxy_base_dir))
     confs_path = os.path.join(confs_dir, listener.id)
@@ -143,8 +143,8 @@ def _process_tls_certificates(listener):
 
     Converts and uploads PEM data to the Amphora API
 
-    :param listener the listener object
-    :return: TLS_CERT and SNI_CERTS
+    :param listener: the listener object
+    :returns: TLS_CERT and SNI_CERTS
     """
     cert_mgr = CERT_MANAGER_PLUGIN.CertManager()
 
@@ -170,7 +170,7 @@ def _get_primary_cn(tls_cert):
     """Retrieve primary cn for TLS certificate
 
     :param tls_cert: the TLS certificate
-    :return: primary cn of the TLS certificate
+    :returns: primary cn of the TLS certificate
     """
     return cert_parser.get_host_names(tls_cert)['cn']
 
@@ -179,7 +179,7 @@ def _map_cert_tls_container(cert):
     """Map cert data to TLS data model
 
     :param cert: TLS certificate
-    :return: mapped TLSContainer object
+    :returns: mapped TLSContainer object
     """
     certificate = cert.get_certificate()
     pkey = cert_parser.dump_private_key(cert.get_private_key(),
@@ -195,7 +195,7 @@ def _build_pem(tls_cert):
     """Generate PEM encoded TLS certificate data
 
     :param tls_cert: TLS certificate
-    :return: PEm encoded certificate data
+    :returns: PEm encoded certificate data
     """
     pem = ()
     if tls_cert.intermediates:
@@ -216,7 +216,7 @@ def render_loadbalancer_obj(loadbalancer, user_group, socket_path,
     :param user_group: the user group
     :param socket_path: location of the instances socket data
     :param haproxy_base_dir:  location of the instances state data
-    :return: rendered load balancer configuration
+    :returns: rendered load balancer configuration
     """
     loadbalancer = _transform_loadbalancer(loadbalancer, haproxy_base_dir)
     return _get_template().render({'loadbalancer': loadbalancer,
@@ -230,7 +230,7 @@ def _transform_loadbalancer(loadbalancer, haproxy_base_dir):
 
     :param loadbalancer: the load balancer object
     :param haproxy_base_dir: location of the instances state data
-    :return: dictionary of transformed load balancer values
+    :returns: dictionary of transformed load balancer values
     """
     listeners = [_transform_listener(
         x, haproxy_base_dir) for x in loadbalancer.listeners]
@@ -246,7 +246,7 @@ def _transform_listener(listener, haproxy_base_dir):
 
     :param listener: the listener object
     :param haproxy_base_dir: location of the instances state data
-    :return: dictionary of transformed listener values
+    :returns: dictionary of transformed listener values
     """
     data_dir = os.path.join(haproxy_base_dir, listener.id)
     ret_value = {
@@ -276,7 +276,7 @@ def _transform_pool(pool):
     """Transforms pool object
 
     :param pool: the pool object
-    :return: dictionary of transformed pool values
+    :returns: dictionary of transformed pool values
     """
     ret_value = {
         'id': pool.id,
@@ -304,7 +304,7 @@ def _transform_session_persistence(persistence):
     """Transforms session persistence object
 
     :param persistence: the session persistence object
-    :return: dictionary of transformed session persistence values
+    :returns: dictionary of transformed session persistence values
     """
     return {
         'type': persistence.type,
@@ -316,7 +316,7 @@ def _transform_member(member):
     """Transforms member object
 
     :param member: the member object
-    :return: dictionary of transformed member values
+    :returns: dictionary of transformed member values
     """
     return {
         'id': member.id,
@@ -333,7 +333,7 @@ def _transform_health_monitor(monitor):
     """Transforms health monitor object
 
     :param monitor: the health monitor object
-    :return: dictionary of transformed health monitor values
+    :returns: dictionary of transformed health monitor values
     """
     return {
         'id': monitor.id,
@@ -353,7 +353,7 @@ def _include_member(member):
     """Helper for verifying member statues
 
     :param member: the member object
-    :return: boolean of status check
+    :returns: boolean of status check
     """
     return (member.provisioning_status in
             MEMBER_STATUSES and member.admin_state_up)
@@ -363,7 +363,7 @@ def _expand_expected_codes(codes):
     """Expand the expected code string in set of codes
 
     :param codes: string of status codes
-    :return: list of status codes
+    :returns: list of status codes
     """
 
     retval = set()
