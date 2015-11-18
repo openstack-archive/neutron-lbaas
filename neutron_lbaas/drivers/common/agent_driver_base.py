@@ -222,7 +222,7 @@ class PoolManager(driver_base.BasePoolManager):
                                           agent['host'])
 
     def create(self, context, pool):
-        super(PoolManager, self).delete(context, pool)
+        super(PoolManager, self).create(context, pool)
         agent = self.driver.get_loadbalancer_agent(
             context, pool.listener.loadbalancer.id)
         self.driver.agent_rpc.create_pool(context, pool, agent['host'])
