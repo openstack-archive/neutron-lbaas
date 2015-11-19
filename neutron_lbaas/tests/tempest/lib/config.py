@@ -63,7 +63,6 @@ AuthGroup = [
                 help="Roles to assign to all users created by tempest",
                 default=[]),
     cfg.StrOpt('tenant_isolation_domain_name',
-               default=None,
                help="Only applicable when identity.auth_version is v3."
                     "Domain within which isolated credentials are provisioned."
                     "The default \"None\" means that the domain from the"
@@ -81,7 +80,6 @@ IdentityGroup = [
                 default=False,
                 help="Set to True if using self-signed SSL certificates."),
     cfg.StrOpt('ca_certificates_file',
-               default=None,
                help='Specify a CA bundle file to use in verifying a '
                     'TLS (https) server certificate.'),
     cfg.StrOpt('uri',
