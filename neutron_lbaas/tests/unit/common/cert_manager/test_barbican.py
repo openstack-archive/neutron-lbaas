@@ -18,6 +18,7 @@ import mock
 import neutron_lbaas.common.cert_manager.barbican_cert_manager as bbq_common
 from neutron_lbaas.common import keystone
 import neutron_lbaas.tests.base as base
+from oslo_config import cfg
 
 
 class TestBarbicanAuth(base.BaseTestCase):
@@ -50,6 +51,18 @@ class TestBarbicanAuth(base.BaseTestCase):
         # Getting the session again should return the same object
         bc2 = bbq_common.BarbicanKeystoneAuth.get_barbican_client()
         self.assertIs(bc1, bc2)
+
+    def test_get_service_url(self):
+        # Format: <servicename>://<region>/<resource>/<object_id>
+        cfg.CONF.set_override('service_name',
+                              'lbaas',
+                              'service_auth')
+        cfg.CONF.set_override('region',
+                              'RegionOne',
+                              'service_auth')
+        self.assertEqual(
+            'lbaas://RegionOne/LOADBALANCER/LB-ID',
+            bbq_common.CertManager._get_service_url('LB-ID'))
 
 
 class TestBarbicanCert(base.BaseTestCase):

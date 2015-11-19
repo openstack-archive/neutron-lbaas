@@ -566,14 +566,17 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def _validate_tls(self, listener, curr_listener=None):
         def validate_tls_container(container_ref):
             cert_container = None
+            lb_id = None
+
             if curr_listener:
-                service_url = self._get_service_url(curr_listener)
+                lb_id = curr_listener['loadbalancer_id']
             else:
-                service_url = self._get_service_url(listener)
+                lb_id = listener.get('loadbalancer_id')
+
             try:
                 cert_container = CERT_MANAGER_PLUGIN.CertManager.get_cert(
                     container_ref,
-                    resource_ref=service_url)
+                    lb_id=lb_id)
             except Exception as e:
                 if hasattr(e, 'status_code') and e.status_code == 404:
                     raise loadbalancerv2.TLSContainerNotFound(
@@ -593,7 +596,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                     intermediates=cert_container.get_intermediates())
             except Exception as e:
                 CERT_MANAGER_PLUGIN.CertManager.delete_cert(
-                    container_ref, self._get_service_url(listener))
+                    container_ref, lb_id)
                 raise loadbalancerv2.TLSContainerInvalid(
                     container_id=container_ref, reason=str(e))
 
@@ -628,14 +631,6 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             validate_tls_containers(to_validate)
 
         return len(to_validate) > 0
-
-    def _get_service_url(self, listener):
-        # Format: <servicename>://<region>/<resource>/<object_id>
-        return "{0}://{1}/{2}/{3}".format(
-            cfg.CONF.service_auth.service_name,
-            cfg.CONF.service_auth.region,
-            constants.LOADBALANCER,
-            listener['loadbalancer_id'])
 
     def create_listener(self, context, listener):
         listener = listener.get('listener')
