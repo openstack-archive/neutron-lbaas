@@ -115,7 +115,7 @@ def dump_private_key(private_key, private_key_passphrase=None):
 
     :param private_key: private key
     :param private_key_passphrase: private key passphrase
-    :return: Unencrypted private key in PKCS8
+    :returns: Unencrypted private key in PKCS8
     """
 
     # re encode the key as unencrypted PKCS8

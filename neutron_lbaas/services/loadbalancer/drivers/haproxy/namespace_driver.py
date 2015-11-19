@@ -325,7 +325,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
     def deploy_instance(self, logical_config):
         """Deploys loadbalancer if necessary
 
-        :return: True if loadbalancer was deployed, False otherwise
+        :returns: True if loadbalancer was deployed, False otherwise
         """
         # do actual deploy only if vip and pool are configured and active
         if not logical_config or not self._is_active(logical_config):

@@ -117,7 +117,7 @@ class CertManager(cert_manager.CertManager):
 
         :param cert_ref: the UUID of the cert to retrieve
 
-        :return: neutron_lbaas.common.cert_manager.cert_manager.Cert
+        :returns: neutron_lbaas.common.cert_manager.cert_manager.Cert
                  representation of the certificate data
         :raises CertificateStorageException: if certificate retrieval fails
         """

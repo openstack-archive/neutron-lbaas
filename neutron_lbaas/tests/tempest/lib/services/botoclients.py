@@ -91,7 +91,7 @@ class BotoClientBase(object):
         """
         Obtain existing, or create new AWS credentials
         :param identity_client: identity client with embedded credentials
-        :return: EC2 credentials
+        :returns: EC2 credentials
         """
         ec2_cred_list = identity_client.list_user_ec2_credentials(
             identity_client.user_id)

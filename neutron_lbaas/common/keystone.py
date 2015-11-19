@@ -79,7 +79,7 @@ cfg.CONF.register_opts(OPTS, 'service_auth')
 def get_session():
     """Initializes a Keystone session.
 
-    :return: a Keystone Session object
+    :returns: a Keystone Session object
     :raises Exception: if the session cannot be established
     """
     global _SESSION
