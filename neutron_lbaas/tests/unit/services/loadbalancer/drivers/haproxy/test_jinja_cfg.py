@@ -31,7 +31,7 @@ class TestHaproxyCfg(base.BaseTestCase):
         with contextlib.nested(
             mock.patch('neutron_lbaas.services.loadbalancer.'
                        'drivers.haproxy.jinja_cfg.render_loadbalancer_obj'),
-            mock.patch('neutron.agent.linux.utils.replace_file')
+            mock.patch('neutron.common.utils.replace_file')
         ) as (r_t, replace):
             r_t.return_value = 'fake_rendered_template'
             lb = mock.Mock()
@@ -79,7 +79,7 @@ class TestHaproxyCfg(base.BaseTestCase):
               % sample_configs.PIPED_CODES)
         with mock.patch('os.makedirs'):
             with mock.patch('os.listdir'):
-                with mock.patch.object(jinja_cfg, 'utils'):
+                with mock.patch.object(jinja_cfg, 'n_utils'):
                     with mock.patch.object(
                             jinja_cfg, '_process_tls_certificates') as crt:
                         crt.return_value = {
@@ -123,9 +123,9 @@ class TestHaproxyCfg(base.BaseTestCase):
               "weight 13 check inter 30s fall 3 cookie sample_member_id_2\n\n"
               % sample_configs.PIPED_CODES)
         with mock.patch('os.makedirs'):
-            with mock.patch('neutron.agent.linux.utils.replace_file'):
+            with mock.patch('neutron.common.utils.replace_file'):
                 with mock.patch('os.listdir'):
-                    with mock.patch.object(jinja_cfg, 'utils'):
+                    with mock.patch.object(jinja_cfg, 'n_utils'):
                         with mock.patch.object(
                                 jinja_cfg, '_process_tls_certificates') as crt:
                             crt.return_value = {
@@ -285,7 +285,7 @@ class TestHaproxyCfg(base.BaseTestCase):
 
     def test_render_template_appsession_persistence(self):
         with mock.patch('os.makedirs') as md:
-            with mock.patch.object(jinja_cfg, 'utils'):
+            with mock.patch.object(jinja_cfg, 'n_utils'):
                 md.return_value = '/data/dirs/'
                 be = ("backend sample_pool_id_1\n"
                       "    mode http\n"
@@ -324,7 +324,7 @@ class TestHaproxyCfg(base.BaseTestCase):
     def test_store_listener_crt(self):
         l = sample_configs.sample_listener_tuple(tls=True, sni=True)
         with mock.patch('os.makedirs'):
-            with mock.patch('neutron.agent.linux.utils.replace_file'):
+            with mock.patch('neutron.common.utils.replace_file'):
                     ret = jinja_cfg._store_listener_crt(
                         '/v2/loadbalancers', l, l.default_tls_container)
                     self.assertEqual(
