@@ -192,8 +192,9 @@ def sample_tls_sni_container_tuple(tls_container=None, tls_container_id=None):
 
 
 def sample_tls_container_tuple(id='cont_id_1', certificate=None,
-                               private_key=None, intermediates=[],
+                               private_key=None, intermediates=None,
                                primary_cn=None):
+    intermediates = intermediates or []
     sc = collections.namedtuple(
         'tls_cert',
         'id, certificate, private_key, intermediates, primary_cn')
