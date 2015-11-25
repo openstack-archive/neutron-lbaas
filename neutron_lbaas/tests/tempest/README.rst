@@ -40,7 +40,7 @@ for scenario tests ::
 
 2. Not using Devstack
 ^^^^^^^^^^^^^^^^^^^^^
-6/19/2015 - As we do not have an external Openstack environment with
+6/19/2015 - As we do not have an external OpenStack environment with
 Neutron_LBaaS V2 to test with, this is TBD
 
 3. Packages tempest vs. tempest-lib
