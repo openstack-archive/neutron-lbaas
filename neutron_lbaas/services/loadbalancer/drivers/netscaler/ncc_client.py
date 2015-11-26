@@ -1,3 +1,4 @@
+
 # Copyright 2014 Citrix Systems
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,10 +16,10 @@
 import requests
 
 from neutron.common import exceptions as n_exc
-from neutron.i18n import _LE
-from neutron.i18n import _LI
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
+
+from neutron_lbaas._i18n import _LE, _LI
 
 LOG = logging.getLogger(__name__)
 

@@ -18,13 +18,13 @@ import random
 from neutron.db import agents_db
 from neutron.db import agentschedulers_db
 from neutron.db import model_base
-from neutron.i18n import _LW
 from oslo_log import log as logging
 import six
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm import joinedload
 
+from neutron_lbaas._i18n import _LW
 from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 

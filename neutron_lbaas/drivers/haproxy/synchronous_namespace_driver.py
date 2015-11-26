@@ -24,7 +24,6 @@ from neutron.common import exceptions
 from neutron.common import utils as n_utils
 from neutron import context as ncontext
 from neutron.extensions import portbindings
-from neutron.i18n import _LE, _LW
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
@@ -32,6 +31,7 @@ from oslo_log import log as logging
 from oslo_service import service
 from oslo_utils import excutils
 
+from neutron_lbaas._i18n import _LE, _LW
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer.agent import agent as lb_agent

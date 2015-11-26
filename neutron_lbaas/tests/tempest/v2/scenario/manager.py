@@ -17,7 +17,6 @@
 import subprocess
 
 import netaddr
-from neutron.i18n import _LI, _LW, _LE
 from oslo_log import log
 import six
 from tempest_lib.common.utils import data_utils
@@ -25,6 +24,7 @@ from tempest_lib.common.utils import misc as misc_utils
 from tempest_lib import exceptions as lib_exc
 from tempest_lib import exceptions
 
+from neutron_lbaas._i18n import _LI, _LW, _LE
 from neutron_lbaas.tests.tempest.lib.common import fixed_network
 from neutron_lbaas.tests.tempest.lib.common.utils.linux import remote_client
 from neutron_lbaas.tests.tempest.lib import config

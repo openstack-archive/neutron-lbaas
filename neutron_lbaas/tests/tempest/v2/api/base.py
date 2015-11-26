@@ -15,11 +15,10 @@
 import os
 import time
 
-from neutron.i18n import _, _LI
 from oslo_log import log as logging
 from tempest_lib import exceptions
 
-# from neutron_lbaas.tests.tempest.lib import clients as tempest_clients
+from neutron_lbaas._i18n import _, _LI
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.v1.api import base
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client

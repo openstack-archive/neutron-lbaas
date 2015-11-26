@@ -13,12 +13,12 @@
 #    under the License.
 
 from barbicanclient import client as barbican_client
-from neutron.i18n import _LI, _LW, _LE
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
+from neutron_lbaas._i18n import _LI, _LW, _LE
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common import keystone
 

@@ -18,7 +18,8 @@ Neutron Lbaas base exception handling.
 """
 
 from neutron.common import exceptions
-from neutron.i18n import _LE
+
+from neutron_lbaas._i18n import _LE
 
 
 class LbaasException(exceptions.NeutronException):

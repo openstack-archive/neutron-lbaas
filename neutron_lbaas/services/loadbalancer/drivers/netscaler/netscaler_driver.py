@@ -13,11 +13,11 @@
 #    under the License.
 
 from neutron.api.v2 import attributes
-from neutron.i18n import _LI
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import log as logging
 
+from neutron_lbaas._i18n import _LI
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client

@@ -22,12 +22,12 @@ from neutron.agent.linux import ip_lib
 from neutron.agent.linux import utils as linux_utils
 from neutron.common import exceptions
 from neutron.common import utils as n_utils
-from neutron.i18n import _LI, _LE, _LW
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
+from neutron_lbaas._i18n import _LI, _LE, _LW
 from neutron_lbaas.agent import agent_device_driver
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
