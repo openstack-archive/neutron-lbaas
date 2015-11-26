@@ -80,3 +80,8 @@ LBAAS_AGENT_SCHEDULER_V2_EXT_ALIAS = 'lbaas_agent_schedulerv2'
 AGENT_TYPE_LOADBALANCERV2 = 'Loadbalancerv2 agent'
 LOADBALANCER_PLUGINV2 = 'n-lbaasv2-plugin'
 LOADBALANCER_AGENTV2 = 'n-lbaasv2_agent'
+
+# Used to check number of connections per second allowed
+# for the LBaaS V1 vip and LBaaS V2 listeners. -1 indicates
+# no limit, the value cannot be less than -1.
+MIN_CONNECT_VALUE = -1

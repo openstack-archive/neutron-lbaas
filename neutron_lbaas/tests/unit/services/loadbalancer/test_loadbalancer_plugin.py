@@ -69,6 +69,24 @@ class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
         self.assertIn('vip', res)
         self.assertEqual(res['vip'], return_value)
 
+    def test_vip_create_with_connection_limit_smaller_than_min_value(self):
+        data = {'vip': {'name': 'vip1',
+                        'description': 'descr_vip1',
+                        'subnet_id': _uuid(),
+                        'address': '127.0.0.1',
+                        'protocol_port': 80,
+                        'protocol': 'HTTP',
+                        'pool_id': _uuid(),
+                        'session_persistence': {'type': 'HTTP_COOKIE'},
+                        'connection_limit': -4,
+                        'admin_state_up': True,
+                        'tenant_id': _uuid()}}
+        res = self.api.post(_get_path('lb/vips', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            expect_errors=True)
+        self.assertEqual(exc.HTTPBadRequest.code, res.status_int)
+
     def test_vip_list(self):
         vip_id = _uuid()
         return_value = [{'name': 'vip1',
@@ -106,6 +124,15 @@ class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('vip', res)
         self.assertEqual(res['vip'], return_value)
+
+    def test_vip_update_with_connection_limit_smaller_than_min_value(self):
+        vip_id = _uuid()
+        data = {'vip': {'connection_limit': -4}}
+        res = self.api.put(_get_path('lb/vips', id=vip_id, fmt=self.fmt),
+                           self.serialize(data),
+                           content_type='application/%s' % self.fmt,
+                           expect_errors=True)
+        self.assertEqual(exc.HTTPBadRequest.code, res.status_int)
 
     def test_vip_get(self):
         vip_id = _uuid()
@@ -622,6 +649,24 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         self.assertIn('listener', res)
         self.assertEqual(res['listener'], return_value)
 
+    def test_listener_create_with_connection_limit_less_than_min_value(self):
+        data = {'listener': {'tenant_id': _uuid(),
+                             'name': 'listen-name-1',
+                             'description': 'listen-1-desc',
+                             'protocol': 'HTTP',
+                             'protocol_port': 80,
+                             'default_tls_container_ref': None,
+                             'sni_container_refs': [],
+                             'connection_limit': -4,
+                             'admin_state_up': True,
+                             'loadbalancer_id': _uuid()}}
+
+        res = self.api.post(_get_path('lbaas/listeners', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/{0}'.format(self.fmt),
+                            expect_errors=True)
+        self.assertEqual(exc.HTTPBadRequest.code, res.status_int)
+
     def test_listener_list(self):
         listener_id = _uuid()
         return_value = [{'admin_state_up': True,
@@ -688,6 +733,16 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('listener', res)
         self.assertEqual(res['listener'], return_value)
+
+    def test_listener_update_with_connection_limit_less_than_min_value(self):
+        listener_id = _uuid()
+        update_data = {'listener': {'connection_limit': -4}}
+        res = self.api.put(_get_path('lbaas/listeners',
+                                     id=listener_id,
+                                     fmt=self.fmt),
+                           self.serialize(update_data),
+                           expect_errors=True)
+        self.assertEqual(exc.HTTPBadRequest.code, res.status_int)
 
     def test_listener_get(self):
         listener_id = _uuid()

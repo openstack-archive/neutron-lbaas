@@ -17,6 +17,7 @@
 import abc
 
 from oslo_config import cfg
+from oslo_log import log as logging
 import six
 
 from neutron.api import extensions
@@ -31,6 +32,8 @@ from neutron.services import service_base
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 LOADBALANCERV2_PREFIX = "/lbaas"
+
+LOG = logging.getLogger(__name__)
 
 
 # Loadbalancer Exceptions
@@ -124,6 +127,17 @@ class CertManagerError(nexception.NeutronException):
     message = _("Could not process TLS container %(ref)s, %(reason)s")
 
 
+def _validate_connection_limit(data, min_value=lb_const.MIN_CONNECT_VALUE):
+    if int(data) < min_value:
+        msg = (_("'%(data)s' is not a valid value, "
+                 "because it cannot be less than %(min_value)s") %
+               {'data': data, 'min_value': min_value})
+        LOG.debug(msg)
+        return msg
+
+attr.validators['type:connection_limit'] = _validate_connection_limit
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -198,7 +212,9 @@ RESOURCE_ATTRIBUTE_MAP = {
                                'convert_to': attr.convert_to_list,
                                'is_visible': True},
         'connection_limit': {'allow_post': True, 'allow_put': True,
-                             'default': -1,
+                             'validate': {'type:connection_limit':
+                                          lb_const.MIN_CONNECT_VALUE},
+                             'default': lb_const.MIN_CONNECT_VALUE,
                              'convert_to': attr.convert_to_int,
                              'is_visible': True},
         'protocol': {'allow_post': True, 'allow_put': False,
