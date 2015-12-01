@@ -14,6 +14,7 @@
 #    under the License.
 
 
+from neutron.api.v2 import attributes as attr
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.db import servicetype_db as st_db
@@ -85,6 +86,7 @@ class MemberV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     subnet_id = sa.Column(sa.String(36), nullable=True)
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     operating_status = sa.Column(sa.String(16), nullable=False)
+    name = sa.Column(sa.String(attr.NAME_MAX_LEN), nullable=True)
 
     @property
     def root_loadbalancer(self):
@@ -109,6 +111,7 @@ class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     expected_codes = sa.Column(sa.String(64), nullable=True)
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
+    name = sa.Column(sa.String(attr.NAME_MAX_LEN), nullable=True)
 
     @property
     def root_loadbalancer(self):

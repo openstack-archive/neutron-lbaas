@@ -807,7 +807,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                            'weight': 1,
                            'subnet_id': subnet_id,
                            'admin_state_up': True,
-                           'tenant_id': _uuid()}}
+                           'tenant_id': _uuid(),
+                           'name': 'member1'}}
         return_value = copy.copy(data['member'])
         return_value.update({'id': member_id})
 
@@ -831,7 +832,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = [{'name': 'member1',
                          'admin_state_up': True,
                          'tenant_id': _uuid(),
-                         'id': member_id}]
+                         'id': member_id,
+                         'name': 'member1'}]
 
         instance = self.plugin.return_value
         instance.get_pools.return_value = return_value
@@ -850,7 +852,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         update_data = {'member': {'admin_state_up': False}}
         return_value = {'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'id': member_id}
+                        'id': member_id,
+                        'name': 'member1'}
 
         instance = self.plugin.return_value
         instance.update_pool_member.return_value = return_value
@@ -872,7 +875,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         member_id = _uuid()
         return_value = {'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'id': member_id}
+                        'id': member_id,
+                        'name': 'member1'}
 
         instance = self.plugin.return_value
         instance.get_pool_member.return_value = return_value
@@ -911,7 +915,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                   'expected_codes': '200-300',
                                   'admin_state_up': True,
                                   'tenant_id': _uuid(),
-                                  'pool_id': _uuid()}}
+                                  'pool_id': _uuid(),
+                                  'name': 'monitor1'}}
         return_value = copy.copy(data['healthmonitor'])
         return_value.update({'id': health_monitor_id})
         del return_value['pool_id']
@@ -939,7 +944,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                   'expected_codes': '200-300',
                                   'admin_state_up': True,
                                   'tenant_id': _uuid(),
-                                  'pool_id': _uuid()}}
+                                  'pool_id': _uuid(),
+                                  'name': 'monitor1'}}
         res = self.api.post(_get_path('lbaas/healthmonitors',
                                       fmt=self.fmt),
                             self.serialize(data),
@@ -952,7 +958,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = [{'type': 'HTTP',
                          'admin_state_up': True,
                          'tenant_id': _uuid(),
-                         'id': health_monitor_id}]
+                         'id': health_monitor_id,
+                         'name': 'monitor1'}]
 
         instance = self.plugin.return_value
         instance.get_healthmonitors.return_value = return_value
@@ -969,7 +976,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'type': 'HTTP',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'id': health_monitor_id}
+                        'id': health_monitor_id,
+                        'name': 'monitor1'}
 
         instance = self.plugin.return_value
         instance.update_healthmonitor.return_value = return_value
@@ -991,7 +999,8 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         return_value = {'type': 'HTTP',
                         'admin_state_up': False,
                         'tenant_id': _uuid(),
-                        'id': health_monitor_id}
+                        'id': health_monitor_id,
+                        'name': 'monitor1'}
 
         instance = self.plugin.return_value
         instance.get_healthmonitor.return_value = return_value

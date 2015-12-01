@@ -316,7 +316,11 @@ RESOURCE_ATTRIBUTE_MAP = {
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
                            'convert_to': attr.convert_to_boolean,
-                           'is_visible': True}
+                           'is_visible': True},
+        'name': {'allow_post': True, 'allow_put': True,
+                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'default': '',
+                 'is_visible': True}
     }
 }
 
@@ -352,7 +356,10 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
             'subnet_id': {'allow_post': True, 'allow_put': False,
                           'validate': {'type:uuid': None},
                           'is_visible': True},
-
+            'name': {'allow_post': True, 'allow_put': True,
+                     'validate': {'type:string': attr.NAME_MAX_LEN},
+                     'default': '',
+                     'is_visible': True},
         }
     }
 }

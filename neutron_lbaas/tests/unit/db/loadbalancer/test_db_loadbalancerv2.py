@@ -129,7 +129,7 @@ class LbaasTestMixin(object):
         return pool_res
 
     def _get_member_optional_args(self):
-        return 'weight', 'admin_state_up'
+        return 'weight', 'admin_state_up', 'name'
 
     def _create_member(self, fmt, pool_id, address, protocol_port, subnet_id,
                        expected_res_status=None, **kwargs):
@@ -142,7 +142,6 @@ class LbaasTestMixin(object):
         for arg in args:
             if arg in kwargs and kwargs[arg] is not None:
                 data['member'][arg] = kwargs[arg]
-
         member_req = self.new_create_request('pools',
                                              data,
                                              fmt=fmt,
@@ -156,7 +155,7 @@ class LbaasTestMixin(object):
 
     def _get_healthmonitor_optional_args(self):
         return ('weight', 'admin_state_up', 'expected_codes', 'url_path',
-                'http_method')
+                'http_method', 'name')
 
     def _create_healthmonitor(self, fmt, pool_id, type, delay, timeout,
                               max_retries, expected_res_status=None, **kwargs):
@@ -1625,13 +1624,14 @@ class LbaasMemberTests(MemberTestBase):
             'weight': 1,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'subnet_id': ''
+            'subnet_id': '',
+            'name': 'member1'
         }
 
         expected.update(extras)
 
         expected['subnet_id'] = self.test_subnet_id
-        with self.member(pool_id=self.pool_id) as member:
+        with self.member(pool_id=self.pool_id, name='member1') as member:
             member_id = member['member'].get('id')
             self.assertTrue(member_id)
 
@@ -1667,12 +1667,14 @@ class LbaasMemberTests(MemberTestBase):
                 ('tenant_id', self._tenant_id),
                 ('protocol_port', 80),
                 ('weight', 10),
-                ('admin_state_up', False)]
+                ('admin_state_up', False),
+                ('name', 'member2')]
         with self.member(pool_id=self.pool_id) as member:
             member_id = member['member']['id']
             resp, pool1_update = self._get_pool_api(self.pool_id)
             self.assertEqual(1, len(pool1_update['pool']['members']))
-            data = {'member': {'weight': 10, 'admin_state_up': False}}
+            data = {'member': {'weight': 10, 'admin_state_up': False,
+                               'name': 'member2'}}
             resp, body = self._update_member_api(self.pool_id, member_id, data)
             for k, v in keys:
                 self.assertEqual(v, body['member'][k])
@@ -1694,15 +1696,18 @@ class LbaasMemberTests(MemberTestBase):
                 ('tenant_id', self._tenant_id),
                 ('protocol_port', 80),
                 ('weight', 1),
-                ('admin_state_up', True)]
-        with self.member(pool_id=self.pool_id) as member:
+                ('admin_state_up', True),
+                ('name', 'member1')]
+        with self.member(pool_id=self.pool_id,
+                         name='member1') as member:
             member_id = member['member']['id']
             resp, body = self._get_member_api(self.pool_id, member_id)
             for k, v in keys:
                 self.assertEqual(v, body['member'][k])
 
     def test_list_members(self):
-        with self.member(pool_id=self.pool_id, protocol_port=81):
+        with self.member(pool_id=self.pool_id,
+                         name='member1', protocol_port=81):
             resp, body = self._list_members_api(self.pool_id)
             self.assertEqual(1, len(body['members']))
 
@@ -1776,6 +1781,17 @@ class LbaasMemberTests(MemberTestBase):
                 'WRONG_POOL_ID', member_id, data)
             self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
+    def test_create_member_invalid_name(self):
+        data = {'member': {'address': '127.0.0.1',
+                           'protocol_port': 80,
+                           'weight': 1,
+                           'admin_state_up': True,
+                           'tenant_id': self._tenant_id,
+                           'subnet_id': self.test_subnet_id,
+                           'name': 123}}
+        resp, body = self._create_member_api('POOL_ID', data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
+
     def test_delete_member_invalid_pool_id(self):
         with self.member(pool_id=self.pool_id) as member:
             member_id = member['member']['id']
@@ -1783,7 +1799,8 @@ class LbaasMemberTests(MemberTestBase):
             self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
     def test_get_pool_shows_members(self):
-        with self.member(pool_id=self.pool_id) as member:
+        with self.member(pool_id=self.pool_id,
+                         name='member1') as member:
             expected = {'id': member['member']['id']}
             resp, body = self._get_pool_api(self.pool_id)
             self.assertIn(expected, body['pool']['members'])
@@ -1834,12 +1851,14 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'pools': [{'id': self.pool_id}]
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor1'
         }
 
         expected.update(extras)
 
-        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+        with self.healthmonitor(pool_id=self.pool_id,
+                                name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor'].get('id')
             self.assertTrue(hm_id)
 
@@ -1868,12 +1887,15 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'pools': [{'id': self.pool_id}]
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor1'
+
         }
 
         expected.update(extras)
 
-        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+        with self.healthmonitor(pool_id=self.pool_id,
+                                name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             resp, body = self._get_healthmonitor_api(hm_id)
             actual = {}
@@ -1895,18 +1917,21 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200,404',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'pools': [{'id': self.pool_id}]
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor2'
         }
 
         expected.update(extras)
 
-        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+        with self.healthmonitor(pool_id=self.pool_id,
+                                name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'delay': 30,
                                       'timeout': 10,
                                       'max_retries': 4,
                                       'expected_codes': '200,404',
-                                      'url_path': '/index.html'}}
+                                      'url_path': '/index.html',
+                                      'name': 'monitor2'}}
             resp, body = self._update_healthmonitor_api(hm_id, data)
             actual = {}
             for k, v in body['healthmonitor'].items():
@@ -2089,6 +2114,17 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
 
+    def test_create_healthmonitor_invalid_name(self):
+        data = {'healthmonitor': {'type': lb_const.HEALTH_MONITOR_TCP,
+                                  'delay': 1,
+                                  'timeout': 1,
+                                  'max_retries': 1,
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id,
+                                  'name': 123}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
+
     def test_only_one_healthmonitor_per_pool(self):
         with self.healthmonitor(pool_id=self.pool_id):
             data = {'healthmonitor': {'type': lb_const.HEALTH_MONITOR_TCP,
@@ -2111,10 +2147,12 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'pools': [{'id': self.pool_id}]
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor1'
         }
 
-        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+        with self.healthmonitor(pool_id=self.pool_id,
+                                name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             expected['id'] = hm_id
             resp, body = self._get_healthmonitor_api(hm_id)
@@ -2131,7 +2169,8 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'pools': [{'id': self.pool_id}]
+            'pools': [{'id': self.pool_id}],
+            'name': '',
         }
 
         with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
