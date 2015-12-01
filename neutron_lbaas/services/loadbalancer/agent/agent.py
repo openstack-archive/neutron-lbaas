@@ -21,11 +21,11 @@ from neutron.agent.common import config
 from neutron.agent.linux import interface
 from neutron.common import config as common_config
 from neutron.common import rpc as n_rpc
-from neutron.common import topics
 from oslo_config import cfg
 from oslo_service import service
 
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
+from neutron_lbaas.services.loadbalancer import constants as l_const
 
 OPTS = [
     cfg.IntOpt(
@@ -61,7 +61,7 @@ def main():
     mgr = manager.LbaasAgentManager(cfg.CONF)
     svc = LbaasAgentService(
         host=cfg.CONF.host,
-        topic=topics.LOADBALANCER_AGENT,
+        topic=l_const.LOADBALANCER_AGENT,
         manager=mgr
     )
     service.launch(cfg.CONF, svc).wait()

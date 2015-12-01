@@ -102,8 +102,14 @@ OPERATING_STATUSES = (ONLINE, OFFLINE, DEGRADED, DISABLED, NO_MONITOR)
 NO_CHECK = 'no check'
 
 # LBaaS V2 Agent Constants
-# LBaaS V1 Agent constants live in neutron
 LBAAS_AGENT_SCHEDULER_V2_EXT_ALIAS = 'lbaas_agent_schedulerv2'
 AGENT_TYPE_LOADBALANCERV2 = 'Loadbalancerv2 agent'
 LOADBALANCER_PLUGINV2 = 'n-lbaasv2-plugin'
 LOADBALANCER_AGENTV2 = 'n-lbaasv2_agent'
+
+# LBasS V1 Agent Constants
+LOADBALANCER_PLUGIN = 'n-lbaas-plugin'
+LOADBALANCER_AGENT = 'n-lbaas_agent'
+
+LOADBALANCER = "LOADBALANCER"
+LOADBALANCERV2 = "LOADBALANCERV2"
