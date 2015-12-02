@@ -16,7 +16,6 @@
 from neutron.agent import rpc as agent_rpc
 from neutron.common import exceptions as n_exc
 from neutron import context as ncontext
-from neutron.i18n import _LE, _LI
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconfig
 from oslo_config import cfg
@@ -26,6 +25,7 @@ from oslo_service import loopingcall
 from oslo_service import periodic_task
 from oslo_utils import importutils
 
+from neutron_lbaas._i18n import _LE, _LI
 from neutron_lbaas.agent import agent_api
 from neutron_lbaas.drivers.common import agent_driver_base
 from neutron_lbaas.services.loadbalancer import constants as lb_const

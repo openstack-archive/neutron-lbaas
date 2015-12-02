@@ -19,7 +19,6 @@ import time
 
 from neutron.api.v2 import attributes
 from neutron import context
-from neutron.i18n import _LE, _LW, _LI
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
@@ -27,6 +26,7 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 from six.moves import queue as Queue
 
+from neutron_lbaas._i18n import _LE, _LW, _LI
 import neutron_lbaas.common.cert_manager
 from neutron_lbaas.drivers.radware import base_v2_driver
 from neutron_lbaas.drivers.radware import exceptions as r_exc

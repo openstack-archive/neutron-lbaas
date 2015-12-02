@@ -19,7 +19,6 @@ from neutron.common import exceptions as n_exc
 from neutron.common import rpc as n_rpc
 from neutron.db import agents_db
 from neutron.extensions import portbindings
-from neutron.i18n import _LW
 from neutron.plugins.common import constants as np_const
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
@@ -27,6 +26,7 @@ from oslo_log import log as logging
 import oslo_messaging
 from oslo_utils import importutils
 
+from neutron_lbaas._i18n import _LW
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.extensions import lbaas_agentscheduler
 from neutron_lbaas.services.loadbalancer import constants as l_const

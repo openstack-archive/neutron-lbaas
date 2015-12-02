@@ -19,7 +19,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron.i18n import _LE
+from neutron_lbaas._i18n import _LE
 
 
 LOG = logging.getLogger(__name__)

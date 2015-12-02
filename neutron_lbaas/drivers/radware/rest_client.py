@@ -15,11 +15,11 @@
 import base64
 import httplib
 
-from neutron.i18n import _LE, _LW
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
+from neutron_lbaas._i18n import _LE, _LW
 from neutron_lbaas.drivers.radware import exceptions as r_exc
 
 LOG = logging.getLogger(__name__)

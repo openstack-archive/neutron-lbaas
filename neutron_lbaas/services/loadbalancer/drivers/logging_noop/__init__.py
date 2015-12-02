@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.i18n import _LW
 from oslo_log import log as logging
 
+from neutron_lbaas._i18n import _LW
 from neutron_lbaas.drivers import logging_noop
 
 LOG = logging.getLogger(__name__)
