@@ -904,21 +904,6 @@ class LbaasListenerTests(ListenerTestBase):
                               context.get_admin_context(),
                               {'listener': listener_data})
 
-    def test_get_service_url(self):
-        # Format: <servicename>://<region>/<resource>/<object_id>
-        cfg.CONF.set_override('service_name',
-                              'lbaas',
-                              'service_auth')
-        cfg.CONF.set_override('region',
-                              'RegionOne',
-                              'service_auth')
-        listner = {
-            'loadbalancer_id': self.lb_id
-        }
-        self.assertEqual(
-            'lbaas://RegionOne/LOADBALANCER/{0}'.format(self.lb_id),
-            self.plugin._get_service_url(listner))
-
     def test_create_listener_with_tls_invalid_container(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()
         cfg.CONF.set_override('service_name',
@@ -956,7 +941,7 @@ class LbaasListenerTests(ListenerTestBase):
                               {'listener': listener_data})
             rm_consumer_mock.assert_called_once_with(
                 listener_data['default_tls_container_ref'],
-                'lbaas://RegionOne/LOADBALANCER/{0}'.format(self.lb_id))
+                self.lb_id)
 
     def test_create_listener_with_tls(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()
