@@ -17,3 +17,4 @@ testtools>=1.4.0
 testscenarios>=0.4
 WebOb>=1.2.3
 WebTest>=2.0
+reno>=0.1.1 # Apache2
