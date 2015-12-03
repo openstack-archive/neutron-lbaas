@@ -22,12 +22,12 @@ import six
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.common import config
-from neutron.common import constants as n_constants
-from neutron.common import exceptions as n_exc
 from neutron import context
 import neutron.db.l3_db  # noqa
 from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
+from neutron_lib import constants as n_constants
+from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_utils import uuidutils
 import testtools

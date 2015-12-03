@@ -15,10 +15,10 @@
 import contextlib
 
 import mock
-from neutron.common import exceptions
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants
+from neutron_lib import exceptions
 
 from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client

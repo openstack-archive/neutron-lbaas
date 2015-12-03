@@ -17,9 +17,9 @@ import collections
 import contextlib
 
 import mock
-from neutron.common import exceptions
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants
+from neutron_lib import exceptions
 import six
 
 from neutron_lbaas.db.loadbalancer import models

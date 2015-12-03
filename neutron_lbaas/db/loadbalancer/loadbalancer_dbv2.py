@@ -17,11 +17,11 @@ from neutron.api.v2 import attributes
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
-from neutron.common import constants as n_constants
-from neutron.common import exceptions as n_exc
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
 from neutron.plugins.common import constants
+from neutron_lib import constants as n_constants
+from neutron_lib import exceptions as n_exc
 from oslo_db import exception
 from oslo_log import log as logging
 from oslo_utils import excutils

@@ -16,7 +16,6 @@
 import mock
 from neutron.api import extensions
 from neutron.api.v2 import attributes
-from neutron.common import constants
 from neutron import context
 from neutron.extensions import agent
 from neutron import manager
@@ -25,6 +24,7 @@ from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
 from neutron.tests.unit.db import test_agentschedulers_db
 from neutron.tests.unit.extensions import test_agent
+from neutron_lib import constants
 from oslo_config import cfg
 import six
 from webob import exc
