@@ -211,7 +211,7 @@ class SNI(model_base.BASEV2):
                             sa.ForeignKey("lbaas_listeners.id"),
                             primary_key=True,
                             nullable=False)
-    tls_container_id = sa.Column(sa.String(36),
+    tls_container_id = sa.Column(sa.String(128),
                                  primary_key=True,
                                  nullable=False)
     position = sa.Column(sa.Integer)
@@ -242,7 +242,7 @@ class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     protocol = sa.Column(sa.Enum(*lb_const.LISTENER_SUPPORTED_PROTOCOLS,
                                  name="listener_protocolsv2"),
                          nullable=False)
-    default_tls_container_id = sa.Column(sa.String(36),
+    default_tls_container_id = sa.Column(sa.String(128),
                                          default=None, nullable=True)
     sni_containers = orm.relationship(
             SNI,
