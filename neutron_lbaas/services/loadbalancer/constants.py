@@ -113,3 +113,8 @@ LOADBALANCER_AGENT = 'n-lbaas_agent'
 
 LOADBALANCER = "LOADBALANCER"
 LOADBALANCERV2 = "LOADBALANCERV2"
+
+# Used to check number of connections per second allowed
+# for the LBaaS V1 vip and LBaaS V2 listeners. -1 indicates
+# no limit, the value cannot be less than -1.
+MIN_CONNECT_VALUE = -1

@@ -26,6 +26,8 @@ from neutron.common import exceptions as nexception
 from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
+from neutron_lbaas.extensions import loadbalancerv2
+from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 LOADBALANCER_PREFIX = "/lb"
 
@@ -96,6 +98,10 @@ class MemberExists(nexception.NeutronException):
                 "already present in pool %(pool)s")
 
 
+attr.validators['type:connection_limit'] = (
+    loadbalancerv2._validate_connection_limit)
+
+
 RESOURCE_ATTRIBUTE_MAP = {
     'vips': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -146,7 +152,9 @@ RESOURCE_ATTRIBUTE_MAP = {
                                                         'required': False}}},
                                 'is_visible': True},
         'connection_limit': {'allow_post': True, 'allow_put': True,
-                             'default': -1,
+                             'validate': {'type:connection_limit':
+                                          lb_const.MIN_CONNECT_VALUE},
+                             'default': lb_const.MIN_CONNECT_VALUE,
                              'convert_to': attr.convert_to_int,
                              'is_visible': True},
         'admin_state_up': {'allow_post': True, 'allow_put': True,
