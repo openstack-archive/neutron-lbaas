@@ -105,6 +105,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'name': lb.name,
             'description': lb.description,
             'enabled': lb.admin_state_up,
+            'project_id': lb.tenant_id,
             'vip': {
                 'subnet_id': lb.vip_subnet_id,
                 'ip_address': lb.vip_address,
@@ -152,7 +153,8 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'protocol_port': listener.protocol_port,
             'connection_limit': listener.connection_limit,
             'tls_certificate_id': listener.default_tls_container_id,
-            'sni_containers': sni_containers
+            'sni_containers': sni_containers,
+            'project_id': listener.tenant_id
         }
         m.create(listener, list_url, args)
 
@@ -184,6 +186,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'enabled': pool.admin_state_up,
             'protocol': pool.protocol,
             'lb_algorithm': pool.lb_algorithm,
+            'project_id': pool.tenant_id
         }
         if pool.session_persistence:
             args['session_persistence'] = {
@@ -221,6 +224,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'protocol_port': member.protocol_port,
             'weight': member.weight,
             'subnet_id': member.subnet_id,
+            'project_id': member.tenant_id
         }
         m.create(member, mem_url, args)
 
@@ -260,6 +264,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'url_path': hm.url_path,
             'expected_codes': hm.expected_codes,
             'enabled': hm.admin_state_up,
+            'project_id': hm.tenant_id
         }
         m.create(hm, hm_url, args)
 

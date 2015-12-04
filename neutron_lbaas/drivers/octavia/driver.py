@@ -193,6 +193,7 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
             'name': lb.name,
             'description': lb.description,
             'enabled': lb.admin_state_up,
+            'project_id': lb.tenant_id,
             'vip': {
                 'subnet_id': lb.vip_subnet_id,
                 'ip_address': lb.vip_address,
@@ -247,6 +248,7 @@ class ListenerManager(driver_base.BaseListenerManager):
             'connection_limit': listener.connection_limit,
             'tls_certificate_id': listener.default_tls_container_id,
             'sni_containers': sni_container_ids,
+            'project_id': listener.tenant_id
         }
         if create:
             args['id'] = listener.id
@@ -285,6 +287,7 @@ class PoolManager(driver_base.BasePoolManager):
             'enabled': pool.admin_state_up,
             'protocol': pool.protocol,
             'lb_algorithm': pool.lb_algorithm,
+            'project_id': pool.tenant_id
         }
         if pool.session_persistence:
             args['session_persistence'] = {
@@ -330,6 +333,7 @@ class MemberManager(driver_base.BaseMemberManager):
             'protocol_port': member.protocol_port,
             'weight': member.weight,
             'subnet_id': member.subnet_id,
+            'project_id': member.tenant_id
         }
         self.driver.req.post(self._url(member), args)
 
@@ -369,6 +373,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
             'url_path': hm.url_path,
             'expected_codes': hm.expected_codes,
             'enabled': hm.admin_state_up,
+            'project_id': hm.tenant_id
         }
         write_func(cls._url(hm), args)
 
