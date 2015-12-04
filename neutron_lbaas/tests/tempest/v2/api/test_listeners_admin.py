@@ -15,6 +15,7 @@
 
 from oslo_log import log as logging
 from tempest_lib.common.utils import data_utils
+from tempest_lib import exceptions as ex
 
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import test
@@ -60,22 +61,18 @@ class ListenersTestJSON(base.BaseAdminTestCase):
     def resource_cleanup(cls):
         super(ListenersTestJSON, cls).resource_cleanup()
 
-    @test.attr(type='smoke')
+    @test.attr(type='negative')
     def test_create_listener_empty_tenant_id(self):
-        """Test create listener with an empty tenant id"""
+        """Test create listener with an empty tenant id should fail"""
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8081
         create_new_listener_kwargs['tenant_id'] = ""
-        new_listener = self._create_listener(
-            **create_new_listener_kwargs)
-        new_listener_id = new_listener['id']
-        self.addCleanup(self._delete_listener, new_listener_id)
+        self.assertRaises(ex.BadRequest,
+                          self._create_listener,
+                          **create_new_listener_kwargs)
         self._check_status_tree(
             load_balancer_id=self.load_balancer_id,
-            listener_ids=[self.listener_id, new_listener_id])
-        listener = self.listeners_client.get_listener(
-            new_listener_id)
-        self.assertEqual(new_listener, listener)
+            listener_ids=[self.listener_id])
 
     @test.attr(type='smoke')
     def test_create_listener_invalid_tenant_id(self):
