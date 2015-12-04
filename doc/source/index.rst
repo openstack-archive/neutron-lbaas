@@ -1,17 +1,17 @@
 .. documentation master file
 
-====
-Main
-====
+Neutron LBaaS Documentation
+===========================
+
+Under Construction
+
+Dashboards
+==========
+
+There is a collection of dashboards to help developers and reviewers
+located here.
 
 .. toctree::
-   :glob:
-   :maxdepth: 1
+   :maxdepth: 2
 
-   main/*
-
-==================
-Indices and tables
-==================
-
-* :ref:`search`
+   dashboards/index
