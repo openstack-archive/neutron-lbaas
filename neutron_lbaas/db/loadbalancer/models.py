@@ -22,6 +22,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext import orderinglist
 from sqlalchemy import orm
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 

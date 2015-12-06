@@ -25,7 +25,7 @@ from oslo_service import loopingcall
 from oslo_service import periodic_task
 from oslo_utils import importutils
 
-from neutron_lbaas._i18n import _LE, _LI
+from neutron_lbaas._i18n import _, _LE, _LI
 from neutron_lbaas.services.loadbalancer.agent import agent_api
 from neutron_lbaas.services.loadbalancer import constants as l_const
 

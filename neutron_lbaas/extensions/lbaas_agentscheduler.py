@@ -25,6 +25,7 @@ from neutron.plugins.common import constants as plugin_const
 from neutron import policy
 from neutron import wsgi
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.extensions import loadbalancer
 
 LOADBALANCER_POOL = 'loadbalancer-pool'

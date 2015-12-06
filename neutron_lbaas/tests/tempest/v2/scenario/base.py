@@ -22,6 +22,7 @@ from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
 from tempest_lib import exceptions as lib_exc
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.tests.tempest.lib.common import commands
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import exceptions

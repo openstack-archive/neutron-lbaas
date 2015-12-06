@@ -15,6 +15,8 @@
 
 from neutron.common import exceptions
 
+from neutron_lbaas._i18n import _
+
 
 class RadwareLBaasException(exceptions.NeutronException):
     message = _('An unknown exception occurred in Radware LBaaS provider.')

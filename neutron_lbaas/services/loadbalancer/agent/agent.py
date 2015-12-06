@@ -24,6 +24,7 @@ from neutron.common import rpc as n_rpc
 from oslo_config import cfg
 from oslo_service import service
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
 from neutron_lbaas.services.loadbalancer import constants as l_const
 

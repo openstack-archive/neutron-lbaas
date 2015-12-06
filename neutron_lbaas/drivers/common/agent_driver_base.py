@@ -20,6 +20,7 @@ from oslo_config import cfg
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.drivers.common import agent_callbacks
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.extensions import lbaas_agentschedulerv2

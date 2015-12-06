@@ -21,6 +21,7 @@ from neutron.common import utils as n_utils
 from neutron.plugins.common import constants as plugin_constants
 from oslo_config import cfg
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.common import cert_manager
 from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.services.loadbalancer import constants

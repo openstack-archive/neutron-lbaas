@@ -23,7 +23,7 @@ from neutron import context as ncontext
 from neutron.plugins.common import constants
 from oslo_service import service
 
-from neutron_lbaas._i18n import _LE
+from neutron_lbaas._i18n import _, _LE
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.drivers.driver_mixins import BaseManagerMixin
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client

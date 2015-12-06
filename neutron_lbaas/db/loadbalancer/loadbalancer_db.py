@@ -33,7 +33,7 @@ from sqlalchemy import orm
 from sqlalchemy.orm import exc
 from sqlalchemy.orm import validates
 
-from neutron_lbaas._i18n import _LE
+from neutron_lbaas._i18n import _, _LE
 from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 

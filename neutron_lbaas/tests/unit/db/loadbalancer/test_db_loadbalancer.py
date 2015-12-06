@@ -32,6 +32,7 @@ from neutron.tests.unit.db import test_db_base_plugin_v2
 import testtools
 import webob.exc
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 import neutron_lbaas.extensions
 from neutron_lbaas.extensions import loadbalancer

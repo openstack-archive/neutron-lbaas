@@ -27,7 +27,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron_lbaas._i18n import _LI, _LE, _LW
+from neutron_lbaas._i18n import _, _LI, _LE, _LW
 from neutron_lbaas.agent import agent_device_driver
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models

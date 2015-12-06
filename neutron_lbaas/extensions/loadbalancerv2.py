@@ -29,6 +29,7 @@ from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 LOADBALANCERV2_PREFIX = "/lbaas"

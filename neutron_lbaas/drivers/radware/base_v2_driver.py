@@ -15,6 +15,7 @@
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.drivers import driver_base
 
 

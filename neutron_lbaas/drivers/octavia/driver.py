@@ -23,6 +23,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import excutils
 import requests
 
+from neutron_lbaas._i18n import _
 from neutron_lbaas.common import keystone
 from neutron_lbaas.drivers import driver_base
 

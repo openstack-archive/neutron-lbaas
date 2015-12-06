@@ -13,6 +13,9 @@
 
 from oslo_config import cfg
 
+from neutron_lbaas._i18n import _
+
+
 KEMP_OPTS = [
     cfg.StrOpt('lm_address', default='192.168.0.1',
                help=_('Management address of the LoadMaster appliance.')),

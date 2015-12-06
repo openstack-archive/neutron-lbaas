@@ -19,7 +19,7 @@ from neutron.common import exceptions as n_exc
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 
-from neutron_lbaas._i18n import _LE, _LI
+from neutron_lbaas._i18n import _, _LE, _LI
 
 LOG = logging.getLogger(__name__)
 

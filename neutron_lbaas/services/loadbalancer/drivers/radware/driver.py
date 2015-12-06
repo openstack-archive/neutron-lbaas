@@ -33,7 +33,7 @@ from oslo_serialization import jsonutils
 from oslo_utils import excutils
 from six.moves import queue as Queue
 
-from neutron_lbaas._i18n import _LE, _LI, _LW
+from neutron_lbaas._i18n import _, _LE, _LI, _LW
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as lb_db
 from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver

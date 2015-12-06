@@ -18,7 +18,7 @@ from neutron.plugins.common import constants
 from oslo_log import log as logging
 import oslo_messaging as messaging
 
-from neutron_lbaas._i18n import _LW
+from neutron_lbaas._i18n import _, _LW
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2
 from neutron_lbaas.db.loadbalancer import models as db_models
 from neutron_lbaas.services.loadbalancer import data_models

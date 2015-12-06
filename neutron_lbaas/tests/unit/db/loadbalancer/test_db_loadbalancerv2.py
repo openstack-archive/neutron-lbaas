@@ -34,6 +34,7 @@ import testtools
 import webob.exc
 
 from neutron import manager
+from neutron_lbaas._i18n import _
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
