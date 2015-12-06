@@ -69,8 +69,6 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                                       models.SessionPersistenceV2)):
                     raise loadbalancerv2.EntityNotFound(name=model.NAME, id=id)
                 ctx.reraise = True
-        # always refresh the resource to get up-to-date models
-        context.session.refresh(resource)
         return resource
 
     def _resource_exists(self, context, model, id):
