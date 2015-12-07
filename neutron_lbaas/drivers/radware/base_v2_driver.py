@@ -30,6 +30,7 @@ driver_opts = [
                help=_('vDirect user name.')),
     cfg.StrOpt('vdirect_password',
                default='radware',
+               secret=True,
                help=_('vDirect user password.')),
     cfg.StrOpt('service_adc_type',
                default="VA",
