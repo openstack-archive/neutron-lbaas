@@ -6,6 +6,7 @@ cover/
 covhtml/
 dist/
 doc/build
+etc/*.sample
 *.DS_Store
 *.pyc
 neutron.egg-info/

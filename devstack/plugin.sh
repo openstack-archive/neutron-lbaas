@@ -27,7 +27,10 @@ function neutron_lbaas_configure_common {
         die $LINENO "Do not enable both Version 1 and Version 2 of LBaaS."
     fi
 
-    cp $NEUTRON_LBAAS_DIR/etc/neutron_lbaas.conf $NEUTRON_LBAAS_CONF
+    # Uses oslo config generator to generate LBaaS sample configuration files
+    (cd $NEUTRON_LBAAS_DIR && exec ./tools/generate_config_file_samples.sh)
+
+    cp $NEUTRON_LBAAS_DIR/etc/neutron_lbaas.conf.sample $NEUTRON_LBAAS_CONF
 
     if is_service_enabled $LBAAS_V1; then
         inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
@@ -61,7 +64,7 @@ function neutron_lbaas_configure_common {
 
 function neutron_lbaas_configure_agent {
     mkdir -p $LBAAS_AGENT_CONF_PATH
-    cp $NEUTRON_LBAAS_DIR/etc/lbaas_agent.ini $LBAAS_AGENT_CONF_FILENAME
+    cp $NEUTRON_LBAAS_DIR/etc/lbaas_agent.ini.sample $LBAAS_AGENT_CONF_FILENAME
 
     # ovs_use_veth needs to be set before the plugin configuration
     # occurs to allow plugins to override the setting.
