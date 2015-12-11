@@ -70,8 +70,12 @@ class EdgeListenerManager(driver_base.BaseListenerManager,
         if listener.default_tls_container_id:
             cert_backend = cert_manager.get_backend()
             if cert_backend:
-                return cert_backend.CertManager.get_cert(
-                        listener.default_tls_container_id)
+                return cert_backend.CertManager().get_cert(
+                    project_id=listener.tenant_id,
+                    cert_ref=listener.default_tls_container_id,
+                    resource_ref=cert_backend.CertManager.get_service_url(
+                        listener.loadbalancer_id)
+                )
 
     @call_log
     def create(self, context, listener):

@@ -556,7 +556,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     cert_mock.get_private_key.return_value = 'private_key'
                     cert_mock.get_private_key_passphrase.return_value = \
                         'private_key_passphrase'
-                    cert_manager_mock.get_cert.return_value = cert_mock
+                    cert_manager_mock().get_cert.return_value = cert_mock
                     cert_parser_mock.validate_cert.return_value = True
 
                     with self.listener(

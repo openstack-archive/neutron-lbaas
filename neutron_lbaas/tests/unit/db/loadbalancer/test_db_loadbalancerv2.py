@@ -962,8 +962,10 @@ class LbaasListenerTests(ListenerTestBase):
                               context.get_admin_context(),
                               {'listener': listener_data})
             rm_consumer_mock.assert_called_once_with(
-                listener_data['default_tls_container_ref'],
-                self.lb_id)
+                cert_ref=listener_data['default_tls_container_ref'],
+                project_id=self._tenant_id,
+                resource_ref=cert_manager.CertManager.get_service_url(
+                    self.lb_id))
 
     def test_create_listener_with_tls(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()

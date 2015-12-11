@@ -23,7 +23,10 @@ cert_manager_opts = [
     cfg.StrOpt('cert_manager_type',
                default=CERT_MANAGER_DEFAULT,
                help='Certificate Manager plugin. '
-                    'Defaults to {0}.'.format(CERT_MANAGER_DEFAULT))
+                    'Defaults to {0}.'.format(CERT_MANAGER_DEFAULT)),
+    cfg.StrOpt('barbican_auth',
+               default='barbican_acl_auth',
+               help='Name of the Barbican authentication method to use')
 ]
 
 CONF.register_opts(cert_manager_opts, group='certificates')

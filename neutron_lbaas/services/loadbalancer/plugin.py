@@ -621,18 +621,20 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def _validate_tls(self, listener, curr_listener=None):
         def validate_tls_container(container_ref):
-            cert_container = None
-            lb_id = None
+            cert_mgr = CERT_MANAGER_PLUGIN.CertManager()
 
             if curr_listener:
                 lb_id = curr_listener['loadbalancer_id']
+                tenant_id = curr_listener['tenant_id']
             else:
                 lb_id = listener.get('loadbalancer_id')
+                tenant_id = listener.get('tenant_id')
 
             try:
-                cert_container = CERT_MANAGER_PLUGIN.CertManager.get_cert(
-                    container_ref,
-                    lb_id=lb_id)
+                cert_container = cert_mgr.get_cert(
+                    project_id=tenant_id,
+                    cert_ref=container_ref,
+                    resource_ref=cert_mgr.get_service_url(lb_id))
             except Exception as e:
                 if hasattr(e, 'status_code') and e.status_code == 404:
                     raise loadbalancerv2.TLSContainerNotFound(
@@ -651,8 +653,10 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                         cert_container.get_private_key_passphrase()),
                     intermediates=cert_container.get_intermediates())
             except Exception as e:
-                CERT_MANAGER_PLUGIN.CertManager.delete_cert(
-                    container_ref, lb_id)
+                cert_mgr.delete_cert(
+                    project_id=tenant_id,
+                    cert_ref=container_ref,
+                    resource_ref=cert_mgr.get_service_url(lb_id))
                 raise loadbalancerv2.TLSContainerInvalid(
                     container_id=container_ref, reason=str(e))
 
