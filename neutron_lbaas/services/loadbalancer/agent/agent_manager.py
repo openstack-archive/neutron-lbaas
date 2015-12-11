@@ -215,6 +215,12 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                        'id': obj_id, 'driver': driver})
         self.plugin_rpc.update_status(obj_type, obj_id, np_const.ERROR)
 
+    def _update_status(self, obj_type, obj_id, admin_state_up):
+        if admin_state_up:
+            self.plugin_rpc.update_status(obj_type, obj_id, np_const.ACTIVE)
+        else:
+            self.plugin_rpc.update_status(obj_type, obj_id, l_const.DISABLED)
+
     def create_vip(self, context, vip):
         driver = self._get_driver(vip['pool_id'])
         try:
@@ -223,7 +229,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call('create', 'vip', vip['id'],
                                             driver.get_name())
         else:
-            self.plugin_rpc.update_status('vip', vip['id'], np_const.ACTIVE)
+            self._update_status('vip', vip['id'], vip['admin_state_up'])
 
     def update_vip(self, context, old_vip, vip):
         driver = self._get_driver(vip['pool_id'])
@@ -233,7 +239,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call('update', 'vip', vip['id'],
                                             driver.get_name())
         else:
-            self.plugin_rpc.update_status('vip', vip['id'], np_const.ACTIVE)
+            self._update_status('vip', vip['id'], vip['admin_state_up'])
 
     def delete_vip(self, context, vip):
         driver = self._get_driver(vip['pool_id'])
@@ -253,7 +259,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                                             driver.get_name())
         else:
             self.instance_mapping[pool['id']] = driver_name
-            self.plugin_rpc.update_status('pool', pool['id'], np_const.ACTIVE)
+            self._update_status('pool', pool['id'], pool['admin_state_up'])
 
     def update_pool(self, context, old_pool, pool):
         driver = self._get_driver(pool['id'])
@@ -263,7 +269,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call('update', 'pool', pool['id'],
                                             driver.get_name())
         else:
-            self.plugin_rpc.update_status('pool', pool['id'], np_const.ACTIVE)
+            self._update_status('pool', pool['id'], pool['admin_state_up'])
 
     def delete_pool(self, context, pool):
         driver = self._get_driver(pool['id'])
@@ -278,8 +284,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call('create', 'member', member['id'],
                                             driver.get_name())
         else:
-            self.plugin_rpc.update_status('member', member['id'],
-                                          np_const.ACTIVE)
+            self._update_status('member', member['id'],
+                                member['admin_state_up'])
 
     def update_member(self, context, old_member, member):
         driver = self._get_driver(member['pool_id'])
@@ -289,8 +295,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call('update', 'member', member['id'],
                                             driver.get_name())
         else:
-            self.plugin_rpc.update_status('member', member['id'],
-                                          np_const.ACTIVE)
+            self._update_status('member', member['id'],
+                                member['admin_state_up'])
 
     def delete_member(self, context, member):
         driver = self._get_driver(member['pool_id'])
@@ -305,8 +311,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call(
                 'create', 'health_monitor', assoc_id, driver.get_name())
         else:
-            self.plugin_rpc.update_status(
-                'health_monitor', assoc_id, np_const.ACTIVE)
+            self._update_status('health_monitor', assoc_id,
+                                health_monitor['admin_state_up'])
 
     def update_pool_health_monitor(self, context, old_health_monitor,
                                    health_monitor, pool_id):
@@ -320,8 +326,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self._handle_failed_driver_call(
                 'update', 'health_monitor', assoc_id, driver.get_name())
         else:
-            self.plugin_rpc.update_status(
-                'health_monitor', assoc_id, np_const.ACTIVE)
+            self._update_status('health_monitor', assoc_id,
+                                health_monitor['admin_state_up'])
 
     def delete_pool_health_monitor(self, context, health_monitor, pool_id):
         driver = self._get_driver(pool_id)
