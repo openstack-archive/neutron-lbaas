@@ -18,6 +18,7 @@ import mock
 from neutron.plugins.common import constants
 
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
+from neutron_lbaas.services.loadbalancer import constants as l_const
 from neutron_lbaas.tests import base
 
 
@@ -195,14 +196,21 @@ class TestManager(base.BaseTestCase):
         self.driver_mock.remove_orphans.assert_called_once_with(orphans.keys())
 
     def test_create_vip(self):
-        vip = {'id': 'id1', 'pool_id': '1'}
+        vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.mgr.create_vip(mock.Mock(), vip)
         self.driver_mock.create_vip.assert_called_once_with(vip)
         self.rpc_mock.update_status.assert_called_once_with('vip', vip['id'],
                                                             constants.ACTIVE)
 
+    def test_create_vip_with_admin_down(self):
+        vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': False}
+        self.mgr.create_vip(mock.Mock(), vip)
+        self.driver_mock.create_vip.assert_called_once_with(vip)
+        self.rpc_mock.update_status.assert_called_once_with('vip', vip['id'],
+                                                            l_const.DISABLED)
+
     def test_create_vip_failed(self):
-        vip = {'id': 'id1', 'pool_id': '1'}
+        vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.driver_mock.create_vip.side_effect = Exception
         self.mgr.create_vip(mock.Mock(), vip)
         self.driver_mock.create_vip.assert_called_once_with(vip)
@@ -210,16 +218,24 @@ class TestManager(base.BaseTestCase):
                                                             constants.ERROR)
 
     def test_update_vip(self):
-        old_vip = {'id': 'id1'}
-        vip = {'id': 'id1', 'pool_id': '1'}
+        old_vip = {'id': 'id1', 'admin_state_up': True}
+        vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.mgr.update_vip(mock.Mock(), old_vip, vip)
         self.driver_mock.update_vip.assert_called_once_with(old_vip, vip)
         self.rpc_mock.update_status.assert_called_once_with('vip', vip['id'],
                                                             constants.ACTIVE)
 
+    def test_update_vip_with_admin_down(self):
+        old_vip = {'id': 'id1', 'admin_state_up': True}
+        vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': False}
+        self.mgr.update_vip(mock.Mock(), old_vip, vip)
+        self.driver_mock.update_vip.assert_called_once_with(old_vip, vip)
+        self.rpc_mock.update_status.assert_called_once_with('vip', vip['id'],
+                                                            l_const.DISABLED)
+
     def test_update_vip_failed(self):
-        old_vip = {'id': 'id1'}
-        vip = {'id': 'id1', 'pool_id': '1'}
+        old_vip = {'id': 'id1', 'admin_state_up': True}
+        vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.driver_mock.update_vip.side_effect = Exception
         self.mgr.update_vip(mock.Mock(), old_vip, vip)
         self.driver_mock.update_vip.assert_called_once_with(old_vip, vip)
@@ -232,7 +248,7 @@ class TestManager(base.BaseTestCase):
         self.driver_mock.delete_vip.assert_called_once_with(vip)
 
     def test_create_pool(self):
-        pool = {'id': 'id1'}
+        pool = {'id': 'id1', 'admin_state_up': True}
         self.assertNotIn(pool['id'], self.mgr.instance_mapping)
         self.mgr.create_pool(mock.Mock(), pool, 'devdriver')
         self.driver_mock.create_pool.assert_called_once_with(pool)
@@ -240,8 +256,17 @@ class TestManager(base.BaseTestCase):
                                                             constants.ACTIVE)
         self.assertIn(pool['id'], self.mgr.instance_mapping)
 
+    def test_create_pool_with_admin_down(self):
+        pool = {'id': 'id1', 'admin_state_up': False}
+        self.assertNotIn(pool['id'], self.mgr.instance_mapping)
+        self.mgr.create_pool(mock.Mock(), pool, 'devdriver')
+        self.driver_mock.create_pool.assert_called_once_with(pool)
+        self.rpc_mock.update_status.assert_called_once_with('pool', pool['id'],
+                                                            l_const.DISABLED)
+        self.assertIn(pool['id'], self.mgr.instance_mapping)
+
     def test_create_pool_failed(self):
-        pool = {'id': 'id1'}
+        pool = {'id': 'id1', 'admin_state_up': True}
         self.assertNotIn(pool['id'], self.mgr.instance_mapping)
         self.driver_mock.create_pool.side_effect = Exception
         self.mgr.create_pool(mock.Mock(), pool, 'devdriver')
@@ -251,16 +276,24 @@ class TestManager(base.BaseTestCase):
         self.assertNotIn(pool['id'], self.mgr.instance_mapping)
 
     def test_update_pool(self):
-        old_pool = {'id': '1'}
-        pool = {'id': '1'}
+        old_pool = {'id': '1', 'admin_state_up': True}
+        pool = {'id': '1', 'admin_state_up': True}
         self.mgr.update_pool(mock.Mock(), old_pool, pool)
         self.driver_mock.update_pool.assert_called_once_with(old_pool, pool)
         self.rpc_mock.update_status.assert_called_once_with('pool', pool['id'],
                                                             constants.ACTIVE)
 
+    def test_update_pool_with_admin_down(self):
+        old_pool = {'id': '1', 'admin_state_up': True}
+        pool = {'id': '1', 'admin_state_up': False}
+        self.mgr.update_pool(mock.Mock(), old_pool, pool)
+        self.driver_mock.update_pool.assert_called_once_with(old_pool, pool)
+        self.rpc_mock.update_status.assert_called_once_with('pool', pool['id'],
+                                                            l_const.DISABLED)
+
     def test_update_pool_failed(self):
-        old_pool = {'id': '1'}
-        pool = {'id': '1'}
+        old_pool = {'id': '1', 'admin_state_up': True}
+        pool = {'id': '1', 'admin_state_up': True}
         self.driver_mock.update_pool.side_effect = Exception
         self.mgr.update_pool(mock.Mock(), old_pool, pool)
         self.driver_mock.update_pool.assert_called_once_with(old_pool, pool)
@@ -275,15 +308,23 @@ class TestManager(base.BaseTestCase):
         self.assertNotIn(pool['id'], self.mgr.instance_mapping)
 
     def test_create_member(self):
-        member = {'id': 'id1', 'pool_id': '1'}
+        member = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.mgr.create_member(mock.Mock(), member)
         self.driver_mock.create_member.assert_called_once_with(member)
         self.rpc_mock.update_status.assert_called_once_with('member',
                                                             member['id'],
                                                             constants.ACTIVE)
 
+    def test_create_member_with_admin_down(self):
+        member = {'id': 'id1', 'pool_id': '1', 'admin_state_up': False}
+        self.mgr.create_member(mock.Mock(), member)
+        self.driver_mock.create_member.assert_called_once_with(member)
+        self.rpc_mock.update_status.assert_called_once_with('member',
+                                                            member['id'],
+                                                            l_const.DISABLED)
+
     def test_create_member_failed(self):
-        member = {'id': 'id1', 'pool_id': '1'}
+        member = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.driver_mock.create_member.side_effect = Exception
         self.mgr.create_member(mock.Mock(), member)
         self.driver_mock.create_member.assert_called_once_with(member)
@@ -292,8 +333,8 @@ class TestManager(base.BaseTestCase):
                                                             constants.ERROR)
 
     def test_update_member(self):
-        old_member = {'id': 'id1'}
-        member = {'id': 'id1', 'pool_id': '1'}
+        old_member = {'id': 'id1', 'admin_state_up': True}
+        member = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.mgr.update_member(mock.Mock(), old_member, member)
         self.driver_mock.update_member.assert_called_once_with(old_member,
                                                                member)
@@ -301,9 +342,19 @@ class TestManager(base.BaseTestCase):
                                                             member['id'],
                                                             constants.ACTIVE)
 
+    def test_update_member_with_admin_down(self):
+        old_member = {'id': 'id1', 'admin_state_up': True}
+        member = {'id': 'id1', 'pool_id': '1', 'admin_state_up': False}
+        self.mgr.update_member(mock.Mock(), old_member, member)
+        self.driver_mock.update_member.assert_called_once_with(old_member,
+                                                               member)
+        self.rpc_mock.update_status.assert_called_once_with('member',
+                                                            member['id'],
+                                                            l_const.DISABLED)
+
     def test_update_member_failed(self):
-        old_member = {'id': 'id1'}
-        member = {'id': 'id1', 'pool_id': '1'}
+        old_member = {'id': 'id1', 'admin_state_up': True}
+        member = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
         self.driver_mock.update_member.side_effect = Exception
         self.mgr.update_member(mock.Mock(), old_member, member)
         self.driver_mock.update_member.assert_called_once_with(old_member,
@@ -318,7 +369,7 @@ class TestManager(base.BaseTestCase):
         self.driver_mock.delete_member.assert_called_once_with(member)
 
     def test_create_monitor(self):
-        monitor = {'id': 'id1'}
+        monitor = {'id': 'id1', 'admin_state_up': True}
         assoc_id = {'monitor_id': monitor['id'], 'pool_id': '1'}
         self.mgr.create_pool_health_monitor(mock.Mock(), monitor, '1')
         self.driver_mock.create_pool_health_monitor.assert_called_once_with(
@@ -327,8 +378,18 @@ class TestManager(base.BaseTestCase):
                                                             assoc_id,
                                                             constants.ACTIVE)
 
+    def test_create_monitor_with_admin_down(self):
+        monitor = {'id': 'id1', 'admin_state_up': False}
+        assoc_id = {'monitor_id': monitor['id'], 'pool_id': '1'}
+        self.mgr.create_pool_health_monitor(mock.Mock(), monitor, '1')
+        self.driver_mock.create_pool_health_monitor.assert_called_once_with(
+            monitor, '1')
+        self.rpc_mock.update_status.assert_called_once_with('health_monitor',
+                                                            assoc_id,
+                                                            l_const.DISABLED)
+
     def test_create_monitor_failed(self):
-        monitor = {'id': 'id1'}
+        monitor = {'id': 'id1', 'admin_state_up': True}
         assoc_id = {'monitor_id': monitor['id'], 'pool_id': '1'}
         self.driver_mock.create_pool_health_monitor.side_effect = Exception
         self.mgr.create_pool_health_monitor(mock.Mock(), monitor, '1')
@@ -339,7 +400,7 @@ class TestManager(base.BaseTestCase):
                                                             constants.ERROR)
 
     def test_update_monitor(self):
-        monitor = {'id': 'id1'}
+        monitor = {'id': 'id1', 'admin_state_up': True}
         assoc_id = {'monitor_id': monitor['id'], 'pool_id': '1'}
         self.mgr.update_pool_health_monitor(mock.Mock(), monitor, monitor, '1')
         self.driver_mock.update_pool_health_monitor.assert_called_once_with(
@@ -348,8 +409,18 @@ class TestManager(base.BaseTestCase):
                                                             assoc_id,
                                                             constants.ACTIVE)
 
+    def test_update_monitor_with_admin_down(self):
+        monitor = {'id': 'id1', 'admin_state_up': False}
+        assoc_id = {'monitor_id': monitor['id'], 'pool_id': '1'}
+        self.mgr.update_pool_health_monitor(mock.Mock(), monitor, monitor, '1')
+        self.driver_mock.update_pool_health_monitor.assert_called_once_with(
+            monitor, monitor, '1')
+        self.rpc_mock.update_status.assert_called_once_with('health_monitor',
+                                                            assoc_id,
+                                                            l_const.DISABLED)
+
     def test_update_monitor_failed(self):
-        monitor = {'id': 'id1'}
+        monitor = {'id': 'id1', 'admin_state_up': True}
         assoc_id = {'monitor_id': monitor['id'], 'pool_id': '1'}
         self.driver_mock.update_pool_health_monitor.side_effect = Exception
         self.mgr.update_pool_health_monitor(mock.Mock(), monitor, monitor, '1')
