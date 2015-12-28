@@ -14,7 +14,6 @@
 
 import os
 
-from oslo_log import log as logging
 from tempest_lib.common.utils import data_utils
 import testscenarios
 
@@ -25,7 +24,6 @@ from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
 
-LOG = logging.getLogger(__name__)
 
 # Use local tempest conf if one is available.
 # This usually means we're running tests outside of devstack

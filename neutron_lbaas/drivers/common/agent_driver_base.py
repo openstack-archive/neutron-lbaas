@@ -17,7 +17,6 @@ from neutron.common import rpc as n_rpc
 from neutron.db import agents_db
 from neutron.services import provider_configuration as provconf
 from oslo_config import cfg
-from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
@@ -27,7 +26,6 @@ from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 
-LOG = logging.getLogger(__name__)
 
 LB_SCHEDULERS = 'loadbalancer_schedulers'
 

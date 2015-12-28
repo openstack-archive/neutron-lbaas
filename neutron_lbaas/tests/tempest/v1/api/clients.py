@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 from neutron_lbaas.tests.tempest.lib.common import cred_provider
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import manager
@@ -41,7 +39,6 @@ from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import
 
 
 CONF = config.CONF
-LOG = logging.getLogger(__name__)
 
 
 class Manager(manager.Manager):

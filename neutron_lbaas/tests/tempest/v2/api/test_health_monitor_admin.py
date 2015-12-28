@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from oslo_log import log as logging
 from oslo_utils import uuidutils
 from tempest_lib import exceptions as ex
 
@@ -22,8 +21,6 @@ from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
-
-LOG = logging.getLogger(__name__)
 
 
 class TestHealthMonitors(base.BaseAdminTestCase):

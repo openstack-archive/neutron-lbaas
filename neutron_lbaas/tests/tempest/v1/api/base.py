@@ -14,7 +14,6 @@
 #    under the License.
 
 import netaddr
-from oslo_log import log as logging
 from tempest_lib.common.utils import data_utils
 from tempest_lib import exceptions as lib_exc
 
@@ -24,8 +23,6 @@ from neutron_lbaas.tests.tempest.lib import exceptions
 import neutron_lbaas.tests.tempest.lib.test
 
 CONF = config.CONF
-
-LOG = logging.getLogger(__name__)
 
 
 class BaseNetworkTest(neutron_lbaas.tests.tempest.lib.test.BaseTestCase):

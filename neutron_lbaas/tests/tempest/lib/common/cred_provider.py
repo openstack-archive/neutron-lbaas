@@ -14,7 +14,6 @@
 
 import abc
 
-from oslo_log import log as logging
 import six
 from tempest_lib import auth
 
@@ -22,7 +21,6 @@ from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import exceptions
 
 CONF = config.CONF
-LOG = logging.getLogger(__name__)
 
 # Type of credentials available from configuration
 CREDENTIAL_TYPES = {
