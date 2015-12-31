@@ -117,8 +117,8 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
                 self.update_instance(loadbalancer)
             except RuntimeError:
                 # do not stop anything this is a minor error
-                LOG.warn(_LW("Existing load balancer %s could not be deployed"
-                             " on the system.") % loadbalancer.id)
+                LOG.warning(_LW("Existing load balancer %s could not be "
+                                "deployed on the system."), loadbalancer.id)
 
     def _retrieve_deployed_instance_dirs(self):
         if not os.path.exists(self.state_path):
@@ -282,7 +282,7 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
 
             return self._parse_stats(raw_stats)
         except socket.error as e:
-            LOG.warn(_LW('Error while connecting to stats socket: %s'), e)
+            LOG.warning(_LW('Error while connecting to stats socket: %s'), e)
             return {}
 
     def _parse_stats(self, raw_stats):
@@ -350,8 +350,8 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
                 if ip_lib.device_exists(device.name):
                     self.vif_driver.unplug(device.name, namespace=namespace)
         except RuntimeError as re:
-            LOG.warn(_LW('An error happened on namespace cleanup: '
-                       '%s') % re.message)
+            LOG.warning(_LW('An error happened on namespace cleanup: '
+                            '%s'), re.message)
         ns.garbage_collect_namespace()
 
     def _kill_processes(self, loadbalancer_id):
@@ -429,8 +429,8 @@ class HaproxyNSDriver(driver_base.LoadBalancerBaseDriver):
             lb_stats['members'] = self._get_servers_stats(parsed_stats)
             return lb_stats
         else:
-            LOG.warn(_LW('Stats socket not found for load balancer %s'),
-                     loadbalancer.id)
+            LOG.warning(_LW('Stats socket not found for load balancer %s'),
+                        loadbalancer.id)
             return {}
 
 

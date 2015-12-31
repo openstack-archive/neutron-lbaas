@@ -64,13 +64,13 @@ def get_network_from_name(name, compute_networks_client):
                    name, networks))
         if caller:
             msg = '(%s) %s' % (caller, msg)
-        LOG.warn(msg)
+        LOG.warning(msg)
         raise exceptions.InvalidConfiguration()
     else:
         msg = "Network with name: %s not found" % name
         if caller:
             msg = '(%s) %s' % (caller, msg)
-        LOG.warn(msg)
+        LOG.warning(msg)
         raise exceptions.InvalidConfiguration()
     # To be consistent between neutron and nova network always use name even
     # if label is used in the api response. If neither is present than then
@@ -80,7 +80,7 @@ def get_network_from_name(name, compute_networks_client):
         msg = "Network found from list doesn't contain a valid name or label"
         if caller:
             msg = '(%s) %s' % (caller, msg)
-        LOG.warn(msg)
+        LOG.warning(msg)
         raise exceptions.InvalidConfiguration()
     network['name'] = name
     return network
@@ -135,6 +135,6 @@ def set_networks_kwarg(network, kwargs=None):
         if 'id' in network.keys():
             params.update({"networks": [{'uuid': network['id']}]})
         else:
-            LOG.warn('The provided network dict: %s was invalid and did not '
-                     ' contain an id' % network)
+            LOG.warning('The provided network dict: %s was invalid and did '
+                        'not contain an id', network)
     return params

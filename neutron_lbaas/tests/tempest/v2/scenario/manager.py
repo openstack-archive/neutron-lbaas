@@ -775,7 +775,7 @@ class NetworkScenarioTest(ScenarioTest):
             try:
                 source.ping_host(dest)
             except lib_exc.SSHExecCommandFailed:
-                LOG.warn(_LW(
+                LOG.warning(_LW(
                     "Failed to ping IP {des} via a ssh connection from: {src}"
                 ).format(des=dest, src=source.ssh_client.host))
                 return not should_succeed
