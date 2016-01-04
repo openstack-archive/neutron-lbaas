@@ -32,6 +32,7 @@ from sqlalchemy.ext import orderinglist
 from sqlalchemy.orm import collections
 
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.services.loadbalancer import constants as l_const
 
 
 class BaseDataModel(object):
@@ -296,6 +297,11 @@ class HealthMonitor(BaseDataModel):
         ret_dict['pools'] = []
         if self.pool:
             ret_dict['pools'].append({'id': self.pool.id})
+        if self.type in [l_const.HEALTH_MONITOR_TCP,
+                         l_const.HEALTH_MONITOR_PING]:
+            ret_dict.pop('http_method')
+            ret_dict.pop('url_path')
+            ret_dict.pop('expected_codes')
         return ret_dict
 
     @classmethod
