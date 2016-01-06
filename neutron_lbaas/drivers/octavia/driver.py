@@ -23,10 +23,11 @@ from oslo_serialization import jsonutils
 from oslo_utils import excutils
 import requests
 
+from neutron_lbaas.common import keystone
 from neutron_lbaas.drivers import driver_base
 
 LOG = logging.getLogger(__name__)
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 OPTS = [
     cfg.StrOpt(
@@ -115,14 +116,17 @@ def async_op(func):
 
 class OctaviaRequest(object):
 
-    def __init__(self, base_url):
+    def __init__(self, base_url, auth_session):
         self.base_url = base_url
+        self.auth_session = auth_session
 
     def request(self, method, url, args=None, headers=None):
         if args:
             if not headers:
+                token = self.auth_session.get_token()
                 headers = {
-                    'Content-type': 'application/json'
+                    'Content-type': 'application/json',
+                    'X-Auth-Token': token
                 }
             args = jsonutils.dumps(args)
         LOG.debug("url = %s", '%s%s' % (self.base_url, str(url)))
@@ -154,8 +158,8 @@ class OctaviaDriver(driver_base.LoadBalancerBaseDriver):
 
     def __init__(self, plugin):
         super(OctaviaDriver, self).__init__(plugin)
-
-        self.req = OctaviaRequest(cfg.CONF.octavia.base_url)
+        self.req = OctaviaRequest(cfg.CONF.octavia.base_url,
+                                  keystone.get_session())
 
         self.load_balancer = LoadBalancerManager(self)
         self.listener = ListenerManager(self)
