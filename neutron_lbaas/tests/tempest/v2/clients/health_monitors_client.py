@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
-
 from oslo_serialization import jsonutils
+from six.moves.urllib import parse
 
 from neutron_lbaas.tests.tempest.lib.common import service_client
 
@@ -28,7 +27,7 @@ class HealthMonitorsClientJSON(service_client.ServiceClient):
         """List all health monitors."""
         url = 'v2.0/lbaas/healthmonitors'
         if params:
-            url = "{0}?{1}".format(url, urllib.urlencode(params))
+            url = "{0}?{1}".format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
@@ -38,7 +37,7 @@ class HealthMonitorsClientJSON(service_client.ServiceClient):
         """Get health monitor details."""
         url = 'v2.0/lbaas/healthmonitors/{0}'.format(health_monitor_id)
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)

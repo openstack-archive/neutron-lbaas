@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
+from six.moves.urllib import parse
 
 from oslo_serialization import jsonutils
 
@@ -28,7 +28,7 @@ class ListenersClientJSON(service_client.ServiceClient):
         """List all listeners."""
         url = 'v2.0/lbaas/listeners'
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
@@ -38,7 +38,7 @@ class ListenersClientJSON(service_client.ServiceClient):
         """Get listener details."""
         url = 'v2.0/lbaas/listeners/{0}'.format(listener_id)
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)

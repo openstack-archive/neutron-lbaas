@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
+from six.moves.urllib import parse
 
 from oslo_serialization import jsonutils
 
@@ -30,7 +30,7 @@ class MembersClientJSON(service_client.ServiceClient):
         """
         url = 'v2.0/lbaas/pools/{0}/members'.format(pool_id)
         if params:
-            url = "{0}?{1}".format(url, urllib.urlencode(params))
+            url = "{0}?{1}".format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
@@ -39,7 +39,7 @@ class MembersClientJSON(service_client.ServiceClient):
     def get_member(self, pool_id, member_id, params=None):
         url = 'v2.0/lbaas/pools/{0}/members/{1}'.format(pool_id, member_id)
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
