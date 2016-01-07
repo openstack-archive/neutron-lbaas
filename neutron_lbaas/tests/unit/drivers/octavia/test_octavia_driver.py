@@ -160,6 +160,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
 
         # Update listener test.
         del args['id']
+        del args['project_id']
         m.update(listener, listener, list_url_id, args)
 
         # Delete listener.
@@ -197,6 +198,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
 
         # Test update pool.
         del args['id']
+        del args['project_id']
         m.update(pool, pool, pool_url_id, args)
 
         # Test pool delete.
@@ -269,6 +271,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m.create(hm, hm_url, args)
 
         # Test HM update
+        del args['project_id']
         m.update(hm, hm, hm_url, args)
 
         # Test HM delete
