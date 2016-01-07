@@ -863,7 +863,8 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                         'protocol_port': 80,
                         'weight': 1,
                         'admin_state_up': True,
-                        'pool_id': pool_id
+                        'pool_id': pool_id,
+                        'tenant_id': self._tenant_id
                     }
                     self.assertRaises(loadbalancer.MemberExists,
                                       self.plugin.create_member,

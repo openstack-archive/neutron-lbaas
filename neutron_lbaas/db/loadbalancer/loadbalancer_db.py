@@ -353,7 +353,7 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
 
     def create_vip(self, context, vip):
         v = vip['vip']
-        tenant_id = self._get_tenant_id_for_create(context, v)
+        tenant_id = v['tenant_id']
 
         with context.session.begin(subtransactions=True):
             if v['pool_id']:
@@ -584,10 +584,9 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
     def create_pool(self, context, pool):
         v = pool['pool']
 
-        tenant_id = self._get_tenant_id_for_create(context, v)
         with context.session.begin(subtransactions=True):
             pool_db = Pool(id=uuidutils.generate_uuid(),
-                           tenant_id=tenant_id,
+                           tenant_id=v['tenant_id'],
                            name=v['name'],
                            description=v['description'],
                            subnet_id=v['subnet_id'],
@@ -717,14 +716,13 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
 
     def create_member(self, context, member):
         v = member['member']
-        tenant_id = self._get_tenant_id_for_create(context, v)
 
         try:
             with context.session.begin(subtransactions=True):
                 # ensuring that pool exists
                 self._get_resource(context, Pool, v['pool_id'])
                 member_db = Member(id=uuidutils.generate_uuid(),
-                                   tenant_id=tenant_id,
+                                   tenant_id=v['tenant_id'],
                                    pool_id=v['pool_id'],
                                    address=v['address'],
                                    protocol_port=v['protocol_port'],
@@ -791,11 +789,10 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
 
     def create_health_monitor(self, context, health_monitor):
         v = health_monitor['health_monitor']
-        tenant_id = self._get_tenant_id_for_create(context, v)
         with context.session.begin(subtransactions=True):
             # setting ACTIVE status since healthmon is shared DB object
             monitor_db = HealthMonitor(id=uuidutils.generate_uuid(),
-                                       tenant_id=tenant_id,
+                                       tenant_id=v['tenant_id'],
                                        type=v['type'],
                                        delay=v['delay'],
                                        timeout=v['timeout'],
