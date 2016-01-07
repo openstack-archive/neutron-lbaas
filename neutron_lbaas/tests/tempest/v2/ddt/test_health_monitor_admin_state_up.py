@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
 from tempest_lib import decorators
 import testscenarios
 
@@ -20,8 +19,6 @@ from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.v2.ddt import base_ddt
 
 CONF = config.CONF
-
-LOG = logging.getLogger(__name__)
 
 scenario_lb_T = ('lb_T', {'lb_flag': True})
 scenario_lb_F = ('lb_F', {'lb_flag': False})

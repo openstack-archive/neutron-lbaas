@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
 from tempest_lib.common.utils import data_utils
 from tempest_lib import exceptions
 
@@ -22,8 +21,6 @@ from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
-
-LOG = logging.getLogger(__name__)
 
 
 class ListenersTestJSON(base.BaseTestCase):

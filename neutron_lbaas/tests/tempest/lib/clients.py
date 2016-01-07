@@ -15,7 +15,6 @@
 
 import copy
 
-from oslo_log import log as logging
 from tempest_lib.services.identity.v2.token_client import TokenClientJSON
 from tempest_lib.services.identity.v3.token_client import V3TokenClientJSON
 
@@ -137,7 +136,6 @@ from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.snapshots_client im
 from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.volumes_client import VolumesV2ClientJSON
 
 CONF = config.CONF
-LOG = logging.getLogger(__name__)
 
 
 class Manager(manager.Manager):

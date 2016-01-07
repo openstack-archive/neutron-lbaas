@@ -12,7 +12,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from oslo_log import log as logging
 import testscenarios
 
 from neutron_lbaas.tests.tempest.lib import config
@@ -20,7 +19,6 @@ from neutron_lbaas.tests.tempest.v2.ddt import base_ddt
 
 CONF = config.CONF
 
-LOG = logging.getLogger(__name__)
 
 """
 Tests the following operations in the Neutron-LBaaS API using the

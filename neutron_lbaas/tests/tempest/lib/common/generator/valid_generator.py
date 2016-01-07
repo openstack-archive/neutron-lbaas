@@ -13,12 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo_log import log as logging
-
 import neutron_lbaas.tests.tempest.lib.common.generator.base_generator as base
-
-
-LOG = logging.getLogger(__name__)
 
 
 class ValidTestGenerator(base.BasicGeneratorSet):
