@@ -175,7 +175,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             pool_stats['members'] = self._get_servers_stats(parsed_stats)
             return pool_stats
         else:
-            LOG.warn(_LW('Stats socket not found for pool %s'), pool_id)
+            LOG.warning(_LW('Stats socket not found for pool %s'), pool_id)
             return {}
 
     def _get_backend_stats(self, parsed_stats):
@@ -217,7 +217,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
 
             return self._parse_stats(raw_stats)
         except socket.error as e:
-            LOG.warn(_LW('Error while connecting to stats socket: %s'), e)
+            LOG.warning(_LW('Error while connecting to stats socket: %s'), e)
             return {}
 
     def _parse_stats(self, raw_stats):

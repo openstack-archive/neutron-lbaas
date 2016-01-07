@@ -348,24 +348,24 @@ class IsolatedCreds(cred_provider.CredentialProvider):
         try:
             net_client.delete_router(router_id)
         except lib_exc.NotFound:
-            LOG.warn('router with name: %s not found for delete' %
-                     router_name)
+            LOG.warning('router with name: %s not found for delete',
+                        router_name)
 
     def _clear_isolated_subnet(self, subnet_id, subnet_name):
         net_client = self.network_admin_client
         try:
             net_client.delete_subnet(subnet_id)
         except lib_exc.NotFound:
-            LOG.warn('subnet with name: %s not found for delete' %
-                     subnet_name)
+            LOG.warning('subnet with name: %s not found for delete',
+                        subnet_name)
 
     def _clear_isolated_network(self, network_id, network_name):
         net_client = self.network_admin_client
         try:
             net_client.delete_network(network_id)
         except lib_exc.NotFound:
-            LOG.warn('network with name: %s not found for delete' %
-                     network_name)
+            LOG.warning('network with name: %s not found for delete',
+                        network_name)
 
     def _cleanup_default_secgroup(self, tenant):
         net_client = self.network_admin_client
@@ -376,8 +376,8 @@ class IsolatedCreds(cred_provider.CredentialProvider):
             try:
                 net_client.delete_security_group(secgroup['id'])
             except lib_exc.NotFound:
-                LOG.warn('Security group %s, id %s not found for clean-up' %
-                         (secgroup['name'], secgroup['id']))
+                LOG.warning('Security group %s, id %s not found for clean-up',
+                            secgroup['name'], secgroup['id'])
 
     def _clear_isolated_net_resources(self):
         net_client = self.network_admin_client
@@ -396,8 +396,8 @@ class IsolatedCreds(cred_provider.CredentialProvider):
                     net_client.remove_router_interface_with_subnet_id(
                         creds.router['id'], creds.subnet['id'])
                 except lib_exc.NotFound:
-                    LOG.warn('router with name: %s not found for delete' %
-                             creds.router['name'])
+                    LOG.warning('router with name: %s not found for delete',
+                                creds.router['name'])
                 self._clear_isolated_router(creds.router['id'],
                                             creds.router['name'])
             if (not self.network_resources or
@@ -417,15 +417,15 @@ class IsolatedCreds(cred_provider.CredentialProvider):
             try:
                 self.creds_client.delete_user(creds.user_id)
             except lib_exc.NotFound:
-                LOG.warn("user with name: %s not found for delete" %
-                         creds.username)
+                LOG.warning("user with name: %s not found for delete",
+                            creds.username)
             try:
                 if CONF.service_available.neutron:
                     self._cleanup_default_secgroup(creds.tenant_id)
                 self.creds_client.delete_project(creds.tenant_id)
             except lib_exc.NotFound:
-                LOG.warn("tenant with name: %s not found for delete" %
-                         creds.tenant_name)
+                LOG.warning("tenant with name: %s not found for delete",
+                            creds.tenant_name)
         self.isolated_creds = {}
 
     def is_multi_user(self):
