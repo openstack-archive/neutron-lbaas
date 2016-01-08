@@ -15,15 +15,17 @@
 
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives import serialization
-import neutron_lbaas.common.exceptions as exceptions
-from OpenSSL import crypto
-from OpenSSL import SSL
-import pyasn1.codec.der.decoder as decoder
-import pyasn1_modules.rfc2459 as rfc2459
+from cryptography import x509
+from neutron.i18n import _LE
+from oslo_log import log as logging
 import six
+
+import neutron_lbaas.common.exceptions as exceptions
 
 X509_BEG = "-----BEGIN CERTIFICATE-----"
 X509_END = "-----END CERTIFICATE-----"
+
+LOG = logging.getLogger(__name__)
 
 
 def validate_cert(certificate, private_key=None,
@@ -40,32 +42,32 @@ def validate_cert(certificate, private_key=None,
     :param intermediates: PEM encoded intermediate certificates
     :returns: boolean
     """
-    x509 = _get_x509_from_pem_bytes(certificate)
+
+    cert = _get_x509_from_pem_bytes(certificate)
     if intermediates:
         for x509Pem in _split_x509s(intermediates):
             _get_x509_from_pem_bytes(x509Pem)
     if private_key:
         pkey = _read_privatekey(private_key, passphrase=private_key_passphrase)
-        ctx = SSL.Context(SSL.TLSv1_METHOD)
-        ctx.use_certificate(x509)
-        try:
-            ctx.use_privatekey(pkey)
-            ctx.check_privatekey()
-        except Exception:
+        pknum = pkey.public_key().public_numbers()
+        certnum = cert.public_key().public_numbers()
+        if pknum != certnum:
             raise exceptions.MisMatchedKey
     return True
 
 
 def _read_privatekey(privatekey_pem, passphrase=None):
-    def cb(*args):
-        if passphrase:
-            if six.PY2:
-                return passphrase.encode("utf-8")
-            elif six.PY3:
-                return six.b(passphrase)
-        else:
-            raise exceptions.NeedsPassphrase
-    return crypto.load_privatekey(crypto.FILETYPE_PEM, privatekey_pem, cb)
+    if passphrase:
+        if six.PY2:
+            passphrase = passphrase.encode("utf-8")
+        elif six.PY3:
+            passphrase = six.b(passphrase)
+
+    try:
+        return serialization.load_pem_private_key(privatekey_pem, passphrase,
+                                                  backends.default_backend())
+    except Exception:
+        raise exceptions.NeedsPassphrase
 
 
 def _split_x509s(x509Str):
@@ -128,8 +130,7 @@ def dump_private_key(private_key, private_key_passphrase=None):
 
 
 def get_host_names(certificate):
-    """
-    Extract the host names from the Pem encoded X509 certificate
+    """Extract the host names from the Pem encoded X509 certificate
 
     :param certificate: A PEM encoded certificate
     :returns: A dictionary containing the following keys:
@@ -138,27 +139,29 @@ def get_host_names(certificate):
     'dns_names' is a list of dNSNames (possibly empty) from
     the SubjectAltNames of the certificate.
     """
+    try:
+        certificate = certificate.encode('ascii')
 
-    x509 = _get_x509_from_pem_bytes(certificate)
-    hostNames = {}
-    if hasattr(x509.get_subject(), 'CN'):
-        hostNames['cn'] = x509.get_subject().CN
-    hostNames['dns_names'] = []
-    num_exts = x509.get_extension_count()
-    for i in range(0, num_exts):
-        ext = x509.get_extension(i)
-        short_name = ext.get_short_name()
-        if short_name == six.b('subjectAltName'):
-            data = ext.get_data()
-            general_names_container = decoder.decode(
-                data, asn1Spec=rfc2459.GeneralNames())
-            for general_names in general_names_container[0]:
-                currName = general_names.getName()
-                if currName == 'dNSName':
-                    octets = general_names.getComponent().asOctets()
-                    decoded = octets.decode("utf-8")
-                    hostNames['dns_names'].append(decoded)
-    return hostNames
+        cert = _get_x509_from_pem_bytes(certificate)
+        cn = cert.subject.get_attributes_for_oid(x509.OID_COMMON_NAME)[0]
+        host_names = {
+            'cn': cn.value.lower(),
+            'dns_names': []
+        }
+        try:
+            ext = cert.extensions.get_extension_for_oid(
+                x509.OID_SUBJECT_ALTERNATIVE_NAME
+            )
+            host_names['dns_names'] = ext.value.get_values_for_type(
+                x509.DNSName)
+        except x509.ExtensionNotFound:
+            LOG.debug("%s extension not found",
+                      x509.OID_SUBJECT_ALTERNATIVE_NAME)
+
+        return host_names
+    except Exception:
+        LOG.exception(_LE("Unreadable certificate."))
+        raise exceptions.UnreadableCert
 
 
 def _get_x509_from_pem_bytes(certificate_pem):
@@ -166,11 +169,11 @@ def _get_x509_from_pem_bytes(certificate_pem):
     Parse X509 data from a PEM encoded certificate
 
     :param certificate_pem: Certificate in PEM format
-    :returns: pyOpenSSL high-level x509 data from the PEM string
+    :returns: crypto high-level x509 data from the PEM string
     """
     try:
-        x509 = crypto.load_certificate(crypto.FILETYPE_PEM,
-                                       certificate_pem)
+        x509cert = x509.load_pem_x509_certificate(certificate_pem,
+                                                  backends.default_backend())
     except Exception:
         raise exceptions.UnreadableCert
-    return x509
+    return x509cert
