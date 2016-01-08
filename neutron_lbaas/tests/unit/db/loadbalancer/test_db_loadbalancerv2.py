@@ -725,7 +725,8 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
                     {'port': {'network_id': subnet['subnet']['network_id'],
                               'name': '', 'admin_state_up': True,
                               'device_id': lb_id, 'device_owner': '',
-                              'mac_address': '', 'fixed_ips': []}})
+                              'mac_address': '', 'fixed_ips': [],
+                              'tenant_id': acontext.tenant_id}})
                 port_id = db_port['id']
                 self.addCleanup(self.plugin.db._core_plugin.delete_port,
                                 acontext, port_id)
