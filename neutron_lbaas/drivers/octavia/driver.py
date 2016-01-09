@@ -247,10 +247,10 @@ class ListenerManager(driver_base.BaseListenerManager):
             'protocol_port': listener.protocol_port,
             'connection_limit': listener.connection_limit,
             'tls_certificate_id': listener.default_tls_container_id,
-            'sni_containers': sni_container_ids,
-            'project_id': listener.tenant_id
+            'sni_containers': sni_container_ids
         }
         if create:
+            args['project_id'] = listener.tenant_id
             args['id'] = listener.id
         write_func(url, args)
 
@@ -286,8 +286,7 @@ class PoolManager(driver_base.BasePoolManager):
             'description': pool.description,
             'enabled': pool.admin_state_up,
             'protocol': pool.protocol,
-            'lb_algorithm': pool.lb_algorithm,
-            'project_id': pool.tenant_id
+            'lb_algorithm': pool.lb_algorithm
         }
         if pool.session_persistence:
             args['session_persistence'] = {
@@ -295,6 +294,7 @@ class PoolManager(driver_base.BasePoolManager):
                 'cookie_name': pool.session_persistence.cookie_name,
             }
         if create:
+            args['project_id'] = pool.tenant_id
             args['id'] = pool.id
         write_func(url, args)
 
@@ -362,7 +362,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         return s
 
     @classmethod
-    def _write(cls, write_func, url, hm):
+    def _write(cls, write_func, url, hm, create=True):
         args = {
             'type': hm.type,
             'delay': hm.delay,
@@ -372,9 +372,10 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
             'http_method': hm.http_method,
             'url_path': hm.url_path,
             'expected_codes': hm.expected_codes,
-            'enabled': hm.admin_state_up,
-            'project_id': hm.tenant_id
+            'enabled': hm.admin_state_up
         }
+        if create:
+            args['project_id'] = hm.tenant_id
         write_func(cls._url(hm), args)
 
     @async_op
@@ -383,7 +384,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
     @async_op
     def update(self, context, old_hm, hm):
-        self._write(self.driver.req.put, self._url(hm), hm)
+        self._write(self.driver.req.put, self._url(hm), hm, create=False)
 
     @async_op
     def delete(self, context, hm):
