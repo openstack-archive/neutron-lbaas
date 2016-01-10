@@ -103,7 +103,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertEqual(80, member["protocol_port"])
         self.assertEqual(self.subnet_id, member["subnet_id"])
         # Should have default values for admin_state_up and weight
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
 
     @test.attr(type='smoke')
@@ -313,7 +313,7 @@ class MemberTestJSON(base.BaseTestCase):
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member['id'])
         # Make sure the defaults are correct
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         # Lets overwrite the defaults
         member_opts = {"weight": 10, "admin_state_up": False}
@@ -331,12 +331,12 @@ class MemberTestJSON(base.BaseTestCase):
                                      **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10}
         member = self._update_member(self.pool_id, member_id,
                                      **member_opts)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(10, member["weight"])
 
     @test.attr(type='smoke')
@@ -347,7 +347,7 @@ class MemberTestJSON(base.BaseTestCase):
                                      **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False}
         member = self._update_member(self.pool_id, member_id,
@@ -363,7 +363,7 @@ class MemberTestJSON(base.BaseTestCase):
                                      **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10, "admin_state_up": "%^67"}
         self.assertRaises(ex.BadRequest, self._update_member,
@@ -377,7 +377,7 @@ class MemberTestJSON(base.BaseTestCase):
                                      **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False, "weight": "*^$df"}
         self.assertRaises(ex.BadRequest, self._update_member,
@@ -391,7 +391,7 @@ class MemberTestJSON(base.BaseTestCase):
                                      **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10, "admin_state_up": ""}
         self.assertRaises(ex.BadRequest, self._update_member,
@@ -405,7 +405,7 @@ class MemberTestJSON(base.BaseTestCase):
                                      **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
-        self.assertEqual(True, member["admin_state_up"])
+        self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False, "weight": ""}
         self.assertRaises(ex.BadRequest, self._update_member,

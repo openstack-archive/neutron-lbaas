@@ -86,7 +86,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
                         'allocates_vip', group='octavia')
         cfg.CONF.set_override('allocates_vip', True, group='octavia')
         test_driver = driver.OctaviaDriver(self.plugin)
-        self.assertEqual(True, test_driver.load_balancer.allocates_vip)
+        self.assertTrue(test_driver.load_balancer.allocates_vip)
 
     def test_load_balancer_ops(self):
         m = ManagerTest(self, self.driver.load_balancer,

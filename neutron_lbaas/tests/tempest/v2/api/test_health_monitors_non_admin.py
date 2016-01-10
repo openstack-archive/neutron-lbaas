@@ -159,7 +159,7 @@ class TestHealthMonitors(base.BaseTestCase):
 
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
-        self.assertEqual(True, hm_test.get('admin_state_up'))
+        self.assertTrue(hm_test.get('admin_state_up'))
 
     @test.attr(type='smoke')
     def test_create_health_monitor_missing_http_method(self):
@@ -371,7 +371,7 @@ class TestHealthMonitors(base.BaseTestCase):
                                         timeout=5, pool_id=self.pool.get('id'))
 
         new_hm = self._update_health_monitor(hm.get('id'))
-        self.assertEqual(True, new_hm.get('admin_state_up'))
+        self.assertTrue(new_hm.get('admin_state_up'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_delay(self):
