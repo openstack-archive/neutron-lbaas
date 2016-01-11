@@ -13,49 +13,49 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from cryptography import x509
 import neutron_lbaas.common.exceptions as exceptions
 import neutron_lbaas.common.tls_utils.cert_parser as cert_parser
 from neutron_lbaas.tests import base
 
 
 ALT_EXT_CRT = """-----BEGIN CERTIFICATE-----
-MIIGxDCCBaygAwIBAgIGAUp0fCElMA0GCSqGSIb3DQEBDQUAMIGLMQswCQYDVQQG
-EwJVUzEOMAwGA1UECAwFVGV4YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlvMR4wHAYD
-VQQKDBVPcGVuU3RhY2sgRXhwZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRyb24gTGJh
-YXMxHjAcBgNVBAMMFXd3dy5DTkZyb21TdWJqZWN0Lm9yZzAeFw0xNDExMjIwMDEx
-MzlaFw0yMjEyMjEwMDExMzlaMIGLMQswCQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4
-YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlvMR4wHAYDVQQKDBVPcGVuU3RhY2sgRXhw
-ZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRyb24gTGJhYXMxHjAcBgNVBAMMFXd3dy5D
-TkZyb21TdWJqZWN0Lm9yZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
-ALL1nmbDPUDps84i1sM3rhHrc+Dlu0N/wKQWKZFeiWUtF/pot19V3o0yXDpsg7W5
-RkLMTFkZEcnQpyGdpAGjTjzmNXMZw99EzxsmrR3l6hUEISifVbvEuftYZT6jPxM5
-ML6WAjFNaBEZPWtZi8CgX5xdjdrDNndwyHob49n7Nc/h1kVqqBqMILabTqC6yEcx
-S/B+DugVuuYbEdYYYElQUMfM+mUdULrSqIVl2n5AvvSFjWzWzfgPyp4QKn+f7HVR
-T62bh/XjQ88n1tMYNAEqixRZTPgqY1LFl9VJVgRp9fdL6ttMurOR3C0STJ5qCdKB
-L7LrpbY4u8dEragRC6YAyI8CAwEAAaOCAyowggMmMAwGA1UdEwEB/wQCMAAwDgYD
-VR0PAQH/BAQDAgO4MIIDBAYDVR0RBIIC+zCCAveCGXd3dy5ob3N0RnJvbV9kTlNO
-YW1lMS5jb22CGXd3dy5ob3N0RnJvbV9kTlNOYW1lMi5jb22CGXd3dy5ob3N0RnJv
-bV9kTlNOYW1lMy5jb22BEW5vb25lQG5vd2hlcmUub3JnpIGPMIGMMQswCQYDVQQG
-EwJVUzEOMAwGA1UECAwFVGV4YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlvMR4wHAYD
-VQQKDBVPcGVuU3RhY2sgRXhwZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRyb24gTGJh
-YXMxHzAdBgNVBAMMFnd3dy5jbkZyb21BbHROYW1lMS5vcmekgY8wgYwxCzAJBgNV
-BAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEUMBIGA1UEBwwLU2FuIEFudG9uaW8xHjAc
-BgNVBAoMFU9wZW5TdGFjayBFeHBlcmltZW50czEWMBQGA1UECwwNTmV1dHJvbiBM
-YmFhczEfMB0GA1UEAwwWd3d3LmNuRnJvbUFsdE5hbWUyLm9yZ6SBjzCBjDELMAkG
-A1UEBhMCVVMxDjAMBgNVBAgMBVRleGFzMRQwEgYDVQQHDAtTYW4gQW50b25pbzEe
-MBwGA1UECgwVT3BlblN0YWNrIEV4cGVyaW1lbnRzMRYwFAYDVQQLDA1OZXV0cm9u
-IExiYWFzMR8wHQYDVQQDDBZ3d3cuY25Gcm9tQWx0TmFtZTMub3JnpIGPMIGMMQsw
-CQYDVQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlv
-MR4wHAYDVQQKDBVPcGVuU3RhY2sgRXhwZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRy
-b24gTGJhYXMxHzAdBgNVBAMMFnd3dy5jbkZyb21BbHROYW1lNC5vcmeHBAoBAgOH
-EAEjRWeJq83v97PVkeaixICGFmh0dHA6Ly93d3cuZXhhbXBsZS5jb22CGXd3dy5o
-b3N0RnJvbV9kTlNOYW1lNC5jb20wDQYJKoZIhvcNAQENBQADggEBAICUCDMhDf0f
-cvX5mVnq4Q3+SM/nl03Gse6J0JdpFivS4hl+uZs0TAFYpfEPpAa7KKxD229kbCiQ
-kyxf8fzADSl77RQbL6Lxa8K/c66mVNiuVvTHV4r/nDNcRYN9fGArw/Ho7VX+HVQ6
-UW1t/uvXeyg695t7kzZmvg0ChD5kS848d2rXu2MhwHwXA8rbuK6gxVY97fbzBNlj
-aiPJUAb8lqZMShd+3yVCgMmV0J20u2b5pSdO+LHQ7NfVqURk2pcHD8slfHzXT58q
-YB90v0pSVP6mzHGyLxETZZz0nhaH9EjOyFkQI84ORT8Kmd5Y04gSI0LTKKF1eMNE
-TyNC+MtsRdA=
+MIIGqjCCBZKgAwIBAgIJAIApBg8slSSiMA0GCSqGSIb3DQEBBQUAMIGLMQswCQYD
+VQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlvMR4w
+HAYDVQQKDBVPcGVuU3RhY2sgRXhwZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRyb24g
+TGJhYXMxHjAcBgNVBAMMFXd3dy5DTkZyb21TdWJqZWN0Lm9yZzAeFw0xNTA1MjEy
+MDMzMjNaFw0yNTA1MTgyMDMzMjNaMIGLMQswCQYDVQQGEwJVUzEOMAwGA1UECAwF
+VGV4YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlvMR4wHAYDVQQKDBVPcGVuU3RhY2sg
+RXhwZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRyb24gTGJhYXMxHjAcBgNVBAMMFXd3
+dy5DTkZyb21TdWJqZWN0Lm9yZzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
+ggEBALL1nmbDPUDps84i1sM3rhHrc+Dlu0N/wKQWKZFeiWUtF/pot19V3o0yXDps
+g7W5RkLMTFkZEcnQpyGdpAGjTjzmNXMZw99EzxsmrR3l6hUEISifVbvEuftYZT6j
+PxM5ML6WAjFNaBEZPWtZi8CgX5xdjdrDNndwyHob49n7Nc/h1kVqqBqMILabTqC6
+yEcxS/B+DugVuuYbEdYYYElQUMfM+mUdULrSqIVl2n5AvvSFjWzWzfgPyp4QKn+f
+7HVRT62bh/XjQ88n1tMYNAEqixRZTPgqY1LFl9VJVgRp9fdL6ttMurOR3C0STJ5q
+CdKBL7LrpbY4u8dEragRC6YAyI8CAwEAAaOCAw0wggMJMAkGA1UdEwQCMAAwCwYD
+VR0PBAQDAgXgMIIC7QYDVR0RBIIC5DCCAuCCGHd3dy5ob3N0RnJvbUROU05hbWUx
+LmNvbYIYd3d3Lmhvc3RGcm9tRE5TTmFtZTIuY29tghh3d3cuaG9zdEZyb21ETlNO
+YW1lMy5jb22CGHd3dy5ob3N0RnJvbUROU05hbWU0LmNvbYcECgECA4cQASNFZ4mr
+ze/3s9WR5qLEgIYWaHR0cDovL3d3dy5leGFtcGxlLmNvbaSBjzCBjDELMAkGA1UE
+BhMCVVMxDjAMBgNVBAgMBVRleGFzMRQwEgYDVQQHDAtTYW4gQW50b25pbzEeMBwG
+A1UECgwVT3BlblN0YWNrIEV4cGVyaW1lbnRzMRYwFAYDVQQLDA1OZXV0cm9uIExi
+YWFzMR8wHQYDVQQDDBZ3d3cuY25Gcm9tQWx0TmFtZTEub3JnpIGPMIGMMQswCQYD
+VQQGEwJVUzEOMAwGA1UECAwFVGV4YXMxFDASBgNVBAcMC1NhbiBBbnRvbmlvMR4w
+HAYDVQQKDBVPcGVuU3RhY2sgRXhwZXJpbWVudHMxFjAUBgNVBAsMDU5ldXRyb24g
+TGJhYXMxHzAdBgNVBAMMFnd3dy5jbkZyb21BbHROYW1lMi5vcmekgY8wgYwxCzAJ
+BgNVBAYTAlVTMQ4wDAYDVQQIDAVUZXhhczEUMBIGA1UEBwwLU2FuIEFudG9uaW8x
+HjAcBgNVBAoMFU9wZW5TdGFjayBFeHBlcmltZW50czEWMBQGA1UECwwNTmV1dHJv
+biBMYmFhczEfMB0GA1UEAwwWd3d3LmNuRnJvbUFsdE5hbWUzLm9yZ6SBjzCBjDEL
+MAkGA1UEBhMCVVMxDjAMBgNVBAgMBVRleGFzMRQwEgYDVQQHDAtTYW4gQW50b25p
+bzEeMBwGA1UECgwVT3BlblN0YWNrIEV4cGVyaW1lbnRzMRYwFAYDVQQLDA1OZXV0
+cm9uIExiYWFzMR8wHQYDVQQDDBZ3d3cuY25Gcm9tQWx0TmFtZTQub3JnMA0GCSqG
+SIb3DQEBBQUAA4IBAQCS6iDn6R3C+qJLZibaqrBSkM9yu5kwRsQ6lQ+DODvVYGWq
+eGkkh5o2c6WbJlH44yF280+HvnJcuISD7epPHJN0vUM9+WMtXfEli9avFHgu2JxP
+3P0ixK2kaJnqKQkSEdnA/v/eWP1Cd2v6rbKCIo9d2gSP0cnpdtlX9Zk3SzEh0V7s
+RjSdfZoAvz0aAnpDHlTerLcz5T2aiRae2wSt/RLA3qDO1Ji05tWvQBmKuepxS6A1
+tL4Drm+OCXJwTrE7ClTMCwcrZnLl4tI+Z+X3DV92WQB8ldST/QFjz1hgs/4zrADA
+elu2c/X7MR4ObOjhDfaVGQ8kMhYf5hx69qyNDsGi
 -----END CERTIFICATE-----
 """
 
@@ -237,11 +237,11 @@ def _get_rsa_numbers(private_key, private_key_passphrase=None):
 class TestTLSParseUtils(base.BaseTestCase):
     def test_alt_subject_name_parses(self):
         hosts = cert_parser.get_host_names(ALT_EXT_CRT)
-        self.assertEqual('www.CNFromSubject.org', hosts['cn'])
-        self.assertEqual('www.hostFrom_dNSName1.com', hosts['dns_names'][0])
-        self.assertEqual('www.hostFrom_dNSName2.com', hosts['dns_names'][1])
-        self.assertEqual('www.hostFrom_dNSName3.com', hosts['dns_names'][2])
-        self.assertEqual('www.hostFrom_dNSName4.com', hosts['dns_names'][3])
+        self.assertEqual('www.cnfromsubject.org', hosts['cn'])
+        self.assertEqual('www.hostfromdnsname1.com', hosts['dns_names'][0])
+        self.assertEqual('www.hostfromdnsname2.com', hosts['dns_names'][1])
+        self.assertEqual('www.hostfromdnsname3.com', hosts['dns_names'][2])
+        self.assertEqual('www.hostfromdnsname4.com', hosts['dns_names'][3])
 
     def test_x509_parses(self):
         self.assertRaises(exceptions.UnreadableCert,
@@ -260,19 +260,17 @@ class TestTLSParseUtils(base.BaseTestCase):
         self.assertRaises(exceptions.NeedsPassphrase,
                           cert_parser._read_privatekey,
                           ENCRYPTED_PKCS8_CRT_KEY)
-        epkey = cert_parser._read_privatekey(
+        cert_parser._read_privatekey(
             ENCRYPTED_PKCS8_CRT_KEY,
             passphrase=ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE)
-        self.assertTrue(epkey.check())
 
     def test_read_private_key_unicode(self):
         self.assertRaises(exceptions.NeedsPassphrase,
                           cert_parser._read_privatekey,
                           ENCRYPTED_PKCS8_CRT_KEY)
-        epkey = cert_parser._read_privatekey(
+        cert_parser._read_privatekey(
             ENCRYPTED_PKCS8_CRT_KEY,
             passphrase=u'{0}'.format(ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
-        self.assertTrue(epkey.check())
 
     def test_dump_private_key(self):
         self.assertRaises(exceptions.NeedsPassphrase,
@@ -303,4 +301,6 @@ class TestTLSParseUtils(base.BaseTestCase):
             imds.append(cert_parser._get_x509_from_pem_bytes(x509Pem))
 
         for i in range(0, len(imds)):
-            self.assertEqual(EXPECTED_IMD_SUBJS[i], imds[i].get_subject().CN)
+            self.assertEqual(EXPECTED_IMD_SUBJS[i],
+                             imds[i].subject.get_attributes_for_oid(
+                                 x509.OID_COMMON_NAME)[0].value)
