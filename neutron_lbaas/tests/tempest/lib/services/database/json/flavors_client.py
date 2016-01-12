@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
+from six.moves.urllib import parse
 
 from neutron_lbaas.tests.tempest.lib.common import service_client
 
@@ -23,7 +23,7 @@ class DatabaseFlavorsClientJSON(service_client.ServiceClient):
     def list_db_flavors(self, params=None):
         url = 'flavors'
         if params:
-            url += '?%s' % urllib.urlencode(params)
+            url += '?%s' % parse.urlencode(params)
 
         resp, body = self.get(url)
         self.expected_success(200, resp.status)

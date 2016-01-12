@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import urllib
+from six.moves.urllib import parse
 
 from oslo_serialization import jsonutils
 
@@ -28,7 +28,7 @@ class LoadBalancersClientJSON(service_client.ServiceClient):
         """List all load balancers."""
         url = 'v2.0/lbaas/loadbalancers'
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
@@ -38,7 +38,7 @@ class LoadBalancersClientJSON(service_client.ServiceClient):
         """Get load balancer details."""
         url = 'v2.0/lbaas/loadbalancers/{0}'.format(load_balancer_id)
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
@@ -72,7 +72,7 @@ class LoadBalancersClientJSON(service_client.ServiceClient):
         """Get a load balancer's status tree."""
         url = 'v2.0/lbaas/loadbalancers/{0}/statuses'.format(load_balancer_id)
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
@@ -82,7 +82,7 @@ class LoadBalancersClientJSON(service_client.ServiceClient):
         """Get a load balancer's stats."""
         url = 'v2.0/lbaas/loadbalancers/{0}/stats'.format(load_balancer_id)
         if params:
-            url = '{0}?{1}'.format(url, urllib.urlencode(params))
+            url = '{0}?{1}'.format(url, parse.urlencode(params))
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
