@@ -65,7 +65,7 @@ class TestLocalManager(base.BaseTestCase):
     def _store_cert(self):
         file_mock = mock.mock_open()
         # Attempt to store the cert
-        with mock.patch('__builtin__.open', file_mock, create=True):
+        with mock.patch('six.moves.builtins.open', file_mock, create=True):
             cert_id = local_cert_manager.CertManager.store_cert(
                 certificate=self.certificate,
                 intermediates=self.intermediates,
@@ -97,7 +97,7 @@ class TestLocalManager(base.BaseTestCase):
     def _get_cert(self, cert_id):
         file_mock = mock.mock_open()
         # Attempt to retrieve the cert
-        with mock.patch('__builtin__.open', file_mock, create=True):
+        with mock.patch('six.moves.builtins.open', file_mock, create=True):
             data = local_cert_manager.CertManager.get_cert(cert_id)
 
         # Verify the correct files were opened

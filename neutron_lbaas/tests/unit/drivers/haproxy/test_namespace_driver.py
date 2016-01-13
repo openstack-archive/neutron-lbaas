@@ -241,7 +241,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
     def test_update(self):
         self.driver._get_state_file_path = mock.Mock(return_value='/path')
         self.driver._spawn = mock.Mock()
-        with mock.patch('__builtin__.open') as m_open:
+        with mock.patch('six.moves.builtins.open') as m_open:
             file_mock = mock.MagicMock()
             m_open.return_value = file_mock
             file_mock.__enter__.return_value = file_mock
@@ -667,7 +667,7 @@ class TestNamespaceDriverModule(base.BaseTestCase):
     @mock.patch('neutron.agent.linux.utils.execute')
     def test_kill_pids_in_file(self, execute, exists):
         pid_path = '/var/lib/data'
-        with mock.patch('__builtin__.open') as m_open:
+        with mock.patch('six.moves.builtins.open') as m_open:
             exists.return_value = False
             file_mock = mock.MagicMock()
             m_open.return_value = file_mock

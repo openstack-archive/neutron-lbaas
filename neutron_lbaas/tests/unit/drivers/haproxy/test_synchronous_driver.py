@@ -20,6 +20,7 @@ import mock
 from neutron.common import exceptions
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants
+import six
 
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.haproxy \
@@ -78,7 +79,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             rdb.asert_called_once_with(dirs)
             upin.assert_has_calls([mock.call(lbs[0]), mock.call(lbs[1])])
             self.assertEqual(2, upin.call_count)
-            #deployed_loadbalancer_ids is a set
+            # deployed_loadbalancer_ids is a set
             self.assertEqual(1, len(self.driver.deployed_loadbalancer_ids))
             self.assertIn(self._sample_in_loadbalancer().id,
                           self.driver.deployed_loadbalancer_ids)
@@ -514,7 +515,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         with contextlib.nested(
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch.object(self.driver, '_spawn'),
-            mock.patch('__builtin__.open')
+            mock.patch.object(six.moves.builtins, 'open')
         ) as (gsp, spawn, mock_open):
             mock_open.return_value = ['5']
 
@@ -650,7 +651,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
     def test_kill_pids_in_file(self):
         with contextlib.nested(
             mock.patch('os.path.exists'),
-            mock.patch('__builtin__.open'),
+            mock.patch.object(six.moves.builtins, 'open'),
             mock.patch('neutron.agent.linux.utils.execute'),
             mock.patch.object(namespace_driver.LOG, 'exception'),
         ) as (path_exists, mock_open, mock_execute, mock_log):

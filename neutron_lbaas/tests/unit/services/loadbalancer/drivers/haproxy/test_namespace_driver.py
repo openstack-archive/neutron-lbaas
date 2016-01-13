@@ -16,6 +16,7 @@ import contextlib
 
 import mock
 from neutron.common import exceptions
+import six
 
 from neutron_lbaas.services.loadbalancer.drivers.haproxy \
     import namespace_driver
@@ -73,7 +74,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         with contextlib.nested(
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch.object(self.driver, '_spawn'),
-            mock.patch('__builtin__.open')
+            mock.patch.object(six.moves.builtins, 'open')
         ) as (gsp, spawn, mock_open):
             mock_open.return_value = ['5']
 
@@ -410,7 +411,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
     def test_kill_pids_in_file(self):
         with contextlib.nested(
             mock.patch('os.path.exists'),
-            mock.patch('__builtin__.open'),
+            mock.patch.object(six.moves.builtins, 'open'),
             mock.patch('neutron.agent.linux.utils.execute'),
             mock.patch.object(namespace_driver.LOG, 'exception'),
         ) as (path_exists, mock_open, mock_execute, mock_log):
