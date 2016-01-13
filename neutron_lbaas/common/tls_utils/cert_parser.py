@@ -64,7 +64,8 @@ def _read_privatekey(privatekey_pem, passphrase=None):
             passphrase = six.b(passphrase)
 
     try:
-        return serialization.load_pem_private_key(privatekey_pem, passphrase,
+        pkey = privatekey_pem.encode('ascii')
+        return serialization.load_pem_private_key(pkey, passphrase,
                                                   backends.default_backend())
     except Exception:
         raise exceptions.NeedsPassphrase
@@ -172,7 +173,8 @@ def _get_x509_from_pem_bytes(certificate_pem):
     :returns: crypto high-level x509 data from the PEM string
     """
     try:
-        x509cert = x509.load_pem_x509_certificate(certificate_pem,
+        certificate = certificate_pem.encode('ascii')
+        x509cert = x509.load_pem_x509_certificate(certificate,
                                                   backends.default_backend())
     except Exception:
         raise exceptions.UnreadableCert
