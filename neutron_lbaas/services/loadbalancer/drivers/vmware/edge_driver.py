@@ -198,9 +198,8 @@ class EdgeLoadbalancerDriver(abstract_driver.LoadBalancerAbstractDriver):
         pool_mapping = db.get_nsxv_edge_pool_mapping(context, pool_id)
         return self._nsxv_driver.stats(context, pool_id, pool_mapping)
 
-    def is_edge_in_use(self, edge_id):
-        pool_mappings = db.get_nsxv_edge_pool_mapping_by_edge(
-            self.context, edge_id)
+    def is_edge_in_use(self, context, edge_id):
+        pool_mappings = db.get_nsxv_edge_pool_mapping_by_edge(context, edge_id)
 
         if pool_mappings:
             return True
