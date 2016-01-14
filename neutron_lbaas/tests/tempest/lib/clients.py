@@ -22,19 +22,14 @@ from neutron_lbaas.tests.tempest.lib.common import cred_provider
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import exceptions
 from neutron_lbaas.tests.tempest.lib import manager
-from neutron_lbaas.tests.tempest.lib.services.compute.json.flavors_client import FlavorsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.floating_ips_client import \
     FloatingIPsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.images_client import ImagesClientJSON
-from neutron_lbaas.tests.tempest.lib.services.compute.json.interfaces_client import \
-    InterfacesClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.keypairs_client import KeyPairsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.networks_client import NetworksClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.security_groups_client import \
     SecurityGroupsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.servers_client import ServersClientJSON
-from neutron_lbaas.tests.tempest.lib.services.compute.json.tenant_networks_client import \
-    TenantNetworksClientJSON
 from neutron_lbaas.tests.tempest.lib.services.database.json.flavors_client import \
     DatabaseFlavorsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.database.json.limits_client import \
@@ -194,15 +189,12 @@ class Manager(manager.Manager):
     #     self.quotas_client = QuotasClientJSON(self.auth_provider, **params)
     #     self.quota_classes_client = QuotaClassesClientJSON(self.auth_provider,
     #                                                        **params)
-        self.flavors_client = FlavorsClientJSON(self.auth_provider, **params)
     #     self.extensions_client = ExtensionsClientJSON(self.auth_provider,
     #                                                   **params)
         self.floating_ips_client = FloatingIPsClientJSON(self.auth_provider,
                                                          **params)
         self.security_groups_client = SecurityGroupsClientJSON(
             self.auth_provider, **params)
-        self.interfaces_client = InterfacesClientJSON(self.auth_provider,
-                                                      **params)
     #     self.fixed_ips_client = FixedIPsClientJSON(self.auth_provider,
     #                                                **params)
     #     self.availability_zone_client = AvailabilityZoneClientJSON(
@@ -217,8 +209,6 @@ class Manager(manager.Manager):
     #                                                   **params)
     #     self.instance_usages_audit_log_client = \
     #         InstanceUsagesAuditLogClientJSON(self.auth_provider, **params)
-        self.tenant_networks_client = \
-            TenantNetworksClientJSON(self.auth_provider, **params)
     #     self.baremetal_nodes_client = BaremetalNodesClientJSON(
     #         self.auth_provider, **params)
 
