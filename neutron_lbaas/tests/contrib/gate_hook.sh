@@ -23,17 +23,23 @@ enable_plugin barbican https://git.openstack.org/openstack/barbican
 enable_plugin octavia https://git.openstack.org/openstack/octavia
 "
 
+if [ "$testenv" != "scenario" ]; then
+    export DEVSTACK_LOCAL_CONFIG+="
+DISABLE_AMP_IMAGE_BUILD=True
+"
+fi
+
+# These are not needed with either v1 or v2
+ENABLED_SERVICES+="-c-api,-c-bak,-c-sch,-c-vol,-cinder"
+ENABLED_SERVICES+=",-s-account,-s-container,-s-object,-s-proxy"
+
 if [ "$testenv" != "apiv1" ]; then
   # Override enabled services, so we can turn on lbaasv2.
   # While we're at it, disable cinder and swift, since we don't need them.
-  ENABLED_SERVICES+="q-lbaasv2,-q-lbaas"
-  ENABLED_SERVICES+=",-c-api,-c-bak,-c-sch,-c-vol,-cinder"
-  ENABLED_SERVICES+=",-s-account,-s-container,-s-object,-s-proxy"
+  ENABLED_SERVICES+=",q-lbaasv2,-q-lbaas"
   ENABLED_SERVICES+=",octavia,o-cw,o-hk,o-hm,o-api"
-  export ENABLED_SERVICES
-  DISABLE_AMP_IMAGE_BUILD=True
-  export DISABLE_AMP_IMAGE_BUILD
 fi
+export ENABLED_SERVICES
 
 if [ "$testenv" = "apiv2" ]; then
    cat > $DEVSTACK_PATH/local.conf <<EOF
