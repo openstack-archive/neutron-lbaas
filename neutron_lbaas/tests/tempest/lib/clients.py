@@ -19,58 +19,22 @@ from tempest_lib.services.identity.v2.token_client import TokenClientJSON
 from tempest_lib.services.identity.v3.token_client import V3TokenClientJSON
 
 from neutron_lbaas.tests.tempest.lib.common import cred_provider
-# from neutron_lbaas.tests.tempest.lib.common import negative_rest_client
 from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.lib import exceptions
 from neutron_lbaas.tests.tempest.lib import manager
-# from neutron_lbaas.tests.tempest.lib.services.baremetal.v1.json.baremetal_client import \
-#     BaremetalClientJSON
-# from neutron_lbaas.tests.tempest.lib.services import botoclients
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.agents_client import \
-#     AgentsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.aggregates_client import \
-#     AggregatesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.availability_zone_client import \
-#     AvailabilityZoneClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.baremetal_nodes_client import \
-#     BaremetalNodesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.certificates_client import \
-#     CertificatesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.extensions_client import \
-#     ExtensionsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.fixed_ips_client import FixedIPsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.flavors_client import FlavorsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.floating_ips_client import \
     FloatingIPsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.hosts_client import HostsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.hypervisor_client import \
-#     HypervisorClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.images_client import ImagesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.instance_usage_audit_log_client import \
-#     InstanceUsagesAuditLogClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.interfaces_client import \
     InterfacesClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.keypairs_client import KeyPairsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.limits_client import LimitsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.migrations_client import \
-#     MigrationsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.networks_client import NetworksClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.quotas_client import QuotaClassesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.quotas_client import QuotasClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.security_group_default_rules_client import \
-#     SecurityGroupDefaultRulesClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.security_groups_client import \
     SecurityGroupsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.servers_client import ServersClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.services_client import ServicesClientJSON
 from neutron_lbaas.tests.tempest.lib.services.compute.json.tenant_networks_client import \
     TenantNetworksClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.tenant_usages_client import \
-#     TenantUsagesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.compute.json.volumes_extensions_client import \
-#     VolumesExtensionsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.data_processing.v1_1.data_processing_client import \
-#     DataProcessingClient
 from neutron_lbaas.tests.tempest.lib.services.database.json.flavors_client import \
     DatabaseFlavorsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.database.json.limits_client import \
@@ -91,46 +55,11 @@ from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.service_client im
     ServiceClientJSON
 from neutron_lbaas.tests.tempest.lib.services.image.v1.json.image_client import ImageClientJSON
 from neutron_lbaas.tests.tempest.lib.services.image.v2.json.image_client import ImageClientV2JSON
-# from neutron_lbaas.tests.tempest.lib.services.messaging.json.messaging_client import \
-#     MessagingClientJSON
 from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import NetworkClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.object_storage.account_client import AccountClient
-# from neutron_lbaas.tests.tempest.lib.services.object_storage.container_client import ContainerClient
-# from neutron_lbaas.tests.tempest.lib.services.object_storage.object_client import ObjectClient
 from neutron_lbaas.tests.tempest.lib.services.orchestration.json.orchestration_client import \
     OrchestrationClient
-# from neutron_lbaas.tests.tempest.lib.services.telemetry.json.telemetry_client import \
-#     TelemetryClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.admin.volume_hosts_client import \
-#     VolumeHostsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.admin.volume_quotas_client import \
-#     VolumeQuotasClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.admin.volume_services_client import \
-#     VolumesServicesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.admin.volume_types_client import \
-#     VolumeTypesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.availability_zone_client import \
-#     VolumeAvailabilityZoneClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.backups_client import BackupsClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.extensions_client import \
-#     ExtensionsClientJSON as VolumeExtensionClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.json.qos_client import QosSpecsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.volume.json.snapshots_client import SnapshotsClientJSON
 from neutron_lbaas.tests.tempest.lib.services.volume.json.volumes_client import VolumesClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.admin.volume_hosts_client import \
-#     VolumeHostsV2ClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.admin.volume_quotas_client import \
-#     VolumeQuotasV2Client
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.admin.volume_services_client import \
-#     VolumesServicesV2ClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.admin.volume_types_client import \
-#     VolumeTypesV2ClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.availability_zone_client import \
-#     VolumeV2AvailabilityZoneClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.backups_client import BackupsClientV2JSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.extensions_client import \
-#     ExtensionsV2ClientJSON as VolumeV2ExtensionClientJSON
-# from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.qos_client import QosSpecsV2ClientJSON
 from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.snapshots_client import \
     SnapshotsV2ClientJSON
 from neutron_lbaas.tests.tempest.lib.services.volume.v2.json.volumes_client import VolumesV2ClientJSON
