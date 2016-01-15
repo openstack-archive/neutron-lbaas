@@ -62,6 +62,11 @@ class LoggingNoopLoadBalancerManager(LoggingNoopCommonManager,
         LOG.debug('allocates_vip queried')
         return False
 
+    @property
+    def deletes_cascade(self):
+        LOG.debug('deletes_cascade queried')
+        return False
+
     def create_and_allocate_vip(self, context, obj):
         LOG.debug("LB %s no-op, create_and_allocate_vip %s",
                   self.__class__.__name__, obj.id)
@@ -82,6 +87,16 @@ class LoggingNoopLoadBalancerManager(LoggingNoopCommonManager,
             "active_connections": 0,
             "total_connections": 0
         }
+
+    @driver_base.driver_op
+    def delete(self, context, obj):
+        LOG.debug("LB %s no-op, delete %s", self.__class__.__name__,
+                  obj.id)
+
+    @driver_base.driver_op
+    def delete_cascade(self, context, obj):
+        LOG.debug("LB %s no-op, delete cascade %s", self.__class__.__name__,
+                  obj.id)
 
 
 class LoggingNoopListenerManager(LoggingNoopCommonManager,

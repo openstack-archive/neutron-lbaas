@@ -175,6 +175,21 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
             self.driver.agent_rpc.delete_loadbalancer(context, loadbalancer,
                                                       agent['host'])
 
+    def delete_cascade(self, context, loadbalancer):
+        if not self.deletes_cascade:
+            raise NotImplementedError()
+
+        super(LoadBalancerManager, self).delete(context, loadbalancer)
+        agent = self.driver.get_loadbalancer_agent(context, loadbalancer.id)
+        # TODO(blogan): Rethink deleting from the database here. May want to
+        # wait until the agent actually deletes it.  Doing this now to keep
+        # what v1 had.
+        self.driver.plugin.db.delete_loadbalancer_cascade(context,
+                                                          loadbalancer.id)
+        if agent:
+            self.driver.agent_rpc.delete_loadbalancer(context, loadbalancer,
+                                                      agent['host'])
+
     def stats(self, context, loadbalancer):
         pass
 
