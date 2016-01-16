@@ -98,14 +98,15 @@ class BaseManagerMixin(object):
             self.driver.plugin.db.update_loadbalancer(
                 context, obj.id, {'vip_address': obj.vip_address,
                                   'vip_port_id': obj.vip_port_id})
-        self.driver.plugin.db.update_status(
-            context, models.LoadBalancer, obj.root_loadbalancer.id,
-            provisioning_status=lb_p_status,
-            operating_status=lb_op_status)
-        if obj == obj.root_loadbalancer or delete:
-            # Do not want to update the status of the load balancer again
-            # Or the obj was deleted from the db so no need to update the
-            # statuses
+        if delete:
+            # We cannot update the status of obj if it was deleted but if the
+            # obj is not a load balancer, the root load balancer should be
+            # updated
+            if not isinstance(obj, data_models.LoadBalancer):
+                self.driver.plugin.db.update_status(
+                    context, models.LoadBalancer, obj.root_loadbalancer.id,
+                    provisioning_status=lb_p_status,
+                    operating_status=lb_op_status)
             return
         obj_op_status = lb_const.ONLINE
         if isinstance(obj, data_models.HealthMonitor):
@@ -118,6 +119,14 @@ class BaseManagerMixin(object):
             context, obj_sa_cls, obj.id,
             provisioning_status=constants.ACTIVE,
             operating_status=obj_op_status)
+        if not isinstance(obj, data_models.LoadBalancer):
+            # Only update the status of the root_loadbalancer if the previous
+            # update was not the root load balancer so we are not updating
+            # it twice.
+            self.driver.plugin.db.update_status(
+                context, models.LoadBalancer, obj.root_loadbalancer.id,
+                provisioning_status=lb_p_status,
+                operating_status=lb_op_status)
 
     def failed_completion(self, context, obj):
         """
