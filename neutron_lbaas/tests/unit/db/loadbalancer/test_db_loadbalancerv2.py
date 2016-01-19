@@ -1844,7 +1844,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_create_healthmonitor(self, **extras):
         expected = {
-            'type': 'TCP',
+            'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
             'max_retries': 1,
@@ -1859,7 +1859,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
         expected.update(extras)
 
-        with self.healthmonitor(pool_id=self.pool_id,
+        with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
                                 name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor'].get('id')
             self.assertTrue(hm_id)
@@ -1880,7 +1880,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_show_healthmonitor(self, **extras):
         expected = {
-            'type': 'TCP',
+            'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
             'max_retries': 1,
@@ -1896,7 +1896,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
         expected.update(extras)
 
-        with self.healthmonitor(pool_id=self.pool_id,
+        with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
                                 name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             resp, body = self._get_healthmonitor_api(hm_id)
@@ -1910,7 +1910,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_update_healthmonitor(self, **extras):
         expected = {
-            'type': 'TCP',
+            'type': 'HTTP',
             'delay': 30,
             'timeout': 10,
             'max_retries': 4,
@@ -1925,7 +1925,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
         expected.update(extras)
 
-        with self.healthmonitor(pool_id=self.pool_id,
+        with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
                                 name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             data = {'healthmonitor': {'delay': 30,
@@ -1951,6 +1951,96 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             hm_id = healthmonitor['healthmonitor']['id']
             resp = self._delete_healthmonitor_api(hm_id)
             self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
+
+    def test_create_healthmonitor_with_type_tcp(self, **extras):
+        expected = {
+            'type': 'TCP',
+            'delay': 1,
+            'timeout': 1,
+            'max_retries': 1,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor1'
+        }
+
+        expected.update(extras)
+
+        with self.healthmonitor(pool_id=self.pool_id,
+                                type='TCP',
+                                name='monitor1') as healthmonitor:
+            hm_id = healthmonitor['healthmonitor'].get('id')
+            self.assertTrue(hm_id)
+
+            actual = {}
+            for k, v in healthmonitor['healthmonitor'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+                                    hm_id=hm_id)
+        return healthmonitor
+
+    def test_show_healthmonitor_with_type_tcp(self, **extras):
+        expected = {
+            'type': 'TCP',
+            'delay': 1,
+            'timeout': 1,
+            'max_retries': 1,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor1'
+
+        }
+
+        expected.update(extras)
+
+        with self.healthmonitor(pool_id=self.pool_id,
+                                type='TCP',
+                                name='monitor1') as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            resp, body = self._get_healthmonitor_api(hm_id)
+            actual = {}
+            for k, v in body['healthmonitor'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(expected, actual)
+
+        return healthmonitor
+
+    def test_update_healthmonitor_with_type_tcp(self, **extras):
+        expected = {
+            'type': 'TCP',
+            'delay': 30,
+            'timeout': 10,
+            'max_retries': 4,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor2'
+        }
+
+        expected.update(extras)
+
+        with self.healthmonitor(pool_id=self.pool_id,
+                                type='TCP',
+                                name='monitor1') as healthmonitor:
+            hm_id = healthmonitor['healthmonitor']['id']
+            data = {'healthmonitor': {'delay': 30,
+                                      'timeout': 10,
+                                      'max_retries': 4,
+                                      'name': 'monitor2'}}
+            resp, body = self._update_healthmonitor_api(hm_id, data)
+            actual = {}
+            for k, v in body['healthmonitor'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+                                    hm_id=hm_id)
+
+        return healthmonitor
 
     def test_create_health_monitor_with_timeout_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -2140,7 +2230,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_get_healthmonitor(self):
         expected = {
-            'type': 'TCP',
+            'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
             'max_retries': 1,
@@ -2153,7 +2243,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'name': 'monitor1'
         }
 
-        with self.healthmonitor(pool_id=self.pool_id,
+        with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
                                 name='monitor1') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             expected['id'] = hm_id
@@ -2162,7 +2252,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_list_healthmonitors(self):
         expected = {
-            'type': 'TCP',
+            'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
             'max_retries': 1,
@@ -2175,7 +2265,8 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'name': '',
         }
 
-        with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
+        with self.healthmonitor(pool_id=self.pool_id,
+                                type='HTTP') as healthmonitor:
             hm_id = healthmonitor['healthmonitor']['id']
             expected['id'] = hm_id
             resp, body = self._list_healthmonitors_api()
