@@ -178,6 +178,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'required_by_policy': True,
                       'is_visible': True},
         'vip_id': {'allow_post': False, 'allow_put': False,
+                   'validate': {'type:uuid': None},
                    'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': None},
