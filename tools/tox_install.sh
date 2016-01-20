@@ -42,7 +42,10 @@ elif [ -x "$ZUUL_CLONER" ]; then
     cd "$cwd"
 else
     echo "PIP HARDCODE" > /tmp/tox_install.txt
-    $install_cmd -U -egit+https://git.openstack.org/openstack/neutron#egg=neutron
+    if [ -z "$NEUTRON_PIP_LOCATION" ]; then
+        NEUTRON_PIP_LOCATION="git+https://git.openstack.org/openstack/neutron#egg=neutron"
+    fi
+    $install_cmd -U -e ${NEUTRON_PIP_LOCATION}
 fi
 
 $install_cmd -U $*
