@@ -334,9 +334,14 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 listener_dict[prop] = getattr(
                     listener, prop, PROPERTY_DEFAULTS.get(prop))
 
+            cert_mgr = CERT_MANAGER_PLUGIN.CertManager()
+
             if listener.default_tls_container_id:
-                default_cert = CERT_MANAGER_PLUGIN.CertManager.get_cert(
-                    listener.default_tls_container_id,
+                default_cert = cert_mgr.get_cert(
+                    project_id=listener.tenant_id,
+                    cert_ref=listener.default_tls_container_id,
+                    resource_ref=cert_mgr.get_service_url(
+                        listener.loadbalancer_id),
                     service_name='Neutron LBaaS v2 Radware provider')
                 cert_dict = {
                     'id': listener.default_tls_container_id,
@@ -349,8 +354,11 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             if listener.sni_containers:
                 listener_dict['sni_tls_certificates'] = []
                 for sni_container in listener.sni_containers:
-                    sni_cert = CERT_MANAGER_PLUGIN.CertManager.get_cert(
-                        sni_container.tls_container_id,
+                    sni_cert = cert_mgr.get_cert(
+                        project_id=listener.tenant_id,
+                        cert_ref=sni_container.tls_container_id,
+                        resource_ref=cert_mgr.get_service_url(
+                            listener.loadbalancer_id),
                         service_name='Neutron LBaaS v2 Radware provider')
                     listener_dict['sni_tls_certificates'].append(
                         {'id': sni_container.tls_container_id,

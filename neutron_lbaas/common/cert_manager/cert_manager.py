@@ -17,6 +17,7 @@ Certificate manager API
 """
 import abc
 
+from oslo_config import cfg
 import six
 
 
@@ -53,8 +54,9 @@ class CertManager(object):
     """
 
     @abc.abstractmethod
-    def store_cert(self, certificate, private_key, intermediates=None,
-                   private_key_passphrase=None, **kwargs):
+    def store_cert(self, project_id, certificate, private_key,
+                   intermediates=None, private_key_passphrase=None,
+                   expiration=None, name=None):
         """Stores (i.e., registers) a cert with the cert manager.
 
         This method stores the specified cert and returns its UUID that
@@ -65,8 +67,8 @@ class CertManager(object):
         pass
 
     @abc.abstractmethod
-    def get_cert(self, cert_ref, check_only=False,
-                 resource_ref=None, **kwargs):
+    def get_cert(self, project_id, cert_ref, resource_ref,
+                 check_only=False, service_name=None):
         """Retrieves the specified cert.
 
         If check_only is True, don't perform any sort of registration.
@@ -76,10 +78,21 @@ class CertManager(object):
         pass
 
     @abc.abstractmethod
-    def delete_cert(self, cert_ref, resource_ref, **kwargs):
+    def delete_cert(self, project_id, cert_ref, resource_ref,
+                    service_name=None):
         """Deletes the specified cert.
 
         If the specified cert does not exist, a CertificateStorageException
         should be raised.
         """
         pass
+
+    @classmethod
+    def get_service_url(cls, loadbalancer_id):
+        # Format: <servicename>://<region>/<resource>/<object_id>
+        return "{0}://{1}/{2}/{3}".format(
+            cfg.CONF.service_auth.service_name,
+            cfg.CONF.service_auth.region,
+            "loadbalancer",
+            loadbalancer_id
+        )

@@ -16,7 +16,7 @@ from oslo_config import cfg
 
 from neutron_lbaas.common import cert_manager
 from neutron_lbaas.common.cert_manager import barbican_cert_manager as bcm
-from neutron_lbaas.common.cert_manager import get_backend
+from neutron_lbaas.common.cert_manager import cert_manager as cmi
 from neutron_lbaas.common.cert_manager import local_cert_manager as lcm
 from neutron_lbaas.tests import base
 
@@ -27,12 +27,26 @@ class TestCertManager(base.BaseTestCase):
         cert_manager._CERT_MANAGER_PLUGIN = None
         super(TestCertManager, self).setUp()
 
+    def test_get_service_url(self):
+        # Format: <servicename>://<region>/<resource>/<object_id>
+        cfg.CONF.set_override('service_name',
+                              'lbaas',
+                              'service_auth',
+                              enforce_type=True)
+        cfg.CONF.set_override('region',
+                              'RegionOne',
+                              'service_auth',
+                              enforce_type=True)
+        self.assertEqual(
+            'lbaas://RegionOne/loadbalancer/LB-ID',
+            cmi.CertManager.get_service_url('LB-ID'))
+
     def test_barbican_cert_manager(self):
         cfg.CONF.set_override(
             'cert_manager_type',
             'barbican',
             group='certificates')
-        self.assertEqual(get_backend().CertManager,
+        self.assertEqual(cert_manager.get_backend().CertManager,
                          bcm.CertManager)
 
     def test_local_cert_manager(self):
@@ -40,5 +54,5 @@ class TestCertManager(base.BaseTestCase):
             'cert_manager_type',
             'local',
             group='certificates')
-        self.assertEqual(get_backend().CertManager,
+        self.assertEqual(cert_manager.get_backend().CertManager,
                          lcm.CertManager)

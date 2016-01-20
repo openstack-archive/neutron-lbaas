@@ -16,57 +16,10 @@ from barbicanclient import client as barbican_client
 import mock
 
 import neutron_lbaas.common.cert_manager.barbican_cert_manager as bbq_common
-from neutron_lbaas.common import keystone
 import neutron_lbaas.tests.base as base
-from oslo_config import cfg
-
-
-class TestBarbicanAuth(base.BaseTestCase):
-
-    def setUp(self):
-        # Reset the client
-        bbq_common.BarbicanKeystoneAuth._barbican_client = None
-        keystone._SESSION = None
-
-        super(TestBarbicanAuth, self).setUp()
-
-    def test_get_barbican_client(self):
-        # There should be no existing client
-        self.assertIsNone(keystone._SESSION)
-
-        # Mock out the keystone session and get the client
-        keystone._SESSION = mock.MagicMock()
-        bc1 = bbq_common.BarbicanKeystoneAuth.get_barbican_client()
-
-        # Our returned client should also be the saved client
-        self.assertIsInstance(
-            bbq_common.BarbicanKeystoneAuth._barbican_client,
-            barbican_client.Client
-        )
-        self.assertIs(
-            bbq_common.BarbicanKeystoneAuth._barbican_client,
-            bc1
-        )
-
-        # Getting the session again should return the same object
-        bc2 = bbq_common.BarbicanKeystoneAuth.get_barbican_client()
-        self.assertIs(bc1, bc2)
-
-    def test_get_service_url(self):
-        # Format: <servicename>://<region>/<resource>/<object_id>
-        cfg.CONF.set_override('service_name',
-                              'lbaas',
-                              'service_auth')
-        cfg.CONF.set_override('region',
-                              'RegionOne',
-                              'service_auth')
-        self.assertEqual(
-            'lbaas://RegionOne/LOADBALANCER/LB-ID',
-            bbq_common.CertManager._get_service_url('LB-ID'))
 
 
 class TestBarbicanCert(base.BaseTestCase):
-
     def setUp(self):
         # Certificate data
         self.certificate = "My Certificate"

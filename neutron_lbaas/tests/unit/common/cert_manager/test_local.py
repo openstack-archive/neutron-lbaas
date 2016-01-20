@@ -52,6 +52,7 @@ class TestLocalCert(base.BaseTestCase):
 class TestLocalManager(base.BaseTestCase):
 
     def setUp(self):
+        self.project_id = "12345"
         self.certificate = "My Certificate"
         self.intermediates = "My Intermediates"
         self.private_key = "My Private Key"
@@ -60,13 +61,16 @@ class TestLocalManager(base.BaseTestCase):
         conf = oslo_fixture.Config(cfg.CONF)
         conf.config(group="certificates", storage_path="/tmp/")
 
+        self.cert_manager = local_cert_manager.CertManager()
+
         super(TestLocalManager, self).setUp()
 
     def _store_cert(self):
         file_mock = mock.mock_open()
         # Attempt to store the cert
         with mock.patch('six.moves.builtins.open', file_mock, create=True):
-            cert_id = local_cert_manager.CertManager.store_cert(
+            cert_id = self.cert_manager.store_cert(
+                project_id=self.project_id,
                 certificate=self.certificate,
                 intermediates=self.intermediates,
                 private_key=self.private_key,
@@ -98,7 +102,11 @@ class TestLocalManager(base.BaseTestCase):
         file_mock = mock.mock_open()
         # Attempt to retrieve the cert
         with mock.patch('six.moves.builtins.open', file_mock, create=True):
-            data = local_cert_manager.CertManager.get_cert(cert_id)
+            data = self.cert_manager.get_cert(
+                project_id=self.project_id,
+                cert_ref=cert_id,
+                resource_ref=None
+            )
 
         # Verify the correct files were opened
         file_mock.assert_has_calls([
@@ -117,7 +125,11 @@ class TestLocalManager(base.BaseTestCase):
         remove_mock = mock.Mock()
         # Delete the cert
         with mock.patch('os.remove', remove_mock):
-            local_cert_manager.CertManager.delete_cert(cert_id)
+            self.cert_manager.delete_cert(
+                project_id=self.project_id,
+                cert_ref=cert_id,
+                resource_ref=None
+            )
 
         # Verify the correct files were removed
         remove_mock.assert_has_calls([
