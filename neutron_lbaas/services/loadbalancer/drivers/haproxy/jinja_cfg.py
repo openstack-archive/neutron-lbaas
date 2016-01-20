@@ -245,8 +245,8 @@ def _transform_loadbalancer(loadbalancer, haproxy_base_dir):
     :param haproxy_base_dir: location of the instances state data
     :returns: dictionary of transformed load balancer values
     """
-    listeners = [_transform_listener(
-        x, haproxy_base_dir) for x in loadbalancer.listeners]
+    listeners = [_transform_listener(x, haproxy_base_dir)
+        for x in loadbalancer.listeners if x.admin_state_up]
     pools = [_transform_pool(x) for x in loadbalancer.pools]
     return {
         'name': loadbalancer.name,

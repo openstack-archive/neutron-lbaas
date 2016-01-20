@@ -153,7 +153,7 @@ def sample_listener_tuple(proto=None, monitor=True, persistence=True,
     port = '443' if proto is 'HTTPS' or proto is 'TERMINATED_HTTPS' else '80'
     in_listener = collections.namedtuple(
         'listener', 'id, tenant_id, protocol_port, protocol, default_pool, '
-                    'connection_limit, default_tls_container_id, '
+        'connection_limit, admin_state_up, default_tls_container_id, '
                     'sni_container_ids, default_tls_container, '
                     'sni_containers, loadbalancer_id')
     return in_listener(
@@ -165,6 +165,7 @@ def sample_listener_tuple(proto=None, monitor=True, persistence=True,
             proto=proto, monitor=monitor, persistence=persistence,
             persistence_type=persistence_type),
         connection_limit=98,
+        admin_state_up=True,
         default_tls_container_id='cont_id_1' if tls else '',
         sni_container_ids=['cont_id_2', 'cont_id_3'] if sni else [],
         default_tls_container=sample_tls_container_tuple(
