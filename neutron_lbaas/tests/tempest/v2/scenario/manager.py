@@ -46,7 +46,6 @@ class ScenarioTest(test.BaseTestCase):
     def setup_clients(cls):
         super(ScenarioTest, cls).setup_clients()
         # Clients (in alphabetical order)
-        cls.flavors_client = cls.manager.flavors_client
         cls.floating_ips_client = cls.manager.floating_ips_client
         # Glance image client v1
         cls.image_client = cls.manager.image_client
@@ -58,7 +57,6 @@ class ScenarioTest(test.BaseTestCase):
         cls.servers_client = cls.manager.servers_client
         cls.volumes_client = cls.manager.volumes_client
         cls.snapshots_client = cls.manager.snapshots_client
-        cls.interface_client = cls.manager.interfaces_client
         # Neutron network client
         cls.network_client = cls.manager.network_client
         # Heat client
