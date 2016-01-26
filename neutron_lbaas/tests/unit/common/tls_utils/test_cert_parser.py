@@ -14,6 +14,8 @@
 #    under the License.
 
 from cryptography import x509
+import six
+
 import neutron_lbaas.common.exceptions as exceptions
 import neutron_lbaas.common.tls_utils.cert_parser as cert_parser
 from neutron_lbaas.tests import base
@@ -246,6 +248,7 @@ class TestTLSParseUtils(base.BaseTestCase):
     def test_x509_parses(self):
         self.assertRaises(exceptions.UnreadableCert,
                           cert_parser.validate_cert, "BAD CERT")
+        self.assertTrue(cert_parser.validate_cert(six.u(ALT_EXT_CRT)))
         self.assertTrue(cert_parser.validate_cert(ALT_EXT_CRT))
         self.assertTrue(cert_parser.validate_cert(ALT_EXT_CRT,
                         private_key=UNENCRYPTED_PKCS8_CRT_KEY))
@@ -261,7 +264,7 @@ class TestTLSParseUtils(base.BaseTestCase):
                           cert_parser._read_privatekey,
                           ENCRYPTED_PKCS8_CRT_KEY)
         cert_parser._read_privatekey(
-            ENCRYPTED_PKCS8_CRT_KEY,
+            str(ENCRYPTED_PKCS8_CRT_KEY),
             passphrase=ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE)
 
     def test_read_private_key_unicode(self):
@@ -269,8 +272,11 @@ class TestTLSParseUtils(base.BaseTestCase):
                           cert_parser._read_privatekey,
                           ENCRYPTED_PKCS8_CRT_KEY)
         cert_parser._read_privatekey(
+            six.u(ENCRYPTED_PKCS8_CRT_KEY),
+            passphrase=ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE)
+        cert_parser._read_privatekey(
             ENCRYPTED_PKCS8_CRT_KEY,
-            passphrase=u'{0}'.format(ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
+            passphrase=six.u(ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
 
     def test_dump_private_key(self):
         self.assertRaises(exceptions.NeedsPassphrase,
@@ -280,7 +286,7 @@ class TestTLSParseUtils(base.BaseTestCase):
             UNENCRYPTED_PKCS8_CRT_KEY)
         decrypted_rsa_key = _get_rsa_numbers(
             cert_parser.dump_private_key(ENCRYPTED_PKCS8_CRT_KEY,
-                             ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
+                                         ENCRYPTED_PKCS8_CRT_KEY_PASSPHRASE))
 
         self.assertEqual(striped_rsa_key, decrypted_rsa_key)
         self.assertIsNot(ENCRYPTED_PKCS8_CRT_KEY,
