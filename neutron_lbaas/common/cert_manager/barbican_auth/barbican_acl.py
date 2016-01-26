@@ -17,6 +17,7 @@
 Barbican ACL auth class for Barbican certificate handling
 """
 from barbicanclient import client as barbican_client
+from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
@@ -25,6 +26,8 @@ from neutron_lbaas.common.cert_manager.barbican_auth import common
 from neutron_lbaas.common import keystone
 
 LOG = logging.getLogger(__name__)
+
+CONF = cfg.CONF
 
 
 class BarbicanACLAuth(common.BarbicanAuth):
@@ -35,7 +38,9 @@ class BarbicanACLAuth(common.BarbicanAuth):
         if not cls._barbican_client:
             try:
                 cls._barbican_client = barbican_client.Client(
-                    session=keystone.get_session()
+                    session=keystone.get_session(),
+                    region_name=CONF.service_auth.region,
+                    interface=CONF.service_auth.endpoint_type
                 )
             except Exception:
                 with excutils.save_and_reraise_exception():
