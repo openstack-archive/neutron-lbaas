@@ -40,6 +40,27 @@ from neutron_lbaas.tests.tempest.v2.scenario import manager
 config = config.CONF
 
 
+def _setup_config_args(auth_provider):
+    """Set up ServiceClient arguments using config settings. """
+    service = config.network.catalog_type
+    region = config.network.region or config.identity.region
+    endpoint_type = config.network.endpoint_type
+    build_interval = config.network.build_interval
+    build_timeout = config.network.build_timeout
+
+    # The disable_ssl appears in identity
+    disable_ssl_certificate_validation = (
+        config.identity.disable_ssl_certificate_validation)
+    ca_certs = None
+
+    # Trace in debug section
+    trace_requests = config.debug.trace_requests
+
+    return [auth_provider, service, region, endpoint_type, build_interval,
+            build_timeout, disable_ssl_certificate_validation, ca_certs,
+            trace_requests]
+
+
 class BaseTestCase(manager.NetworkScenarioTest):
 
     def setUp(self):
@@ -61,7 +82,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
         mgr = self.get_client_manager()
         auth_provider = mgr.auth_provider
-        self.client_args = [auth_provider, 'network', 'regionOne']
+        self.client_args = _setup_config_args(auth_provider)
 
         self.load_balancers_client = (
             load_balancers_client.LoadBalancersClientJSON(*self.client_args))
@@ -225,9 +246,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                                username, key.name)
 
             # Start netcat
-            start_server = ('while true; do '
-                            'sudo nc -ll -p %(port)s -e sh /tmp/%(script)s; '
-                            'done > /dev/null &')
+            start_server = ('while true; do sudo sh /tmp/%(script)s '
+                            '| sudo nc -l -p %(port)s; done > /dev/null &')
             cmd = start_server % {'port': self.port1,
                                   'script': 'script1'}
             ssh_client.exec_command(cmd)
