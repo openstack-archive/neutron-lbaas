@@ -1,4 +1,4 @@
-# Copyright 2015 Rackspace
+# Copyright 2015, 2016 Rackspace
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -11,10 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from tempest_lib.common.utils import data_utils
-from tempest_lib import exceptions as ex
 
-from neutron_lbaas.tests.tempest.lib import test
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as ex
+from tempest import test
+
 from neutron_lbaas.tests.tempest.v2.api import base
 
 
@@ -48,6 +49,9 @@ class TestHealthMonitors(base.BaseTestCase):
         cls.pool = cls._create_pool(
             protocol='HTTP', lb_algorithm='ROUND_ROBIN',
             listener_id=cls.listener.get('id'))
+        cls.create_basic_hm_kwargs = {'type': 'HTTP', 'delay': 3,
+                                      'max_retries': 10, 'timeout': 5,
+                                      'pool_id': cls.pool.get('id')}
 
     @test.attr(type='smoke')
     def test_list_health_monitors_empty(self):
@@ -56,17 +60,13 @@ class TestHealthMonitors(base.BaseTestCase):
 
     @test.attr(type='smoke')
     def test_list_health_monitors_one(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
-                                         pool_id=self.pool.get('id'))
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertIn(hm, hm_list)
 
     @test.attr(type='smoke')
     def test_list_health_monitors_two(self):
-        hm1 = self._create_health_monitor(
-            type='HTTP', delay=3, max_retries=10, timeout=5,
-            pool_id=self.pool.get('id'))
+        hm1 = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_listener = self._create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
             protocol='HTTP', protocol_port=88)
@@ -76,7 +76,10 @@ class TestHealthMonitors(base.BaseTestCase):
             listener_id=new_listener.get('id'))
         self.addCleanup(self._delete_pool, new_pool.get('id'))
         hm2 = self._create_health_monitor(
-            type='HTTP', max_retries=10, delay=3, timeout=5,
+            type='HTTPS',
+            max_retries=3,
+            delay=1,
+            timeout=2,
             pool_id=new_pool.get('id'))
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertEqual(2, len(hm_list))
@@ -85,17 +88,13 @@ class TestHealthMonitors(base.BaseTestCase):
 
     @test.attr(type='smoke')
     def test_get_health_monitor(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
-                                         pool_id=self.pool.get('id'))
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
 
     @test.attr(type='smoke')
     def test_create_health_monitor(self):
-        new_hm = self._create_health_monitor(
-            type='HTTP', delay=3, max_retries=10, timeout=5,
-            pool_id=self.pool.get('id'))
+        new_hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm = self.health_monitors_client.get_health_monitor(new_hm.get('id'))
         self.assertEqual(new_hm, hm)
 
@@ -154,9 +153,7 @@ class TestHealthMonitors(base.BaseTestCase):
         """Test if a non_admin user can create a health monitor with
         admin_state_up missing
         """
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
         self.assertTrue(hm_test.get('admin_state_up'))
@@ -166,8 +163,7 @@ class TestHealthMonitors(base.BaseTestCase):
         """Test if a non_admin user can create a health monitor with
         http_method missing
         """
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
 
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
@@ -178,9 +174,7 @@ class TestHealthMonitors(base.BaseTestCase):
         """Test if a non_admin user can create a health monitor with
         url_path missing
         """
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
         self.assertEqual('/', hm_test.get('url_path'))
@@ -190,8 +184,7 @@ class TestHealthMonitors(base.BaseTestCase):
         """Test if a non_admin user can create a health monitor with
         expected_codes missing
         """
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
 
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
@@ -367,207 +360,161 @@ class TestHealthMonitors(base.BaseTestCase):
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_admin_state_up(self):
         """Test update health monitor with missing admin state field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertTrue(new_hm.get('admin_state_up'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_delay(self):
         """Test update health monitor with missing delay field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('delay'), new_hm.get('delay'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_timeout(self):
         """Test update health monitor with missing timeout field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('timeout'), new_hm.get('timeout'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_max_retries(self):
         """Test update health monitor with missing max retries field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('max_retries'), new_hm.get('max_retries'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_http_method(self):
         """Test update health monitor with missing http_method field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('http_method'), new_hm.get('http_method'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_url_path(self):
         """Test update health monitor with missing url_path field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('url_path'), new_hm.get('url_path'))
 
     @test.attr(type='smoke')
     def test_update_health_monitor_missing_expected_codes(self):
         """Test update health monitor with missing expected_codes field"""
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('expected_codes'),
                          new_hm.get('expected_codes'))
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_attribute(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
-                                         pool_id=self.pool.get('id'))
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), max_retries='blue')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_admin_state_up(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), admin_state_up='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_delay(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), delay='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_timeout(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), timeout='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_max_retries(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), max_retries='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_http_method(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), http_method='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_url_path(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), url_path='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_invalid_expected_codes(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), expected_codes='blah')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_admin_state_up(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), admin_state_up='')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_delay(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), empty_delay='')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_timeout(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), timeout='')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_max_retries(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), max_retries='')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_empty_http_method(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), http_method='')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_url_path(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), http_method='')
 
     @test.attr(type='negative')
     def test_update_health_monitor_empty_expected_codes(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                        timeout=5, pool_id=self.pool.get('id'))
-
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), expected_codes='')
 
     @test.attr(type='smoke')
     def test_update_health_monitor_extra_attribute(self):
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
-                                         pool_id=self.pool.get('id'))
+        hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), protocol='UDP')

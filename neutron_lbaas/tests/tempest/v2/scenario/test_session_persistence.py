@@ -13,7 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lbaas.tests.tempest.lib import test
+from tempest import test
+
 from neutron_lbaas.tests.tempest.v2.scenario import base
 
 

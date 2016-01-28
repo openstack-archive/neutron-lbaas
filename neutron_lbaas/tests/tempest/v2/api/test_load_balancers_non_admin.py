@@ -1,4 +1,4 @@
-# Copyright 2015 Rackspace US Inc.
+# Copyright 2015, 2016 Rackspace US Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,12 +14,11 @@
 #    under the License.
 
 from netaddr import IPAddress
+from tempest import config
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as ex
+from tempest import test
 
-from tempest_lib.common.utils import data_utils
-from tempest_lib import exceptions
-
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
@@ -98,7 +97,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         Test create load balancer with a missing
         required vip_subnet_id field
         """
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           tenant_id=self.subnet['tenant_id'])
@@ -106,7 +105,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_empty_provider_field(self):
         """Test create load balancer with an empty provider field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           provider="")
@@ -122,7 +121,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_empty_vip_address_field(self):
         """Test create load balancer with empty vip_address field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           vip_subnet_id=self.subnet['id'],
@@ -139,7 +138,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_empty_admin_state_up_field(self):
         """Test create load balancer with empty admin_state_up field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           vip_subnet_id=self.subnet['id'],
@@ -204,7 +203,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_vip_subnet_id(self):
         """Test create load balancer with an invalid vip subnet id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           vip_subnet_id="abc123")
@@ -212,7 +211,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_empty_vip_subnet_id(self):
         """Test create load balancer with an empty vip subnet id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           vip_subnet_id="")
@@ -220,7 +219,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_tenant_id(self):
         """Test create load balancer with an invalid tenant id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           tenant_id="&^%123")
@@ -228,7 +227,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_name(self):
         """Test create load balancer with an invalid name"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           tenant_id=self.subnet['tenant_id'],
@@ -238,7 +237,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_description(self):
         """Test create load balancer with an invalid description"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           tenant_id=self.subnet['tenant_id'],
@@ -248,7 +247,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_incorrect_attribute(self):
         """Test create a load balancer with an extra, incorrect field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           tenant_id=self.subnet['tenant_id'],
@@ -268,7 +267,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_empty_tenant_id_field(self):
         """Test create load balancer with empty tenant_id field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           vip_subnet_id=self.subnet['id'],
                           wait=False,
@@ -278,7 +277,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     def test_create_load_balancer_other_tenant_id_field(self):
         """Test create load balancer for other tenant"""
         tenant = 'deffb4d7c0584e89a8ec99551565713c'
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self.load_balancers_client.create_load_balancer,
                           wait=False,
                           vip_subnet_id=self.subnet['id'],
@@ -287,7 +286,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_invalid_flavor_field(self):
         """Test create load balancer with an invalid flavor field"""
-        self.assertRaises(exceptions.NotFound,
+        self.assertRaises(ex.NotFound,
                           self.load_balancers_client.create_load_balancer,
                           vip_subnet_id=self.subnet['id'],
                           flavor_id="NO_SUCH_FLAVOR")
@@ -295,7 +294,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_load_balancer_provider_flavor_conflict(self):
         """Test create load balancer with both a provider and a flavor"""
-        self.assertRaises(exceptions.Conflict,
+        self.assertRaises(ex.Conflict,
                           self.load_balancers_client.create_load_balancer,
                           vip_subnet_id=self.subnet['id'],
                           flavor_id="NO_SUCH_FLAVOR",
@@ -322,7 +321,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_load_balancer_invalid_name(self):
         """Test update load balancer with invalid name"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
                           wait=False,
@@ -343,7 +342,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_load_balancer_invalid_description(self):
         """Test update load balancer with invalid description"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
                           wait=False,
@@ -373,7 +372,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_load_balancer_invalid_admin_state_up_field(self):
         """Test update load balancer with an invalid admin_state_up"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
                           wait=False,
@@ -382,7 +381,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_load_balancer_empty_admin_state_up_field(self):
         """Test update load balancer with an empty admin_state_up"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
                           wait=False,
@@ -400,7 +399,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_load_balancer_incorrect_attribute(self):
         """Test update a load balancer with an extra, invalid attribute"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_load_balancer,
                           load_balancer_id=self.load_balancer_id,
                           wait=False,
@@ -440,6 +439,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(new_load_balancer, load_balancer)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
         self._delete_load_balancer(new_load_balancer_id)
-        self.assertRaises(exceptions.NotFound,
+        self.assertRaises(ex.NotFound,
                           self.load_balancers_client.get_load_balancer,
                           new_load_balancer_id)

@@ -1,4 +1,5 @@
 # Copyright 2012 OpenStack Foundation
+# Copyright 2016 Rackspace Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,18 +15,18 @@
 #    under the License.
 
 import netaddr
-from tempest_lib.common.utils import data_utils
-from tempest_lib import exceptions as lib_exc
+from tempest import config
+from tempest import exceptions
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as lib_exc
+from tempest import test
 
 from neutron_lbaas.tests.tempest.v1.api import clients
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import exceptions
-import neutron_lbaas.tests.tempest.lib.test
 
 CONF = config.CONF
 
 
-class BaseNetworkTest(neutron_lbaas.tests.tempest.lib.test.BaseTestCase):
+class BaseNetworkTest(test.BaseTestCase):
 
     """
     Base class for the Neutron tests that use the Tempest Neutron REST client
@@ -48,12 +49,23 @@ class BaseNetworkTest(neutron_lbaas.tests.tempest.lib.test.BaseTestCase):
     """
 
     force_tenant_isolation = False
+    credentials = ['primary']
 
     # Default to ipv4.
     _ip_version = 4
 
     @classmethod
-    def resource_setup(cls):
+    def get_client_manager(cls, credential_type=None, roles=None,
+                           force_new=None):
+        manager = test.BaseTestCase.get_client_manager(
+            credential_type=credential_type,
+            roles=roles,
+            force_new=force_new)
+        # Neutron uses a different clients manager than the one in the Tempest
+        return clients.Manager(manager.credentials)
+
+    @classmethod
+    def skip_checks(cls):
         # Create no network resources for these test.
         cls.set_network_resources()
         super(BaseNetworkTest, cls).resource_setup()
@@ -62,10 +74,19 @@ class BaseNetworkTest(neutron_lbaas.tests.tempest.lib.test.BaseTestCase):
         if cls._ip_version == 6 and not CONF.network_feature_enabled.ipv6:
             raise cls.skipException("IPv6 Tests are disabled.")
 
-        os = cls.get_client_manager()
+    @classmethod
+    def setup_credentials(cls):
+        # Create no network resources for these test.
+        cls.set_network_resources()
+        super(BaseNetworkTest, cls).setup_credentials()
 
-        cls.network_cfg = CONF.network
-        cls.client = os.network_client
+    @classmethod
+    def setup_clients(cls):
+        super(BaseNetworkTest, cls).setup_clients()
+        cls.client = cls.os.network_client
+
+    @classmethod
+    def resource_setup(cls):
         cls.networks = []
         cls.shared_networks = []
         cls.subnets = []
@@ -161,7 +182,6 @@ class BaseNetworkTest(neutron_lbaas.tests.tempest.lib.test.BaseTestCase):
                 cls._try_delete_resource(cls.admin_client.delete_network,
                                          network['id'])
 
-            cls.clear_isolated_creds()
         super(BaseNetworkTest, cls).resource_cleanup()
 
     @classmethod
@@ -428,13 +448,13 @@ class BaseNetworkTest(neutron_lbaas.tests.tempest.lib.test.BaseTestCase):
 
 class BaseAdminNetworkTest(BaseNetworkTest):
 
-    @classmethod
-    def resource_setup(cls):
-        super(BaseAdminNetworkTest, cls).resource_setup()
+    credentials = ['primary', 'admin']
 
-        mgr = cls.get_client_manager(credential_type='admin')
-        cls.manager = mgr
-        cls.admin_client = mgr.network_client
+    @classmethod
+    def setup_clients(cls):
+        super(BaseAdminNetworkTest, cls).setup_clients()
+        cls.admin_client = cls.os_adm.network_client
+        cls.identity_admin_client = cls.os_adm.tenants_client
 
     @classmethod
     def create_metering_label(cls, name, description):

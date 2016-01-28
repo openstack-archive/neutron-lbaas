@@ -1,4 +1,4 @@
-# Copyright 2015 Rackspace US Inc.
+# Copyright 2015, 2016 Rackspace US Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common.utils import data_utils
-from tempest_lib import exceptions
+from tempest import config
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as ex
+from tempest import test
 
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF
@@ -114,7 +114,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_missing_field_loadbalancer(self):
         """Test create listener with a missing required field loadbalancer"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           protocol_port=self.port,
                           protocol=self.protocol)
@@ -124,7 +124,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_missing_field_protocol(self):
         """Test create listener with a missing required field protocol"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port)
@@ -134,7 +134,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_missing_field_protocol_port(self):
         """Test create listener with a missing required field protocol_port"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol=self.protocol)
@@ -161,7 +161,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_load_balancer_id(self):
         """Test create listener with an invalid load_balancer_id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id="234*",
                           protocol_port=self.port,
@@ -172,7 +172,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_protocol(self):
         """Test create listener with an invalid protocol"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -183,7 +183,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_protocol_port(self):
         """Test create listener with an invalid protocol_port"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port="9999999",
@@ -194,7 +194,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_admin_state_up(self):
         """Test update listener with an invalid admin_state_up"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -205,7 +205,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_tenant_id(self):
         """Test create listener with an invalid tenant id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -217,7 +217,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_name(self):
         """Test create listener with an invalid name"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -229,7 +229,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_invalid_description(self):
         """Test create listener with an invalid description"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -243,7 +243,7 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test create listener with an invalid value for connection
         _limit field
         """
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -255,7 +255,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_empty_load_balancer_id(self):
         """Test create listener with an empty load_balancer_id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id="",
                           protocol_port=self.port,
@@ -266,7 +266,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_empty_protocol(self):
         """Test create listener with an empty protocol"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -277,7 +277,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_empty_protocol_port(self):
         """Test create listener with an empty protocol_port"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port="",
@@ -288,7 +288,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_empty_admin_state_up(self):
         """Test update listener with an empty  admin_state_up"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           protocol_port=self.port,
                           protocol=self.protocol,
@@ -299,7 +299,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_empty_tenant_id(self):
         """Test create listener with an empty tenant id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -347,7 +347,7 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test create listener with an empty connection
         _limit field
         """
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
@@ -359,7 +359,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_create_listener_incorrect_attribute(self):
         """Test create a listener with an extra, incorrect field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           incorrect_attribute="incorrect_attribute",
                           **self.create_listener_kwargs)
@@ -380,7 +380,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_invalid_tenant_id(self):
         """Test update listener with an invalid tenant id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           tenant_id="&^%123")
@@ -390,7 +390,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_invalid_admin_state_up(self):
         """Test update a listener with an invalid admin_state_up"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           admin_state_up="$23")
@@ -400,7 +400,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_invalid_name(self):
         """Test update a listener with an invalid name"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           name='a' * 256)
@@ -410,7 +410,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_invalid_description(self):
         """Test update a listener with an invalid description"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           description='a' * 256)
@@ -420,7 +420,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_invalid_connection_limit(self):
         """Test update a listener with an invalid connection_limit"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           connection_limit="$23")
@@ -430,7 +430,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_incorrect_attribute(self):
         """Test update a listener with an extra, incorrect field"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           name="listener_name123",
@@ -501,7 +501,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_empty_tenant_id(self):
         """Test update listener with an empty tenant id"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           tenant_id="")
@@ -511,7 +511,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_empty_admin_state_up(self):
         """Test update a listener with an empty admin_state_up"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           admin_state_up="")
@@ -543,7 +543,7 @@ class ListenersTestJSON(base.BaseTestCase):
     @test.attr(type='negative')
     def test_update_listener_empty_connection_limit(self):
         """Test update a listener with an empty connection_limit"""
-        self.assertRaises(exceptions.BadRequest,
+        self.assertRaises(ex.BadRequest,
                           self._update_listener,
                           listener_id=self.listener_id,
                           connection_limit="")
@@ -565,6 +565,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertEqual(new_listener, listener)
         self.assertNotEqual(self.listener, new_listener)
         self._delete_listener(new_listener_id)
-        self.assertRaises(exceptions.NotFound,
+        self.assertRaises(ex.NotFound,
                           self.listeners_client.get_listener,
                           new_listener_id)

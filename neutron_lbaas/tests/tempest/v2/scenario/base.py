@@ -1,4 +1,5 @@
 # Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Copyright 2016 Rackspace Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,30 +15,34 @@
 #    under the License.
 
 import cookielib
+import shlex
 import socket
+import subprocess
 import tempfile
 import time
 
+from oslo_log import log as logging
 import six
 from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
-from tempest_lib import exceptions as lib_exc
+from tempest.common import waiters
+from tempest import config
+from tempest import exceptions
+from tempest.lib import exceptions as lib_exc
+from tempest.scenario import manager
+from tempest.services.network import resources as net_resources
+from tempest import test
 
 from neutron_lbaas._i18n import _
-from neutron_lbaas.tests.tempest.lib.common import commands
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import exceptions
-from neutron_lbaas.tests.tempest.lib.services.network import resources as \
-    net_resources
-from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
 from neutron_lbaas.tests.tempest.v2.clients import pools_client
-from neutron_lbaas.tests.tempest.v2.scenario import manager
 
 config = config.CONF
+
+LOG = logging.getLogger(__name__)
 
 
 def _setup_config_args(auth_provider):
@@ -74,7 +79,6 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.port1 = 80
         self.port2 = 88
         self.num = 50
-        self.server_ips = {}
         self.server_fixed_ips = {}
 
         self._create_security_group_for_test()
@@ -173,9 +177,14 @@ class BaseTestCase(manager.NetworkScenarioTest):
             ],
             'key_name': keypair['name'],
             'security_groups': security_groups,
+            'name': name
         }
         net_name = self.network['name']
-        server = self.create_server(name=name, create_kwargs=create_kwargs)
+        server = self.create_server(**create_kwargs)
+        waiters.wait_for_server_status(self.servers_client,
+                                       server['id'], 'ACTIVE')
+        server = self.servers_client.show_server(server['id'])
+        server = server['server']
         self.servers_keypairs[server['id']] = keypair
         if (config.network.public_network_id and not
                 config.network.tenant_networks_reachable):
@@ -204,14 +213,16 @@ class BaseTestCase(manager.NetworkScenarioTest):
     def _stop_server(self):
         for name, value in six.iteritems(self.servers):
             if name == 'primary':
-                self.servers_client.stop(value)
-                self.servers_client.wait_for_server_status(value, 'SHUTOFF')
+                self.servers_client.stop_server(value)
+                waiters.wait_for_server_status(self.servers_client,
+                                               value, 'SHUTOFF')
 
     def _start_server(self):
         for name, value in six.iteritems(self.servers):
             if name == 'primary':
                 self.servers_client.start(value)
-                self.servers_client.wait_for_server_status(value, 'ACTIVE')
+                waiters.wait_for_server_status(self.servers_client,
+                                               value, 'ACTIVE')
 
     def _start_servers(self):
         """
@@ -221,10 +232,11 @@ class BaseTestCase(manager.NetworkScenarioTest):
         """
         for server_id, ip in six.iteritems(self.server_ips):
             private_key = self.servers_keypairs[server_id]['private_key']
-            server_name = self.servers_client.get_server(server_id)['name']
-            username = config.scenario.ssh_user
+            server = self.servers_client.show_server(server_id)['server']
+            server_name = server['name']
+            username = config.validation.image_ssh_user
             ssh_client = self.get_remote_client(
-                server_or_ip=ip,
+                ip_address=ip,
                 private_key=private_key)
 
             # Write a backend's response into a file
@@ -240,14 +252,15 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 with tempfile.NamedTemporaryFile() as key:
                     key.write(private_key)
                     key.flush()
-                    commands.copy_file_to_host(script.name,
-                                               "/tmp/script1",
-                                               ip,
-                                               username, key.name)
+                    self.copy_file_to_host(script.name,
+                                           "/tmp/script1",
+                                           ip,
+                                           username, key.name)
 
             # Start netcat
-            start_server = ('while true; do sudo sh /tmp/%(script)s '
-                            '| sudo nc -l -p %(port)s; done > /dev/null &')
+            start_server = ('while true; do '
+                            'sudo nc -ll -p %(port)s -e sh /tmp/%(script)s; '
+                            'done > /dev/null &')
             cmd = start_server % {'port': self.port1,
                                   'script': 'script1'}
             ssh_client.exec_command(cmd)
@@ -260,9 +273,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
                     with tempfile.NamedTemporaryFile() as key:
                         key.write(private_key)
                         key.flush()
-                        commands.copy_file_to_host(script.name,
-                                                   "/tmp/script2", ip,
-                                                   username, key.name)
+                        self.copy_file_to_host(script.name,
+                                               "/tmp/script2", ip,
+                                               username, key.name)
                 cmd = start_server % {'port': self.port2,
                                       'script': 'script2'}
                 ssh_client.exec_command(cmd)
@@ -405,7 +418,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
         # vip port - see https://bugs.launchpad.net/neutron/+bug/1163569
         # However the linuxbridge-agent does, and it is necessary to add a
         # security group with a rule that allows tcp port 80 to the vip port.
-        self.network_client.update_port(
+#        self.network_client.update_port(
+        self.ports_client.update_port(
             self.load_balancer.get('vip_port_id'),
             security_groups=[self.security_group.id])
 
@@ -494,7 +508,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 return False
             except error.HTTPError:
                 return False
-        timeout = config.compute.ping_timeout
+        timeout = config.validation .ping_timeout
         start = time.time()
         while not try_connect(check_ip, port):
             if (time.time() - start) > timeout:
@@ -585,3 +599,21 @@ class BaseTestCase(manager.NetworkScenarioTest):
             response = urllib2.urlopen(request)
             resp.append(response.read())
         self.assertEqual(len(set(resp)), 1, message=resp)
+
+    def copy_file_to_host(self, file_from, dest, host, username, pkey):
+        dest = "%s@%s:%s" % (username, host, dest)
+        cmd = ("scp -v -o UserKnownHostsFile=/dev/null "
+               "-o StrictHostKeyChecking=no "
+               "-i %(pkey)s %(file1)s %(dest)s" % {'pkey': pkey,
+                                                   'file1': file_from,
+                                                   'dest': dest})
+        args = shlex.split(cmd.encode('utf-8'))
+        subprocess_args = {'stdout': subprocess.PIPE,
+                           'stderr': subprocess.STDOUT}
+        proc = subprocess.Popen(args, **subprocess_args)
+        stdout, stderr = proc.communicate()
+        if proc.returncode != 0:
+            LOG.error(("Command {0} returned with exit status {1},"
+                      "output {2}, error {3}").format(cmd, proc.returncode,
+                                                      stdout, stderr))
+        return stdout

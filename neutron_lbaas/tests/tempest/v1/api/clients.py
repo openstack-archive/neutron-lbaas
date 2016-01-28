@@ -1,4 +1,5 @@
 # Copyright 2012 OpenStack Foundation
+# Copyright 2016 Rackspace Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,29 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron_lbaas.tests.tempest.lib.common import cred_provider
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import manager
-from neutron_lbaas.tests.tempest.lib.services.identity.v2.json.identity_client import \
-    IdentityClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v2.json.token_client import \
-     TokenClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.credentials_client \
-     import CredentialsClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.endpoints_client import \
-    EndPointClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.identity_client import \
-    IdentityV3ClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.policy_client import \
-     PolicyClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.region_client import \
-     RegionClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.service_client import \
-    ServiceClientJSON
-from neutron_lbaas.tests.tempest.lib.services.identity.v3.json.token_client import \
-     V3TokenClientJSON
+from tempest.common import cred_provider
+from tempest import config
+from tempest import manager
+from tempest.services.identity.v2.json.tenants_client import \
+    TenantsClient
+
 from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import \
-     NetworkClientJSON
+    NetworkClientJSON
 
 
 CONF = config.CONF
@@ -80,27 +66,12 @@ class Manager(manager.Manager):
         params = {
             'service': CONF.identity.catalog_type,
             'region': CONF.identity.region,
-            'endpoint_type': 'adminURL'
         }
         params.update(self.default_params_with_timeout_values)
-
-        self.identity_client = IdentityClientJSON(self.auth_provider,
-                                                  **params)
-        self.identity_v3_client = IdentityV3ClientJSON(self.auth_provider,
-                                                       **params)
-        self.endpoints_client = EndPointClientJSON(self.auth_provider,
-                                                   **params)
-        self.service_client = ServiceClientJSON(self.auth_provider, **params)
-        self.policy_client = PolicyClientJSON(self.auth_provider, **params)
-        self.region_client = RegionClientJSON(self.auth_provider, **params)
-        self.credentials_client = CredentialsClientJSON(self.auth_provider,
-                                                        **params)
-        # Token clients do not use the catalog. They only need default_params.
-        self.token_client = TokenClientJSON(CONF.identity.uri,
-                                            **self.default_params)
-        if CONF.identity_feature_enabled.api_v3:
-            self.token_v3_client = V3TokenClientJSON(CONF.identity.uri_v3,
-                                                     **self.default_params)
+        params_v2_admin = params.copy()
+        params_v2_admin['endpoint_type'] = CONF.identity.v2_admin_endpoint_type
+        self.tenants_client = TenantsClient(
+            self.auth_provider, **params_v2_admin)
 
 
 class AdminManager(Manager):

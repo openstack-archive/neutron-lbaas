@@ -1,4 +1,5 @@
-# Copyright 2015 Rackspace
+# Copyright 2015, 2016 Rackspace Inc.
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,15 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
 import time
 
 from oslo_log import log as logging
-from tempest_lib import exceptions
+from tempest.api.network import base
+from tempest import config
+from tempest.lib import exceptions
 
 from neutron_lbaas._i18n import _, _LI
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.v1.api import base
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
@@ -30,11 +30,6 @@ from neutron_lbaas.tests.tempest.v2.clients import pools_client
 CONF = config.CONF
 
 LOG = logging.getLogger(__name__)
-
-# Use local tempest conf if one is available.
-# This usually means we're running tests outside of devstack
-if os.path.exists('./tests/tempest/etc/dev_tempest.conf'):
-    CONF.set_config_path('./tests/tempest/etc/dev_tempest.conf')
 
 
 def _setup_client_args(auth_provider):
@@ -135,7 +130,7 @@ class BaseTestCase(base.BaseNetworkTest):
             cls._wait_for_load_balancer_status(lb.get('id'))
 
         cls._lbs_to_delete.append(lb.get('id'))
-        port = cls.client.show_port(lb['vip_port_id'])
+        port = cls.ports_client.show_port(lb['vip_port_id'])
         cls.ports.append(port['port'])
         return lb
 

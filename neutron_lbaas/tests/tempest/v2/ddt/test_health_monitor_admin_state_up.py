@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib import decorators
+from tempest import config
+from tempest.lib import decorators
 import testscenarios
 
-from neutron_lbaas.tests.tempest.lib import config
 from neutron_lbaas.tests.tempest.v2.ddt import base_ddt
 
 CONF = config.CONF
