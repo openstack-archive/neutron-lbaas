@@ -103,7 +103,7 @@ class V3CredsClient(CredsClient):
             # Domain names must be unique, in any case a list is returned,
             # selecting the first (and only) element
             self.creds_domain = self.identity_client.list_domains(
-                params={'name': domain_name})[0]
+                params={'name': domain_name})['domains'][0]
         except lib_exc.NotFound:
             # TODO(andrea) we could probably create the domain on the fly
             msg = "Configured domain %s could not be found" % domain_name

@@ -57,14 +57,16 @@ class IdentityClientJSON(service_client.ServiceClient):
         description: Description of new tenant (default is none)
         enabled <true|false>: Initial tenant status (default is true)
         """
+        domain_id = kwargs.get('domain_id', 'default')
         post_body = {
             'name': name,
             'description': kwargs.get('description', ''),
+            'domain_id': domain_id,
             'enabled': kwargs.get('enabled', True),
         }
-        post_body = json.dumps({'tenant': post_body})
-        resp, body = self.post('tenants', post_body)
-        self.expected_success(200, resp.status)
+        post_body = json.dumps({'project': post_body})
+        resp, body = self.post('projects', post_body)
+        self.expected_success(201, resp.status)
         return service_client.ResponseBody(resp, self._parse_resp(body))
 
     def delete_role(self, role_id):
@@ -75,34 +77,34 @@ class IdentityClientJSON(service_client.ServiceClient):
 
     def list_user_roles(self, tenant_id, user_id):
         """Returns a list of roles assigned to a user for a tenant."""
-        url = '/tenants/%s/users/%s/roles' % (tenant_id, user_id)
+        url = '/projects/%s/users/%s/roles' % (tenant_id, user_id)
         resp, body = self.get(url)
         self.expected_success(200, resp.status)
         return service_client.ResponseBodyList(resp, self._parse_resp(body))
 
     def assign_user_role(self, tenant_id, user_id, role_id):
         """Add roles to a user on a tenant."""
-        resp, body = self.put('/tenants/%s/users/%s/roles/OS-KSADM/%s' %
+        resp, body = self.put('/projects/%s/users/%s/roles/OS-KSADM/%s' %
                               (tenant_id, user_id, role_id), "")
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, self._parse_resp(body))
 
     def remove_user_role(self, tenant_id, user_id, role_id):
         """Removes a role assignment for a user on a tenant."""
-        resp, body = self.delete('/tenants/%s/users/%s/roles/OS-KSADM/%s' %
+        resp, body = self.delete('/projects/%s/users/%s/roles/OS-KSADM/%s' %
                                  (tenant_id, user_id, role_id))
         self.expected_success(204, resp.status)
         return service_client.ResponseBody(resp, body)
 
     def delete_tenant(self, tenant_id):
         """Delete a tenant."""
-        resp, body = self.delete('tenants/%s' % str(tenant_id))
+        resp, body = self.delete('projects/%s' % str(tenant_id))
         self.expected_success(204, resp.status)
         return service_client.ResponseBody(resp, body)
 
     def get_tenant(self, tenant_id):
         """Get tenant details."""
-        resp, body = self.get('tenants/%s' % str(tenant_id))
+        resp, body = self.get('projects/%s' % str(tenant_id))
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, self._parse_resp(body))
 
@@ -114,10 +116,10 @@ class IdentityClientJSON(service_client.ServiceClient):
 
     def list_tenants(self):
         """Returns tenants."""
-        resp, body = self.get('tenants')
+        resp, body = self.get('projects')
         self.expected_success(200, resp.status)
         body = json.loads(body)
-        return service_client.ResponseBodyList(resp, body['tenants'])
+        return service_client.ResponseBodyList(resp, body['projects'])
 
     def get_tenant_by_name(self, tenant_name):
         tenants = self.list_tenants()
@@ -138,8 +140,8 @@ class IdentityClientJSON(service_client.ServiceClient):
             'description': desc,
             'enabled': en,
         }
-        post_body = json.dumps({'tenant': post_body})
-        resp, body = self.post('tenants/%s' % tenant_id, post_body)
+        post_body = json.dumps({'project': post_body})
+        resp, body = self.post('projects/%s' % tenant_id, post_body)
         self.expected_success(200, resp.status)
         return service_client.ResponseBody(resp, self._parse_resp(body))
 
@@ -151,7 +153,7 @@ class IdentityClientJSON(service_client.ServiceClient):
             'email': email
         }
         if tenant_id is not None:
-            post_body['tenantId'] = tenant_id
+            post_body['project_id'] = tenant_id
         if kwargs.get('enabled') is not None:
             post_body['enabled'] = kwargs.get('enabled')
         post_body = json.dumps({'user': post_body})
@@ -208,7 +210,7 @@ class IdentityClientJSON(service_client.ServiceClient):
 
     def list_users_for_tenant(self, tenant_id):
         """List users for a Tenant."""
-        resp, body = self.get('/tenants/%s/users' % tenant_id)
+        resp, body = self.get('/projects/%s/users' % tenant_id)
         self.expected_success(200, resp.status)
         return service_client.ResponseBodyList(resp, self._parse_resp(body))
 
@@ -271,7 +273,7 @@ class IdentityClientJSON(service_client.ServiceClient):
                                                body['extensions']['values'])
 
     def create_user_ec2_credentials(self, user_id, tenant_id):
-        post_body = json.dumps({'tenant_id': tenant_id})
+        post_body = json.dumps({'project_id': tenant_id})
         resp, body = self.post('/users/%s/credentials/OS-EC2' % user_id,
                                post_body)
         self.expected_success(200, resp.status)
