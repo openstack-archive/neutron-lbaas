@@ -14,7 +14,7 @@
 
 import oslo_i18n
 
-DOMAIN = "neutron-lbaas"
+DOMAIN = "neutron_lbaas"
 
 _translators = oslo_i18n.TranslatorFactory(domain=DOMAIN)
 
