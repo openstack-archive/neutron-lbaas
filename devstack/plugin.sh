@@ -70,15 +70,24 @@ function neutron_lbaas_configure_agent {
 }
 
 function neutron_lbaas_start {
+    local is_run_process=True
+
     if is_service_enabled $LBAAS_V1; then
         LBAAS_VERSION="q-lbaas"
         AGENT_LBAAS_BINARY=${AGENT_LBAASV1_BINARY}
-    else
+    elif is_service_enabled $LBAAS_V2; then
         LBAAS_VERSION="q-lbaasv2"
         AGENT_LBAAS_BINARY=${AGENT_LBAASV2_BINARY}
+        # Octavia doesn't need the LBaaS V2 service running.  If Octavia is the
+        # only provider then don't run the process.
+        if [[ "$NEUTRON_LBAAS_SERVICE_PROVIDERV2" == "$NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA" ]]; then
+            is_run_process=False
+        fi
     fi
 
-    run_process $LBAAS_VERSION "python $AGENT_LBAAS_BINARY --config-file $NEUTRON_CONF --config-file $NEUTRON_LBAAS_CONF --config-file=$LBAAS_AGENT_CONF_FILENAME"
+    if [[ "$is_run_process" == "True" ]] ; then
+        run_process $LBAAS_VERSION "python $AGENT_LBAAS_BINARY --config-file $NEUTRON_CONF --config-file $NEUTRON_LBAAS_CONF --config-file=$LBAAS_AGENT_CONF_FILENAME"
+    fi
 }
 
 function neutron_lbaas_stop {
