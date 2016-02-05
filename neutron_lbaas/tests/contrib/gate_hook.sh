@@ -50,4 +50,14 @@ EOF
 
 fi
 
+if [ "$testenv" = "scenario" ]; then
+   cat > $DEVSTACK_PATH/local.conf <<EOF
+[[post-config|/etc/octavia/octavia.conf]]
+[DEFAULT]
+debug = True
+
+EOF
+
+fi
+
 $GATE_DEST/devstack-gate/devstack-vm-gate.sh
