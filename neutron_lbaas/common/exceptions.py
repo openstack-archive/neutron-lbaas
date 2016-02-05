@@ -22,6 +22,10 @@ from neutron.common import exceptions
 from neutron_lbaas._i18n import _LE
 
 
+class ModelMapException(exceptions.NeutronException):
+    message = _LE("Unable to map model class %(target_name)s")
+
+
 class LbaasException(exceptions.NeutronException):
     pass
 

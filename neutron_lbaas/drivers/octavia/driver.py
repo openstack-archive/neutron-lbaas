@@ -20,12 +20,14 @@ from neutron import context as ncontext
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
+from oslo_service import service
 from oslo_utils import excutils
 import requests
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.common import keystone
 from neutron_lbaas.drivers import driver_base
+from neutron_lbaas.drivers.octavia import octavia_messaging_consumer
 
 LOG = logging.getLogger(__name__)
 VERSION = "1.0.1"
@@ -53,8 +55,9 @@ OPTS = [
         default=False,
         help=_('True if Octavia will be responsible for allocating the VIP.'
                ' False if neutron-lbaas will allocate it and pass to Octavia.')
-    ),
+    )
 ]
+
 cfg.CONF.register_opts(OPTS, 'octavia')
 
 
@@ -167,7 +170,9 @@ class OctaviaDriver(driver_base.LoadBalancerBaseDriver):
         self.pool = PoolManager(self)
         self.member = MemberManager(self)
         self.health_monitor = HealthMonitorManager(self)
-
+        self.octavia_consumer = octavia_messaging_consumer.OctaviaConsumer(
+            self)
+        service.launch(cfg.CONF, self.octavia_consumer)
         LOG.debug("OctaviaDriver: initialized, version=%s", VERSION)
 
     @property
