@@ -27,6 +27,11 @@ if [ "$testenv" != "scenario" ]; then
     export DEVSTACK_LOCAL_CONFIG+="
 DISABLE_AMP_IMAGE_BUILD=True
 "
+# Not needed for API tests
+    ENABLED_SERVICES+="-horizon,-ceilometer-acentral,-ceilometer-acompute,"
+    ENABLED_SERVICES+="-ceilometer-alarm-evaluator,-ceilometer-alarm-notifier,"
+    ENABLED_SERVICES+="-ceilometer-anotification,-ceilometer-api,"
+    ENABLED_SERVICES+="-ceilometer-collector,"
 fi
 
 # These are not needed with either v1 or v2
