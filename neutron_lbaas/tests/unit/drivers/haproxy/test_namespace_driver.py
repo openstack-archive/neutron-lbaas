@@ -18,8 +18,8 @@ import contextlib
 import socket
 
 import mock
-from neutron.common import exceptions
 from neutron.plugins.common import constants
+from neutron_lib import exceptions
 
 from neutron_lbaas.drivers.haproxy import namespace_driver
 from neutron_lbaas.services.loadbalancer import data_models

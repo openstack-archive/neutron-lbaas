@@ -20,11 +20,11 @@ import netaddr
 from neutron.agent.common import config
 from neutron.agent.linux import interface
 from neutron.agent.linux import ip_lib
-from neutron.common import exceptions
 from neutron.common import utils as n_utils
 from neutron import context as ncontext
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants
+from neutron_lib import exceptions
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging

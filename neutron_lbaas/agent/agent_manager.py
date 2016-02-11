@@ -14,10 +14,10 @@
 #    under the License.
 
 from neutron.agent import rpc as agent_rpc
-from neutron.common import exceptions as n_exc
 from neutron import context as ncontext
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as provconfig
+from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging

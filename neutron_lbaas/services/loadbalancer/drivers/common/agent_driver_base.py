@@ -14,13 +14,13 @@
 
 import uuid
 
-from neutron.common import constants as q_const
-from neutron.common import exceptions as n_exc
 from neutron.common import rpc as n_rpc
 from neutron.db import agents_db
 from neutron.extensions import portbindings
 from neutron.plugins.common import constants as np_const
 from neutron.services import provider_configuration as provconf
+from neutron_lib import constants as q_const
+from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging

@@ -15,7 +15,7 @@
 import contextlib
 
 import mock
-from neutron.common import exceptions
+from neutron_lib import exceptions
 import six
 
 from neutron_lbaas.services.loadbalancer.drivers.haproxy \

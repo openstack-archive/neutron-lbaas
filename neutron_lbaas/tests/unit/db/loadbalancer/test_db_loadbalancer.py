@@ -21,14 +21,14 @@ from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
 from neutron.common import config
-from neutron.common import constants as n_constants
-from neutron.common import exceptions as n_exc
 from neutron import context
 from neutron.db import servicetype_db as sdb
 from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import provider_configuration as pconf
 from neutron.tests.unit.db import test_db_base_plugin_v2
+from neutron_lib import constants as n_constants
+from neutron_lib import exceptions as n_exc
 import testtools
 import webob.exc
 

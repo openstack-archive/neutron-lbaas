@@ -16,10 +16,10 @@
 import random
 import sys
 
-from neutron.common import constants
 from neutron.db import agents_db
 from neutron.db import agentschedulers_db
 from neutron.db import model_base
+from neutron_lib import constants
 from oslo_log import log as logging
 import six
 import sqlalchemy as sa

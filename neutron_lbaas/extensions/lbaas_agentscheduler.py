@@ -18,12 +18,12 @@ import abc
 from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.api.v2 import resource
-from neutron.common import constants
 from neutron.extensions import agent
 from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron import policy
 from neutron import wsgi
+from neutron_lib import constants
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.extensions import loadbalancer

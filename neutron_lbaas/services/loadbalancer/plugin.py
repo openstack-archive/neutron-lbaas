@@ -16,7 +16,6 @@
 import six
 
 from neutron.api.v2 import attributes as attrs
-from neutron.common import exceptions as n_exc
 from neutron import context as ncontext
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import flavors
@@ -25,6 +24,7 @@ from neutron.plugins.common import constants
 from neutron.services.flavors import flavors_plugin
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
+from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
