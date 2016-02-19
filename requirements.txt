@@ -3,7 +3,7 @@
 # process, which may cause wedges in the gate later.
 pbr>=1.6 # Apache-2.0
 
-eventlet>=0.18.2 # MIT
+eventlet!=0.18.3,>=0.18.2 # MIT
 requests!=2.9.0,>=2.8.1 # Apache-2.0
 netaddr!=0.7.16,>=0.7.12 # BSD
 neutron-lib>=0.0.1 # Apache-2.0
