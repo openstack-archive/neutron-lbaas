@@ -132,11 +132,12 @@ class TestLoggingNoopLoadBalancerDriver(
     def _create_fake_models(self):
         id = 'name-001'
         lb = data_models.LoadBalancer(id=id)
+        pool = data_models.Pool(id=id, loadbalancer=lb)
         listener = data_models.Listener(id=id, loadbalancer=lb)
-        pool = data_models.Pool(id=id, listener=listener)
         member = data_models.Member(id=id, pool=pool)
         hm = data_models.HealthMonitor(id=id, pool=pool)
         lb.listeners = [listener]
+        lb.pools = [pool]
         listener.default_pool = pool
         pool.members = [member]
         pool.healthmonitor = hm

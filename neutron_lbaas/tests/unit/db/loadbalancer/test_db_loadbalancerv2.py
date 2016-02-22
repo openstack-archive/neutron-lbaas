@@ -41,6 +41,7 @@ from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.logging_noop import driver as noop_driver
 import neutron_lbaas.extensions
 from neutron_lbaas.extensions import loadbalancerv2
+from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import plugin as loadbalancer_plugin
 from neutron_lbaas.tests import base
@@ -60,9 +61,15 @@ _subnet_id = "0c798ed8-33ba-11e2-8b28-000c291c4d14"
 
 
 class LbaasTestMixin(object):
+    _resource_map = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.copy()
+    for k in sharedpools.EXTENDED_ATTRIBUTES_2_0.keys():
+        if _resource_map.get(k):
+            _resource_map[k].update(sharedpools.EXTENDED_ATTRIBUTES_2_0[k])
+        else:
+            _resource_map[k] = sharedpools.EXTENDED_ATTRIBUTES_2_0[k]
     resource_prefix_map = dict(
         (k, loadbalancerv2.LOADBALANCERV2_PREFIX)
-        for k in loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys()
+        for k in _resource_map.keys()
     )
 
     def _get_loadbalancer_optional_args(self):
@@ -89,12 +96,17 @@ class LbaasTestMixin(object):
                 'connection_limit', 'admin_state_up',
                 'default_tls_container_ref', 'sni_container_refs')
 
-    def _create_listener(self, fmt, protocol, protocol_port, loadbalancer_id,
+    def _create_listener(self, fmt, protocol, protocol_port,
+                         loadbalancer_id=None, default_pool_id=None,
                          expected_res_status=None, **kwargs):
         data = {'listener': {'protocol': protocol,
                              'protocol_port': protocol_port,
-                             'loadbalancer_id': loadbalancer_id,
                              'tenant_id': self._tenant_id}}
+        if loadbalancer_id:
+            data['listener']['loadbalancer_id'] = loadbalancer_id
+        if default_pool_id:
+            data['listener']['default_pool_id'] = default_pool_id
+
         args = self._get_listener_optional_args()
         for arg in args:
             if arg in kwargs and kwargs[arg] is not None:
@@ -110,12 +122,16 @@ class LbaasTestMixin(object):
     def _get_pool_optional_args(self):
         return 'name', 'description', 'admin_state_up', 'session_persistence'
 
-    def _create_pool(self, fmt, protocol, lb_algorithm, listener_id,
-                     expected_res_status=None, **kwargs):
+    def _create_pool(self, fmt, protocol, lb_algorithm, listener_id=None,
+                     loadbalancer_id=None, expected_res_status=None,
+                     **kwargs):
         data = {'pool': {'protocol': protocol,
                          'lb_algorithm': lb_algorithm,
-                         'listener_id': listener_id,
                          'tenant_id': self._tenant_id}}
+        if listener_id:
+            data['pool']['listener_id'] = listener_id
+        if loadbalancer_id:
+            data['pool']['loadbalancer_id'] = loadbalancer_id
 
         args = self._get_pool_optional_args()
         for arg in args:
@@ -202,12 +218,24 @@ class LbaasTestMixin(object):
 
     @contextlib.contextmanager
     def listener(self, fmt=None, protocol='HTTP', loadbalancer_id=None,
-                 protocol_port=80, no_delete=False, **kwargs):
+                 protocol_port=80, default_pool_id=None, no_delete=False,
+                 **kwargs):
         if not fmt:
             fmt = self.fmt
 
-        res = self._create_listener(fmt, protocol, protocol_port,
-                                    loadbalancer_id, **kwargs)
+        if loadbalancer_id and default_pool_id:
+            res = self._create_listener(fmt, protocol, protocol_port,
+                                        loadbalancer_id=loadbalancer_id,
+                                        default_pool_id=default_pool_id,
+                                        **kwargs)
+        elif loadbalancer_id:
+            res = self._create_listener(fmt, protocol, protocol_port,
+                                        loadbalancer_id=loadbalancer_id,
+                                        **kwargs)
+        else:
+            res = self._create_listener(fmt, protocol, protocol_port,
+                                        default_pool_id=default_pool_id,
+                                        **kwargs)
         if res.status_int >= webob.exc.HTTPClientError.code:
             raise webob.exc.HTTPClientError(
                 explanation=_("Unexpected error code: %s") % res.status_int
@@ -220,15 +248,30 @@ class LbaasTestMixin(object):
 
     @contextlib.contextmanager
     def pool(self, fmt=None, protocol='HTTP', lb_algorithm='ROUND_ROBIN',
-             no_delete=False, listener_id='listenerID1', **kwargs):
+             no_delete=False, listener_id=None,
+             loadbalancer_id=None, **kwargs):
         if not fmt:
             fmt = self.fmt
 
-        res = self._create_pool(fmt,
-                                protocol=protocol,
-                                lb_algorithm=lb_algorithm,
-                                listener_id=listener_id,
-                                **kwargs)
+        if listener_id and loadbalancer_id:
+            res = self._create_pool(fmt,
+                                    protocol=protocol,
+                                    lb_algorithm=lb_algorithm,
+                                    listener_id=listener_id,
+                                    loadbalancer_id=loadbalancer_id,
+                                    **kwargs)
+        elif listener_id:
+            res = self._create_pool(fmt,
+                                    protocol=protocol,
+                                    lb_algorithm=lb_algorithm,
+                                    listener_id=listener_id,
+                                    **kwargs)
+        else:
+            res = self._create_pool(fmt,
+                                    protocol=protocol,
+                                    lb_algorithm=lb_algorithm,
+                                    loadbalancer_id=loadbalancer_id,
+                                    **kwargs)
         if res.status_int >= webob.exc.HTTPClientError.code:
             raise webob.exc.HTTPClientError(
                 explanation=_("Unexpected error code: %s") % res.status_int
@@ -300,6 +343,21 @@ class LbaasTestMixin(object):
             self.assertEqual(webob.exc.HTTPNoContent.code, del_res.status_int)
 
 
+class SharedPoolsExtensionManager(object):
+    def get_resources(self):
+        # Simulate extension of loadbalancerv2 attribute map
+        for key in loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys():
+            loadbalancerv2.RESOURCE_ATTRIBUTE_MAP[key].update(
+                sharedpools.EXTENDED_ATTRIBUTES_2_0.get(key, {}))
+        return loadbalancerv2.Loadbalancerv2.get_resources()
+
+    def get_actions(self):
+        return []
+
+    def get_request_extensions(self):
+        return []
+
+
 class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
     def setUp(self, core_plugin=None, lb_plugin=None, lbaas_provider=None,
               ext_mgr=None):
@@ -328,10 +386,17 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
 
         if not ext_mgr:
             self.plugin = loadbalancer_plugin.LoadBalancerPluginv2()
-            ext_mgr = extensions.PluginAwareExtensionManager(
-                extensions_path,
-                {constants.LOADBALANCERV2: self.plugin}
-            )
+            # This is necessary because the automatic extension manager
+            # finding algorithm below will find the loadbalancerv2
+            # extension and fail to initizlize the main API router with
+            # the shared pools extension
+            if 'shared_pools' in LBPlugin.supported_extension_aliases:
+                ext_mgr = SharedPoolsExtensionManager()
+            else:
+                ext_mgr = extensions.PluginAwareExtensionManager(
+                    extensions_path,
+                    {constants.LOADBALANCERV2: self.plugin}
+                )
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = extensions.ExtensionMiddleware(app, ext_mgr=ext_mgr)
 
@@ -409,34 +474,34 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             else:
                 self.assertEqual(lb_const.ONLINE,
                                  listener_statuses['operating_status'])
-            if pool_id:
-                pool_statuses = None
-                for pool in listener_statuses['pools']:
-                    if pool['id'] == pool_id:
-                        pool_statuses = pool
-                self.assertIsNotNone(pool_statuses)
+        if pool_id:
+            pool_statuses = None
+            for pool in lb_statuses['pools']:
+                if pool['id'] == pool_id:
+                    pool_statuses = pool
+            self.assertIsNotNone(pool_statuses)
+            self.assertEqual(constants.ACTIVE,
+                             pool_statuses['provisioning_status'])
+            self.assertEqual(lb_const.ONLINE,
+                             pool_statuses['operating_status'])
+            if member_id:
+                member_statuses = None
+                for member in pool_statuses['members']:
+                    if member['id'] == member_id:
+                        member_statuses = member
+                self.assertIsNotNone(member_statuses)
                 self.assertEqual(constants.ACTIVE,
-                                 pool_statuses['provisioning_status'])
-                self.assertEqual(lb_const.ONLINE,
-                                 pool_statuses['operating_status'])
-                if member_id:
-                    member_statuses = None
-                    for member in pool_statuses['members']:
-                        if member['id'] == member_id:
-                            member_statuses = member
-                    self.assertIsNotNone(member_statuses)
-                    self.assertEqual(constants.ACTIVE,
-                                     member_statuses['provisioning_status'])
-                    if member_disabled:
-                        self.assertEqual(lb_const.DISABLED,
-                                         member_statuses["operating_status"])
-                    else:
-                        self.assertEqual(lb_const.ONLINE,
+                                 member_statuses['provisioning_status'])
+                if member_disabled:
+                    self.assertEqual(lb_const.DISABLED,
+                                     member_statuses["operating_status"])
+                else:
+                    self.assertEqual(lb_const.ONLINE,
                                      member_statuses['operating_status'])
-                if hm_id:
-                    hm_status = pool_statuses['healthmonitor']
-                    self.assertEqual(constants.ACTIVE,
-                                     hm_status['provisioning_status'])
+            if hm_id:
+                hm_status = pool_statuses['healthmonitor']
+                self.assertEqual(constants.ACTIVE,
+                                 hm_status['provisioning_status'])
 
 
 class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
@@ -450,6 +515,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
             'listeners': [],
+            'pools': [],
             'provider': 'lbaas'
         }
 
@@ -695,6 +761,7 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
             'listeners': [],
+            'pools': [],
             'provider': 'lbaas'
         }
 
@@ -750,8 +817,12 @@ class ListenerTestBase(LbaasPluginDbTestCase):
         self.test_subnet_id = self.test_subnet['subnet']['id']
         lb_res = self._create_loadbalancer(
             self.fmt, subnet_id=self.test_subnet_id)
+        lb_res2 = self._create_loadbalancer(
+            self.fmt, subnet_id=self.test_subnet_id)
         self.lb = self.deserialize(self.fmt, lb_res)
+        self.lb2 = self.deserialize(self.fmt, lb_res2)
         self.lb_id = self.lb['loadbalancer']['id']
+        self.lb_id2 = self.lb2['loadbalancer']['id']
 
     def tearDown(self):
         self._delete_loadbalancer_api(self.lb_id)
@@ -832,6 +903,34 @@ class LbaasListenerTests(ListenerTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, listener_id)
+        return listener
+
+    def test_create_listener_with_default_pool_no_lb(self, **extras):
+        listener_pool_res = self._create_pool(
+            self.fmt, lb_const.PROTOCOL_HTTP,
+            lb_const.LB_METHOD_ROUND_ROBIN,
+            loadbalancer_id=self.lb_id)
+        listener_pool = self.deserialize(self.fmt, listener_pool_res)
+        listener_pool_id = listener_pool['pool']['id']
+        expected = {
+            'protocol': 'HTTP',
+            'protocol_port': 80,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'default_pool_id': listener_pool_id
+        }
+
+        expected.update(extras)
+
+        with self.listener(default_pool_id=listener_pool_id) as listener:
+            listener_id = listener['listener'].get('id')
+            self.assertTrue(listener_id)
+            actual = {}
+            for k, v in listener['listener'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(actual, expected)
             self._validate_statuses(self.lb_id, listener_id)
         return listener
 
@@ -1007,6 +1106,37 @@ class LbaasListenerTests(ListenerTestBase):
                               loadbalancer_id=uuidutils.generate_uuid(),
                               expected_res_status=404)
 
+    def test_can_create_listener_with_pool_loadbalancer_match(self):
+        with self.subnet() as subnet:
+            with self.loadbalancer(subnet=subnet) as loadbalancer:
+                lb_id = loadbalancer['loadbalancer']['id']
+                with self.pool(loadbalancer_id=lb_id) as p1:
+                    p_id = p1['pool']['id']
+                    with self.listener(default_pool_id=p_id,
+                                       loadbalancer_id=lb_id):
+                        pass
+
+    def test_cannot_create_listener_with_pool_loadbalancer_mismatch(self):
+        with self.subnet() as subnet:
+            with contextlib.nested(self.loadbalancer(subnet=subnet),
+                                   self.loadbalancer(subnet=subnet)
+                                   ) as (lb1, lb2):
+                lb_id1 = lb1['loadbalancer']['id']
+                lb_id2 = lb2['loadbalancer']['id']
+                with self.pool(loadbalancer_id=lb_id1) as p1:
+                    p_id = p1['pool']['id']
+                    data = {'listener': {'name': '',
+                                         'protocol_port': 80,
+                                         'protocol': 'HTTP',
+                                         'connection_limit': 100,
+                                         'admin_state_up': True,
+                                         'tenant_id': self._tenant_id,
+                                         'default_pool_id': p_id,
+                                         'loadbalancer_id': lb_id2}}
+                    resp, body = self._create_listener_api(data)
+                    self.assertEqual(resp.status_int,
+                                     webob.exc.HTTPBadRequest.code)
+
     def test_update_listener(self):
         name = 'new_listener'
         expected_values = {'name': name,
@@ -1142,18 +1272,6 @@ class LbaasListenerTests(ListenerTestBase):
             for k in expected_values:
                 self.assertEqual(expected_values[k], listener_list[0][k])
 
-    def test_cannot_delete_listener_with_pool(self):
-        with self.listener(loadbalancer_id=self.lb_id) as listener:
-            listener_id = listener['listener']['id']
-            ctx = context.get_admin_context()
-            with self.pool(listener_id=listener_id):
-                self.assertRaises(
-                    loadbalancerv2.EntityInUse,
-                    self.plugin.delete_listener,
-                    ctx,
-                    listener_id)
-            self._validate_statuses(self.lb_id, listener_id)
-
     def test_list_listeners_with_sort_emulated(self):
         with self.listener(name='listener1', protocol_port=81,
                            loadbalancer_id=self.lb_id) as listener1:
@@ -1202,8 +1320,14 @@ class PoolTestBase(ListenerTestBase):
         super(PoolTestBase, self).setUp()
         listener_res = self._create_listener(self.fmt, lb_const.PROTOCOL_HTTP,
                                              80, self.lb_id)
+        listener_res2 = self._create_listener(self.fmt, lb_const.PROTOCOL_HTTP,
+                                              80, self.lb_id2)
         self.def_listener = self.deserialize(self.fmt, listener_res)
+        self.def_listener2 = self.deserialize(self.fmt, listener_res2)
         self.listener_id = self.def_listener['listener']['id']
+        self.listener_id2 = self.def_listener2['listener']['id']
+        self.loadbalancer_id = self.lb_id
+        self.loadbalancer_id2 = self.lb_id2
 
     def tearDown(self):
         self._delete_listener_api(self.listener_id)
@@ -1249,7 +1373,6 @@ class LbaasPoolTests(PoolTestBase):
             'lb_algorithm': 'ROUND_ROBIN',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
-            'listeners': [{'id': self.listener_id}],
             'healthmonitor_id': None,
             'members': []
         }
@@ -1269,6 +1392,35 @@ class LbaasPoolTests(PoolTestBase):
                     actual[k] = v
             self.assertEqual(expected, actual)
             self._validate_statuses(self.lb_id, self.listener_id, pool_id)
+        return pool
+
+    def test_create_pool_with_loadbalancer_no_listener(self, **extras):
+        expected = {
+            'name': '',
+            'description': '',
+            'protocol': 'HTTP',
+            'lb_algorithm': 'ROUND_ROBIN',
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'healthmonitor_id': None,
+            'members': []
+        }
+
+        expected.update(extras)
+
+        with self.pool(loadbalancer_id=self.loadbalancer_id, **extras) as pool:
+            pool_id = pool['pool'].get('id')
+            if 'session_persistence' in expected:
+                if not expected['session_persistence'].get('cookie_name'):
+                    expected['session_persistence']['cookie_name'] = None
+            self.assertTrue(pool_id)
+
+            actual = {}
+            for k, v in pool['pool'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, None, pool_id)
         return pool
 
     def test_show_pool(self, **extras):
@@ -1391,6 +1543,37 @@ class LbaasPoolTests(PoolTestBase):
         resp, body = self._create_pool_api(data)
         self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
+    def test_can_create_pool_with_listener_loadbalancer_match(self):
+        with self.subnet() as subnet:
+            with self.loadbalancer(subnet=subnet) as loadbalancer:
+                lb_id = loadbalancer['loadbalancer']['id']
+                with self.listener(loadbalancer_id=lb_id) as l1:
+                    l_id = l1['listener']['id']
+                    with self.pool(listener_id=l_id,
+                                   loadbalancer_id=lb_id):
+                        pass
+
+    def test_cannot_create_pool_with_listener_loadbalancer_mismatch(self):
+        with self.subnet() as subnet:
+            with contextlib.nested(self.loadbalancer(subnet=subnet),
+                                   self.loadbalancer(subnet=subnet)
+                                   ) as (lb1, lb2):
+                lb_id1 = lb1['loadbalancer']['id']
+                lb_id2 = lb2['loadbalancer']['id']
+                with self.listener(loadbalancer_id=lb_id1) as l1:
+                    l_id = l1['listener']['id']
+                    data = {'pool': {'name': '',
+                                     'description': '',
+                                     'protocol': 'HTTP',
+                                     'lb_algorithm': 'ROUND_ROBIN',
+                                     'admin_state_up': True,
+                                     'tenant_id': self._tenant_id,
+                                     'listener_id': l_id,
+                                     'loadbalancer_id': lb_id2}}
+                    resp, body = self._create_pool_api(data)
+                    self.assertEqual(resp.status_int,
+                                     webob.exc.HTTPBadRequest.code)
+
     def test_create_pool_with_session_persistence(self):
         self.test_create_pool(session_persistence={'type': 'HTTP_COOKIE'})
 
@@ -1465,7 +1648,7 @@ class LbaasPoolTests(PoolTestBase):
                            'tenant_id': self._tenant_id,
                            'session_persistence': {'cookie_name': None,
                                                    'type': 'HTTP_COOKIE'},
-                           'listeners': [{'id': self.listener_id}],
+                           'loadbalancers': [{'id': self.lb_id}],
                            'members': []}
 
         with self.pool(name=name, listener_id=self.listener_id,
@@ -2460,14 +2643,14 @@ class LbaasStatusesTest(MemberTestBase):
 
     def _delete_populated_lb(self, lb_dict):
         lb_id = lb_dict['id']
+        for pool in lb_dict['pools']:
+            pool_id = pool['id']
+            for member in pool['members']:
+                member_id = member['id']
+                self._delete_member_api(pool_id, member_id)
+            self._delete_pool_api(pool_id)
         for listener in lb_dict['listeners']:
             listener_id = listener['id']
-            for pool in listener['pools']:
-                pool_id = pool['id']
-                for member in pool['members']:
-                    member_id = member['id']
-                    self._delete_member_api(pool_id, member_id)
-                self._delete_pool_api(pool_id)
             self._delete_listener_api(listener_id)
         self._delete_loadbalancer_api(lb_id)
 
@@ -2492,6 +2675,17 @@ class LbaasStatusesTest(MemberTestBase):
                         for member_obj in member_list:
                             if member_obj['address'] == member:
                                 return copy.copy(member_obj)
+        pool_list = lb['pools']
+        for pool_obj in pool_list:
+            if pool_obj['name'] == pool:
+                if healthmonitor:
+                    return copy.copy(pool_obj['healthmonitor'])
+                if member is None:
+                    return copy.copy(pool_obj)
+                member_list = pool_obj['members']
+                for member_obj in member_list:
+                    if member_obj['address'] == member:
+                        return copy.copy(member_obj)
         raise KeyError
 
     def _create_new_populated_loadbalancer(self):
@@ -2509,6 +2703,7 @@ class LbaasStatusesTest(MemberTestBase):
         lb_id = lb['loadbalancer']['id']
         lb_dict['id'] = lb_id
         lb_dict['listeners'] = []
+        lb_dict['pools'] = []
         for prot, port in [(HTTP, 80), (HTTPS, 443)]:
             res = self._create_listener(fmt, prot, port, lb_id,
                                         name="listener_%s" % prot)
@@ -2522,10 +2717,14 @@ class LbaasStatusesTest(MemberTestBase):
             members = []
             lb_dict['listeners'][-1]['pools'].append({'id': pool['pool']['id'],
                                                       'members': members})
+            lb_dict['pools'].append({'id': pool['pool']['id'],
+                                    'members': members})
             res = self._create_healthmonitor(fmt, pool_id, type=prot, delay=1,
                                              timeout=1, max_retries=1)
             health_monitor = self.deserialize(fmt, res)
             lb_dict['listeners'][-1]['pools'][-1]['health_monitor'] = {
+                'id': health_monitor['healthmonitor']['id']}
+            lb_dict['pools'][-1]['health_monitor'] = {
                 'id': health_monitor['healthmonitor']['id']}
             for i in six.moves.range(0, 3):
                 address = "127.0.0.%i" % oct4

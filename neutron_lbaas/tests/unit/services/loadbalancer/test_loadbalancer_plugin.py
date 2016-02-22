@@ -24,6 +24,7 @@ from webob import exc
 
 from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.extensions import loadbalancerv2
+from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.tests import base
 
 
@@ -491,9 +492,12 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
 
     def setUp(self):
         super(LoadBalancerExtensionV2TestCase, self).setUp()
+        resource_map = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.copy()
+        for k in sharedpools.EXTENDED_ATTRIBUTES_2_0.keys():
+            resource_map[k].update(sharedpools.EXTENDED_ATTRIBUTES_2_0[k])
         self._setUpExtension(
             'neutron_lbaas.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
-            constants.LOADBALANCERV2, loadbalancerv2.RESOURCE_ATTRIBUTE_MAP,
+            constants.LOADBALANCERV2, resource_map,
             loadbalancerv2.Loadbalancerv2, 'lbaas', use_quota=True)
 
     def test_loadbalancer_create(self):
@@ -622,6 +626,7 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                              'description': 'listen-1-desc',
                              'protocol': 'HTTP',
                              'protocol_port': 80,
+                             'default_pool_id': None,
                              'default_tls_container_ref': None,
                              'sni_container_refs': [],
                              'connection_limit': 100,
@@ -655,6 +660,7 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                              'description': 'listen-1-desc',
                              'protocol': 'HTTP',
                              'protocol_port': 80,
+                             'default_pool_id': None,
                              'default_tls_container_ref': tls_ref,
                              'sni_container_refs': sni_refs,
                              'connection_limit': 100,
@@ -804,12 +810,13 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                          'protocol': 'HTTP',
                          'lb_algorithm': 'ROUND_ROBIN',
                          'admin_state_up': True,
+                         'loadbalancer_id': _uuid(),
+                         'listener_id': None,
                          'tenant_id': _uuid(),
-                         'listener_id': _uuid(),
                          'session_persistence': {}}}
         return_value = copy.copy(data['pool'])
         return_value.update({'id': pool_id})
-        del return_value['listener_id']
+        return_value.pop('listener_id')
 
         instance = self.plugin.return_value
         instance.create_pool.return_value = return_value

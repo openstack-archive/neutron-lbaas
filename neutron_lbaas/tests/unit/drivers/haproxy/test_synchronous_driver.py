@@ -775,7 +775,7 @@ class BaseTestManager(base.BaseTestCase):
                                     provisioning_status=constants.ACTIVE,
                                     operating_status=lb_const.ONLINE)
         monitor = data_models.HealthMonitor(id='1', pool=None)
-        pool = data_models.Pool(id='1', listener=None, members=[member],
+        pool = data_models.Pool(id='1', loadbalancer=None, members=[member],
                                 provisioning_status=constants.ACTIVE,
                                 operating_status=lb_const.ONLINE,
                                 healthmonitor=monitor,
@@ -787,11 +787,11 @@ class BaseTestManager(base.BaseTestCase):
                                         operating_status=lb_const.ONLINE,
                                         default_pool=pool,
                                         default_pool_id=pool.id)
-        pool.listener = listener
         loadbalancer = data_models.LoadBalancer(
             id='1', listeners=[listener], provisioning_status=constants.ACTIVE,
-            operating_status=lb_const.ONLINE)
+            operating_status=lb_const.ONLINE, pools=[pool])
         listener.loadbalancer = loadbalancer
+        pool.loadbalancer = loadbalancer
         return loadbalancer, listener, pool, member, monitor
 
 
@@ -1082,7 +1082,7 @@ class TestPoolManager(BaseTestManager):
     def test_update(self):
         loadbalancer, listener, pool, _, _ = self._create_mock_models()
         old_pool = data_models.Pool(id='2')
-        old_pool.listener = listener
+        old_pool.loadbalancer = loadbalancer
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
             with mock.patch.object(self.pool,
@@ -1094,7 +1094,7 @@ class TestPoolManager(BaseTestManager):
     def test_fail_update(self):
         loadbalancer, listener, pool, _, _ = self._create_mock_models()
         old_pool = data_models.Pool(id='2')
-        old_pool.listener = listener
+        old_pool.loadbalancer = loadbalancer
         with mock.patch.object(self.driver.load_balancer,
                                'refresh') as lb_refresh:
             with mock.patch.object(self.pool,

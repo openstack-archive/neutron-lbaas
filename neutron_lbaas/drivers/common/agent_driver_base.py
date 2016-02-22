@@ -216,26 +216,26 @@ class PoolManager(driver_base.BasePoolManager):
     def update(self, context, old_pool, pool):
         super(PoolManager, self).update(context, old_pool, pool)
         agent = self.driver.get_loadbalancer_agent(
-            context, pool.listener.loadbalancer.id)
+            context, pool.loadbalancer.id)
         self.driver.agent_rpc.update_pool(context, old_pool, pool,
                                           agent['host'])
 
     def create(self, context, pool):
         super(PoolManager, self).create(context, pool)
         agent = self.driver.get_loadbalancer_agent(
-            context, pool.listener.loadbalancer.id)
+            context, pool.loadbalancer.id)
         self.driver.agent_rpc.create_pool(context, pool, agent['host'])
 
     def delete(self, context, pool):
         super(PoolManager, self).delete(context, pool)
         agent = self.driver.get_loadbalancer_agent(
-            context, pool.listener.loadbalancer.id)
+            context, pool.loadbalancer.id)
         # TODO(blogan): Rethink deleting from the database and updating the lb
         # status here. May want to wait until the agent actually deletes it.
         # Doing this now to keep what v1 had.
         self.driver.plugin.db.delete_pool(context, pool.id)
         self.driver.plugin.db.update_loadbalancer_provisioning_status(
-            context, pool.listener.loadbalancer.id)
+            context, pool.loadbalancer.id)
         self.driver.agent_rpc.delete_pool(context, pool, agent['host'])
 
 
@@ -244,26 +244,26 @@ class MemberManager(driver_base.BaseMemberManager):
     def update(self, context, old_member, member):
         super(MemberManager, self).update(context, old_member, member)
         agent = self.driver.get_loadbalancer_agent(
-            context, member.pool.listener.loadbalancer.id)
+            context, member.pool.loadbalancer.id)
         self.driver.agent_rpc.update_member(context, old_member, member,
                                             agent['host'])
 
     def create(self, context, member):
         super(MemberManager, self).create(context, member)
         agent = self.driver.get_loadbalancer_agent(
-            context, member.pool.listener.loadbalancer.id)
+            context, member.pool.loadbalancer.id)
         self.driver.agent_rpc.create_member(context, member, agent['host'])
 
     def delete(self, context, member):
         super(MemberManager, self).delete(context, member)
         agent = self.driver.get_loadbalancer_agent(
-            context, member.pool.listener.loadbalancer.id)
+            context, member.pool.loadbalancer.id)
         # TODO(blogan): Rethink deleting from the database and updating the lb
         # status here. May want to wait until the agent actually deletes it.
         # Doing this now to keep what v1 had.
         self.driver.plugin.db.delete_pool_member(context, member.id)
         self.driver.plugin.db.update_loadbalancer_provisioning_status(
-            context, member.pool.listener.loadbalancer.id)
+            context, member.pool.loadbalancer.id)
         self.driver.agent_rpc.delete_member(context, member, agent['host'])
 
 
@@ -273,27 +273,27 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         super(HealthMonitorManager, self).update(
             context, old_healthmonitor, healthmonitor)
         agent = self.driver.get_loadbalancer_agent(
-            context, healthmonitor.pool.listener.loadbalancer.id)
+            context, healthmonitor.pool.loadbalancer.id)
         self.driver.agent_rpc.update_healthmonitor(
             context, old_healthmonitor, healthmonitor, agent['host'])
 
     def create(self, context, healthmonitor):
         super(HealthMonitorManager, self).create(context, healthmonitor)
         agent = self.driver.get_loadbalancer_agent(
-            context, healthmonitor.pool.listener.loadbalancer.id)
+            context, healthmonitor.pool.loadbalancer.id)
         self.driver.agent_rpc.create_healthmonitor(
             context, healthmonitor, agent['host'])
 
     def delete(self, context, healthmonitor):
         super(HealthMonitorManager, self).delete(context, healthmonitor)
         agent = self.driver.get_loadbalancer_agent(
-            context, healthmonitor.pool.listener.loadbalancer.id)
+            context, healthmonitor.pool.loadbalancer.id)
         # TODO(blogan): Rethink deleting from the database and updating the lb
         # status here. May want to wait until the agent actually deletes it.
         # Doing this now to keep what v1 had.
         self.driver.plugin.db.delete_healthmonitor(context, healthmonitor.id)
         self.driver.plugin.db.update_loadbalancer_provisioning_status(
-            context, healthmonitor.pool.listener.loadbalancer.id)
+            context, healthmonitor.pool.loadbalancer.id)
         self.driver.agent_rpc.delete_healthmonitor(
             context, healthmonitor, agent['host'])
 

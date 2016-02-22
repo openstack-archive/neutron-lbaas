@@ -60,10 +60,11 @@ class BaseOctaviaDriverTest(test_db_loadbalancerv2.LbaasPluginDbTestCase):
         sni_container = data_models.SNI(listener_id=id)
         listener = data_models.Listener(id=id, loadbalancer=lb,
                                         sni_containers=[sni_container])
-        pool = data_models.Pool(id=id, listener=listener)
+        pool = data_models.Pool(id=id, loadbalancer=lb)
         member = data_models.Member(id=id, pool=pool)
         hm = data_models.HealthMonitor(id=id, pool=pool)
         lb.listeners = [listener]
+        lb.pools = [pool]
         listener.default_pool = pool
         pool.members = [member]
         pool.healthmonitor = hm
@@ -154,6 +155,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
             'connection_limit': listener.connection_limit,
             'tls_certificate_id': listener.default_tls_container_id,
             'sni_containers': sni_containers,
+            'default_pool_id': listener.default_pool_id,
             'project_id': listener.tenant_id
         }
         m.create(listener, list_url, args)
@@ -173,9 +175,8 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         pool = self.lb.listeners[0].default_pool
 
         # urls for assert test.
-        pool_url = '/v1/loadbalancers/%s/listeners/%s/pools' % (
-            pool.listener.loadbalancer.id,
-            pool.listener.id)
+        pool_url = '/v1/loadbalancers/%s/pools' % (
+            pool.loadbalancer.id)
         pool_url_id = pool_url + "/%s" % pool.id
 
         # Test create pool.
@@ -211,9 +212,8 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         member = self.lb.listeners[0].default_pool.members[0]
 
         # urls for assert.
-        mem_url = '/v1/loadbalancers/%s/listeners/%s/pools/%s/members' % (
-            member.pool.listener.loadbalancer.id,
-            member.pool.listener.id,
+        mem_url = '/v1/loadbalancers/%s/pools/%s/members' % (
+            member.pool.loadbalancer.id,
             member.pool.id)
         mem_url_id = mem_url + "/%s" % member.id
 
@@ -249,9 +249,8 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         hm = self.lb.listeners[0].default_pool.healthmonitor
 
         # urls for assert.
-        hm_url = '/v1/loadbalancers/%s/listeners/%s/pools/%s/healthmonitor' % (
-            hm.pool.listener.loadbalancer.id,
-            hm.pool.listener.id,
+        hm_url = '/v1/loadbalancers/%s/pools/%s/healthmonitor' % (
+            hm.pool.loadbalancer.id,
             hm.pool.id)
 
         # Test HM create.
