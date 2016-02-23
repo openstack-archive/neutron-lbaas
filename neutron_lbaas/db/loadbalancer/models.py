@@ -257,7 +257,7 @@ class Listener(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     name = sa.Column(sa.String(255))
     description = sa.Column(sa.String(255))
     default_pool_id = sa.Column(sa.String(36), sa.ForeignKey("lbaas_pools.id"),
-                                unique=True)
+                                nullable=True)
     loadbalancer_id = sa.Column(sa.String(36), sa.ForeignKey(
         "lbaas_loadbalancers.id"))
     protocol = sa.Column(sa.Enum(*lb_const.LISTENER_SUPPORTED_PROTOCOLS,
