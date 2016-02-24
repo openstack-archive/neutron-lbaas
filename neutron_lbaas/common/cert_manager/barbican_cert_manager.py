@@ -72,7 +72,9 @@ class BarbicanKeystoneAuth(object):
             try:
                 cls._keystone_session = keystone.get_session()
                 cls._barbican_client = barbican_client.Client(
-                    session=cls._keystone_session
+                    session=cls._keystone_session,
+                    region_name=CONF.service_auth.region,
+                    interface=CONF.service_auth.endpoint_type
                 )
             except Exception:
                 # Barbican (because of Keystone-middleware) sometimes masks
