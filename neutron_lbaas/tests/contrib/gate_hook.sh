@@ -5,14 +5,17 @@ set -ex
 GATE_DEST=$BASE/new
 DEVSTACK_PATH=$GATE_DEST/devstack
 
-testenv=${2:-"apiv2"}
+# Sort out our gate args
+. `dirname "$0"`/decode_args.sh
 
-if [ "$1" = "lbaasv1" ]; then
+testenv=${lbaastest:-"apiv2"}
+
+if [ "$lbaasversion" = "lbaasv1" ]; then
     testenv="apiv1"
-elif [ "$1" = "lbaasv2" ]; then
-    if [ "$2" = "healthmonitor" ] || [ "$2" = "listener" ] || [ "$2" = "loadbalancer" ] || [ "$2" = "member" ] || [ "$2" = "minimal" ] || [ "$2" = "pool" ]; then
+elif [ "$lbaasversion" = "lbaasv2" ]; then
+    if [ "$lbaasenv" = "healthmonitor" ] || [ "$lbaasenv" = "listener" ] || [ "$lbaasenv" = "loadbalancer" ] || [ "$lbaasenv" = "member" ] || [ "$lbaasenv" = "minimal" ] || [ "$lbaasenv" = "pool" ]; then
         testenv="apiv2"
-    elif [ "$2" = "scenario" ]; then
+    elif [ "$lbaasenv" = "scenario" ]; then
           testenv="scenario"
     fi
 fi
@@ -20,8 +23,12 @@ fi
 export DEVSTACK_LOCAL_CONFIG+="
 enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas
 enable_plugin barbican https://git.openstack.org/openstack/barbican
+"
+if [ "$lbaasdriver" = "octavia" ]; then
+    export DEVSTACK_LOCAL_CONFIG+="
 enable_plugin octavia https://git.openstack.org/openstack/octavia
 "
+fi
 
 if [ "$testenv" != "scenario" ]; then
     export DEVSTACK_LOCAL_CONFIG+="
@@ -42,11 +49,22 @@ if [ "$testenv" != "apiv1" ]; then
   # Override enabled services, so we can turn on lbaasv2.
   # While we're at it, disable cinder and swift, since we don't need them.
   ENABLED_SERVICES+=",q-lbaasv2,-q-lbaas"
-  ENABLED_SERVICES+=",octavia,o-cw,o-hk,o-hm,o-api"
+  if [ "$lbaasdriver" = "octavia" ]; then
+    ENABLED_SERVICES+=",octavia,o-cw,o-hk,o-hm,o-api"
+  fi
+
+  if [ "$lbaasdriver" = "namespace" ]; then
+    cat > $DEVSTACK_PATH/local.conf <<EOF
+[[post-config|\$NEUTRON_LBAAS_CONF]]
+
+[service_providers]
+service_provider=LOADBALANCER:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+EOF
+  fi
 fi
 export ENABLED_SERVICES
 
-if [ "$testenv" = "apiv2" ]; then
+if [ "$lbaasdriver" = "octavia" -a "$testenv" = "apiv2" ]; then
    cat > $DEVSTACK_PATH/local.conf <<EOF
 [[post-config|/etc/octavia/octavia.conf]]
 [DEFAULT]
@@ -61,7 +79,7 @@ EOF
 
 fi
 
-if [ "$testenv" = "scenario" ]; then
+if [ "$lbaasdriver" = "octavia" -a "$testenv" = "scenario" ]; then
    cat > $DEVSTACK_PATH/local.conf <<EOF
 [[post-config|/etc/octavia/octavia.conf]]
 [DEFAULT]
