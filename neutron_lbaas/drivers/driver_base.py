@@ -94,7 +94,7 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
 
     @property
     def deletes_cascade(self):
-        """Does this driver need to allocate its own virtual IPs"""
+        """Does this driver cascade delete LB"""
         return False
 
     def create_and_allocate_vip(self, context, obj):

@@ -101,7 +101,7 @@ def thread_op(manager, entity, delete=False, lb_create=False):
 def async_op(func):
     @wraps(func)
     def func_wrapper(*args, **kwargs):
-        d = (func.__name__ == 'delete')
+        d = (func.__name__ == 'delete' or func.__name__ == 'delete_cascade')
         lb_create = ((func.__name__ == 'create') and
                      isinstance(args[0], LoadBalancerManager))
         try:
@@ -196,6 +196,10 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
     def allocates_vip(self):
         return cfg.CONF.octavia.allocates_vip
 
+    @property
+    def deletes_cascade(self):
+        return True
+
     def create_and_allocate_vip(self, context, lb):
         self.create(context, lb)
 
@@ -237,6 +241,10 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
 
     def get(self, lb):
         return self.driver.req.get(self._url(lb, lb.id))
+
+    @async_op
+    def delete_cascade(self, context, lb):
+        self.driver.req.delete(self._url(lb, lb.id) + '/delete_cascade')
 
 
 class ListenerManager(driver_base.BaseListenerManager):

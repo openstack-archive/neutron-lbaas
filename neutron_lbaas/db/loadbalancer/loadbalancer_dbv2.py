@@ -242,8 +242,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             if cascade:
                 lb = self.get_loadbalancer(context, id)
                 for pool in lb.pools:
-                    self.delete_healthmonitor(context, pool.healthmonitor_id)
-                    self.delete_pool(pool.id)
+                    if pool.healthmonitor_id:
+                        self.delete_healthmonitor(
+                            context, pool.healthmonitor_id)
+                    self.delete_pool(context, pool.id)
                 for listener in lb.listeners:
                     # todo (xgerman): delete L7
                     self.delete_listener(context, listener.id)

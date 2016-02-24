@@ -43,6 +43,10 @@ class ManagerTest(object):
         self.manager.delete(self.context, model)
         self.mocked_req.delete.assert_called_with(url)
 
+    def delete_cascade(self, model, url):
+        self.manager.delete_cascade(self.context, model)
+        self.mocked_req.delete.assert_called_with(url)
+
     # TODO(Banashankar) : Complete refresh function. Need more info.
     def refresh(self):
         pass
@@ -137,7 +141,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m.update(lb, lb, lb_url_id, args)
 
         # delete LB test
-        m.delete(lb, lb_url_id)
+        m.delete_cascade(lb, lb_url_id + '/delete_cascade')
 
         # TODO(Banashankar) : refresh n stats fucntions are not yet done.
         #m.refresh()
