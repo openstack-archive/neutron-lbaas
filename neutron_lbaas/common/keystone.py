@@ -43,6 +43,7 @@ OPTS = [
     ),
     cfg.StrOpt(
         'admin_password',
+        secret=True,
         default='password',
         help=_('The service admin password'),
     ),
