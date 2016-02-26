@@ -49,6 +49,7 @@ NETSCALER_CC_OPTS = [
     ),
     cfg.StrOpt(
         'netscaler_ncc_password',
+        secret=True,
         help=_('Password to login to the NetScaler Control Center Server.'),
     ),
     cfg.StrOpt(
