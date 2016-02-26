@@ -58,7 +58,7 @@ if [ "$testenv" != "apiv1" ]; then
 [[post-config|\$NEUTRON_LBAAS_CONF]]
 
 [service_providers]
-service_provider=LOADBALANCER:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+service_provider=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
 EOF
   fi
 fi
