@@ -42,11 +42,23 @@ def upgrade():
 
     # This foreign key does not need to be unique anymore. To remove the
     # uniqueness but keep the foreign key we have to do some juggling.
-    op.drop_constraint('lbaas_listeners_ibfk_2', 'lbaas_listeners',
-        type_='foreignkey')
-    op.drop_constraint('default_pool_id', 'lbaas_listeners', type_='unique')
-    op.create_foreign_key('lbaas_listeners_ibfk_2', 'lbaas_listeners',
-                          'lbaas_pools', ['default_pool_id'], ['id'])
+    #
+    # Also, because different database engines handle unique constraints
+    # in incompatible ways, we can't simply call op.drop_constraint and
+    # expect it to work for all DB engines. This is yet another unfortunate
+    # case where sqlalchemy isn't able to abstract everything away.
+    if op.get_context().dialect.name == 'postgresql':
+        # PostgreSQL path:
+        op.drop_constraint('lbaas_listeners_default_pool_id_key',
+                           'lbaas_listeners', 'unique')
+    else:
+        # MySQL path:
+        op.drop_constraint('lbaas_listeners_ibfk_2', 'lbaas_listeners',
+                           type_='foreignkey')
+        op.drop_constraint('default_pool_id', 'lbaas_listeners',
+                           type_='unique')
+        op.create_foreign_key('lbaas_listeners_ibfk_2', 'lbaas_listeners',
+                              'lbaas_pools', ['default_pool_id'], ['id'])
 
     op.add_column(
         u'lbaas_pools',
