@@ -37,6 +37,8 @@ class LoggingNoopLoadBalancerDriver(driver_base.LoadBalancerBaseDriver):
         self.pool = LoggingNoopPoolManager(self)
         self.member = LoggingNoopMemberManager(self)
         self.health_monitor = LoggingNoopHealthMonitorManager(self)
+        self.l7policy = LoggingNoopL7PolicyManager(self)
+        self.l7rule = LoggingNoopL7RuleManager(self)
 
 
 class LoggingNoopCommonManager(object):
@@ -101,4 +103,14 @@ class LoggingNoopMemberManager(LoggingNoopCommonManager,
 
 class LoggingNoopHealthMonitorManager(LoggingNoopCommonManager,
                                       driver_base.BaseHealthMonitorManager):
+    pass
+
+
+class LoggingNoopL7PolicyManager(LoggingNoopCommonManager,
+                                 driver_base.BaseL7PolicyManager):
+    pass
+
+
+class LoggingNoopL7RuleManager(LoggingNoopCommonManager,
+                               driver_base.BaseL7RuleManager):
     pass

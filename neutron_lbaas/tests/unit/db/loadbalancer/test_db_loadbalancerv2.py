@@ -40,6 +40,7 @@ from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.logging_noop import driver as noop_driver
 import neutron_lbaas.extensions
+from neutron_lbaas.extensions import l7
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -61,16 +62,11 @@ _subnet_id = "0c798ed8-33ba-11e2-8b28-000c291c4d14"
 
 
 class LbaasTestMixin(object):
-    _resource_map = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.copy()
-    for k in sharedpools.EXTENDED_ATTRIBUTES_2_0.keys():
-        if _resource_map.get(k):
-            _resource_map[k].update(sharedpools.EXTENDED_ATTRIBUTES_2_0[k])
-        else:
-            _resource_map[k] = sharedpools.EXTENDED_ATTRIBUTES_2_0[k]
+    resource_keys = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys()
+    resource_keys.extend(l7.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_prefix_map = dict(
         (k, loadbalancerv2.LOADBALANCERV2_PREFIX)
-        for k in _resource_map.keys()
-    )
+        for k in resource_keys)
 
     def _get_loadbalancer_optional_args(self):
         return 'description', 'vip_address', 'admin_state_up', 'name'
@@ -123,8 +119,7 @@ class LbaasTestMixin(object):
         return 'name', 'description', 'admin_state_up', 'session_persistence'
 
     def _create_pool(self, fmt, protocol, lb_algorithm, listener_id=None,
-                     loadbalancer_id=None, expected_res_status=None,
-                     **kwargs):
+                     loadbalancer_id=None, expected_res_status=None, **kwargs):
         data = {'pool': {'protocol': protocol,
                          'lb_algorithm': lb_algorithm,
                          'tenant_id': self._tenant_id}}
@@ -194,6 +189,53 @@ class LbaasTestMixin(object):
             self.assertEqual(expected_res_status, hm_res.status_int)
 
         return hm_res
+
+    def _add_optional_args(self, optional_args, data, **kwargs):
+        for arg in optional_args:
+            if arg in kwargs and kwargs[arg] is not None:
+                data[arg] = kwargs[arg]
+
+    def _get_l7policy_optional_args(self):
+        return ('name', 'description', 'redirect_pool_id',
+                'redirect_url', 'admin_state_up', 'position')
+
+    def _create_l7policy(self, fmt, listener_id, action,
+                         expected_res_status=None, **kwargs):
+        data = {'l7policy': {'listener_id': listener_id,
+                             'action': action,
+                             'tenant_id': self._tenant_id}}
+
+        optional_args = self._get_l7policy_optional_args()
+        self._add_optional_args(optional_args, data['l7policy'], **kwargs)
+
+        l7policy_req = self.new_create_request('l7policies', data, fmt)
+        l7policy_res = l7policy_req.get_response(self.ext_api)
+        if expected_res_status:
+            self.assertEqual(l7policy_res.status_int, expected_res_status)
+
+        return l7policy_res
+
+    def _get_l7rule_optional_args(self):
+        return ('invert', 'key', 'admin_state_up')
+
+    def _create_l7policy_rule(self, fmt, l7policy_id, type, compare_type,
+                              value, expected_res_status=None, **kwargs):
+        data = {'rule': {'type': type,
+                         'compare_type': compare_type,
+                         'value': value,
+                         'tenant_id': self._tenant_id}}
+
+        optional_args = self._get_l7rule_optional_args()
+        self._add_optional_args(optional_args, data['rule'], **kwargs)
+
+        rule_req = self.new_create_request('l7policies', data, fmt,
+                                           id=l7policy_id,
+                                           subresource='rules')
+        rule_res = rule_req.get_response(self.ext_api)
+        if expected_res_status:
+            self.assertEqual(rule_res.status_int, expected_res_status)
+
+        return rule_res
 
     @contextlib.contextmanager
     def loadbalancer(self, fmt=None, subnet=None, no_delete=False, **kwargs):
@@ -342,13 +384,94 @@ class LbaasTestMixin(object):
             del_res = del_req.get_response(self.ext_api)
             self.assertEqual(webob.exc.HTTPNoContent.code, del_res.status_int)
 
+    @contextlib.contextmanager
+    def l7policy(self, listener_id, fmt=None,
+                 action=lb_const.L7_POLICY_ACTION_REJECT,
+                 no_delete=False, **kwargs):
+        if not fmt:
+            fmt = self.fmt
 
-class SharedPoolsExtensionManager(object):
+        res = self._create_l7policy(fmt,
+                                    listener_id=listener_id,
+                                    action=action,
+                                    **kwargs)
+        if res.status_int >= webob.exc.HTTPClientError.code:
+            raise webob.exc.HTTPClientError(
+                explanation=_("Unexpected error code: %s") % res.status_int
+            )
+
+        l7policy = self.deserialize(fmt or self.fmt, res)
+        yield l7policy
+        if not no_delete:
+            self.plugin.db.update_status(context.get_admin_context(),
+                                         models.L7Policy,
+                                         l7policy['l7policy']['id'],
+                                         constants.ACTIVE)
+            del_req = self.new_delete_request(
+                'l7policies',
+                fmt=fmt,
+                id=l7policy['l7policy']['id'])
+            del_res = del_req.get_response(self.ext_api)
+            self.assertEqual(del_res.status_int,
+                             webob.exc.HTTPNoContent.code)
+
+    @contextlib.contextmanager
+    def l7policy_rule(self, l7policy_id, fmt=None, value='value1',
+                      type=lb_const.L7_RULE_TYPE_HOST_NAME,
+                      compare_type=lb_const.L7_RULE_COMPARE_TYPE_EQUAL_TO,
+                      no_delete=False, **kwargs):
+        if not fmt:
+            fmt = self.fmt
+        res = self._create_l7policy_rule(fmt,
+                                         l7policy_id=l7policy_id,
+                                         type=type,
+                                         compare_type=compare_type,
+                                         value=value,
+                                         **kwargs)
+        if res.status_int >= webob.exc.HTTPClientError.code:
+            raise webob.exc.HTTPClientError(
+                explanation=_("Unexpected error code: %s") % res.status_int
+            )
+
+        rule = self.deserialize(fmt or self.fmt, res)
+        yield rule
+        if not no_delete:
+            self.plugin.db.update_status(context.get_admin_context(),
+                                         models.L7Rule,
+                                         rule['rule']['id'],
+                                         constants.ACTIVE)
+            del_req = self.new_delete_request(
+                'l7policies',
+                fmt=fmt,
+                id=l7policy_id,
+                subresource='rules',
+                sub_id=rule['rule']['id'])
+            del_res = del_req.get_response(self.ext_api)
+            self.assertEqual(del_res.status_int,
+                             webob.exc.HTTPNoContent.code)
+
+
+class ExtendedPluginAwareExtensionManager(object):
+    def __init__(self, extension_aliases):
+        self.extension_aliases = extension_aliases
+
     def get_resources(self):
-        # Simulate extension of loadbalancerv2 attribute map
-        for key in loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys():
-            loadbalancerv2.RESOURCE_ATTRIBUTE_MAP[key].update(
-                sharedpools.EXTENDED_ATTRIBUTES_2_0.get(key, {}))
+        extensions_list = []
+        if 'shared_pools' in self.extension_aliases:
+            extensions_list.append(sharedpools)
+        if 'l7' in self.extension_aliases:
+            extensions_list.append(l7)
+        for extension in extensions_list:
+            if 'RESOURCE_ATTRIBUTE_MAP' in extension.__dict__:
+                loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.update(
+                    extension.RESOURCE_ATTRIBUTE_MAP)
+            if 'SUB_RESOURCE_ATTRIBUTE_MAP' in extension.__dict__:
+                loadbalancerv2.SUB_RESOURCE_ATTRIBUTE_MAP.update(
+                    extension.SUB_RESOURCE_ATTRIBUTE_MAP)
+            if 'EXTENDED_ATTRIBUTES_2_0' in extension.__dict__:
+                for key in loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys():
+                    loadbalancerv2.RESOURCE_ATTRIBUTE_MAP[key].update(
+                        extension.EXTENDED_ATTRIBUTES_2_0.get(key, {}))
         return loadbalancerv2.Loadbalancerv2.get_resources()
 
     def get_actions(self):
@@ -389,14 +512,10 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             # This is necessary because the automatic extension manager
             # finding algorithm below will find the loadbalancerv2
             # extension and fail to initizlize the main API router with
-            # the shared pools extension
-            if 'shared_pools' in LBPlugin.supported_extension_aliases:
-                ext_mgr = SharedPoolsExtensionManager()
-            else:
-                ext_mgr = extensions.PluginAwareExtensionManager(
-                    extensions_path,
-                    {constants.LOADBALANCERV2: self.plugin}
-                )
+            # extensions' resources
+            ext_mgr = ExtendedPluginAwareExtensionManager(
+                LBPlugin.supported_extension_aliases)
+
             app = config.load_paste_app('extensions_test_app')
             self.ext_api = extensions.ExtensionMiddleware(app, ext_mgr=ext_mgr)
 
@@ -446,9 +565,11 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
         body = self.deserialize(self.fmt, resp)
         return resp, body
 
-    def _validate_statuses(self, lb_id, listener_id=None, pool_id=None,
-                           member_id=None, hm_id=None,
+    def _validate_statuses(self, lb_id, listener_id=None,
+                           l7policy_id=None, l7rule_id=None,
+                           pool_id=None, member_id=None, hm_id=None,
                            member_disabled=False, listener_disabled=False,
+                           l7policy_disabled=False, l7rule_disabled=False,
                            loadbalancer_disabled=False):
         resp, body = self._get_loadbalancer_statuses_api(lb_id)
         lb_statuses = body['statuses']['loadbalancer']
@@ -474,6 +595,23 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
             else:
                 self.assertEqual(lb_const.ONLINE,
                                  listener_statuses['operating_status'])
+            if l7policy_id:
+                policy_statuses = None
+                for policy in listener_statuses['l7policies']:
+                    if policy['id'] == l7policy_id:
+                        policy_statuses = policy
+                self.assertIsNotNone(policy_statuses)
+                self.assertEqual(constants.ACTIVE,
+                                 policy_statuses['provisioning_status'])
+                if l7rule_id:
+                    rule_statuses = None
+                    for rule in policy_statuses['rules']:
+                        if rule['id'] == l7rule_id:
+                            rule_statuses = rule
+                    self.assertIsNotNone(rule_statuses)
+                    self.assertEqual(constants.ACTIVE,
+                                     rule_statuses['provisioning_status'])
+
         if pool_id:
             pool_statuses = None
             for pool in lb_statuses['pools']:
@@ -1314,6 +1452,889 @@ class LbaasListenerTests(ListenerTestBase):
                     )
 
 
+class LbaasL7Tests(ListenerTestBase):
+    def test_create_l7policy_invalid_listener_id(self, **extras):
+        self._create_l7policy(self.fmt, uuidutils.generate_uuid(),
+                              lb_const.L7_POLICY_ACTION_REJECT,
+                              expected_res_status=webob.exc.HTTPNotFound.code)
+
+    def test_create_l7policy_redirect_no_pool(self, **extras):
+        l7policy_data = {
+            'name': '',
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+            'description': '',
+            'position': 1,
+            'redirect_pool_id': None,
+            'redirect_url': 'http://radware.com',
+            'tenant_id': self._tenant_id,
+            'admin_state_up': True,
+        }
+        l7policy_data.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            ctx = context.get_admin_context()
+            l7policy_data['listener_id'] = listener['listener']['id']
+
+            l7policy_data['action'] = (
+                lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL)
+            self.assertRaises(
+                l7.L7PolicyRedirectPoolIdMissing,
+                self.plugin.create_l7policy,
+                ctx, {'l7policy': l7policy_data})
+
+    def test_create_l7policy_redirect_invalid_pool(self, **extras):
+        l7policy_data = {
+            'name': '',
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+            'description': '',
+            'position': 1,
+            'redirect_pool_id': None,
+            'tenant_id': self._tenant_id,
+            'admin_state_up': True,
+        }
+        l7policy_data.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            ctx = context.get_admin_context()
+            l7policy_data['listener_id'] = listener['listener']['id']
+
+            # Test pool redirect action with invalid pool id specified
+            l7policy_data['redirect_pool_id'] = uuidutils.generate_uuid()
+            self.assertRaises(
+                loadbalancerv2.EntityNotFound,
+                self.plugin.create_l7policy,
+                ctx, {'l7policy': l7policy_data})
+
+    def test_create_l7policy_redirect_foreign_pool(self, **extras):
+        l7policy_data = {
+            'name': '',
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+            'description': '',
+            'position': 1,
+            'redirect_pool_id': None,
+            'tenant_id': self._tenant_id,
+            'admin_state_up': True,
+        }
+        l7policy_data.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            ctx = context.get_admin_context()
+            l7policy_data['listener_id'] = listener['listener']['id']
+
+            # Test pool redirect action with another loadbalancer pool id
+            with self.pool(loadbalancer_id=self.lb_id2) as p:
+                l7policy_data['redirect_pool_id'] = p['pool']['id']
+                self.assertRaises(
+                    sharedpools.ListenerAndPoolMustBeOnSameLoadbalancer,
+                    self.plugin.create_l7policy,
+                    ctx, {'l7policy': l7policy_data})
+
+    def test_create_l7policy_redirect_no_url(self, **extras):
+        l7policy_data = {
+            'name': '',
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+            'description': '',
+            'position': 1,
+            'redirect_pool_id': None,
+            'redirect_url': 'http://radware.com',
+            'tenant_id': self._tenant_id,
+            'admin_state_up': True,
+        }
+        l7policy_data.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            ctx = context.get_admin_context()
+            l7policy_data['listener_id'] = listener['listener']['id']
+
+            # Test url redirect action without url specified
+            del l7policy_data['redirect_url']
+            l7policy_data['action'] = lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL
+            self.assertRaises(
+                l7.L7PolicyRedirectUrlMissing,
+                self.plugin.create_l7policy,
+                ctx, {'l7policy': l7policy_data})
+
+    def test_create_l7policy_redirect_invalid_url(self, **extras):
+        l7policy_data = {
+            'name': '',
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+            'description': '',
+            'position': 1,
+            'redirect_pool_id': None,
+            'redirect_url': 'http://radware.com',
+            'tenant_id': self._tenant_id,
+            'admin_state_up': True,
+        }
+        l7policy_data.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            l7policy_data['listener_id'] = listener['listener']['id']
+
+            # Test url redirect action with invalid url specified
+            try:
+                with contextlib.nested(
+                    self.l7policy(listener['listener']['id'],
+                    action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+                    redirect_url='https:/acme.com')):
+                    self.assertTrue(False)
+            except webob.exc.HTTPClientError:
+                pass
+
+    def test_create_l7policy_invalid_position(self, **extras):
+        l7policy_data = {
+            'name': '',
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+            'description': '',
+            'position': 1,
+            'redirect_pool_id': None,
+            'redirect_url': 'http://radware.com',
+            'tenant_id': self._tenant_id,
+            'admin_state_up': True,
+        }
+        l7policy_data.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            l7policy_data['listener_id'] = listener['listener']['id']
+
+            # Test invalid zero position for policy
+            try:
+                with contextlib.nested(
+                    self.l7policy(listener['listener']['id'],
+                    position=0)):
+                    self.assertTrue(False)
+            except webob.exc.HTTPClientError:
+                pass
+
+    def test_create_l7policy(self, **extras):
+        expected = {
+            'action': lb_const.L7_POLICY_ACTION_REJECT,
+            'redirect_pool_id': None,
+            'redirect_url': None,
+            'tenant_id': self._tenant_id,
+        }
+        expected.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.l7policy(listener_id) as p:
+                expected['listener_id'] = listener_id
+                actual = {}
+                for k, v in p['l7policy'].items():
+                    if k in expected:
+                        actual[k] = v
+                self.assertEqual(actual, expected)
+                self._validate_statuses(self.lb_id, listener_id,
+                                        p['l7policy']['id'])
+
+    def test_create_l7policy_pool_redirect(self, **extras):
+        expected = {
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+            'redirect_pool_id': None,
+            'redirect_url': None,
+            'tenant_id': self._tenant_id,
+        }
+        expected.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.pool(loadbalancer_id=self.lb_id) as pool:
+                pool_id = pool['pool']['id']
+                with self.l7policy(
+                    listener_id,
+                    action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                    redirect_pool_id=pool_id) as p:
+                    expected['listener_id'] = listener_id
+                    expected['redirect_pool_id'] = pool_id
+                    actual = {}
+                    for k, v in p['l7policy'].items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+    def test_l7policy_pool_deletion(self, **extras):
+        expected = {
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+            'redirect_pool_id': None,
+            'redirect_url': None,
+            'tenant_id': self._tenant_id,
+        }
+        expected.update(extras)
+
+        with contextlib.nested(
+            self.listener(loadbalancer_id=self.lb_id),
+            self.listener(loadbalancer_id=self.lb_id,
+                protocol_port=8080)) as (listener1, listener2):
+            with contextlib.nested(
+                self.pool(loadbalancer_id=self.lb_id,
+                          no_delete=True),
+                self.pool(loadbalancer_id=self.lb_id)) as (pool1, pool2):
+                with contextlib.nested(
+                    self.l7policy(
+                        listener1['listener']['id'],
+                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                        redirect_pool_id=pool1['pool']['id']),
+                    self.l7policy(
+                        listener1['listener']['id'],
+                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                        redirect_pool_id=pool2['pool']['id']),
+                    self.l7policy(
+                        listener2['listener']['id'],
+                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                        redirect_pool_id=pool1['pool']['id'])) as (
+                        policy1, policy2, policy3):
+
+                    ctx = context.get_admin_context()
+                    self.plugin.delete_pool(ctx, pool1['pool']['id'])
+
+                    l7policy1 = self.plugin.get_l7policy(
+                        ctx, policy1['l7policy']['id'])
+                    self.assertEqual(l7policy1['action'],
+                        lb_const.L7_POLICY_ACTION_REJECT)
+                    self.assertEqual(l7policy1['redirect_pool_id'], None)
+
+                    l7policy3 = self.plugin.get_l7policy(
+                        ctx, policy3['l7policy']['id'])
+                    self.assertEqual(l7policy3['action'],
+                        lb_const.L7_POLICY_ACTION_REJECT)
+                    self.assertEqual(l7policy3['redirect_pool_id'], None)
+
+    def test_create_l7policies_ordering(self, **extras):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with contextlib.nested(
+                self.l7policy(listener_id, name="1"),
+                self.l7policy(listener_id, name="2"),
+                self.l7policy(listener_id, name="3"),
+                self.l7policy(listener_id, position=1, name="4"),
+                self.l7policy(listener_id, position=2, name="5"),
+                self.l7policy(listener_id, position=4, name="6"),
+                self.l7policy(listener_id, name="7"),
+                self.l7policy(listener_id, position=8, name="8"),
+                self.l7policy(listener_id, position=1, name="9"),
+                self.l7policy(listener_id, position=1, name="10")
+            ):
+                listener_db = self.plugin.db._get_resource(
+                    context.get_admin_context(),
+                    models.Listener, listener['listener']['id'])
+                names = ['10', '9', '4', '5', '1', '6', '2', '3', '7', '8']
+                for pos in range(0, 10):
+                    self.assertEqual(
+                        listener_db.l7_policies[pos]['position'], pos + 1)
+                    self.assertEqual(
+                        listener_db.l7_policies[pos]['name'], names[pos])
+
+    def test_update_l7policy(self, **extras):
+        expected = {
+            'admin_state_up': False,
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+            'redirect_pool_id': None,
+            'redirect_url': 'redirect_url',
+            'tenant_id': self._tenant_id,
+            'position': 1,
+        }
+        expected.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.l7policy(listener_id) as p:
+                l7policy_id = p['l7policy']['id']
+
+                data = {
+                    'l7policy': {
+                        'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+                        'redirect_url': 'redirect_url',
+                        'admin_state_up': False}}
+
+                ctx = context.get_admin_context()
+                self.plugin.update_l7policy(ctx, l7policy_id, data)
+                l7policy = self.plugin.get_l7policy(ctx, l7policy_id)
+                actual = {}
+                for k, v in l7policy.items():
+                    if k in expected:
+                        actual[k] = v
+                self.assertEqual(actual, expected)
+                self._validate_statuses(self.lb_id, listener_id,
+                                        p['l7policy']['id'],
+                                        l7policy_disabled=True)
+
+    def test_update_l7policies_ordering(self, **extras):
+        expected = {
+            'action': lb_const.L7_POLICY_ACTION_REJECT,
+            'redirect_pool_id': None,
+            'redirect_url': '',
+            'tenant_id': self._tenant_id,
+        }
+        expected.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with contextlib.nested(
+                self.l7policy(listener_id, name="1"),
+                self.l7policy(listener_id, name="2"),
+                self.l7policy(listener_id, name="3"),
+                self.l7policy(listener_id, name="4"),
+                self.l7policy(listener_id, name="5"),
+                self.l7policy(listener_id, name="6"),
+                self.l7policy(listener_id, name="7"),
+                self.l7policy(listener_id, name="8"),
+                self.l7policy(listener_id, name="9"),
+                self.l7policy(listener_id, name="10"),
+            ) as (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10):
+                c = context.get_admin_context()
+
+                listener_db = self.plugin.db._get_resource(
+                    context.get_admin_context(),
+                    models.Listener, listener['listener']['id'])
+
+                expected['position'] = 1
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p2['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p2['l7policy']['id'],
+                                            {'l7policy': expected})
+                expected['position'] = 3
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p1['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p1['l7policy']['id'],
+                                            {'l7policy': expected})
+                expected['position'] = 4
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p6['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p6['l7policy']['id'],
+                                            {'l7policy': expected})
+                expected['position'] = 11
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p2['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p2['l7policy']['id'],
+                                            {'l7policy': expected})
+                expected['position'] = 1
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p1['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p1['l7policy']['id'],
+                                            {'l7policy': expected})
+                expected['position'] = 8
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p5['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p5['l7policy']['id'],
+                                            {'l7policy': expected})
+                expected['position'] = 3
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p10['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.update_l7policy(c, p10['l7policy']['id'],
+                                            {'l7policy': expected})
+                listener_db = self.plugin.db._get_resource(
+                    context.get_admin_context(),
+                    models.Listener, listener['listener']['id'])
+                names = ['1', '3', '10', '6', '4', '7', '8', '9', '5', '2']
+                for pos in range(0, 10):
+                    self.assertEqual(
+                        listener_db.l7_policies[pos]['position'], pos + 1)
+                    self.assertEqual(
+                        listener_db.l7_policies[pos]['name'], names[pos])
+
+    def test_delete_l7policy(self, **extras):
+        expected = {
+            'position': 1,
+            'action': lb_const.L7_POLICY_ACTION_REJECT,
+            'redirect_pool_id': None,
+            'redirect_url': '',
+            'tenant_id': self._tenant_id,
+        }
+        expected.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with contextlib.nested(
+                self.l7policy(listener_id, name="0"),
+                self.l7policy(listener_id, name="1"),
+                self.l7policy(listener_id, name="2"),
+                self.l7policy(listener_id, name="3", no_delete=True),
+                self.l7policy(listener_id, name="4"),
+                self.l7policy(listener_id, name="5", no_delete=True),
+                self.l7policy(listener_id, name="6")
+            ) as (p0, p1, p2, p3, p4, p5, p6):
+                c = context.get_admin_context()
+
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p3['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.delete_l7policy(c, p3['l7policy']['id'])
+                self.plugin.db.update_status(
+                    c, models.L7Policy, p5['l7policy']['id'],
+                    lb_const.OFFLINE)
+                self.plugin.delete_l7policy(c, p5['l7policy']['id'])
+
+                listener_db = self.plugin.db._get_resource(
+                    context.get_admin_context(),
+                    models.Listener, listener['listener']['id'])
+                names = ['0', '1', '2', '4', '6']
+                for pos in range(0, 4):
+                    self.assertEqual(
+                        listener_db.l7_policies[pos]['position'], pos + 1)
+                    self.assertEqual(
+                        listener_db.l7_policies[pos]['name'], names[pos])
+
+                self.assertRaises(
+                    loadbalancerv2.EntityNotFound,
+                    self.plugin.get_l7policy,
+                    c, p3['l7policy']['id'])
+                self.assertRaises(
+                    loadbalancerv2.EntityNotFound,
+                    self.plugin.get_l7policy,
+                    c, p5['l7policy']['id'])
+
+    def test_show_l7policy(self, **extras):
+        expected = {
+            'position': 1,
+            'action': lb_const.L7_POLICY_ACTION_REJECT,
+            'redirect_pool_id': None,
+            'redirect_url': None,
+            'tenant_id': self._tenant_id,
+        }
+        expected.update(extras)
+
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.l7policy(listener_id, name="0") as p:
+                req = self.new_show_request('l7policies',
+                                            p['l7policy']['id'],
+                                            fmt=self.fmt)
+                res = self.deserialize(self.fmt,
+                                       req.get_response(self.ext_api))
+                actual = {}
+                for k, v in res['l7policy'].items():
+                    if k in expected:
+                        actual[k] = v
+                self.assertEqual(expected, actual)
+            return p
+
+    def test_list_l7policies_with_sort_emulated(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with contextlib.nested(self.l7policy(listener_id, name="b"),
+                                   self.l7policy(listener_id, name="c"),
+                                   self.l7policy(listener_id, name="a")
+                                   ) as (p1, p2, p3):
+                self._test_list_with_sort('l7policy', (p3, p1, p2),
+                                          [('name', 'asc')],
+                                          resources='l7policies')
+
+    def test_list_l7policies_with_pagination_emulated(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with contextlib.nested(self.l7policy(listener_id, name="b"),
+                                   self.l7policy(listener_id, name="c"),
+                                   self.l7policy(listener_id, name="e"),
+                                   self.l7policy(listener_id, name="d"),
+                                   self.l7policy(listener_id, name="f"),
+                                   self.l7policy(listener_id, name="g"),
+                                   self.l7policy(listener_id, name="a")
+                                   ) as (p1, p2, p3, p4, p5, p6, p7):
+                self._test_list_with_pagination(
+                    'l7policy', (p6, p5, p3, p4, p2, p1, p7),
+                    ('name', 'desc'), 2, 4, resources='l7policies')
+
+    def test_list_l7policies_with_pagination_reverse_emulated(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with contextlib.nested(self.l7policy(listener_id, name="b"),
+                                   self.l7policy(listener_id, name="c"),
+                                   self.l7policy(listener_id, name="e"),
+                                   self.l7policy(listener_id, name="d"),
+                                   self.l7policy(listener_id, name="f"),
+                                   self.l7policy(listener_id, name="g"),
+                                   self.l7policy(listener_id, name="a")
+                                   ) as (p1, p2, p3, p4, p5, p6, p7):
+                self._test_list_with_pagination_reverse(
+                    'l7policy', (p6, p5, p3, p4, p2, p1, p7),
+                    ('name', 'desc'), 2, 4, resources='l7policies')
+
+    def test_create_l7rule_invalid_policy_id(self, **extras):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            with self.l7policy(listener['listener']['id']):
+                self._create_l7policy_rule(
+                    self.fmt, uuidutils.generate_uuid(),
+                    lb_const.L7_RULE_TYPE_HOST_NAME,
+                    lb_const.L7_RULE_COMPARE_TYPE_REGEX,
+                    'value',
+                    expected_res_status=webob.exc.HTTPNotFound.code)
+
+    def test_create_invalid_l7rule(self, **extras):
+        rule = {
+            'type': lb_const.L7_RULE_TYPE_HEADER,
+            'compare_type': lb_const.L7_RULE_COMPARE_TYPE_REGEX,
+            'value': '*'
+        }
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            with self.l7policy(listener['listener']['id']) as policy:
+                policy_id = policy['l7policy']['id']
+                ctx = context.get_admin_context()
+
+                # test invalid regex
+                self.assertRaises(
+                    l7.L7RuleInvalidRegex,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test missing key for HEADER type
+                rule['value'] = '/*/'
+                self.assertRaises(
+                    l7.L7RuleKeyMissing,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test missing key for COOKIE type
+                rule['type'] = lb_const.L7_RULE_TYPE_COOKIE
+                self.assertRaises(
+                    l7.L7RuleKeyMissing,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test invalid key for HEADER type
+                rule['type'] = lb_const.L7_RULE_TYPE_HEADER
+                rule['key'] = '/'
+                self.assertRaises(
+                    l7.L7RuleInvalidKey,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test invalid value for COOKIE type
+                rule['compare_type'] =\
+                    lb_const.L7_RULE_COMPARE_TYPE_CONTAINS
+                rule['type'] = lb_const.L7_RULE_TYPE_COOKIE
+                rule['key'] = 'a'
+                rule['value'] = ';'
+                self.assertRaises(
+                    l7.L7RuleInvalidCookieValue,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test invalid value for !COOKIE type
+                rule['type'] = lb_const.L7_RULE_TYPE_PATH
+                rule['value'] = '	'
+                self.assertRaises(
+                    l7.L7RuleInvalidHeaderValue,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test invalid value for !COOKIE type quated
+                rule['value'] = '  '
+                self.assertRaises(
+                    l7.L7RuleInvalidHeaderValue,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+                # test unsupported compare type for FILE type
+                rule['type'] = lb_const.L7_RULE_TYPE_FILE_TYPE
+                self.assertRaises(
+                    l7.L7RuleUnsupportedCompareType,
+                    self.plugin.db.create_l7policy_rule,
+                    ctx, rule, policy_id)
+
+    def test_create_l7rule(self, **extras):
+        expected = {
+            'type': lb_const.L7_RULE_TYPE_HOST_NAME,
+            'compare_type': lb_const.L7_RULE_COMPARE_TYPE_EQUAL_TO,
+            'key': None,
+            'value': 'value1'
+        }
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            with self.l7policy(listener['listener']['id']) as policy:
+                policy_id = policy['l7policy']['id']
+                with contextlib.nested(
+                    self.l7policy_rule(policy_id),
+                    self.l7policy_rule(policy_id, key='key1'),
+                    self.l7policy_rule(policy_id, value='value2'),
+                    self.l7policy_rule(policy_id,
+                                       type=lb_const.L7_RULE_TYPE_PATH),
+                    self.l7policy_rule(
+                        policy_id,
+                        compare_type=lb_const.L7_RULE_COMPARE_TYPE_REGEX),
+                    self.l7policy_rule(
+                        policy_id,
+                        invert=True)
+                ) as (r_def, r_key, r_value, r_type, r_compare_type, r_invert):
+
+                    ctx = context.get_admin_context()
+                    rdb = self.plugin.get_l7policy_rule(
+                        ctx, r_def['rule']['id'], policy_id)
+                    actual = {}
+                    for k, v in rdb.items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+                    rdb = self.plugin.get_l7policy_rule(
+                        ctx, r_key['rule']['id'], policy_id)
+                    expected['key'] = 'key1'
+                    actual = {}
+                    for k, v in rdb.items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+                    rdb = self.plugin.get_l7policy_rule(
+                        ctx, r_value['rule']['id'], policy_id)
+                    expected['key'] = None
+                    expected['value'] = 'value2'
+                    actual = {}
+                    for k, v in rdb.items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+                    rdb = self.plugin.get_l7policy_rule(
+                        ctx, r_type['rule']['id'], policy_id)
+                    expected['value'] = 'value1'
+                    expected['type'] = lb_const.L7_RULE_TYPE_PATH
+                    actual = {}
+                    for k, v in rdb.items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+                    rdb = self.plugin.get_l7policy_rule(
+                        ctx, r_compare_type['rule']['id'], policy_id)
+                    expected['type'] = lb_const.L7_RULE_TYPE_HOST_NAME
+                    expected['compare_type'] =\
+                        lb_const.L7_RULE_COMPARE_TYPE_REGEX
+                    actual = {}
+                    for k, v in rdb.items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+                    rdb = self.plugin.get_l7policy_rule(
+                        ctx, r_invert['rule']['id'], policy_id)
+                    expected['invert'] = True
+                    expected['compare_type'] =\
+                        lb_const.L7_RULE_COMPARE_TYPE_EQUAL_TO
+                    actual = {}
+                    for k, v in rdb.items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+
+    def test_invalid_update_l7rule(self, **extras):
+        rule = {
+            'type': lb_const.L7_RULE_TYPE_HEADER,
+            'compare_type': lb_const.L7_RULE_COMPARE_TYPE_REGEX,
+            'value': '*'
+        }
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            with self.l7policy(listener['listener']['id']) as policy:
+                policy_id = policy['l7policy']['id']
+                with self.l7policy_rule(policy_id) as r:
+                    rule_id = r['rule']['id']
+                    ctx = context.get_admin_context()
+
+                    # test invalid regex
+                    self.assertRaises(
+                        l7.L7RuleInvalidRegex,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test missing key for HEADER type
+                    rule['value'] = '/*/'
+                    self.assertRaises(
+                        l7.L7RuleKeyMissing,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test missing key for COOKIE type
+                    rule['type'] = lb_const.L7_RULE_TYPE_COOKIE
+                    self.assertRaises(
+                        l7.L7RuleKeyMissing,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test invalid key for HEADER type
+                    rule['type'] = lb_const.L7_RULE_TYPE_HEADER
+                    rule['key'] = '/'
+                    self.assertRaises(
+                        l7.L7RuleInvalidKey,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test invalid value for COOKIE type
+                    rule['compare_type'] =\
+                        lb_const.L7_RULE_COMPARE_TYPE_CONTAINS
+                    rule['type'] = lb_const.L7_RULE_TYPE_COOKIE
+                    rule['key'] = 'a'
+                    rule['value'] = ';'
+                    self.assertRaises(
+                        l7.L7RuleInvalidCookieValue,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test invalid value for !COOKIE type
+                    rule['type'] = lb_const.L7_RULE_TYPE_PATH
+                    rule['value'] = '	'
+                    self.assertRaises(
+                        l7.L7RuleInvalidHeaderValue,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test invalid value for !COOKIE type quated
+                    rule['value'] = '  '
+                    self.assertRaises(
+                        l7.L7RuleInvalidHeaderValue,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+                    # test unsupported compare type for FILE type
+                    rule['type'] = lb_const.L7_RULE_TYPE_FILE_TYPE
+                    self.assertRaises(
+                        l7.L7RuleUnsupportedCompareType,
+                        self.plugin.db.update_l7policy_rule,
+                        ctx, rule_id, rule, policy_id)
+
+    def test_update_l7rule(self, **extras):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            with self.l7policy(listener['listener']['id']) as policy:
+                policy_id = policy['l7policy']['id']
+                with self.l7policy_rule(policy_id) as r:
+                    req = self.new_show_request('l7policies',
+                                                policy_id,
+                                                fmt=self.fmt)
+                    policy_show = self.deserialize(
+                        self.fmt,
+                        req.get_response(self.ext_api)
+                    )
+                    self.assertEqual(
+                        len(policy_show['l7policy']['rules']), 1)
+
+                    expected = {}
+                    expected['type'] = lb_const.L7_RULE_TYPE_HEADER
+                    expected['compare_type'] = (
+                        lb_const.L7_RULE_COMPARE_TYPE_REGEX)
+                    expected['value'] = '/.*/'
+                    expected['key'] = 'HEADER1'
+                    expected['invert'] = True
+                    expected['admin_state_up'] = False
+
+                    req = self.new_update_request(
+                        'l7policies', {'rule': expected},
+                        policy_id, subresource='rules',
+                        sub_id=r['rule']['id'])
+                    res = self.deserialize(
+                        self.fmt,
+                        req.get_response(self.ext_api)
+                    )
+                    actual = {}
+                    for k, v in res['rule'].items():
+                        if k in expected:
+                            actual[k] = v
+                    self.assertEqual(actual, expected)
+                    self._validate_statuses(self.lb_id,
+                                            listener['listener']['id'],
+                                            policy_id, r['rule']['id'],
+                                            l7rule_disabled=True)
+
+    def test_delete_l7rule(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            with self.l7policy(listener['listener']['id']) as policy:
+                policy_id = policy['l7policy']['id']
+                with contextlib.nested(
+                    self.l7policy_rule(policy_id, no_delete=True),
+                    self.l7policy_rule(policy_id, no_delete=True)
+                ) as (r0, r1):
+                    req = self.new_show_request('l7policies',
+                                                policy_id,
+                                                fmt=self.fmt)
+                    policy_update = self.deserialize(
+                        self.fmt,
+                        req.get_response(self.ext_api)
+                    )
+                    self.assertEqual(
+                        len(policy_update['l7policy']['rules']), 2)
+
+                    req = self.new_delete_request('l7policies',
+                                                  policy_id,
+                                                  subresource='rules',
+                                                  sub_id=r0['rule']['id'])
+                    res = req.get_response(self.ext_api)
+                    self.assertEqual(res.status_int,
+                                     webob.exc.HTTPNoContent.code)
+
+                    req = self.new_show_request('l7policies',
+                                                policy_id,
+                                                fmt=self.fmt)
+                    policy_update = self.deserialize(
+                        self.fmt,
+                        req.get_response(self.ext_api)
+                    )
+                    self.assertEqual(
+                        len(policy_update['l7policy']['rules']), 1)
+
+    def test_list_l7rules_with_sort_emulated(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.l7policy(listener_id) as policy:
+                policy_id = policy['l7policy']['id']
+                with contextlib.nested(
+                    self.l7policy_rule(policy_id, value="b"),
+                    self.l7policy_rule(policy_id, value="c"),
+                    self.l7policy_rule(policy_id, value="a")
+                ) as (r1, r2, r3):
+                    self._test_list_with_sort('l7policy', (r3, r1, r2),
+                                              [('value', 'asc')],
+                                              id=policy_id,
+                                              resources='l7policies',
+                                              subresource='rule',
+                                              subresources='rules')
+
+    def test_list_l7rules_with_pagination_emulated(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.l7policy(listener_id) as policy:
+                policy_id = policy['l7policy']['id']
+                with contextlib.nested(
+                    self.l7policy_rule(policy_id, value="b"),
+                    self.l7policy_rule(policy_id, value="c"),
+                    self.l7policy_rule(policy_id, value="e"),
+                    self.l7policy_rule(policy_id, value="d"),
+                    self.l7policy_rule(policy_id, value="f"),
+                    self.l7policy_rule(policy_id, value="g"),
+                    self.l7policy_rule(policy_id, value="a")
+                ) as (r1, r2, r3, r4, r5, r6, r7):
+                    self._test_list_with_pagination(
+                        'l7policy', (r6, r5, r3, r4, r2, r1, r7),
+                        ('value', 'desc'), 2, 4,
+                        id=policy_id,
+                        resources='l7policies',
+                        subresource='rule',
+                        subresources='rules')
+
+    def test_list_l7rules_with_pagination_reverse_emulated(self):
+        with self.listener(loadbalancer_id=self.lb_id) as listener:
+            listener_id = listener['listener']['id']
+            with self.l7policy(listener_id) as p:
+                policy_id = p['l7policy']['id']
+                with contextlib.nested(
+                    self.l7policy_rule(policy_id, value="b"),
+                    self.l7policy_rule(policy_id, value="c"),
+                    self.l7policy_rule(policy_id, value="e"),
+                    self.l7policy_rule(policy_id, value="d"),
+                    self.l7policy_rule(policy_id, value="f"),
+                    self.l7policy_rule(policy_id, value="g"),
+                    self.l7policy_rule(policy_id, value="a")
+                ) as (r1, r2, r3, r4, r5, r6, r7):
+                    self._test_list_with_pagination_reverse(
+                        'l7policy', (r6, r5, r3, r4, r2, r1, r7),
+                        ('value', 'desc'), 2, 4,
+                        id=policy_id,
+                        resources='l7policies',
+                        subresource='rule',
+                        subresources='rules')
+
+
 class PoolTestBase(ListenerTestBase):
 
     def setUp(self):
@@ -1391,7 +2412,8 @@ class LbaasPoolTests(PoolTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, pool_id)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=pool_id)
         return pool
 
     def test_create_pool_with_loadbalancer_no_listener(self, **extras):
@@ -1420,7 +2442,7 @@ class LbaasPoolTests(PoolTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, None, pool_id)
+            self._validate_statuses(self.lb_id, None, pool_id=pool_id)
         return pool
 
     def test_show_pool(self, **extras):
@@ -1473,7 +2495,8 @@ class LbaasPoolTests(PoolTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, pool_id)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=pool_id)
 
         return pool
 
@@ -1743,6 +2766,7 @@ class MemberTestBase(PoolTestBase):
             self.fmt, lb_const.PROTOCOL_HTTP,
             lb_const.LB_METHOD_ROUND_ROBIN,
             self.listener_id,
+            self.lb_id,
             session_persistence={'type':
                                  lb_const.SESSION_PERSISTENCE_HTTP_COOKIE})
         self.pool = self.deserialize(self.fmt, pool_res)
@@ -1827,8 +2851,9 @@ class LbaasMemberTests(MemberTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
-                                    member_id)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id,
+                                    member_id=member_id)
         return member
 
     def test_create_member_with_existing_address_port_pool_combination(self):
@@ -1867,8 +2892,9 @@ class LbaasMemberTests(MemberTestBase):
                 self.assertEqual(v, body['member'][k])
             resp, pool1_update = self._get_pool_api(self.pool_id)
             self.assertEqual(1, len(pool1_update['pool']['members']))
-            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
-                                    member_id, member_disabled=True)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id,
+                                    member_id=member_id, member_disabled=True)
 
     def test_delete_member(self):
         with self.member(pool_id=self.pool_id, no_delete=True) as member:
@@ -2054,7 +3080,8 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id,
                                     hm_id=hm_id)
             _, pool = self._get_pool_api(self.pool_id)
             self.assertEqual(
@@ -2125,7 +3152,8 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id,
                                     hm_id=hm_id)
 
         return healthmonitor
@@ -2162,8 +3190,8 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
-                                    hm_id=hm_id)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id, hm_id=hm_id)
         return healthmonitor
 
     def test_show_healthmonitor_with_type_tcp(self, **extras):
@@ -2222,8 +3250,8 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                 if k in expected:
                     actual[k] = v
             self.assertEqual(expected, actual)
-            self._validate_statuses(self.lb_id, self.listener_id, self.pool_id,
-                                    hm_id=hm_id)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id, hm_id=hm_id)
 
         return healthmonitor
 
@@ -2711,6 +3739,7 @@ class LbaasStatusesTest(MemberTestBase):
             listener_id = listener['listener']['id']
             lb_dict['listeners'].append({'id': listener_id, 'pools': []})
             res = self._create_pool(fmt, prot, ROUND_ROBIN, listener_id,
+                                    loadbalancer_id=lb_id,
                                     name="pool_%s" % prot)
             pool = self.deserialize(fmt, res)
             pool_id = pool['pool']['id']
