@@ -45,7 +45,6 @@ sys.path.insert(0, ROOT_DIR)
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.coverage',
               'sphinx.ext.ifconfig',
-              'sphinx.ext.pngmath',
               'sphinx.ext.graphviz',
               'sphinx.ext.todo',
               'oslosphinx']
