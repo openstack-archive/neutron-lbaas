@@ -15,6 +15,7 @@
 #
 
 import mock
+import webob
 
 from neutron.db import servicetype_db as st_db
 from neutron.tests import base as n_base
@@ -205,6 +206,17 @@ class NeutronDbPluginV2TestCase(
         expected_res = [item[resource]['id'] for item in items]
         expected_res.reverse()
         self.assertEqual(expected_res, [n['id'] for n in item_res])
+
+    def _delete(self, collection, id,
+                expected_code=webob.exc.HTTPNoContent.code,
+                neutron_context=None, subresource=None, sub_id=None):
+        req = self.new_delete_request(collection, id, subresource=subresource,
+                                      sub_id=sub_id)
+        if neutron_context:
+            # create a specific auth context for this request
+            req.environ['neutron.context'] = neutron_context
+        res = req.get_response(self._api_for_resource(collection))
+        self.assertEqual(res.status_int, expected_code)
 
 
 class ExtensionTestCase(ext_base.ExtensionTestCase):

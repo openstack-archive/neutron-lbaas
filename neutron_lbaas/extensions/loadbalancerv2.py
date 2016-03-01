@@ -669,3 +669,7 @@ class LoadBalancerPluginBaseV2(service_base.ServicePluginBase):
     @abc.abstractmethod
     def delete_l7policy_rule(self, context, id, l7policy_id):
         pass
+
+    @abc.abstractmethod
+    def create_graph(self, context, graph):
+        pass

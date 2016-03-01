@@ -59,31 +59,45 @@ class ManagerTest(object):
 class BaseOctaviaDriverTest(test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
     # Copied it from Brocade's test code :/
-    def _create_fake_models(self):
+    def _create_fake_models(self, children=True, graph=False):
         # This id is used for all the entities.
         id = 'test_id'
         lb = data_models.LoadBalancer(id=id)
+        if not children:
+            return lb
         sni_container = data_models.SNI(listener_id=id)
         listener = data_models.Listener(id=id, loadbalancer=lb,
                                         sni_containers=[sni_container])
         pool = data_models.Pool(id=id, loadbalancer=lb)
         member = data_models.Member(id=id, pool=pool)
         hm = data_models.HealthMonitor(id=id, pool=pool)
+        sp = data_models.SessionPersistence(pool_id=pool.id, pool=pool)
         l7policy = data_models.L7Policy(
-            id=id, listener=listener, redirect_pool_id=pool.id,
+            id=id, listener=listener,
             action=constants.L7_POLICY_ACTION_REDIRECT_TO_POOL)
         l7rule = data_models.L7Rule(
-            id=id, policy=l7policy,
-            type=constants.L7_RULE_TYPE_PATH,
+            id=id, policy=l7policy, type=constants.L7_RULE_TYPE_PATH,
             compare_type=constants.L7_RULE_COMPARE_TYPE_STARTS_WITH,
             value='/api')
         lb.listeners = [listener]
         lb.pools = [pool]
+        if graph:
+            r_pool = data_models.Pool(id=id, loadbalancer=lb)
+            r_member = data_models.Member(id=id, pool=r_pool)
+            r_pool.members = [r_member]
+            l7policy.redirect_pool = r_pool
+            l7policy.redirect_pool_id = r_pool.id
+            lb.pools.append(r_pool)
+        else:
+            l7policy.redirect_pool = pool
+            l7policy.redirect_pool_id = pool.id
         listener.default_pool = pool
-        listener.l7policies = [l7policy]
+        listener.l7_policies = [l7policy]
         l7policy.rules = [l7rule]
         pool.members = [member]
+        pool.session_persistence = sp
         pool.healthmonitor = hm
+
         return lb
 
     def setUp(self):
@@ -105,11 +119,124 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         test_driver = driver.OctaviaDriver(self.plugin)
         self.assertTrue(test_driver.load_balancer.allocates_vip)
 
+    def test_create_load_balancer_graph(self):
+        m = ManagerTest(self, self.driver.load_balancer,
+                        self.driver.req)
+        lb = self._create_fake_models(children=True, graph=True)
+        listener = lb.listeners[0]
+        sni_container = listener.sni_containers[0]
+        policy = listener.l7_policies[0]
+        r_pool = policy.redirect_pool
+        r_member = r_pool.members[0]
+        rule = policy.rules[0]
+        pool = listener.default_pool
+        member = pool.members[0]
+        sp = pool.session_persistence
+        hm = pool.healthmonitor
+
+        lb_url = '/v1/loadbalancers'
+
+        args = {
+            "id": lb.id,
+            "name": lb.name,
+            "enabled": lb.admin_state_up,
+            "vip": {
+                "subnet_id": lb.vip_subnet_id,
+                "port_id": lb.vip_port_id,
+                "ip_address": lb.vip_address
+            },
+            "listeners": [{
+                "id": listener.id,
+                "protocol": listener.protocol,
+                "enabled": listener.admin_state_up,
+                "sni_containers": [sni_container.tls_container_id],
+                "tls_certificate_id": listener.default_tls_container_id,
+                "l7policies": [{
+                    "id": policy.id,
+                    "name": policy.name,
+                    "redirect_pool": {
+                        "id": r_pool.id,
+                        "lb_algorithm": r_pool.lb_algorithm,
+                        "protocol": r_pool.protocol,
+                        "name": r_pool.name,
+                        "enabled": r_pool.admin_state_up,
+                        "session_persistence": r_pool.session_persistence,
+                        "members": [{
+                            "project_id": r_member.tenant_id,
+                            "weight": r_member.weight,
+                            "subnet_id": r_member.subnet_id,
+                            "ip_address": r_member.address,
+                            "protocol_port": r_member.protocol_port,
+                            "enabled": r_member.admin_state_up,
+                            "id": r_member.id
+                        }],
+                        "project_id": r_pool.tenant_id,
+                        "description": r_pool.description
+                    },
+                    "l7rules": [{
+                        "id": rule.id,
+                        "type": rule.type,
+                        "compare_type": rule.compare_type,
+                        "key": rule.key,
+                        "value": rule.value,
+                        "invert": rule.invert
+                    }],
+                    "enabled": policy.admin_state_up,
+                    "action": policy.action,
+                    "position": policy.position,
+                    "description": policy.description
+                }],
+                "name": listener.name,
+                "description": listener.description,
+                "default_pool": {
+                    "id": pool.id,
+                    "lb_algorithm": pool.lb_algorithm,
+                    "protocol": pool.protocol,
+                    "name": pool.name,
+                    "enabled": pool.admin_state_up,
+                    "session_persistence": {
+                        "cookie_name": sp.cookie_name,
+                        "type": sp.type
+                    },
+                    "members": [{
+                        "project_id": member.tenant_id,
+                        "weight": member.weight,
+                        "subnet_id": member.subnet_id,
+                        "ip_address": member.address,
+                        "protocol_port": member.protocol_port,
+                        "enabled": member.admin_state_up,
+                        "id": member.id
+                    }],
+                    "health_monitor": {
+                        'type': hm.type,
+                        'delay': hm.delay,
+                        'timeout': hm.timeout,
+                        'rise_threshold': hm.max_retries,
+                        'fall_threshold': hm.max_retries,
+                        'http_method': hm.http_method,
+                        'url_path': hm.url_path,
+                        'expected_codes': hm.expected_codes,
+                        'enabled': hm.admin_state_up,
+                        'project_id': hm.tenant_id
+                    },
+                    "project_id": pool.tenant_id,
+                    "description": pool.description
+                },
+                "connection_limit": listener.connection_limit,
+                "protocol_port": listener.protocol_port,
+                "project_id": listener.tenant_id
+            }],
+            "project_id": lb.tenant_id,
+            "description": lb.description
+        }
+
+        m.create(lb, lb_url, args)
+
     def test_load_balancer_ops(self):
         m = ManagerTest(self, self.driver.load_balancer,
                         self.driver.req)
 
-        lb = self.lb
+        lb = self._create_fake_models(children=False)
 
         # urls for assert test.
         lb_url = '/v1/loadbalancers'
@@ -133,7 +260,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
 
         # Update LB test
         # args for update assert.
-        args = args = {
+        args = {
             'name': lb.name,
             'description': lb.description,
             'enabled': lb.admin_state_up,
@@ -298,7 +425,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m = ManagerTest(self, self.driver.l7policy,
                         self.driver.req)
 
-        l7p = copy.deepcopy(self.lb.listeners[0].l7policies[0])
+        l7p = copy.deepcopy(self.lb.listeners[0].l7_policies[0])
         l7p.action = constants.L7_POLICY_ACTION_REJECT
 
         # urls for assert.
@@ -330,7 +457,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m = ManagerTest(self, self.driver.l7policy,
                         self.driver.req)
 
-        l7p = copy.deepcopy(self.lb.listeners[0].l7policies[0])
+        l7p = copy.deepcopy(self.lb.listeners[0].l7_policies[0])
         l7p.action = constants.L7_POLICY_ACTION_REDIRECT_TO_POOL
 
         # urls for assert.
@@ -363,7 +490,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m = ManagerTest(self, self.driver.l7policy,
                         self.driver.req)
 
-        l7p = copy.deepcopy(self.lb.listeners[0].l7policies[0])
+        l7p = copy.deepcopy(self.lb.listeners[0].l7_policies[0])
         l7p.action = constants.L7_POLICY_ACTION_REDIRECT_TO_URL
 
         # urls for assert.
@@ -396,7 +523,7 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
         m = ManagerTest(self, self.driver.l7rule,
                         self.driver.req)
 
-        l7r = self.lb.listeners[0].l7policies[0].rules[0]
+        l7r = self.lb.listeners[0].l7_policies[0].rules[0]
 
         # urls for assert.
         l7r_url = '/v1/loadbalancers/%s/listeners/%s/l7policies/%s/l7rules' % (

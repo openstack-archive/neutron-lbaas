@@ -12,10 +12,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-import six
+import copy
 
 from neutron.api.v2 import attributes as attrs
+from neutron.api.v2 import base as napi_base
 from neutron import context as ncontext
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import flavors
@@ -29,6 +29,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 from oslo_utils import excutils
+import six
 
 from neutron_lbaas._i18n import _LI, _LE
 from neutron_lbaas import agent_scheduler as agent_scheduler_v2
@@ -37,6 +38,8 @@ from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as ldb
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
+from neutron_lbaas.extensions import l7
+from neutron_lbaas.extensions import lb_graph as lb_graph_ext
 from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.extensions import loadbalancer as lb_ext
 from neutron_lbaas.extensions import loadbalancerv2
@@ -386,7 +389,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                                    "shared_pools",
                                    "l7",
                                    "lbaas_agent_schedulerv2",
-                                   "service-type"]
+                                   "service-type",
+                                   "lb-graph"]
     path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
 
     agent_notifiers = (
@@ -475,15 +479,15 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             return self.default_provider
 
     def _call_driver_operation(self, context, driver_method, db_entity,
-                               old_db_entity=None):
+                               old_db_entity=None, **kwargs):
         manager_method = "%s.%s" % (driver_method.__self__.__class__.__name__,
                                     driver_method.__name__)
         LOG.info(_LI("Calling driver operation %s") % manager_method)
         try:
             if old_db_entity:
-                driver_method(context, old_db_entity, db_entity)
+                driver_method(context, old_db_entity, db_entity, **kwargs)
             else:
-                driver_method(context, db_entity)
+                driver_method(context, db_entity, **kwargs)
         # catching and reraising agent issues
         except (lbaas_agentschedulerv2.NoEligibleLbaasAgent,
                 lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
@@ -562,6 +566,113 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
         loadbalancer['provider'] = provider
 
+    def _get_tweaked_resource_attribute_map(self):
+        memo = {id(attrs.ATTR_NOT_SPECIFIED): attrs.ATTR_NOT_SPECIFIED}
+        ram = copy.deepcopy(attrs.RESOURCE_ATTRIBUTE_MAP, memo=memo)
+        del ram['listeners']['loadbalancer_id']
+        del ram['pools']['listener_id']
+        del ram['healthmonitors']['pool_id']
+        for resource in ram:
+            if resource in lb_graph_ext.EXISTING_ATTR_GRAPH_ATTR_MAP:
+                ram[resource].update(
+                    lb_graph_ext.EXISTING_ATTR_GRAPH_ATTR_MAP[resource])
+        return ram
+
+    def _prepare_loadbalancer_graph(self, context, loadbalancer):
+        """Prepares the entire user requested body of a load balancer graph
+
+        To minimize code duplication, this method reuses the neutron API
+        controller's method to do all the validation, conversion, and
+        defaulting of each resource.  This reuses the RESOURCE_ATTRIBUTE_MAP
+        and SUB_RESOURCE_ATTRIBUTE_MAP from the extension to enable this.
+        """
+        # NOTE(blogan): it is assumed the loadbalancer attributes have already
+        # passed through the prepare_request_body method by nature of the
+        # normal neutron wsgi workflow.  So we start with listeners since
+        # that probably has not passed through the neutron wsgi workflow.
+        ram = self._get_tweaked_resource_attribute_map()
+        # NOTE(blogan): members are not populated in the attributes.RAM so
+        # our only option is to use the original extension definition of member
+        # to validate.  If members ever need something added to it then it too
+        # will need to be added here.
+        prepped_lb = napi_base.Controller.prepare_request_body(
+            context, {'loadbalancer': loadbalancer}, True, 'loadbalancer',
+            ram['loadbalancers']
+        )
+        sub_ram = loadbalancerv2.SUB_RESOURCE_ATTRIBUTE_MAP
+        sub_ram.update(l7.SUB_RESOURCE_ATTRIBUTE_MAP)
+        prepped_listeners = []
+        for listener in loadbalancer.get('listeners', []):
+            prepped_listener = napi_base.Controller.prepare_request_body(
+                context, {'listener': listener}, True, 'listener',
+                ram['listeners'])
+            l7policies = listener.get('l7policies')
+            if l7policies and l7policies != attrs.ATTR_NOT_SPECIFIED:
+                prepped_policies = []
+                for policy in l7policies:
+                    prepped_policy = napi_base.Controller.prepare_request_body(
+                        context, {'l7policy': policy}, True, 'l7policy',
+                        ram['l7policies'])
+                    l7rules = policy.get('rules')
+                    redirect_pool = policy.get('redirect_pool')
+                    if l7rules and l7rules != attrs.ATTR_NOT_SPECIFIED:
+                        prepped_rules = []
+                        for rule in l7rules:
+                            prepped_rule = (
+                                napi_base.Controller.prepare_request_body(
+                                    context, {'l7rule': rule}, True, 'l7rule',
+                                    sub_ram['rules']['parameters']))
+                            prepped_rules.append(prepped_rule)
+                        prepped_policy['l7_rules'] = prepped_rules
+                    if (redirect_pool and
+                            redirect_pool != attrs.ATTR_NOT_SPECIFIED):
+                        prepped_r_pool = (
+                            napi_base.Controller.prepare_request_body(
+                                context, {'pool': redirect_pool}, True, 'pool',
+                                ram['pools']))
+                        prepped_r_members = []
+                        for member in redirect_pool.get('members', []):
+                            prepped_r_member = (
+                                napi_base.Controller.prepare_request_body(
+                                    context, {'member': member},
+                                    True, 'member',
+                                    sub_ram['members']['parameters']))
+                            prepped_r_members.append(prepped_r_member)
+                        prepped_r_pool['members'] = prepped_r_members
+                        r_hm = redirect_pool.get('healthmonitor')
+                        if r_hm and r_hm != attrs.ATTR_NOT_SPECIFIED:
+                            prepped_r_hm = (
+                                napi_base.Controller.prepare_request_body(
+                                    context, {'healthmonitor': r_hm},
+                                    True, 'healthmonitor',
+                                    ram['healthmonitors']))
+                            prepped_r_pool['healthmonitor'] = prepped_r_hm
+                        prepped_policy['redirect_pool'] = redirect_pool
+                    prepped_policies.append(prepped_policy)
+                prepped_listener['l7_policies'] = prepped_policies
+            pool = listener.get('default_pool')
+            if pool and pool != attrs.ATTR_NOT_SPECIFIED:
+                prepped_pool = napi_base.Controller.prepare_request_body(
+                    context, {'pool': pool}, True, 'pool',
+                    ram['pools'])
+                prepped_members = []
+                for member in pool.get('members', []):
+                    prepped_member = napi_base.Controller.prepare_request_body(
+                        context, {'member': member}, True, 'member',
+                        sub_ram['members']['parameters'])
+                    prepped_members.append(prepped_member)
+                prepped_pool['members'] = prepped_members
+                hm = pool.get('healthmonitor')
+                if hm and hm != attrs.ATTR_NOT_SPECIFIED:
+                    prepped_hm = napi_base.Controller.prepare_request_body(
+                        context, {'healthmonitor': hm}, True, 'healthmonitor',
+                        ram['healthmonitors'])
+                    prepped_pool['healthmonitor'] = prepped_hm
+                prepped_listener['default_pool'] = prepped_pool
+            prepped_listeners.append(prepped_listener)
+        prepped_lb['listeners'] = prepped_listeners
+        return loadbalancer
+
     def create_loadbalancer(self, context, loadbalancer):
         loadbalancer = loadbalancer.get('loadbalancer')
         if loadbalancer['flavor_id'] != attrs.ATTR_NOT_SPECIFIED:
@@ -582,6 +693,30 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                          else driver.load_balancer.create)
         self._call_driver_operation(context, create_method, lb_db)
         return self.db.get_loadbalancer(context, lb_db.id).to_api_dict()
+
+    def create_graph(self, context, graph):
+        loadbalancer = graph.get('graph', {}).get('loadbalancer')
+        loadbalancer = self._prepare_loadbalancer_graph(context, loadbalancer)
+        if loadbalancer['flavor_id'] != attrs.ATTR_NOT_SPECIFIED:
+            self._insert_provider_name_from_flavor(context, loadbalancer)
+        else:
+            del loadbalancer['flavor_id']
+        provider_name = self._get_provider_name(loadbalancer)
+        driver = self.drivers[provider_name]
+        if not driver.load_balancer.allows_create_graph:
+            raise lb_graph_ext.ProviderCannotCreateLoadBalancerGraph
+        lb_db = self.db.create_loadbalancer_graph(
+            context, loadbalancer,
+            allocate_vip=not driver.load_balancer.allocates_vip)
+        self.service_type_manager.add_resource_association(
+            context, constants.LOADBALANCERV2, provider_name, lb_db.id)
+        create_method = (driver.load_balancer.create_and_allocate_vip
+                         if driver.load_balancer.allocates_vip
+                         else driver.load_balancer.create)
+        self._call_driver_operation(context, create_method, lb_db)
+        api_lb = {'loadbalancer': self.db.get_loadbalancer(
+            context, lb_db.id).to_api_dict(full_graph=True)}
+        return api_lb
 
     def update_loadbalancer(self, context, id, loadbalancer):
         loadbalancer = loadbalancer.get('loadbalancer')

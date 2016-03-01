@@ -176,7 +176,8 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                 'flavor_id': n_constants.ATTR_NOT_SPECIFIED,
                 'vip_address': n_constants.ATTR_NOT_SPECIFIED,
                 'admin_state_up': True,
-                'tenant_id': self._tenant_id}}
+                'tenant_id': self._tenant_id,
+                'listeners': []}}
         self.assertRaises(lbaas_agentschedulerv2.NoEligibleLbaasAgent,
                           self.lbaas_plugin.create_loadbalancer,
                           self.adminContext, lb)
@@ -211,7 +212,8 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                     'flavor_id': n_constants.ATTR_NOT_SPECIFIED,
                     'vip_address': n_constants.ATTR_NOT_SPECIFIED,
                     'admin_state_up': True,
-                    'tenant_id': self._tenant_id}}
+                    'tenant_id': self._tenant_id,
+                    'listeners': []}}
             self.assertRaises(lbaas_agentschedulerv2.NoEligibleLbaasAgent,
                               self.lbaas_plugin.create_loadbalancer,
                               self.adminContext, lb)

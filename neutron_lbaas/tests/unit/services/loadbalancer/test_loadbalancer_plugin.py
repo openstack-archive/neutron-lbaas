@@ -32,11 +32,11 @@ _uuid = uuidutils.generate_uuid
 _get_path = test_base._get_path
 
 
-class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
+class TestLoadBalancerExtensionTestCase(base.ExtensionTestCase):
     fmt = 'json'
 
     def setUp(self):
-        super(LoadBalancerExtensionTestCase, self).setUp()
+        super(TestLoadBalancerExtensionTestCase, self).setUp()
         self._setUpExtension(
             'neutron_lbaas.extensions.loadbalancer.LoadBalancerPluginBase',
             constants.LOADBALANCER, loadbalancer.RESOURCE_ATTRIBUTE_MAP,
@@ -487,11 +487,11 @@ class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
         self.assertEqual(exc.HTTPNoContent.code, res.status_int)
 
 
-class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
+class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
     fmt = 'json'
 
     def setUp(self):
-        super(LoadBalancerExtensionV2TestCase, self).setUp()
+        super(TestLoadBalancerExtensionV2TestCase, self).setUp()
         resource_map = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.copy()
         for k in sharedpools.EXTENDED_ATTRIBUTES_2_0.keys():
             resource_map[k].update(sharedpools.EXTENDED_ATTRIBUTES_2_0[k])

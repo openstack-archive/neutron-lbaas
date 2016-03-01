@@ -88,6 +88,18 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
     model_class = models.LoadBalancer
 
     @property
+    def allows_create_graph(self):
+        """
+        Can this driver create a load balancer graph in one call.
+
+        Return True if this driver has the capability to create a load balancer
+        and any of its children in one driver call.  If this returns True and
+        the user requests the creation of a load balancer graph, then the
+        create_graph method will be called to create the load balancer.
+        """
+        return False
+
+    @property
     def allocates_vip(self):
         """Does this driver need to allocate its own virtual IPs"""
         return False
@@ -163,10 +175,12 @@ def driver_op(func):
     @wraps(func)
     def func_wrapper(*args, **kwargs):
         d = (func.__name__ == 'delete')
+        lb_create = ((func.__name__ == 'create') and
+                     isinstance(args[0], BaseLoadBalancerManager))
         try:
             r = func(*args, **kwargs)
             args[0].successful_completion(
-                args[1], args[2], delete=d)
+                args[1], args[2], delete=d, lb_create=lb_create)
             return r
         except Exception:
             with excutils.save_and_reraise_exception():

@@ -47,6 +47,46 @@ class BaseManagerMixin(object):
     def delete(self, context, obj):
         pass
 
+    def _successful_completion_lb_graph(self, context, obj):
+        listeners = obj.listeners
+        obj.listeners = []
+        for listener in listeners:
+            # need to maintain the link from the child to the load balancer
+            listener.loadbalancer = obj
+            pool = listener.default_pool
+            l7_policies = listener.l7_policies
+            if pool:
+                pool.listener = listener
+                hm = pool.healthmonitor
+                if hm:
+                    hm.pool = pool
+                    self.successful_completion(context, hm)
+                for member in pool.members:
+                    member.pool = pool
+                    self.successful_completion(context, member)
+                self.successful_completion(context, pool)
+            if l7_policies:
+                for l7policy in l7_policies:
+                    l7policy.listener = listener
+                    l7rules = l7policy.rules
+                    for l7rule in l7rules:
+                        l7rule.l7policy = l7policy
+                        self.successful_completion(context, l7rule)
+                    redirect_pool = l7policy.redirect_pool
+                    if redirect_pool:
+                        redirect_pool.listener = listener
+                        rhm = redirect_pool.healthmonitor
+                        if rhm:
+                            rhm.pool = redirect_pool
+                            self.successful_completion(context, rhm)
+                        for rmember in redirect_pool.members:
+                            rmember.pool = redirect_pool
+                            self.successful_completion(context, rmember)
+                        self.successful_completion(context, redirect_pool)
+                    self.successful_completion(context, l7policy)
+            self.successful_completion(context, listener)
+        self.successful_completion(context, obj)
+
     def successful_completion(self, context, obj, delete=False,
                               lb_create=False):
         """
@@ -64,6 +104,9 @@ class BaseManagerMixin(object):
         """
         LOG.debug("Starting successful_completion method after a successful "
                   "driver action.")
+        if lb_create and obj.listeners:
+            self._successful_completion_lb_graph(context, obj)
+            return
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
         if delete:
             # Check if driver is responsible for vip allocation.  If the driver
