@@ -23,7 +23,7 @@ from neutron import context
 with mock.patch.dict(sys.modules, {'brocade_neutron_lbaas': mock.Mock()}):
     from neutron_lbaas.drivers.brocade import driver_v2 as driver
 from neutron_lbaas.services.loadbalancer import data_models
-from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 
 class FakeModel(object):
@@ -72,7 +72,7 @@ class LoadBalancerManagerTest(ManagerTest):
 
 
 class TestBrocadeLoadBalancerDriver(
-        test_db_loadbalancer.LoadBalancerPluginDbTestCase):
+        test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
     def _create_fake_models(self):
         id = 'name-001'

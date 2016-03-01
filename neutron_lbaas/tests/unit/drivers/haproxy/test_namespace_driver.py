@@ -407,8 +407,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                        namespace='ns1')
 
     @mock.patch('neutron.common.utils.ensure_dir')
-    @mock.patch('neutron_lbaas.services.loadbalancer.drivers.haproxy.'
-                'jinja_cfg.save_config')
+    @mock.patch('neutron_lbaas.drivers.haproxy.jinja_cfg.save_config')
     @mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
     def test_spawn(self, ip_wrap, jinja_save, ensure_dir):
         mock_ns = ip_wrap.return_value

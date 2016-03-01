@@ -18,7 +18,7 @@ import mock
 from neutron import context as ncontext
 
 from neutron_lbaas.drivers.vmware import edge_driver_v2
-from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 DUMMY_CERT = {'id': 'fake_id'}
 
@@ -71,7 +71,7 @@ class ManagerTest(object):
 
 
 class TestVMWareEdgeLoadBalancerDriverV2(
-        test_db_loadbalancer.LoadBalancerPluginDbTestCase):
+        test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
     def setUp(self):
         super(TestVMWareEdgeLoadBalancerDriverV2, self).setUp()

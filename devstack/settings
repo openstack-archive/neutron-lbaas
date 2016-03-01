@@ -1,14 +1,11 @@
 # settings for LBaaS devstack pluginlib/neutron_plugins/services/loadbalancer
 
-# For backward compatibility, treat q-lbaas as lbaas v1.
 # In the future, the q-lbaas may default to q-lbaasv2
 
-AGENT_LBAASV1_BINARY="$NEUTRON_BIN_DIR/neutron-lbaas-agent"
 AGENT_LBAASV2_BINARY="$NEUTRON_BIN_DIR/neutron-lbaasv2-agent"
 
-LBAAS_V1="q-lbaas"
 LBAAS_V2="q-lbaasv2"
-LBAAS_ANY="$LBAAS_V1 $LBAAS_V2"
+LBAAS_ANY="$LBAAS_V2"
 
 BARBICAN="barbican-svc"
 
@@ -21,7 +18,6 @@ AUTH_VERSION=${AUTH_VERSION:-"2"}
 LBAAS_AGENT_CONF_PATH=/etc/neutron/services/loadbalancer/haproxy
 LBAAS_AGENT_CONF_FILENAME=$LBAAS_AGENT_CONF_PATH/lbaas_agent.ini
 
-LBAASV1_PLUGIN=${LBAASV1_PLUGIN:-"neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPlugin"}
 LBAASV2_PLUGIN=${LBAASV2_PLUGIN:-"neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2"}
 
 NEUTRON_LBAAS_DIR=$DEST/neutron-lbaas
@@ -29,5 +25,4 @@ NEUTRON_LBAAS_CONF=$NEUTRON_CONF_DIR/neutron_lbaas.conf
 
 NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA=${NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA:-"LOADBALANCERV2:Octavia:neutron_lbaas.drivers.octavia.driver.OctaviaDriver:default"}
 
-NEUTRON_LBAAS_SERVICE_PROVIDERV1=${NEUTRON_LBAAS_SERVICE_PROVIDERV1:-"LOADBALANCER:Haproxy:neutron_lbaas.services.loadbalancer.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default"}
 NEUTRON_LBAAS_SERVICE_PROVIDERV2=${NEUTRON_LBAAS_SERVICE_PROVIDERV2:-${NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA}}

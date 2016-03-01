@@ -43,6 +43,11 @@ if [ "$testenv" = "apiv2" ]; then
     esac
 fi
 
+if [ "$testenv" = "apiv1" ]; then
+    # Temporary until job is removed
+    exit 0
+fi
+
 function generate_testr_results {
     # Give job user rights to access tox logs
     sudo -H -u "$owner" chmod o+rw .

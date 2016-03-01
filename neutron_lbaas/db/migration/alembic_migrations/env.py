@@ -13,12 +13,15 @@
 from logging import config as logging_config
 
 from alembic import context
-from neutron.db import model_base
 from oslo_config import cfg
 from oslo_db.sqlalchemy import session
 import sqlalchemy as sa
 from sqlalchemy import event
 
+from neutron.db.migration.alembic_migrations import external
+from neutron.db.migration.models import head  # noqa
+from neutron.db import model_base
+from neutron_lbaas.db.models import head  # noqa
 
 MYSQL_ENGINE = None
 LBAAS_VERSION_TABLE = 'alembic_version_lbaas'
@@ -39,6 +42,15 @@ def set_mysql_engine():
                     model_base.BASEV2.__table_args__['mysql_engine'])
 
 
+def include_object(object, name, type_, reflected, compare_to):
+    # external.LBAAS_TABLES is the list of LBaaS v1 tables, now defunct
+    external_tables = set(external.TABLES) - set(external.LBAAS_TABLES)
+    if type_ == 'table' and name in external_tables:
+        return False
+    else:
+        return True
+
+
 def run_migrations_offline():
     set_mysql_engine()
 
@@ -47,6 +59,7 @@ def run_migrations_offline():
         kwargs['url'] = neutron_config.database.connection
     else:
         kwargs['dialect_name'] = neutron_config.database.engine
+    kwargs['include_object'] = include_object
     kwargs['version_table'] = LBAAS_VERSION_TABLE
     context.configure(**kwargs)
 
@@ -68,6 +81,7 @@ def run_migrations_online():
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
+        include_object=include_object,
         version_table=LBAAS_VERSION_TABLE
     )
 

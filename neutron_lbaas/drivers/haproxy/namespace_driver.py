@@ -29,11 +29,9 @@ from oslo_utils import excutils
 
 from neutron_lbaas._i18n import _, _LI, _LE, _LW
 from neutron_lbaas.agent import agent_device_driver
+from neutron_lbaas.drivers.haproxy import jinja_cfg
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
-from neutron_lbaas.services.loadbalancer.drivers.haproxy import jinja_cfg
-from neutron_lbaas.services.loadbalancer.drivers.haproxy \
-    import namespace_driver
 
 LOG = logging.getLogger(__name__)
 NS_PREFIX = 'qlbaas-'
@@ -45,7 +43,31 @@ DRIVER_NAME = 'haproxy_ns'
 
 STATE_PATH_V2_APPEND = 'v2'
 
-cfg.CONF.register_opts(namespace_driver.OPTS, 'haproxy')
+STATE_PATH_DEFAULT = '$state_path/lbaas'
+USER_GROUP_DEFAULT = 'nogroup'
+OPTS = [
+    cfg.StrOpt(
+        'loadbalancer_state_path',
+        default=STATE_PATH_DEFAULT,
+        help=_('Location to store config and state files'),
+        deprecated_opts=[cfg.DeprecatedOpt('loadbalancer_state_path',
+                                           group='DEFAULT')],
+    ),
+    cfg.StrOpt(
+        'user_group',
+        default=USER_GROUP_DEFAULT,
+        help=_('The user group'),
+        deprecated_opts=[cfg.DeprecatedOpt('user_group', group='DEFAULT')],
+    ),
+    cfg.IntOpt(
+        'send_gratuitous_arp',
+        default=3,
+        help=_('When delete and re-add the same vip, send this many '
+               'gratuitous ARPs to flush the ARP cache in the Router. '
+               'Set it below or equal to 0 to disable this feature.'),
+    )
+]
+cfg.CONF.register_opts(OPTS, 'haproxy')
 
 
 def get_ns_name(namespace_id):

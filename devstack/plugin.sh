@@ -24,27 +24,13 @@ function neutron_agent_lbaas_install_agent_packages {
 }
 
 function neutron_lbaas_configure_common {
-    if is_service_enabled $LBAAS_V1 && is_service_enabled $LBAAS_V2; then
-        die $LINENO "Do not enable both Version 1 and Version 2 of LBaaS."
-    fi
-
     cp $NEUTRON_LBAAS_DIR/etc/neutron_lbaas.conf.sample $NEUTRON_LBAAS_CONF
 
-    if is_service_enabled $LBAAS_V1; then
-        inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
-        iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV1
-    elif is_service_enabled $LBAAS_V2; then
-        inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
-        iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV2
-    fi
+    inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
+    iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV2
 
-    if is_service_enabled $LBAAS_V1; then
-        _neutron_service_plugin_class_add $LBAASV1_PLUGIN
-        iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
-    elif is_service_enabled $LBAAS_V2; then
-        _neutron_service_plugin_class_add $LBAASV2_PLUGIN
-        iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
-    fi
+    _neutron_service_plugin_class_add $LBAASV2_PLUGIN
+    iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
 
     # Ensure config is set up properly for authentication neutron-lbaas
     iniset $NEUTRON_LBAAS_CONF service_auth auth_url $AUTH_URL
@@ -92,17 +78,12 @@ function neutron_lbaas_generate_config_files {
 function neutron_lbaas_start {
     local is_run_process=True
 
-    if is_service_enabled $LBAAS_V1; then
-        LBAAS_VERSION="q-lbaas"
-        AGENT_LBAAS_BINARY=${AGENT_LBAASV1_BINARY}
-    elif is_service_enabled $LBAAS_V2; then
-        LBAAS_VERSION="q-lbaasv2"
-        AGENT_LBAAS_BINARY=${AGENT_LBAASV2_BINARY}
-        # Octavia doesn't need the LBaaS V2 service running.  If Octavia is the
-        # only provider then don't run the process.
-        if [[ "$NEUTRON_LBAAS_SERVICE_PROVIDERV2" == "$NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA" ]]; then
-            is_run_process=False
-        fi
+    LBAAS_VERSION="q-lbaasv2"
+    AGENT_LBAAS_BINARY=${AGENT_LBAASV2_BINARY}
+    # Octavia doesn't need the LBaaS V2 service running.  If Octavia is the
+    # only provider then don't run the process.
+    if [[ "$NEUTRON_LBAAS_SERVICE_PROVIDERV2" == "$NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA" ]]; then
+        is_run_process=False
     fi
 
     if [[ "$is_run_process" == "True" ]] ; then

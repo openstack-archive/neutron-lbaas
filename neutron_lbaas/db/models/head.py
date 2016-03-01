@@ -15,10 +15,7 @@
 from neutron.db.migration.models import head
 
 import neutron_lbaas.agent_scheduler  # noqa
-import neutron_lbaas.db.loadbalancer.loadbalancer_db  # noqa
 import neutron_lbaas.db.loadbalancer.models  # noqa
-import neutron_lbaas.services.loadbalancer.agent_scheduler  # noqa
-import neutron_lbaas.services.loadbalancer.drivers.vmware.models  # noqa
 
 
 def get_metadata():

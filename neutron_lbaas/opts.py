@@ -24,11 +24,6 @@ import neutron_lbaas.drivers.common.agent_driver_base
 import neutron_lbaas.drivers.octavia.driver
 import neutron_lbaas.drivers.radware.base_v2_driver
 import neutron_lbaas.extensions.loadbalancerv2
-import neutron_lbaas.services.loadbalancer.agent.agent_manager
-import neutron_lbaas.services.loadbalancer.drivers.haproxy.jinja_cfg
-import neutron_lbaas.services.loadbalancer.drivers.haproxy.namespace_driver
-import neutron_lbaas.services.loadbalancer.drivers.netscaler.netscaler_driver
-import neutron_lbaas.services.loadbalancer.drivers.radware.driver
 
 
 def list_agent_opts():
@@ -36,13 +31,9 @@ def list_agent_opts():
         ('DEFAULT',
          itertools.chain(
              neutron_lbaas.agent.agent.OPTS,
-             neutron_lbaas.services.loadbalancer.agent.agent_manager.OPTS,
              neutron.agent.linux.interface.OPTS,
              neutron.agent.common.config.INTERFACE_DRIVER_OPTS)
-         ),
-        ('haproxy',
-         neutron_lbaas.services.loadbalancer.drivers.haproxy.
-         namespace_driver.OPTS)
+         )
     ]
 
 
@@ -67,25 +58,15 @@ def list_opts():
 
 def list_service_opts():
     return [
-        ('radware',
-         neutron_lbaas.services.loadbalancer.drivers.radware.driver.
-         driver_opts),
         ('radwarev2',
          neutron_lbaas.drivers.radware.base_v2_driver.driver_opts),
         ('radwarev2_debug',
          neutron_lbaas.drivers.radware.base_v2_driver.driver_debug_opts),
-        ('netscaler_driver',
-         neutron_lbaas.services.loadbalancer.drivers.netscaler.
-         netscaler_driver.NETSCALER_CC_OPTS),
         ('haproxy',
          itertools.chain(
              neutron.agent.common.config.INTERFACE_DRIVER_OPTS,
              neutron_lbaas.agent.agent.OPTS,
-             neutron_lbaas.services.loadbalancer.drivers.haproxy.
-             namespace_driver.OPTS,
-             neutron_lbaas.services.loadbalancer.drivers.haproxy.jinja_cfg.
-             jinja_opts)
-         ),
+         )),
         ('octavia',
          neutron_lbaas.drivers.octavia.driver.OPTS)
     ]

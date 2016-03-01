@@ -17,7 +17,7 @@ from neutron import context
 
 from neutron_lbaas.drivers.logging_noop import driver
 from neutron_lbaas.services.loadbalancer import data_models
-from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 log_path = ('neutron_lbaas.drivers.logging_noop.driver.LOG')
 
@@ -127,7 +127,7 @@ class LoadBalancerManagerTest(ManagerTestWithUpdates):
 
 
 class TestLoggingNoopLoadBalancerDriver(
-        test_db_loadbalancer.LoadBalancerPluginDbTestCase):
+        test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
     def _create_fake_models(self):
         id = 'name-001'
