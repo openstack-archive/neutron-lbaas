@@ -386,8 +386,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                                    "shared_pools",
                                    "l7",
                                    "lbaas_agent_schedulerv2",
-                                   "service-type",
-                                   "n-lbaasv2-cascade-delete"]
+                                   "service-type"]
     path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
 
     agent_notifiers = (
@@ -489,8 +488,6 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         except (lbaas_agentschedulerv2.NoEligibleLbaasAgent,
                 lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
             raise no_agent
-        except NotImplementedError as e:
-            raise e
         except Exception:
             LOG.exception(_LE("There was an error in the driver"))
             self._handle_driver_error(context, db_entity)
@@ -606,28 +603,22 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def delete_loadbalancer(self, context, id):
         old_lb = self.db.get_loadbalancer(context, id)
-
+        if old_lb.listeners:
+            raise loadbalancerv2.EntityInUse(
+                entity_using=models.Listener.NAME,
+                id=old_lb.listeners[0].id,
+                entity_in_use=models.LoadBalancer.NAME)
+        if old_lb.pools:
+            raise loadbalancerv2.EntityInUse(
+                entity_using=models.PoolV2.NAME,
+                id=old_lb.pools[0].id,
+                entity_in_use=models.LoadBalancer.NAME)
         self.db.test_and_set_status(context, models.LoadBalancer, id,
                                     constants.PENDING_DELETE)
         driver = self._get_driver_for_provider(old_lb.provider.provider_name)
         db_lb = self.db.get_loadbalancer(context, id)
-        try:
-            self._call_driver_operation(
-                context, driver.load_balancer.delete_cascade, db_lb)
-        except NotImplementedError:
-            if old_lb.listeners:
-                raise loadbalancerv2.EntityInUse(
-                    entity_using=models.Listener.NAME,
-                    id=old_lb.listeners[0].id,
-                    entity_in_use=models.LoadBalancer.NAME)
-            if old_lb.pools:
-                raise loadbalancerv2.EntityInUse(
-                    entity_using=models.PoolV2.NAME,
-                    id=old_lb.pools[0].id,
-                    entity_in_use=models.LoadBalancer.NAME)
-            #driver does not support cascade
-            self._call_driver_operation(
-                context, driver.load_balancer.delete, db_lb)
+        self._call_driver_operation(
+            context, driver.load_balancer.delete, db_lb)
 
     def get_loadbalancer(self, context, id, fields=None):
         return self.db.get_loadbalancer(context, id).to_api_dict()

@@ -125,14 +125,6 @@ class LoadBalancerManagerTest(ManagerTestWithUpdates):
         h = self.manager.stats(self.parent.context, model)
         self.parent.assertEqual(dummy_stats, h)
 
-    @patch_manager
-    def delete(self, model):
-        self.manager.delete(self.parent.context, model)
-
-    @patch_manager
-    def delete_cascade(self, model):
-        self.manager.delete_cascade(self.parent.context, model)
-
 
 class TestLoggingNoopLoadBalancerDriver(
         test_db_loadbalancer.LoadBalancerPluginDbTestCase):
