@@ -92,6 +92,11 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
         """Does this driver need to allocate its own virtual IPs"""
         return False
 
+    @property
+    def deletes_cascade(self):
+        """Does this driver need to allocate its own virtual IPs"""
+        return False
+
     def create_and_allocate_vip(self, context, obj):
         """Create the load balancer and allocate a VIP
 
@@ -105,7 +110,13 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
 
     @property
     def db_delete_method(self):
-        return self.driver.plugin.db.delete_loadbalancer
+        if self.deletes_cascade:
+            return self.driver.plugin.db.delete_loadbalancer_cascade
+        else:
+            return self.driver.plugin.db.delete_loadbalancer
+
+    def delete_cascade(self, context, obj):
+        raise NotImplementedError()
 
 
 class BaseListenerManager(driver_mixins.BaseManagerMixin):

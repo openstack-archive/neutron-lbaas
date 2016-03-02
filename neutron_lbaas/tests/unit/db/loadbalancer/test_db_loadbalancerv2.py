@@ -642,7 +642,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                  hm_status['provisioning_status'])
 
 
-class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
+class TestLbaasLoadBalancerTests(LbaasPluginDbTestCase):
 
     def test_create_loadbalancer(self, **extras):
         expected = {
@@ -718,16 +718,16 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                 resp = self._delete_loadbalancer_api(loadbalancer_id)
                 self.assertEqual(webob.exc.HTTPNoContent.code, resp.status_int)
 
-    def test_delete_loadbalancer_when_loadbalancer_in_use(self):
+    def test_delete_loadbalancer_when_loadbalancer_in_use_cascade(self):
         with self.subnet() as subnet:
-            with self.loadbalancer(subnet=subnet) as loadbalancer:
+            with self.loadbalancer(
+                    subnet=subnet, no_delete=True) as loadbalancer:
                 lb_id = loadbalancer['loadbalancer']['id']
-                with self.listener(loadbalancer_id=lb_id):
+                with self.listener(loadbalancer_id=lb_id, no_delete=True):
                     ctx = context.get_admin_context()
-                    self.assertRaises(loadbalancerv2.EntityInUse,
-                                      self.plugin.delete_loadbalancer,
+                    self.plugin.delete_loadbalancer(
                                       ctx, lb_id)
-                    self._validate_statuses(lb_id)
+                    # lb deleted
 
     def test_show_loadbalancer(self):
         name = 'lb_show'
@@ -943,6 +943,24 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
                     acontext, lb_id, delete_vip_port=True)
                 port = self.plugin.db._core_plugin.get_port(acontext, port_id)
                 self.assertIsNotNone(port)
+
+
+class LoadBalancerDeleteCascade(LbaasPluginDbTestCase):
+
+    def setUp(self):
+        driver_patcher = mock.patch.object(
+            noop_driver.LoggingNoopLoadBalancerManager,
+            'deletes_cascade', new_callable=mock.PropertyMock)
+        driver_patcher.start().return_value = True
+        super(LoadBalancerDeleteCascade, self).setUp()
+
+    def test_delete_loadbalancer(self):
+        with self.subnet() as subnet:
+            with self.loadbalancer(subnet=subnet, no_delete=True) as lb:
+                lb_id = lb['loadbalancer']['id']
+                acontext = context.get_admin_context()
+                self.plugin.db.delete_loadbalancer(
+                    acontext, lb_id, delete_vip_port=True)
 
 
 class ListenerTestBase(LbaasPluginDbTestCase):

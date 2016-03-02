@@ -236,12 +236,24 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             lb_db.update(loadbalancer)
         return data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
 
-    def delete_loadbalancer(self, context, id, delete_vip_port=True):
+    def delete_loadbalancer(self, context, id, delete_vip_port=True,
+                            cascade=False):
         with context.session.begin(subtransactions=True):
+            if cascade:
+                lb = self.get_loadbalancer(context, id)
+                for pool in lb.pools:
+                    self.delete_healthmonitor(context, pool.healthmonitor_id)
+                    self.delete_pool(pool.id)
+                for listener in lb.listeners:
+                    # todo (xgerman): delete L7
+                    self.delete_listener(context, listener.id)
             lb_db = self._get_resource(context, models.LoadBalancer, id)
             context.session.delete(lb_db)
         if delete_vip_port and lb_db.vip_port:
             self._core_plugin.delete_port(context, lb_db.vip_port_id)
+
+    def delete_loadbalancer_cascade(self, context, id, delete_vip_port=True):
+        self.delete_loadbalancer(context, id, delete_vip_port, cascade=True)
 
     def prevent_lbaasv2_port_deletion(self, context, port_id):
         try:
