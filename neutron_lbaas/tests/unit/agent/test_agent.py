@@ -13,12 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import mock
 from oslo_config import cfg
 
 from neutron_lbaas.agent import agent
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 class TestLbaasService(base.BaseTestCase):
@@ -36,7 +36,7 @@ class TestLbaasService(base.BaseTestCase):
 
     def test_main(self):
         logging_str = 'neutron.agent.common.config.setup_logging'
-        with contextlib.nested(
+        with nested(
             mock.patch(logging_str),
             mock.patch.object(agent.service, 'launch'),
             mock.patch('sys.argv'),
