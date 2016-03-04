@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography import x509
 from neutron_lbaas._i18n import _LE
 from oslo_log import log as logging
-import six
+from oslo_utils import encodeutils
 
 import neutron_lbaas.common.exceptions as exceptions
 
@@ -57,15 +57,12 @@ def validate_cert(certificate, private_key=None,
 
 
 def _read_privatekey(privatekey_pem, passphrase=None):
-    if passphrase:
-        if six.PY2:
-            passphrase = passphrase.encode("utf-8")
-        elif six.PY3:
-            passphrase = six.b(passphrase)
+    if passphrase is not None:
+        passphrase = encodeutils.to_utf8(passphrase)
+    privatekey_pem = privatekey_pem.encode('ascii')
 
     try:
-        pkey = privatekey_pem.encode('ascii')
-        return serialization.load_pem_private_key(pkey, passphrase,
+        return serialization.load_pem_private_key(privatekey_pem, passphrase,
                                                   backends.default_backend())
     except Exception:
         raise exceptions.NeedsPassphrase
@@ -100,12 +97,12 @@ def _read_pyca_private_key(private_key, private_key_passphrase=None):
     kw = {"password": None,
           "backend": backends.default_backend()}
     if private_key_passphrase is not None:
-        kw["password"] = private_key_passphrase.encode("utf-8")
+        kw["password"] = encodeutils.to_utf8(private_key_passphrase)
     else:
         kw["password"] = None
+    private_key = encodeutils.to_utf8(private_key)
     try:
-        pk = serialization.load_pem_private_key(private_key.encode('ascii'),
-                                                **kw)
+        pk = serialization.load_pem_private_key(private_key, **kw)
         return pk
     except TypeError as ex:
         if len(ex.args) > 0 and ex.args[0].startswith("Password"):
@@ -172,8 +169,8 @@ def _get_x509_from_pem_bytes(certificate_pem):
     :param certificate_pem: Certificate in PEM format
     :returns: crypto high-level x509 data from the PEM string
     """
+    certificate = encodeutils.to_utf8(certificate_pem)
     try:
-        certificate = certificate_pem.encode('ascii')
         x509cert = x509.load_pem_x509_certificate(certificate,
                                                   backends.default_backend())
     except Exception:
