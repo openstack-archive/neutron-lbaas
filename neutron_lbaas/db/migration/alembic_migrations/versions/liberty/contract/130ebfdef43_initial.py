@@ -30,7 +30,7 @@ down_revision = 'kilo'
 branch_labels = (cli.CONTRACT_BRANCH,)
 
 # milestone identifier, used by neutron-db-manage
-neutron_milestone = [migration.LIBERTY]
+neutron_milestone = [migration.LIBERTY, migration.MITAKA]
 
 
 def upgrade():
