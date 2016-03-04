@@ -73,7 +73,7 @@ class LoadBalancerTestJSON(base.BaseNetworkTest):
         body = create_obj(**kwargs)
         obj = body[obj_name]
         self.addCleanup(delete_obj, obj['id'])
-        for key, value in obj.iteritems():
+        for key, value in obj.items():
             # It is not relevant to filter by all arguments. That is why
             # there is a list of attr to except
             if key not in attr_exceptions:
@@ -170,7 +170,7 @@ class LoadBalancerTestJSON(base.BaseNetworkTest):
         # Verifies the details of a vip
         body = self.client.show_vip(self.vip['id'])
         vip = body['vip']
-        for key, value in vip.iteritems():
+        for key, value in vip.items():
             # 'status' should not be confirmed in api tests
             if key != 'status':
                 self.assertEqual(self.vip[key], value)
@@ -188,7 +188,7 @@ class LoadBalancerTestJSON(base.BaseNetworkTest):
         # Verifies the details of a pool
         body = self.client.show_pool(pool['id'])
         shown_pool = body['pool']
-        for key, value in pool.iteritems():
+        for key, value in pool.items():
             # 'status' should not be confirmed in api tests
             if key != 'status':
                 self.assertEqual(value, shown_pool[key])
@@ -252,7 +252,7 @@ class LoadBalancerTestJSON(base.BaseNetworkTest):
         # Verifies the details of a member
         body = self.client.show_member(self.member['id'])
         member = body['member']
-        for key, value in member.iteritems():
+        for key, value in member.items():
             # 'status' should not be confirmed in api tests
             if key != 'status':
                 self.assertEqual(self.member[key], value)
@@ -331,7 +331,7 @@ class LoadBalancerTestJSON(base.BaseNetworkTest):
         # Verifies the details of a health_monitor
         body = self.client.show_health_monitor(self.health_monitor['id'])
         health_monitor = body['health_monitor']
-        for key, value in health_monitor.iteritems():
+        for key, value in health_monitor.items():
             # 'status' should not be confirmed in api tests
             if key != 'status':
                 self.assertEqual(self.health_monitor[key], value)
