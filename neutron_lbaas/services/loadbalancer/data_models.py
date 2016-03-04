@@ -28,6 +28,7 @@ and also converting to dictionaries.
 from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.db import servicetype_db
+import six
 from sqlalchemy.ext import orderinglist
 from sqlalchemy.orm import collections
 
@@ -55,7 +56,7 @@ class BaseDataModel(object):
                         ret[attr] = item
             elif isinstance(getattr(self, attr), BaseDataModel):
                 ret[attr] = self.__dict__[attr].to_dict()
-            elif isinstance(self.__dict__[attr], unicode):
+            elif isinstance(self.__dict__[attr], six.text_type):
                 ret[attr.encode('utf8')] = self.__dict__[attr].encode('utf8')
             else:
                 ret[attr] = self.__dict__[attr]

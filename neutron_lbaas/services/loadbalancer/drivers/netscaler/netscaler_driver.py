@@ -72,7 +72,7 @@ class NetScalerPluginDriver(abstract_driver.LoadBalancerAbstractDriver):
         """Create a vip on a NetScaler device."""
         network_info = self._get_vip_network_info(context, vip)
         ncc_vip = self._prepare_vip_for_creation(vip)
-        ncc_vip = dict(ncc_vip.items() + network_info.items())
+        ncc_vip.update(network_info)
         LOG.debug("NetScaler driver vip creation: %r", ncc_vip)
         status = constants.ACTIVE
         try:
@@ -120,7 +120,7 @@ class NetScalerPluginDriver(abstract_driver.LoadBalancerAbstractDriver):
                                                        pool['subnet_id'],
                                                        network_info)
         ncc_pool = self._prepare_pool_for_creation(pool)
-        ncc_pool = dict(ncc_pool.items() + network_info.items())
+        ncc_pool.update(network_info)
         LOG.debug("NetScaler driver pool creation: %r", ncc_pool)
         status = constants.ACTIVE
         try:
