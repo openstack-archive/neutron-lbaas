@@ -12,6 +12,7 @@ OCTAVIA_DIR="$BASE/new/octavia"
 
 LBAAS_VERSION=$lbaasversion
 LBAAS_TEST=$lbaasenv
+LBAAS_DRIVER=$lbaasdriver
 
 if [ "$LBAAS_VERSION" = "lbaasv1" ]; then
     testenv="apiv1"
@@ -19,9 +20,15 @@ else
     testenv="apiv2"
     case "$LBAAS_TEST" in
         api)
-            # Temporarily only test a small subset
-            # Remove this once zuul/layout.yaml is updated
-            test_subset="load_balancers"
+            if [ "$LBAAS_DRIVER" = "namespace" ]; then
+                test_subset="load_balancers "
+                test_subset+="listeners "
+                test_subset+="pools "
+                test_subset+="members "
+                test_subset+="health_monitor"
+            else
+                testenv=${LBAAS_TEST:-"apiv2"}
+            fi
             ;;
         minimal)
             # Temporarily just do the happy path

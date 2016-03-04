@@ -54,12 +54,9 @@ if [ "$testenv" != "apiv1" ]; then
   fi
 
   if [ "$lbaasdriver" = "namespace" ]; then
-    cat > $DEVSTACK_PATH/local.conf <<EOF
-[[post-config|\$NEUTRON_LBAAS_CONF]]
-
-[service_providers]
-service_provider=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
-EOF
+    export DEVSTACK_LOCAL_CONFIG+="
+NEUTRON_LBAAS_SERVICE_PROVIDERV2=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+"
   fi
 fi
 export ENABLED_SERVICES
