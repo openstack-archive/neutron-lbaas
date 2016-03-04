@@ -14,7 +14,6 @@
 
 import base64
 import copy
-import httplib
 import netaddr
 import threading
 import time
@@ -31,6 +30,7 @@ from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
+from six.moves import http_client
 from six.moves import queue as Queue
 
 from neutron_lbaas._i18n import _, _LE, _LI, _LW
@@ -737,14 +737,14 @@ class vDirectRESTClient(object):
             headers['Authorization'] = 'Basic %s' % self.auth
         conn = None
         if self.ssl:
-            conn = httplib.HTTPSConnection(
+            conn = http_client.HTTPSConnection(
                 self.server, self.port, timeout=self.timeout)
             if conn is None:
                 LOG.error(_LE('vdirectRESTClient: Could not establish HTTPS '
                           'connection'))
                 return 0, None, None, None
         else:
-            conn = httplib.HTTPConnection(
+            conn = http_client.HTTPConnection(
                 self.server, self.port, timeout=self.timeout)
             if conn is None:
                 LOG.error(_LE('vdirectRESTClient: Could not establish HTTP '

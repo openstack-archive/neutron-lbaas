@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import cookielib
 import shlex
 import socket
 import subprocess
@@ -23,6 +22,7 @@ import time
 
 from oslo_log import log as logging
 import six
+from six.moves import http_cookiejar
 from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
 from tempest.common import waiters
@@ -588,7 +588,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         """Check cookie persistence types by injecting cookies in requests."""
 
         # Send first request and get cookie from the server's response
-        cj = cookielib.CookieJar()
+        cj = http_cookiejar.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
         opener.open("http://{0}/".format(self.vip_ip))
         resp = []

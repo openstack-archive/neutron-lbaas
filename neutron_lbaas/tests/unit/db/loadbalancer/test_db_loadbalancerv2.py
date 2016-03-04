@@ -15,10 +15,8 @@
 
 import contextlib
 import copy
-import exceptions as ex
-import mock
-import six
 
+import mock
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.common import config
@@ -30,6 +28,7 @@ from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_utils import uuidutils
+import six
 import testtools
 import webob.exc
 
@@ -1099,11 +1098,10 @@ class LbaasListenerTests(ListenerTestBase):
     def test_create_listener_with_tls_missing_container(self, **extras):
         default_tls_container_ref = uuidutils.generate_uuid()
 
-        class ReplaceClass(ex.Exception):
+        class ReplaceClass(Exception):
             def __init__(self, status_code, message):
                 self.status_code = status_code
                 self.message = message
-                pass
 
         cfg.CONF.set_override('service_name',
                               'lbaas',
@@ -1122,16 +1120,15 @@ class LbaasListenerTests(ListenerTestBase):
         }
         listener_data.update(extras)
 
+        exc = ReplaceClass(status_code=404, message='Cert Not Found')
+
         with contextlib.nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
+                       'CERT_MANAGER_PLUGIN.CertManager.get_cert',
+                       side_effect=exc),
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
         ) as (get_cert_mock, rm_consumer_mock):
-            ex.Exception = ReplaceClass(status_code=404,
-                                        message='Cert Not Found')
-            get_cert_mock.side_effect = ex.Exception
-
             self.assertRaises(loadbalancerv2.TLSContainerNotFound,
                               self.plugin.create_listener,
                               context.get_admin_context(),
