@@ -153,6 +153,7 @@ class TestLoadBalancerCallbacks(
             expected_lb['provider']['device_driver'] = 'dummy'
             subnet = self.plugin_instance.db._core_plugin.get_subnet(
                 ctx, expected_lb['vip_subnet_id'])
+            subnet = data_models.Subnet.from_dict(subnet).to_dict()
             expected_lb['vip_port']['fixed_ips'][0]['subnet'] = subnet
             del expected_lb['stats']
             self.assertEqual(expected_lb, load_balancer)
