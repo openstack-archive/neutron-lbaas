@@ -21,7 +21,8 @@ class NsxvEdgePoolMapping(model_base.BASEV2):
     """Represents the connection between Edges and pools."""
     __tablename__ = 'nsxv_edge_pool_mappings'
 
-    pool_id = sql.Column(sql.String(36), sql.ForeignKey('pools.id'),
+    pool_id = sql.Column(sql.String(36),
+                         sql.ForeignKey('pools.id', ondelete='CASCADE'),
                          primary_key=True)
     edge_id = sql.Column(sql.String(36), nullable=False)
     edge_pool_id = sql.Column(sql.String(36), nullable=False)
@@ -31,7 +32,8 @@ class NsxvEdgeVipMapping(model_base.BASEV2):
     """Represents the connection between Edges and VIPs."""
     __tablename__ = 'nsxv_edge_vip_mappings'
 
-    pool_id = sql.Column(sql.String(36), sql.ForeignKey('pools.id'),
+    pool_id = sql.Column(sql.String(36),
+                         sql.ForeignKey('pools.id', ondelete='CASCADE'),
                          primary_key=True)
     edge_id = sql.Column(sql.String(36), nullable=False)
     edge_app_profile_id = sql.Column(sql.String(36), nullable=False)
@@ -48,7 +50,8 @@ class NsxvEdgeMonitorMapping(model_base.BASEV2):
         name='uniq_nsxv_edge_monitor_mappings'),)
 
     monitor_id = sql.Column(sql.String(36),
-                            sql.ForeignKey('healthmonitors.id'),
+                            sql.ForeignKey('healthmonitors.id',
+                                           ondelete='CASCADE'),
                             primary_key=True)
     edge_id = sql.Column(sql.String(36), nullable=False, primary_key=True)
     edge_monitor_id = sql.Column(sql.String(36), nullable=False)
