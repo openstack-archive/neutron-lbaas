@@ -7,9 +7,9 @@ function neutron_lbaas_install {
 
 function neutron_agent_lbaas_install_agent_packages {
     if is_ubuntu; then
-        if [[ ${OFFLINE} == false ]]; then
+        if [[ ${OFFLINE} == False ]]; then
             BACKPORT="deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse"
-            BACKPORT_EXISTS=$(grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/* | grep "${BACKPORT}")
+            BACKPORT_EXISTS=$(grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/* | grep "${BACKPORT}") || true
             if [[ -z "${BACKPORT_EXISTS}" ]]; then
                 sudo add-apt-repository "${BACKPORT}" -y
             fi
@@ -128,6 +128,7 @@ if is_service_enabled $LBAAS_ANY; then
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
         # Perform installation of service source
         echo_summary "Installing neutron-lbaas"
+        neutron_agent_lbaas_install_agent_packages
         neutron_lbaas_install
 
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
