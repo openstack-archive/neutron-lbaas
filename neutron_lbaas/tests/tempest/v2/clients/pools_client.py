@@ -1,4 +1,5 @@
-# Copyright 2015 Rackspace
+# Copyright 2015, 2016 Rackspace Inc.
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,14 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from six.moves.urllib import parse
-
 from oslo_serialization import jsonutils
+from six.moves.urllib import parse
+from tempest.lib.common import rest_client
 
-from neutron_lbaas.tests.tempest.lib.common import service_client
 
-
-class PoolsClientJSON(service_client.ServiceClient):
+class PoolsClientJSON(rest_client.RestClient):
     """
     Test Pools API
     """
@@ -32,7 +31,7 @@ class PoolsClientJSON(service_client.ServiceClient):
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBodyList(resp, body['pools'])
+        return rest_client.ResponseBodyList(resp, body['pools'])
 
     def get_pool(self, pool_id, params=None):
         """List details of a pool"""
@@ -42,7 +41,7 @@ class PoolsClientJSON(service_client.ServiceClient):
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBody(resp, body['pool'])
+        return rest_client.ResponseBody(resp, body['pool'])
 
     def create_pool(self, **kwargs):
         """Create a pool"""
@@ -51,7 +50,7 @@ class PoolsClientJSON(service_client.ServiceClient):
         resp, body = self.post(url, post_body)
         body = jsonutils.loads(body)
         self.expected_success(201, resp.status)
-        return service_client.ResponseBody(resp, body['pool'])
+        return rest_client.ResponseBody(resp, body['pool'])
 
     def update_pool(self, pool_id, **kwargs):
         """Update a pool"""
@@ -60,11 +59,11 @@ class PoolsClientJSON(service_client.ServiceClient):
         resp, body = self.put(url, post_body)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBody(resp, body['pool'])
+        return rest_client.ResponseBody(resp, body['pool'])
 
     def delete_pool(self, pool_id):
         """Delete Pool"""
         url = 'v2.0/lbaas/pools/{pool_id}'.format(pool_id=pool_id)
         resp, body = self.delete(url)
         self.expected_success(204, resp.status)
-        return service_client.ResponseBody(resp, body)
+        return rest_client.ResponseBody(resp, body)

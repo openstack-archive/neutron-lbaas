@@ -1,4 +1,4 @@
-# Copyright 2015 Rackspace US Inc.
+# Copyright 2015, 2016 Rackspace US Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common.utils import data_utils
-from tempest_lib import exceptions as ex
+from tempest import config
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as ex
+from tempest import test
 
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF

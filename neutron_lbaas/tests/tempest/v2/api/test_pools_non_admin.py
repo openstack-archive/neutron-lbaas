@@ -1,4 +1,5 @@
-#    Copyright 2015 Rackspace
+# Copyright 2016 Rackspace Inc.
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common.utils import data_utils
-from tempest_lib import exceptions as ex
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as ex
+from tempest import test
 
-from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 PROTOCOL_PORT = 80

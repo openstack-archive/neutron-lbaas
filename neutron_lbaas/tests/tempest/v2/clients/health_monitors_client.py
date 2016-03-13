@@ -1,4 +1,4 @@
-# Copyright 2014 Rackspace US Inc.  All rights reserved.
+# Copyright 2014, 2016 Rackspace US Inc.  All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,11 +14,10 @@
 
 from oslo_serialization import jsonutils
 from six.moves.urllib import parse
+from tempest.lib.common import rest_client
 
-from neutron_lbaas.tests.tempest.lib.common import service_client
 
-
-class HealthMonitorsClientJSON(service_client.ServiceClient):
+class HealthMonitorsClientJSON(rest_client.RestClient):
     """
     Tests Health Monitors API
     """
@@ -31,7 +30,7 @@ class HealthMonitorsClientJSON(service_client.ServiceClient):
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBodyList(resp, body['healthmonitors'])
+        return rest_client.ResponseBodyList(resp, body['healthmonitors'])
 
     def get_health_monitor(self, health_monitor_id, params=None):
         """Get health monitor details."""
@@ -41,7 +40,7 @@ class HealthMonitorsClientJSON(service_client.ServiceClient):
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBody(resp, body["healthmonitor"])
+        return rest_client.ResponseBody(resp, body["healthmonitor"])
 
     def create_health_monitor(self, **kwargs):
         """Create a health monitor."""
@@ -50,7 +49,7 @@ class HealthMonitorsClientJSON(service_client.ServiceClient):
         resp, body = self.post(url, post_body)
         body = jsonutils.loads(body)
         self.expected_success(201, resp.status)
-        return service_client.ResponseBody(resp, body["healthmonitor"])
+        return rest_client.ResponseBody(resp, body["healthmonitor"])
 
     def update_health_monitor(self, health_monitor_id, **kwargs):
         """Update a health monitor."""
@@ -59,11 +58,11 @@ class HealthMonitorsClientJSON(service_client.ServiceClient):
         resp, body = self.put(url, put_body)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBody(resp, body["healthmonitor"])
+        return rest_client.ResponseBody(resp, body["healthmonitor"])
 
     def delete_health_monitor(self, health_monitor_id):
         """Delete an existing health monitor."""
         url = 'v2.0/lbaas/healthmonitors/{0}'.format(health_monitor_id)
         resp, body = self.delete(url)
         self.expected_success(204, resp.status)
-        return service_client.ResponseBody(resp, body)
+        return rest_client.ResponseBody(resp, body)

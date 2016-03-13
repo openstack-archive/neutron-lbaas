@@ -1,4 +1,6 @@
 # Copyright 2013 IBM Corp.
+# Copyright 2016 Rackspace Inc.
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common.utils import data_utils
+from tempest import test
+from tempest.lib.common.utils import data_utils
 
 from neutron_lbaas.tests.tempest.v1.api import base
-from neutron_lbaas.tests.tempest.lib import test
 
 
 class LBaaSAgentSchedulerTestJSON(base.BaseAdminNetworkTest):

@@ -1,4 +1,5 @@
 # Copyright 2014 Mirantis.inc
+# Copyright 2016 Rackspace Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,10 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common.utils import data_utils
+from tempest import test
+from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 
 from neutron_lbaas.tests.tempest.v1.api import base
-from neutron_lbaas.tests.tempest.lib import test
 
 
 class LoadBalancerAdminTestJSON(base.BaseAdminNetworkTest):
@@ -44,7 +46,7 @@ class LoadBalancerAdminTestJSON(base.BaseAdminNetworkTest):
                                    "ROUND_ROBIN", "HTTP", cls.subnet)
 
     @test.attr(type='smoke')
-    @test.idempotent_id('6b0a20d8-4fcd-455e-b54f-ec4db5199518')
+    @decorators.idempotent_id('6b0a20d8-4fcd-455e-b54f-ec4db5199518')
     def test_create_vip_as_admin_for_another_tenant(self):
         name = data_utils.rand_name('vip-')
         body = self.admin_client.create_pool(
@@ -71,7 +73,7 @@ class LoadBalancerAdminTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(vip['name'], show_vip['name'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('74552cfc-ab78-4fb6-825b-f67bca379921')
+    @decorators.idempotent_id('74552cfc-ab78-4fb6-825b-f67bca379921')
     def test_create_health_monitor_as_admin_for_another_tenant(self):
         body = (
             self.admin_client.create_health_monitor(delay=4,
@@ -89,7 +91,7 @@ class LoadBalancerAdminTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(health_monitor['id'], show_health_monitor['id'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('266a192d-3c22-46c4-a8fb-802450301e82')
+    @decorators.idempotent_id('266a192d-3c22-46c4-a8fb-802450301e82')
     def test_create_pool_from_admin_user_other_tenant(self):
         body = self.admin_client.create_pool(
             name=data_utils.rand_name('pool-'),
@@ -103,7 +105,7 @@ class LoadBalancerAdminTestJSON(base.BaseAdminNetworkTest):
         self.assertEqual(self.tenant_id, pool['tenant_id'])
 
     @test.attr(type='smoke')
-    @test.idempotent_id('158bb272-b9ed-4cfc-803c-661dac46f783')
+    @decorators.idempotent_id('158bb272-b9ed-4cfc-803c-661dac46f783')
     def test_create_member_from_admin_user_other_tenant(self):
         body = self.admin_client.create_member(address="10.0.9.47",
                                                protocol_port=80,

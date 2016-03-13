@@ -1,4 +1,6 @@
 # Copyright 2015 Hewlett-Packard Development Company, L.P.
+# Copyright 2016 Rackspace Inc.
+# All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -13,11 +15,11 @@
 # under the License.
 
 from oslo_utils import uuidutils
-from tempest_lib import exceptions as ex
+from tempest import config
+from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions as ex
+from tempest import test
 
-from neutron_lbaas.tests.tempest.lib.common.utils import data_utils
-from neutron_lbaas.tests.tempest.lib import config
-from neutron_lbaas.tests.tempest.lib import test
 from neutron_lbaas.tests.tempest.v2.api import base
 
 CONF = config.CONF

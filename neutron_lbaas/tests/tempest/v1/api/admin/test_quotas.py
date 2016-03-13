@@ -1,4 +1,5 @@
 # Copyright 2013 OpenStack Foundation
+# Copyright 2016 Rackspace Inc.
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest_lib.common.utils import data_utils
+from tempest import test
+from tempest.lib.common.utils import data_utils
 
 from neutron_lbaas.tests.tempest.v1.api import base
-from neutron_lbaas.tests.tempest.lib import test
 
 
 class QuotasTest(base.BaseAdminNetworkTest):
@@ -39,12 +40,11 @@ class QuotasTest(base.BaseAdminNetworkTest):
     """
 
     @classmethod
-    def resource_setup(cls):
-        super(QuotasTest, cls).resource_setup()
+    def skip_checks(cls):
+        super(QuotasTest, cls).skip_checks()
         if not test.is_extension_enabled('quotas', 'network'):
             msg = "quotas extension not enabled."
             raise cls.skipException(msg)
-        cls.identity_admin_client = cls.manager.identity_client
 
     def _check_quotas(self, new_quotas):
         # Add a tenant to conduct the test
@@ -53,7 +53,7 @@ class QuotasTest(base.BaseAdminNetworkTest):
         tenant = self.identity_admin_client.create_tenant(
             name=test_tenant,
             description=test_description)
-        tenant_id = tenant['id']
+        tenant_id = tenant['tenant']['id']
         self.addCleanup(self.identity_admin_client.delete_tenant, tenant_id)
 
         # Change quotas for tenant

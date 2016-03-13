@@ -1,4 +1,4 @@
-# Copyright 2014 Rackspace US Inc.  All rights reserved.
+# Copyright 2014, 2016 Rackspace US Inc.  All rights reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,14 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from six.moves.urllib import parse
-
 from oslo_serialization import jsonutils
+from six.moves.urllib import parse
+from tempest.lib.common import rest_client
 
-from neutron_lbaas.tests.tempest.lib.common import service_client
 
-
-class MembersClientJSON(service_client.ServiceClient):
+class MembersClientJSON(rest_client.RestClient):
     """
     Tests Members API
     """
@@ -34,7 +32,7 @@ class MembersClientJSON(service_client.ServiceClient):
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBodyList(resp, body['members'])
+        return rest_client.ResponseBodyList(resp, body['members'])
 
     def get_member(self, pool_id, member_id, params=None):
         url = 'v2.0/lbaas/pools/{0}/members/{1}'.format(pool_id, member_id)
@@ -43,7 +41,7 @@ class MembersClientJSON(service_client.ServiceClient):
         resp, body = self.get(url)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBody(resp, body["member"])
+        return rest_client.ResponseBody(resp, body["member"])
 
     def create_member(self, pool_id, **kwargs):
         url = 'v2.0/lbaas/pools/{0}/members'.format(pool_id)
@@ -51,7 +49,7 @@ class MembersClientJSON(service_client.ServiceClient):
         resp, body = self.post(url, post_body)
         body = jsonutils.loads(body)
         self.expected_success(201, resp.status)
-        return service_client.ResponseBody(resp, body["member"])
+        return rest_client.ResponseBody(resp, body["member"])
 
     def update_member(self, pool_id, member_id, **kwargs):
         url = 'v2.0/lbaas/pools/{0}/members/{1}'.format(pool_id, member_id)
@@ -59,7 +57,7 @@ class MembersClientJSON(service_client.ServiceClient):
         resp, body = self.put(url, put_body)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
-        return service_client.ResponseBody(resp, body["member"])
+        return rest_client.ResponseBody(resp, body["member"])
 
     def delete_member(self, pool_id, member_id, **kwargs):
         url = 'v2.0/lbaas/pools/{0}/members/{1}'.format(pool_id, member_id)
