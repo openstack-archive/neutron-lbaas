@@ -1,0 +1,23 @@
+---
+issues:
+  - |
+    CLI update does not allow clearing session_persistence.
+
+    In the process of fixing the session_persistence
+    update bug, we discovered that the CLI for updating
+    LBaaS v2 pools does not allow one to clear the
+    session_persistence for a pool once set. A fix for
+    this is being prepared, but in the mean time, the
+    following work-arounds are possible if a given
+    pool's session_persistence parameter needs to be
+    changed:
+
+    * The pool can be deleted and recreated without
+      session_persistence.
+    * A tenant can update the session persistence by
+      talking directly to the API using curl.
+fixes:
+  - |
+    session_persistence on a LBaaSv2 pool is no longer
+    deleted when other pool parameters are updated via
+    the CLI or API.

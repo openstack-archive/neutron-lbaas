@@ -314,6 +314,8 @@ class PoolManager(driver_base.BasePoolManager):
                 'type': pool.session_persistence.type,
                 'cookie_name': pool.session_persistence.cookie_name,
             }
+        else:
+            args['session_persistence'] = None
         if create:
             args['project_id'] = pool.tenant_id
             args['id'] = pool.id

@@ -211,6 +211,8 @@ class TestOctaviaDriver(BaseOctaviaDriverTest):
                 'type': pool.session_persistence.type,
                 'cookie_name': pool.session_persistence.cookie_name,
             }
+        else:
+            args['session_persistence'] = None
         m.create(pool, pool_url, args)
 
         # Test update pool.

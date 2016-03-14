@@ -517,11 +517,14 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                         id=hmpools[0].id,
                         entity_in_use=models.HealthMonitorV2.NAME)
 
-            sp = pool.pop('session_persistence', None)
-            if sp:
-                self._update_pool_session_persistence(context, id, sp)
-            else:
-                self._delete_session_persistence(context, id)
+            # Only update or delete session persistence if it was part
+            # of the API request.
+            if 'session_persistence' in pool.keys():
+                sp = pool.pop('session_persistence')
+                if sp is None or sp == {}:
+                    self._delete_session_persistence(context, id)
+                else:
+                    self._update_pool_session_persistence(context, id, sp)
 
             # sqlalchemy cries if listeners is defined.
             listeners = pool.get('listeners')

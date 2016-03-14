@@ -2402,9 +2402,10 @@ class LbaasPoolTests(PoolTestBase):
 
         with self.pool(listener_id=self.listener_id, **extras) as pool:
             pool_id = pool['pool'].get('id')
-            if 'session_persistence' in expected:
-                if not expected['session_persistence'].get('cookie_name'):
-                    expected['session_persistence']['cookie_name'] = None
+            if ('session_persistence' in expected.keys() and
+                    expected['session_persistence'] is not None and
+                    not expected['session_persistence'].get('cookie_name')):
+                expected['session_persistence']['cookie_name'] = None
             self.assertTrue(pool_id)
 
             actual = {}
@@ -2600,6 +2601,9 @@ class LbaasPoolTests(PoolTestBase):
     def test_create_pool_with_session_persistence(self):
         self.test_create_pool(session_persistence={'type': 'HTTP_COOKIE'})
 
+    def test_create_pool_with_session_persistence_none(self):
+        self.test_create_pool(session_persistence=None)
+
     def test_create_pool_with_session_persistence_with_app_cookie(self):
         sp = {'type': 'APP_COOKIE', 'cookie_name': 'sessionId'}
         self.test_create_pool(session_persistence=sp)
@@ -2653,6 +2657,26 @@ class LbaasPoolTests(PoolTestBase):
             resp, body = self._update_pool_api(pool_id, update_info)
 
             self.assertIsNone(body['pool'].get('session_persistence'))
+
+    def test_update_no_change_session_persistence(self):
+        name = 'pool4'
+        sp = {'type': "HTTP_COOKIE"}
+
+        update_info = {'pool': {'lb_algorithm': 'ROUND_ROBIN'}}
+
+        with self.pool(name=name, session_persistence=sp,
+                       listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
+            sp['cookie_name'] = None
+            # Ensure that pool has been created properly
+            self.assertEqual(pool['pool']['session_persistence'],
+                             sp)
+
+            # Try updating something other than session_persistence
+            resp, body = self._update_pool_api(pool_id, update_info)
+            # Make sure session_persistence is unchanged
+            self.assertEqual(pool['pool']['session_persistence'],
+                             sp)
 
     def test_update_pool_with_protocol(self):
         with self.pool(listener_id=self.listener_id) as pool:
