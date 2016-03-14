@@ -3071,7 +3071,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
         expected.update(extras)
 
         with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
-                                name='monitor1') as healthmonitor:
+                                name='monitor1', **extras) as healthmonitor:
             hm_id = healthmonitor['healthmonitor'].get('id')
             self.assertTrue(hm_id)
 
@@ -3502,6 +3502,9 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             db_hm = self.plugin.db.get_healthmonitor(ctx, hm_id)
             self.assertEqual(constants.ACTIVE, db_hm.provisioning_status)
             self.assertFalse(hasattr(db_hm, 'operating_status'))
+
+    def test_create_healthmonitor_admin_state_down(self):
+        self.test_create_healthmonitor(admin_state_up=False)
 
 
 class LbaasStatusesTest(MemberTestBase):
