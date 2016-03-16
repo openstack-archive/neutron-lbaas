@@ -7,6 +7,7 @@ function neutron_lbaas_install {
 
 function neutron_agent_lbaas_install_agent_packages {
     if is_ubuntu; then
+        sudo apt-get -y install software-properties-common
         sudo add-apt-repository ppa:vbernat/haproxy-1.5 -y
         sudo apt-get update
     fi
