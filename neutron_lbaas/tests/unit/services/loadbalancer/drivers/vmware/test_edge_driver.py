@@ -240,15 +240,15 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
     def test_update_vip(self):
         vip_from = {
             'status': 'ACTIVE', 'protocol': 'HTTP', 'description': '',
-            'address': '10.0.0.8', 'protocol_port': 555L,
+            'address': '10.0.0.8', 'protocol_port': 555,
             'port_id': VIP_PORT_ID, 'id': VIP_ID, 'status_description': None,
             'name': 'testvip1', 'admin_state_up': True,
             'subnet_id': SUBNET_ID, 'tenant_id': TENANT_ID,
-            'connection_limit': -1L, 'pool_id': POOL_ID,
+            'connection_limit': -1, 'pool_id': POOL_ID,
             'session_persistence': {'type': 'SOURCE_IP'}}
         vip_to = {
             'status': 'PENDING_UPDATE', 'protocol': 'HTTP',
-            'description': '', 'address': '10.0.0.8', 'protocol_port': 555L,
+            'description': '', 'address': '10.0.0.8', 'protocol_port': 555,
             'port_id': VIP_PORT_ID, 'id': VIP_ID, 'status_description': None,
             'name': 'testvip1', 'admin_state_up': True,
             'subnet_id': SUBNET_ID, 'tenant_id': TENANT_ID,
@@ -274,10 +274,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
     def test_delete_vip(self):
         lbaas_vip = {
             'status': 'PENDING_DELETE', 'protocol': 'HTTP',
-            'description': '', 'address': '10.0.0.11', 'protocol_port': 555L,
+            'description': '', 'address': '10.0.0.11', 'protocol_port': 555,
             'port_id': VIP_PORT_ID, 'id': VIP_ID, 'status_description': None,
             'name': 'testvip', 'admin_state_up': True, 'subnet_id': SUBNET_ID,
-            'tenant_id': TENANT_ID, 'connection_limit': -1L,
+            'tenant_id': TENANT_ID, 'connection_limit': -1,
             'pool_id': POOL_ID, 'session_persistence': None}
         mapping = {'edge_id': EDGE_ID, 'edge_vse_id': EDGE_VSE_ID,
                    'edge_app_profile_id': APP_PROFILE_ID,
@@ -424,8 +424,8 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
     def test_create_pool_health_monitor(self):
         hmon = {
-            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5L,
-            'max_retries': 5L, 'timeout': 5L, 'pools': [
+            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5,
+            'max_retries': 5, 'timeout': 5, 'pools': [
                 {'status': 'PENDING_CREATE', 'status_description': None,
                  'pool_id': POOL_ID}],
             'type': 'PING', 'id': HEALTHMON_ID}
@@ -448,14 +448,14 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
     def test_update_pool_health_monitor(self):
         from_hmon = {
-            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5L,
-            'max_retries': 5L, 'timeout': 5L, 'pools': [
+            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5,
+            'max_retries': 5, 'timeout': 5, 'pools': [
                 {'status': 'PENDING_UPDATE', 'status_description': None,
                  'pool_id': POOL_ID}],
             'type': 'PING', 'id': HEALTHMON_ID}
         to_hmon = {
-            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5L,
-            'max_retries': 10L, 'timeout': 5L, 'pools': [
+            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5,
+            'max_retries': 10, 'timeout': 5, 'pools': [
                 {'status': 'ACTIVE', 'status_description': None,
                  'pool_id': POOL_ID}],
             'type': 'PING', 'id': HEALTHMON_ID}
@@ -479,8 +479,8 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
     def test_delete_pool_health_monitor(self):
         hmon = {
-            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5L,
-            'max_retries': 5L, 'timeout': 5L, 'pools': [
+            'admin_state_up': True, 'tenant_id': TENANT_ID, 'delay': 5,
+            'max_retries': 5, 'timeout': 5, 'pools': [
                 {'status': 'PENDING_DELETE', 'status_description': None,
                  'pool_id': POOL_ID}],
             'type': 'PING', 'id': HEALTHMON_ID}

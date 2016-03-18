@@ -62,7 +62,7 @@ _subnet_id = "0c798ed8-33ba-11e2-8b28-000c291c4d14"
 
 
 class LbaasTestMixin(object):
-    resource_keys = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys()
+    resource_keys = list(loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_keys.extend(l7.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_prefix_map = dict(
         (k, loadbalancerv2.LOADBALANCERV2_PREFIX)

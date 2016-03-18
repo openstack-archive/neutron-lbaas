@@ -422,7 +422,7 @@ class NetScalerLoadBalancerManager(NetScalerCommonManager,
         vip_subnet_id = lb_obj.vip_subnet_id
         network_info = self.payload_preparer.\
             get_network_info(context, self.driver.plugin, vip_subnet_id)
-        ncc_lb = dict(ncc_lb.items() + network_info.items())
+        ncc_lb.update(network_info)
         msg = _("NetScaler driver lb creation: %s") % repr(ncc_lb)
         LOG.debug(msg)
         resource_path = "%s/%s" % (RESOURCE_PREFIX, LBS_RESOURCE)
@@ -545,7 +545,7 @@ class NetScalerMemberManager(NetScalerCommonManager,
         network_info = (self.payload_preparer.
                         get_network_info(context, self.driver.plugin,
                                          subnet_id))
-        ncc_member = dict(ncc_member.items() + network_info.items())
+        ncc_member.update(network_info)
         msg = _("NetScaler driver member creation: %s") % repr(ncc_member)
         LOG.debug(msg)
         parent_pool_id = member.pool.id
