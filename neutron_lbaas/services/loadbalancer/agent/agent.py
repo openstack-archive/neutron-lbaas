@@ -14,9 +14,6 @@
 
 import sys
 
-import eventlet
-eventlet.monkey_patch()
-
 from neutron.agent.common import config
 from neutron.agent.linux import interface
 from neutron.common import config as common_config
