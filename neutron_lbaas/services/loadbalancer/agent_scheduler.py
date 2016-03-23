@@ -153,7 +153,7 @@ class LeastPoolAgentScheduler(SchedulerBase):
 
     def _schedule(self, candidates, plugin, context):
         """Pick an agent with least number of pools from candidates"""
-        current_min_pool_num = sys.maxint
+        current_min_pool_num = sys.maxsize
         # SchedulerBase.schedule() already checks for empty candidates
         for tmp_agent in candidates:
             tmp_pool_num = plugin.num_of_pools_on_lbaas_agent(
