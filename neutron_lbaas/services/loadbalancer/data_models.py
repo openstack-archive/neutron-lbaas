@@ -47,19 +47,20 @@ class BaseDataModel(object):
         for attr in self.__dict__:
             if attr.startswith('_') or not kwargs.get(attr, True):
                 continue
+            value = self.__dict__[attr]
             if isinstance(getattr(self, attr), list):
                 ret[attr] = []
-                for item in self.__dict__[attr]:
+                for item in value:
                     if isinstance(item, BaseDataModel):
                         ret[attr].append(item.to_dict())
                     else:
                         ret[attr] = item
             elif isinstance(getattr(self, attr), BaseDataModel):
-                ret[attr] = self.__dict__[attr].to_dict()
-            elif isinstance(self.__dict__[attr], six.text_type):
-                ret[attr.encode('utf8')] = self.__dict__[attr].encode('utf8')
+                ret[attr] = value.to_dict()
+            elif six.PY2 and isinstance(value, six.text_type):
+                ret[attr.encode('utf8')] = value.encode('utf8')
             else:
-                ret[attr] = self.__dict__[attr]
+                ret[attr] = value
         return ret
 
     def to_api_dict(self, **kwargs):

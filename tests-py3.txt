@@ -1,7 +1,5 @@
-# Use "$" in the regex to not run
-# neutron_lbaas.tests.unit.agent.test_agent_manager which doesn't pass on
-# Python 3 yet
-neutron_lbaas.tests.unit.agent.test_agent$
+neutron_lbaas.tests.unit.agent.test_agent
+neutron_lbaas.tests.unit.agent.test_agent_manager
 neutron_lbaas.tests.unit.agent.test_agent_api
 neutron_lbaas.tests.unit.common.cert_manager.barbican_auth.test_barbican_acl
 neutron_lbaas.tests.unit.common.cert_manager.test_barbican

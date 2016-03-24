@@ -226,7 +226,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             if self.admin_state_up:
                 self.needs_resync = True
             else:
-                for loadbalancer_id in self.instance_mapping.keys():
+                # Copy keys since the dictionary is modified in the loop body
+                for loadbalancer_id in list(self.instance_mapping.keys()):
                     LOG.info(_LI("Destroying loadbalancer %s due to agent "
                                  "disabling"), loadbalancer_id)
                     self._destroy_loadbalancer(loadbalancer_id)
