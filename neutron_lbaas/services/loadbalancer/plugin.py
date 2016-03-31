@@ -21,9 +21,11 @@ from neutron_lib.plugins import directory
 from neutron.api.v2 import attributes as attrs
 from neutron.api.v2 import base as napi_base
 from neutron import context as ncontext
+from neutron.db import agentschedulers_db
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import flavors
 from neutron.plugins.common import constants
+from neutron import service
 from neutron.services.flavors import flavors_plugin
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
@@ -55,7 +57,8 @@ def add_provider_configuration(type_manager, service_type):
         pconf.ProviderConfiguration('neutron_lbaas'))
 
 
-class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
+class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
+                           agentschedulers_db.AgentSchedulerDbMixin):
     """Implementation of the Neutron Loadbalancer Service Plugin.
 
     This class manages the workflow of LBaaS request/response.
@@ -82,8 +85,17 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         add_provider_configuration(
             self.service_type_manager, constants.LOADBALANCERV2)
         self._load_drivers()
+        self.start_periodic_jobs()
         self.start_rpc_listeners()
         self.db.subscribe()
+        rpc_worker = service.RpcWorker([self], worker_process_count=0)
+        self.add_worker(rpc_worker)
+
+    def start_periodic_jobs(self):
+        for driver_name, driver_class in self.drivers.items():
+            if hasattr(driver_class, 'get_periodic_jobs'):
+                for job in self.drivers[driver_name].get_periodic_jobs():
+                    self.add_agent_status_check_worker(job)
 
     def start_rpc_listeners(self):
         listeners = []

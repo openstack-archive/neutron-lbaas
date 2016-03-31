@@ -1,0 +1,12 @@
+---
+features:
+  - Adds the ability to automatically reschedule load
+    balancers from LBaaS agents the server detects to have
+    died. Previously, load balancers could be scheduled
+    and realized across multiple LBaaS agents, however
+    if a hypervisor died, the load balancers scheduled
+    to that node would cease operation. Now, these load
+    balancers will be automatically rescheduled to a
+    different agent. This feature is turned off by
+    default and controlled via
+    allow_automatic_lbaas_agent_failover

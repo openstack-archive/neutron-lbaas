@@ -49,3 +49,8 @@ class MisMatchedKey(TLSException):
 
 class CertificateStorageException(TLSException):
     message = _LE('Could not store certificate: %(msg)s')
+
+
+class LoadbalancerReschedulingFailed(exceptions.Conflict):
+    message = _LE("Failed rescheduling loadbalancer %(loadbalancer_id)s: "
+                  "no eligible lbaas agent found.")

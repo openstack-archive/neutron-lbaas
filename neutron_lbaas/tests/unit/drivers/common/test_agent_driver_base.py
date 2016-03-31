@@ -14,16 +14,21 @@
 
 import mock
 from neutron_lib.plugins import directory
+from oslo_utils import importutils
 
 from neutron import context
 from neutron.db import servicetype_db as st_db
 from neutron.plugins.common import constants
+from neutron.tests.common import helpers
 
+from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.common import agent_driver_base
 from neutron_lbaas.extensions import loadbalancerv2
+from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.tests import base
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
+from neutron_lbaas.tests.unit import test_agent_scheduler
 
 
 class TestLoadBalancerPluginBase(test_db_loadbalancerv2.LbaasPluginDbTestCase):
@@ -578,3 +583,145 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                             loadbalancerv2.EntityNotFound,
                             self.plugin_instance.db.get_healthmonitor,
                             ctx, hm_id)
+
+
+class TestLoadBalancerManager(test_agent_scheduler.
+                              LBaaSAgentSchedulerTestCase):
+
+    def setUp(self):
+        super(TestLoadBalancerManager, self).setUp()
+        self.load_balancer = agent_driver_base.LoadBalancerManager(self)
+        self.agent_rpc = agent_driver_base.LoadBalancerAgentApi(
+                lb_const.LOADBALANCER_AGENTV2)
+        self.plugin = self.lbaas_plugin
+        self.device_driver = 'haproxy_ns'
+        self.loadbalancer_scheduler = importutils.import_object(
+            'neutron_lbaas.agent_scheduler.ChanceScheduler')
+
+    def test_reschedule_lbaas_from_down_agents(self):
+        with mock.patch(
+            'neutron_lbaas.drivers.common.agent_driver_base.'
+            'LoadBalancerManager.reschedule_resources_from_down_agents'
+        ) as mock_reschedule_resources:
+            self.load_balancer.reschedule_lbaas_from_down_agents()
+            self.assertTrue(mock_reschedule_resources.called)
+            mock_reschedule_resources.assert_called_once_with(
+                agent_type=lb_const.AGENT_TYPE_LOADBALANCERV2,
+                get_down_bindings=(self.load_balancer.
+                                   get_down_loadbalancer_bindings),
+                agent_id_attr='agent_id',
+                resource_id_attr='loadbalancer_id',
+                resource_name='loadbalancer',
+                reschedule_resource=self.load_balancer.reschedule_loadbalancer,
+                rescheduling_failed=exceptions.LoadbalancerReschedulingFailed)
+
+    def test_loadbalancer_reschedule_from_dead_lbaas_agent(self):
+        self._register_agent_states(lbaas_agents=True)
+        with self.loadbalancer() as loadbalancer:
+            loadbalancer_data = loadbalancer['loadbalancer']
+            self.plugin.db.update_loadbalancer_provisioning_status(
+                self.adminContext, loadbalancer_data['id'])
+            original_agent = self._get_lbaas_agent_hosting_loadbalancer(
+                loadbalancer_data['id'])
+            self.assertIsNotNone(original_agent)
+            helpers.kill_agent(original_agent['agent']['id'])
+            self.load_balancer.reschedule_lbaas_from_down_agents()
+            rescheduled_agent = self._get_lbaas_agent_hosting_loadbalancer(
+                loadbalancer_data['id'])
+            self.assertNotEqual(original_agent, rescheduled_agent)
+
+    def test_reschedule_loadbalancer_succeeded(self):
+        self._register_agent_states(lbaas_agents=True)
+        with self.loadbalancer() as loadbalancer:
+            loadbalancer_data = loadbalancer['loadbalancer']
+            self.plugin.db.update_loadbalancer_provisioning_status(
+                self.adminContext, loadbalancer_data['id'])
+            hosting_agent = self.load_balancer.get_agent_hosting_loadbalancer(
+                self.adminContext, loadbalancer_data['id'])
+            with mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager.get_agent_hosting_loadbalancer',
+                side_effect=(hosting_agent, hosting_agent)
+            ) as mock_get_agent_hosting_lb, mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager._unschedule_loadbalancer',
+                side_effect=self.load_balancer._unschedule_loadbalancer
+            ) as mock_unschedule_lb, mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager._schedule_loadbalancer',
+                side_effect=self.load_balancer._schedule_loadbalancer
+            ) as mock_schedule_lb:
+                # rescheduling is expected to succeeded
+                self.load_balancer.reschedule_loadbalancer(
+                    self.adminContext, loadbalancer_data['id'])
+                # check the usage of get_agent_hosting_loadbalancer()
+                self.assertTrue(mock_get_agent_hosting_lb.called)
+                mock_get_agent_hosting_lb.assert_called_with(
+                    self.adminContext, loadbalancer_data['id'])
+                # check the usage of _unschedule_loadbalancer()
+                self.assertTrue(mock_unschedule_lb.called)
+                mock_unschedule_lb.assert_called_once_with(
+                    self.adminContext, loadbalancer_data['id'],
+                    hosting_agent['agent']['id'])
+                # check the usage of _schedule_loadbalancer()
+                self.assertTrue(mock_schedule_lb.called)
+                mock_schedule_lb.assert_called_once_with(
+                    self.adminContext, loadbalancer_data['id'])
+
+    def test_reschedule_loadbalancer_failed(self):
+        self._register_agent_states(lbaas_agents=True)
+        with self.loadbalancer() as loadbalancer:
+            loadbalancer_data = loadbalancer['loadbalancer']
+            self.plugin.db.update_loadbalancer_provisioning_status(
+                self.adminContext, loadbalancer_data['id'])
+            hosting_agent = self.load_balancer.get_agent_hosting_loadbalancer(
+                self.adminContext, loadbalancer_data['id'])
+            with mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager.get_agent_hosting_loadbalancer',
+                side_effect=(hosting_agent, None)
+            ) as mock_get_agent_hosting_lb, mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager._unschedule_loadbalancer',
+                side_effect=self.load_balancer._unschedule_loadbalancer
+            ) as mock_unschedule_lb, mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager._schedule_loadbalancer',
+                side_effect=self.load_balancer._schedule_loadbalancer
+            ) as mock_schedule_lb:
+                # rescheduling is expected to fail
+                self.assertRaises(exceptions.LoadbalancerReschedulingFailed,
+                                  self.load_balancer.reschedule_loadbalancer,
+                                  self.adminContext, loadbalancer_data['id'])
+                # check the usage of get_agent_hosting_loadbalancer()
+                self.assertTrue(mock_get_agent_hosting_lb.called)
+                mock_get_agent_hosting_lb.assert_called_with(
+                    self.adminContext, loadbalancer_data['id'])
+                # check the usage of _unschedule_loadbalancer()
+                self.assertTrue(mock_unschedule_lb.called)
+                mock_unschedule_lb.assert_called_once_with(
+                    self.adminContext, loadbalancer_data['id'],
+                    hosting_agent['agent']['id'])
+                # check the usage of _schedule_loadbalancer()
+                self.assertTrue(mock_schedule_lb.called)
+                mock_schedule_lb.assert_called_once_with(
+                    self.adminContext, loadbalancer_data['id'])
+
+    def test__schedule_loadbalancer(self):
+        self._register_agent_states(lbaas_agents=True)
+        with self.loadbalancer() as loadbalancer:
+            loadbalancer_data = loadbalancer['loadbalancer']
+            self.plugin.db.update_loadbalancer_provisioning_status(
+                self.adminContext, loadbalancer_data['id'])
+            with mock.patch(
+                'neutron_lbaas.db.loadbalancer.loadbalancer_dbv2.'
+                'LoadBalancerPluginDbv2.get_loadbalancer') as mock_get_lb,\
+                mock.patch(
+                'neutron_lbaas.drivers.common.agent_driver_base.'
+                'LoadBalancerManager.create') as mock_create:
+                self.load_balancer._schedule_loadbalancer(
+                    self.adminContext, loadbalancer_data['id'])
+                self.assertTrue(mock_get_lb.called)
+                mock_get_lb.assert_called_once_with(self.adminContext,
+                                                    loadbalancer_data['id'])
+                self.assertTrue(mock_create.called)

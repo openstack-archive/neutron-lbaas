@@ -14,19 +14,25 @@
 
 from neutron.common import rpc as n_rpc
 from neutron.db import agents_db
+from neutron.db import common_db_mixin
 from neutron.services import provider_configuration as provconf
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
+from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
 from neutron_lbaas._i18n import _
+from neutron_lbaas import agent_scheduler as agent_scheduler_v2
+from neutron_lbaas.common import exceptions
+from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.drivers.common import agent_callbacks
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 
+LOG = logging.getLogger(__name__)
 
 LB_SCHEDULERS = 'loadbalancer_schedulers'
 
@@ -35,6 +41,11 @@ AGENT_SCHEDULER_OPTS = [
                default='neutron_lbaas.agent_scheduler.ChanceScheduler',
                help=_('Driver to use for scheduling '
                       'to a default loadbalancer agent')),
+    cfg.BoolOpt('allow_automatic_lbaas_agent_failover',
+                default=False,
+                help=_('Automatically reschedule loadbalancer from offline '
+                       'to online lbaas agents. This is only supported for '
+                       'drivers who use the neutron LBaaSv2 agent')),
 ]
 
 cfg.CONF.register_opts(AGENT_SCHEDULER_OPTS)
@@ -144,7 +155,46 @@ class LoadBalancerAgentApi(object):
                    healthmonitor=healthmonitor)
 
 
-class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
+class LoadBalancerManager(driver_base.BaseLoadBalancerManager,
+                          agent_scheduler_v2.LbaasAgentSchedulerDbMixin,
+                          common_db_mixin.CommonDbMixin):
+    def __init__(self, driver):
+        self.driver = driver
+        self.db = ldbv2.LoadBalancerPluginDbv2()
+
+    def reschedule_lbaas_from_down_agents(self):
+        """Reschedule lbaas from down lbaasv2 agents if admin state is up."""
+        self.reschedule_resources_from_down_agents(
+                agent_type=lb_const.AGENT_TYPE_LOADBALANCERV2,
+                get_down_bindings=self.get_down_loadbalancer_bindings,
+                agent_id_attr='agent_id',
+                resource_id_attr='loadbalancer_id',
+                resource_name='loadbalancer',
+                reschedule_resource=self.reschedule_loadbalancer,
+                rescheduling_failed=exceptions.LoadbalancerReschedulingFailed)
+
+    def reschedule_loadbalancer(self, context, loadbalancer_id):
+        """Reschedule loadbalancer to a new lbaas agent
+
+        Remove the loadbalancer from the agent currently hosting it and
+        schedule it again
+        """
+        cur_agent = self.get_agent_hosting_loadbalancer(context,
+                                                        loadbalancer_id)
+        agent_data = cur_agent['agent']
+        with context.session.begin(subtransactions=True):
+            self._unschedule_loadbalancer(context, loadbalancer_id,
+                                          agent_data['id'])
+            self._schedule_loadbalancer(context, loadbalancer_id)
+            new_agent = self.get_agent_hosting_loadbalancer(context,
+                                                            loadbalancer_id)
+            if not new_agent:
+                raise exceptions.LoadbalancerReschedulingFailed(
+                        loadbalancer_id=loadbalancer_id)
+
+    def _schedule_loadbalancer(self, context, loadbalancer_id):
+        lb_db = self.db.get_loadbalancer(context, loadbalancer_id)
+        self.create(context, lb_db)
 
     def update(self, context, old_loadbalancer, loadbalancer):
         super(LoadBalancerManager, self).update(context, old_loadbalancer,
@@ -333,6 +383,13 @@ class AgentDriverBase(driver_base.LoadBalancerBaseDriver):
             cfg.CONF.loadbalancer_scheduler_driver, LB_SCHEDULERS)
         self.loadbalancer_scheduler = importutils.import_object(
             lb_sched_driver)
+
+    def get_periodic_jobs(self):
+        periodic_jobs = []
+        if cfg.CONF.allow_automatic_lbaas_agent_failover:
+            periodic_jobs.append(
+                self.load_balancer.reschedule_lbaas_from_down_agents)
+        return periodic_jobs
 
     def start_rpc_listeners(self):
         # other agent based plugin driver might already set callbacks on plugin
