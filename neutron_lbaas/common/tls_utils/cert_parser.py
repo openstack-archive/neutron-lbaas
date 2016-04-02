@@ -16,7 +16,7 @@
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives import serialization
 from cryptography import x509
-from neutron.i18n import _LE
+from neutron_lbaas._i18n import _LE
 from oslo_log import log as logging
 import six
 
