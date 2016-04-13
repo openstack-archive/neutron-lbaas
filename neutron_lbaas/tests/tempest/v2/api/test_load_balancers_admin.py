@@ -21,14 +21,15 @@ from tempest import test
 
 from neutron_lbaas.tests.tempest.v2.api import base
 
+
 CONF = config.CONF
 
 
-class LoadBalancersTestJSON(base.BaseAdminTestCase):
+class LoadBalancersTestAdmin(base.BaseAdminTestCase):
 
     """
     Tests the following operations in the Neutron-LBaaS API using the
-    REST client for Load Balancers with default credentials:
+    REST client for Load Balancers with admin credentials:
 
         list load balancers
         create load balancer
@@ -39,18 +40,34 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
 
     @classmethod
     def resource_setup(cls):
-        super(LoadBalancersTestJSON, cls).resource_setup()
+        super(LoadBalancersTestAdmin, cls).resource_setup()
         if not test.is_extension_enabled('lbaas', 'network'):
             msg = "lbaas extension not enabled."
             raise cls.skipException(msg)
         network_name = data_utils.rand_name('network')
         cls.network = cls.create_network(network_name)
         cls.subnet = cls.create_subnet(cls.network)
-        cls.create_lb_kwargs = {'tenant_id': cls.subnet['tenant_id'],
-                                'vip_subnet_id': cls.subnet['id']}
-        cls.load_balancer = \
-            cls._create_active_load_balancer(**cls.create_lb_kwargs)
-        cls.load_balancer_id = cls.load_balancer['id']
+        cls.load_balancer = cls.load_balancers_client.create_load_balancer(
+            vip_subnet_id=cls.subnet['id'])
+        cls._wait_for_load_balancer_status(cls.load_balancer['id'])
+
+        cls.tenant = 'deffb4d7c0584e89a8ec99551565713c'
+        cls.tenant_load_balancer = (
+            cls.load_balancers_client.create_load_balancer(
+                vip_subnet_id=cls.subnet['id'],
+                tenant_id=cls.tenant))
+        cls._wait_for_load_balancer_status(cls.tenant_load_balancer['id'])
+
+    @classmethod
+    def resource_cleanup(cls):
+        cls._try_delete_resource(cls._delete_load_balancer,
+                                 cls.load_balancer['id'])
+        cls._wait_for_load_balancer_status(
+            load_balancer_id=cls.load_balancer['id'], delete=True)
+        cls._try_delete_resource(cls._delete_load_balancer,
+                                 cls.tenant_load_balancer['id'])
+        cls._wait_for_load_balancer_status(
+            load_balancer_id=cls.tenant_load_balancer['id'], delete=True)
 
     @test.attr(type='smoke')
     def test_create_load_balancer_missing_tenant_id_field_for_admin(self):
@@ -59,28 +76,20 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
         Verify tenant_id matches when creating loadbalancer vs.
         load balancer(admin tenant)
         """
-        load_balancer = self.load_balancers_client.create_load_balancer(
-            vip_subnet_id=self.subnet['id'])
-        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         admin_lb = self.load_balancers_client.get_load_balancer(
-            load_balancer.get('id'))
-        self.assertEqual(load_balancer.get('tenant_id'),
+            self.load_balancer.get('id'))
+        self.assertEqual(self.load_balancer.get('tenant_id'),
                          admin_lb.get('tenant_id'))
-        self._wait_for_load_balancer_status(load_balancer['id'])
 
     @test.attr(type='smoke')
-    def test_create_load_balancer_missing_tenant_id_for_other_tenant(self):
+    def test_create_load_balancer_missing_tenant_id_for_tenant(self):
         """
         Test create load balancer with a missing tenant id field. Verify
         tenant_id does not match of subnet(non-admin tenant) vs.
         load balancer(admin tenant)
         """
-        load_balancer = self.load_balancers_client.create_load_balancer(
-            vip_subnet_id=self.subnet['id'])
-        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
-        self.assertNotEqual(load_balancer.get('tenant_id'),
+        self.assertNotEqual(self.load_balancer.get('tenant_id'),
                             self.subnet['tenant_id'])
-        self._wait_for_load_balancer_status(load_balancer['id'])
 
     @test.attr(type='negative')
     def test_create_load_balancer_empty_tenant_id_field(self):
@@ -94,10 +103,25 @@ class LoadBalancersTestJSON(base.BaseAdminTestCase):
     @test.attr(type='smoke')
     def test_create_load_balancer_for_another_tenant(self):
         """Test create load balancer for other tenant"""
-        tenant = 'deffb4d7c0584e89a8ec99551565713c'
-        load_balancer = self.load_balancers_client.create_load_balancer(
-            vip_subnet_id=self.subnet['id'],
-            tenant_id=tenant)
-        self.addCleanup(self._delete_load_balancer, load_balancer['id'])
-        self.assertEqual(load_balancer.get('tenant_id'), tenant)
-        self._wait_for_load_balancer_status(load_balancer['id'])
+        self.assertEqual(self.tenant,
+                         self.tenant_load_balancer.get('tenant_id'))
+
+    @test.attr(type='smoke')
+    def test_update_load_balancer_description(self):
+        """Test update admin load balancer description"""
+        new_description = "Updated Description"
+        self._update_load_balancer(self.load_balancer['id'],
+                                   description=new_description)
+        load_balancer = self.load_balancers_client.get_load_balancer(
+            self.load_balancer['id'])
+        self.assertEqual(new_description, load_balancer.get('description'))
+
+    @test.attr(type='smoke')
+    def test_delete_load_balancer_for_tenant(self):
+        """Test delete another tenant's load balancer as admin"""
+        self.assertEqual(self.tenant,
+                         self.tenant_load_balancer.get('tenant_id'))
+        self._delete_load_balancer(self.tenant_load_balancer['id'])
+        self.assertRaises(ex.NotFound,
+                          self.load_balancers_client.get_load_balancer,
+                          self.tenant_load_balancer['id'])
