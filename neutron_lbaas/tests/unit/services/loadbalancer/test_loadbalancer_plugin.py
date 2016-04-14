@@ -22,6 +22,7 @@ from neutron_lib import constants as n_constants
 from oslo_utils import uuidutils
 from webob import exc
 
+from neutron_lbaas.extensions import healthmonitor_max_retries_down as hm_down
 from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
@@ -495,6 +496,8 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         resource_map = loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.copy()
         for k in sharedpools.EXTENDED_ATTRIBUTES_2_0.keys():
             resource_map[k].update(sharedpools.EXTENDED_ATTRIBUTES_2_0[k])
+        for k in hm_down.EXTENDED_ATTRIBUTES_2_0.keys():
+            resource_map[k].update(hm_down.EXTENDED_ATTRIBUTES_2_0[k])
         self._setUpExtension(
             'neutron_lbaas.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
             constants.LOADBALANCERV2, resource_map,
@@ -1002,6 +1005,7 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                                   'delay': 2,
                                   'timeout': 1,
                                   'max_retries': 3,
+                                  'max_retries_down': 3,
                                   'http_method': 'GET',
                                   'url_path': '/path',
                                   'expected_codes': '200-300',

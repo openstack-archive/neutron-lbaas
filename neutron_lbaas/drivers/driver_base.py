@@ -100,6 +100,11 @@ class BaseLoadBalancerManager(driver_mixins.BaseRefreshMixin,
         return False
 
     @property
+    def allows_healthmonitor_thresholds(self):
+        """Does this driver support thresholds for health monitors"""
+        return False
+
+    @property
     def allocates_vip(self):
         """Does this driver need to allocate its own virtual IPs"""
         return False

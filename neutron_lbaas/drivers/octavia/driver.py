@@ -197,6 +197,10 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         return True
 
     @property
+    def allows_healthmonitor_thresholds(self):
+        return True
+
+    @property
     def allocates_vip(self):
         return cfg.CONF.octavia.allocates_vip
 
@@ -447,7 +451,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
             'delay': hm.delay,
             'timeout': hm.timeout,
             'rise_threshold': hm.max_retries,
-            'fall_threshold': hm.max_retries,
+            'fall_threshold': hm.max_retries_down,
             'http_method': hm.http_method,
             'url_path': hm.url_path,
             'expected_codes': hm.expected_codes,

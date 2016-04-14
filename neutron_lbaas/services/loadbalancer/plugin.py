@@ -391,7 +391,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                                    "l7",
                                    "lbaas_agent_schedulerv2",
                                    "service-type",
-                                   "lb-graph"]
+                                   "lb-graph",
+                                   "hm_max_retries_down"]
     path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
 
     agent_notifiers = (
@@ -476,7 +477,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             if not self.default_provider:
                 raise pconf.DefaultServiceProviderNotFound(
                     service_type=constants.LOADBALANCER)
-            del entity['provider']
+            if entity.get('provider'):
+                del entity['provider']
             return self.default_provider
 
     def _call_driver_operation(self, context, driver_method, db_entity,

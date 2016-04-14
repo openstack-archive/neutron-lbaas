@@ -39,6 +39,7 @@ from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.logging_noop import driver as noop_driver
 import neutron_lbaas.extensions
+from neutron_lbaas.extensions import healthmonitor_max_retries_down
 from neutron_lbaas.extensions import l7
 from neutron_lbaas.extensions import lb_graph
 from neutron_lbaas.extensions import loadbalancerv2
@@ -66,6 +67,8 @@ class LbaasTestMixin(object):
     resource_keys = list(loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_keys.extend(l7.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_keys.extend(lb_graph.RESOURCE_ATTRIBUTE_MAP.keys())
+    resource_keys.extend(healthmonitor_max_retries_down.
+                         EXTENDED_ATTRIBUTES_2_0.keys())
     resource_prefix_map = dict(
         (k, loadbalancerv2.LOADBALANCERV2_PREFIX)
         for k in resource_keys)
@@ -186,7 +189,7 @@ class LbaasTestMixin(object):
 
     def _get_healthmonitor_optional_args(self):
         return ('weight', 'admin_state_up', 'expected_codes', 'url_path',
-                'http_method', 'name')
+                'http_method', 'name', 'max_retries_down')
 
     def _create_healthmonitor(self, fmt, pool_id, type, delay, timeout,
                               max_retries, expected_res_status=None, **kwargs):
@@ -428,7 +431,7 @@ class LbaasTestMixin(object):
 
     @contextlib.contextmanager
     def healthmonitor(self, fmt=None, pool_id='pool1id', type='TCP', delay=1,
-                      timeout=1, max_retries=1, no_delete=False, **kwargs):
+                      timeout=1, max_retries=2, no_delete=False, **kwargs):
         if not fmt:
             fmt = self.fmt
 
@@ -532,6 +535,8 @@ class ExtendedPluginAwareExtensionManager(object):
             extensions_list.append(l7)
         if 'lb-graph' in self.extension_aliases:
             extensions_list.append(lb_graph)
+        if 'hm_max_retries_down' in self.extension_aliases:
+            extensions_list.append(healthmonitor_max_retries_down)
         for extension in extensions_list:
             if 'RESOURCE_ATTRIBUTE_MAP' in extension.__dict__:
                 loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.update(
@@ -1190,7 +1195,8 @@ class TestLoadBalancerGraphCreation(LbaasPluginDbTestCase):
             'delay': 1,
             'timeout': 1,
             'max_retries': 1,
-            'tenant_id': self._tenant_id
+            'tenant_id': self._tenant_id,
+            'max_retries_down': 1
         }
         expected_hm = {
             'http_method': 'GET',
@@ -3541,14 +3547,14 @@ class HealthMonitorTestBase(MemberTestBase):
         return resp, body
 
 
-class LbaasHealthMonitorTests(HealthMonitorTestBase):
+class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
 
     def test_create_healthmonitor(self, **extras):
         expected = {
             'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
-            'max_retries': 1,
+            'max_retries': 2,
             'http_method': 'GET',
             'url_path': '/',
             'expected_codes': '200',
@@ -3585,7 +3591,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
-            'max_retries': 1,
+            'max_retries': 2,
             'http_method': 'GET',
             'url_path': '/',
             'expected_codes': '200',
@@ -3593,7 +3599,6 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'tenant_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': 'monitor1'
-
         }
 
         expected.update(extras)
@@ -3660,7 +3665,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'type': 'TCP',
             'delay': 1,
             'timeout': 1,
-            'max_retries': 1,
+            'max_retries': 2,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
@@ -3689,12 +3694,11 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'type': 'TCP',
             'delay': 1,
             'timeout': 1,
-            'max_retries': 1,
+            'max_retries': 2,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': 'monitor1'
-
         }
 
         expected.update(extras)
@@ -3922,6 +3926,45 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
 
+    def test_create_health_monitor_with_max_retries_down(self, **extras):
+        expected = {
+            'type': 'HTTP',
+            'delay': 1,
+            'timeout': 1,
+            'max_retries': 2,
+            'http_method': 'GET',
+            'url_path': '/',
+            'expected_codes': '200',
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'pools': [{'id': self.pool_id}],
+            'name': 'monitor1',
+            'max_retries_down': 1
+        }
+
+        expected.update(extras)
+
+        with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
+                                name='monitor1', max_retries_down=1,
+                                **extras) as healthmonitor:
+            hm_id = healthmonitor['healthmonitor'].get('id')
+            self.assertTrue(hm_id)
+
+            actual = {}
+            for k, v in healthmonitor['healthmonitor'].items():
+                if k in expected:
+                    actual[k] = v
+            self.assertEqual(expected, actual)
+            self._validate_statuses(self.lb_id, self.listener_id,
+                                    pool_id=self.pool_id,
+                                    hm_id=hm_id)
+            _, pool = self._get_pool_api(self.pool_id)
+            self.assertEqual(
+                {'type': lb_const.SESSION_PERSISTENCE_HTTP_COOKIE,
+                 'cookie_name': None},
+                pool['pool'].get('session_persistence'))
+        return healthmonitor
+
     def test_only_one_healthmonitor_per_pool(self):
         with self.healthmonitor(pool_id=self.pool_id):
             data = {'healthmonitor': {'type': lb_const.HEALTH_MONITOR_TCP,
@@ -3938,14 +3981,15 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
-            'max_retries': 1,
+            'max_retries': 2,
             'http_method': 'GET',
             'url_path': '/',
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
-            'name': 'monitor1'
+            'name': 'monitor1',
+            'max_retries_down': 3
         }
 
         with self.healthmonitor(pool_id=self.pool_id, type='HTTP',
@@ -3960,7 +4004,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'type': 'HTTP',
             'delay': 1,
             'timeout': 1,
-            'max_retries': 1,
+            'max_retries': 2,
             'http_method': 'GET',
             'url_path': '/',
             'expected_codes': '200',
@@ -3968,6 +4012,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
             'tenant_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': '',
+            'max_retries_down': 3
         }
 
         with self.healthmonitor(pool_id=self.pool_id,

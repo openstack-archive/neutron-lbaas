@@ -316,12 +316,14 @@ class HealthMonitor(BaseDataModel):
 
     fields = ['id', 'tenant_id', 'type', 'delay', 'timeout', 'max_retries',
               'http_method', 'url_path', 'expected_codes',
-              'provisioning_status', 'admin_state_up', 'pool', 'name']
+              'provisioning_status', 'admin_state_up', 'pool', 'name',
+              'max_retries_down']
 
     def __init__(self, id=None, tenant_id=None, type=None, delay=None,
                  timeout=None, max_retries=None, http_method=None,
                  url_path=None, expected_codes=None, provisioning_status=None,
-                 admin_state_up=None, pool=None, name=None):
+                 admin_state_up=None, pool=None, name=None,
+                 max_retries_down=None):
         self.id = id
         self.tenant_id = tenant_id
         self.type = type
@@ -335,6 +337,7 @@ class HealthMonitor(BaseDataModel):
         self.admin_state_up = admin_state_up
         self.pool = pool
         self.name = name
+        self.max_retries_down = max_retries_down
 
     def attached_to_loadbalancer(self):
         return bool(self.pool and self.pool.loadbalancer)
