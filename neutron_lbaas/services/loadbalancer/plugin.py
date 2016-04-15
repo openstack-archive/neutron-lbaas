@@ -27,6 +27,7 @@ from neutron.services import service_base
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_utils import encodeutils
 from oslo_utils import excutils
 
 from neutron_lbaas._i18n import _LI, _LE
@@ -649,8 +650,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                         container_id=container_ref)
                 else:
                     # Could be a keystone configuration error...
+                    err_msg = encodeutils.exception_to_unicode(e)
                     raise loadbalancerv2.CertManagerError(
-                        ref=container_ref, reason=e.message
+                        ref=container_ref, reason=err_msg
                     )
 
             try:
