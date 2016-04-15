@@ -24,11 +24,11 @@ class TestHealthMonitors(base.BaseTestCase):
     """
     Tests the following operations in the Neutron-LBaaS API using the
     REST client for Health Monitors:
-        list pools
-        create pool
-        get pool
-        update pool
-        delete pool
+        list health monitors
+        create health monitor
+        get health monitor
+        update health monitor
+        delete health monitor
     """
 
     @classmethod
