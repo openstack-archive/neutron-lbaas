@@ -80,7 +80,7 @@ class AttributeIDImmutable(nexception.NeutronException):
     message = _("Cannot change %(attribute)s if one already exists")
 
 
-class StateInvalid(nexception.NeutronException):
+class StateInvalid(nexception.Conflict):
     message = _("Invalid state %(state)s of loadbalancer resource %(id)s")
 
 
