@@ -340,7 +340,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             if self.admin_state_up:
                 self.needs_resync = True
             else:
-                for pool_id in self.instance_mapping.keys():
+                # Copy keys because the dict is modified in the loop body
+                for pool_id in list(self.instance_mapping.keys()):
                     LOG.info(_LI("Destroying pool %s due to agent disabling"),
                              pool_id)
                     self._destroy_pool(pool_id)

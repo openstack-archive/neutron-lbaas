@@ -12,12 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import copy
 import mock
 
 from neutron_lbaas.services.loadbalancer.agent import agent_api as api
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 class TestApiCache(base.BaseTestCase):
@@ -37,7 +37,7 @@ class TestApiCache(base.BaseTestCase):
         if method in add_host:
             expected_kwargs['host'] = self.api.host
 
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.api.client, 'call'),
             mock.patch.object(self.api.client, 'prepare'),
         ) as (
