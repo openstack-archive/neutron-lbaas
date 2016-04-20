@@ -14,8 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest import test
 from tempest.lib.common.utils import data_utils
+from tempest.lib import exceptions
+from tempest import test
 
 from neutron_lbaas.tests.tempest.v1.api import base
 
@@ -59,7 +60,14 @@ class QuotasTest(base.BaseAdminNetworkTest):
         # Change quotas for tenant
         quota_set = self.admin_client.update_quotas(tenant_id,
                                                     **new_quotas)
-        self.addCleanup(self.admin_client.reset_quotas, tenant_id)
+
+        def safe_reset_quotas(tenant_id):
+            try:
+                self.admin_client.reset_quotas(tenant_id)
+            except exceptions.NotFound:
+                pass
+
+        self.addCleanup(safe_reset_quotas, tenant_id)
         for key, value in new_quotas.items():
             self.assertEqual(value, quota_set[key])
 
