@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import copy
 import mock
 import re
@@ -29,6 +28,7 @@ from neutron_lbaas.drivers.radware import exceptions as r_exc
 from neutron_lbaas.drivers.radware import v2_driver
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_con
+from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 GET_200 = ('/api/workflow/', '/api/workflowTemplate')
@@ -444,7 +444,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.pool(
                         protocol=lb_con.PROTOCOL_HTTP,
                         listener_id=l['listener']['id']) as p:
-                        with contextlib.nested(
+                        with nested(
                             self.member(
                                 no_delete=True, pool_id=p['pool']['id'],
                                 subnet=s, address='10.0.1.10'),
@@ -552,7 +552,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
             with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
-                with contextlib.nested(
+                with nested(
                     mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                                'cert_parser', autospec=True),
                     mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
@@ -678,7 +678,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                 with self.listener(
                     protocol=lb_con.PROTOCOL_HTTP,
                     loadbalancer_id=lb_id) as listener:
-                    with contextlib.nested(
+                    with nested(
                         self.pool(
                             protocol=lb_con.PROTOCOL_HTTP,
                             listener_id=listener['listener']['id']),
@@ -692,7 +692,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
                             self.driver_rest_call_mock.reset_mock()
 
-                            with contextlib.nested(
+                            with nested(
                                 self.l7policy_rule(
                                     l7policy_id=policy['l7policy']['id'],
                                     key='key1', value='val1'),
@@ -812,7 +812,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.pool(
                         protocol='HTTP',
                         listener_id=listener['listener']['id']) as pool:
-                        with contextlib.nested(
+                        with nested(
                             self.member(pool_id=pool['pool']['id'],
                                         subnet=vip_sub, address='10.0.1.10'),
                             self.member(pool_id=pool['pool']['id'],
@@ -890,7 +890,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                                 calls, any_order=True)
 
     def test_build_objects_graph_two_legs_full(self):
-        with contextlib.nested(
+        with nested(
             self.subnet(cidr='10.0.0.0/24'),
             self.subnet(cidr='20.0.0.0/24'),
             self.subnet(cidr='30.0.0.0/24')
