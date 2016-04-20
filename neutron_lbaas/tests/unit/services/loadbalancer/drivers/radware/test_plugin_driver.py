@@ -14,7 +14,6 @@
 
 import re
 
-import contextlib
 import mock
 from neutron.api.v2 import attributes
 from neutron import context
@@ -28,6 +27,7 @@ from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer.drivers.radware import driver
 from neutron_lbaas.services.loadbalancer.drivers.radware \
     import exceptions as r_exc
+from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 GET_200 = ('/api/workflow/', '/api/service/', '/api/workflowTemplate')
@@ -515,7 +515,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                 with self.pool(do_delete=False,
                                provider='radware',
                                subnet_id=subnet['subnet']['id']) as pool:
-                    with contextlib.nested(
+                    with nested(
                         self.member(pool_id=pool['pool']['id'],
                                     do_delete=False),
                         self.member(pool_id=pool['pool']['id'],
@@ -682,14 +682,14 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                             calls, any_order=True)
 
     def test_create_member_on_different_subnets(self):
-        with contextlib.nested(
+        with nested(
             self.subnet(),
             self.subnet(cidr='20.0.0.0/24'),
             self.subnet(cidr='30.0.0.0/24')
         ) as (vip_sub, pool_sub, member_sub):
             with self.pool(provider='radware',
                            subnet_id=pool_sub['subnet']['id']) as pool:
-                with contextlib.nested(
+                with nested(
                     self.port(subnet=vip_sub,
                               fixed_ips=[{'ip_address': '10.0.0.2'}]),
                     self.port(subnet=pool_sub,
@@ -697,7 +697,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                     self.port(subnet=member_sub,
                               fixed_ips=[{'ip_address': '30.0.0.2'}])
                 ):
-                    with contextlib.nested(
+                    with nested(
                         self.member(pool_id=pool['pool']['id'],
                                     address='10.0.0.2'),
                         self.member(pool_id=pool['pool']['id'],
@@ -737,7 +737,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
                                 member_gw_array)
 
     def test_create_member_on_different_subnet_no_port(self):
-        with contextlib.nested(
+        with nested(
             self.subnet(),
             self.subnet(cidr='20.0.0.0/24'),
             self.subnet(cidr='30.0.0.0/24')
@@ -773,7 +773,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
     def test_create_member_on_different_subnet_multiple_ports(self):
         cfg.CONF.set_override("allow_overlapping_ips", 'true')
         with self.network() as other_net:
-            with contextlib.nested(
+            with nested(
                 self.subnet(),
                 self.subnet(cidr='20.0.0.0/24'),
                 self.subnet(cidr='30.0.0.0/24'),
@@ -781,7 +781,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
             ) as (vip_sub, pool_sub, member_sub1, member_sub2):
                 with self.pool(provider='radware',
                                subnet_id=pool_sub['subnet']['id']) as pool:
-                    with contextlib.nested(
+                    with nested(
                         self.port(subnet=member_sub1,
                                   fixed_ips=[{'ip_address': '30.0.0.2'}]),
                         self.port(subnet=member_sub2,
