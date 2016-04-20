@@ -38,6 +38,28 @@ if os.path.exists('./tests/tempest/etc/dev_tempest.conf'):
     CONF.set_config_path('./tests/tempest/etc/dev_tempest.conf')
 
 
+def _setup_client_args(auth_provider):
+    """Set up ServiceClient arguments using config settings. """
+    service = CONF.network.catalog_type or 'network'
+    region = CONF.network.region or 'regionOne'
+    endpoint_type = CONF.network.endpoint_type
+    build_interval = CONF.network.build_interval
+    build_timeout = CONF.network.build_timeout
+
+    # The disable_ssl appears in identity
+    disable_ssl_certificate_validation = (
+        CONF.identity.disable_ssl_certificate_validation)
+    ca_certs = None
+
+    # Trace in debug section
+    trace_requests = CONF.debug.trace_requests
+
+    return [auth_provider, service, region, endpoint_type,
+            build_interval, build_timeout,
+            disable_ssl_certificate_validation, ca_certs,
+            trace_requests]
+
+
 class BaseTestCase(base.BaseNetworkTest):
 
     # This class picks non-admin credentials and run the tempest tests
@@ -48,12 +70,9 @@ class BaseTestCase(base.BaseNetworkTest):
     def resource_setup(cls):
         super(BaseTestCase, cls).resource_setup()
 
-        # credentials = cls.isolated_creds.get_primary_creds()
-        # mgr = tempest_clients.Manager(credentials=credentials)
         mgr = cls.get_client_manager()
-        # auth_provider = mgr.get_auth_provider(credentials)
         auth_provider = mgr.auth_provider
-        client_args = [auth_provider, 'network', 'regionOne']
+        client_args = _setup_client_args(auth_provider)
 
         cls.load_balancers_client = (
             load_balancers_client.LoadBalancersClientJSON(*client_args))
@@ -345,16 +364,9 @@ class BaseAdminTestCase(BaseTestCase):
 
         super(BaseAdminTestCase, cls).resource_setup()
 
-        # credentials = cls.isolated_creds.get_primary_creds()
-        # mgr = tempest_clients.Manager(credentials=credentials)
         mgr = cls.get_client_manager(credential_type='admin')
-        # auth_provider = mgr.get_auth_provider(credentials)
         auth_provider_admin = mgr.auth_provider
-
-        # credentials_admin = cls.isolated_creds.get_admin_creds()
-        # mgr_admin = tempest_clients.Manager(credentials=credentials_admin)
-        # auth_provider_admin = mgr_admin.get_auth_provider(credentials_admin)
-        client_args = [auth_provider_admin, 'network', 'regionOne']
+        client_args = _setup_client_args(auth_provider_admin)
 
         cls.load_balancers_client = (
             load_balancers_client.LoadBalancersClientJSON(*client_args))
