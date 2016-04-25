@@ -12,14 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
-
+import collections
 import mock
 from neutron.plugins.common import constants
 
 from neutron_lbaas.services.loadbalancer.agent import agent_manager as manager
 from neutron_lbaas.services.loadbalancer import constants as l_const
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 class TestManager(base.BaseTestCase):
@@ -43,7 +43,9 @@ class TestManager(base.BaseTestCase):
         self.log = mock.patch.object(manager, 'LOG').start()
         self.driver_mock = mock.Mock()
         self.mgr.device_drivers = {'devdriver': self.driver_mock}
-        self.mgr.instance_mapping = {'1': 'devdriver', '2': 'devdriver'}
+        instance_mapping = collections.OrderedDict([('1', 'devdriver'),
+                                                    ('2', 'devdriver')])
+        self.mgr.instance_mapping = instance_mapping
         self.mgr.needs_resync = False
 
     def test_initialize_service_hook(self):
@@ -80,7 +82,7 @@ class TestManager(base.BaseTestCase):
         self.assertTrue(self.log.exception.called)
 
     def _sync_state_helper(self, ready, reloaded, destroyed):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.mgr, '_reload_pool'),
             mock.patch.object(self.mgr, '_destroy_pool')
         ) as (reload, destroy):
@@ -192,8 +194,7 @@ class TestManager(base.BaseTestCase):
 
     def test_remove_orphans(self):
         self.mgr.remove_orphans()
-        orphans = {'1': "Fake", '2': "Fake"}
-        self.driver_mock.remove_orphans.assert_called_once_with(orphans.keys())
+        self.driver_mock.remove_orphans.assert_called_once_with(['1', '2'])
 
     def test_create_vip(self):
         vip = {'id': 'id1', 'pool_id': '1', 'admin_state_up': True}
