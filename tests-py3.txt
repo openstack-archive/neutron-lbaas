@@ -12,5 +12,12 @@ neutron_lbaas.tests.unit.drivers.haproxy.test_namespace_driver
 neutron_lbaas.tests.unit.services.loadbalancer.agent.test_agent
 neutron_lbaas.tests.unit.services.loadbalancer.agent.test_agent_manager
 neutron_lbaas.tests.unit.services.loadbalancer.agent.test_api
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.haproxy.test_cfg
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.haproxy.test_jinja_cfg
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.haproxy.test_namespace_driver
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.netscaler.test_netscaler_driver
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.radware.test_plugin_driver
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.test_agent_driver_base
+neutron_lbaas.tests.unit.services.loadbalancer.drivers.vmware.test_edge_driver
 neutron_lbaas.tests.unit.services.loadbalancer.test_agent_scheduler
 neutron_lbaas.tests.unit.services.loadbalancer.test_loadbalancer_plugin

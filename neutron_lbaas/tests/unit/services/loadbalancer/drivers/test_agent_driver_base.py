@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
-
 import mock
 from neutron import context
 from neutron.db import servicetype_db as st_db
@@ -31,6 +29,7 @@ from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer.drivers.common \
     import agent_driver_base
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 
@@ -410,7 +409,7 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
             self.assertTrue(mock_log.warning.called)
 
     def test_update_status_health_monitor(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(),
             self.pool()
         ) as (hm, pool):
@@ -439,7 +438,7 @@ class TestLoadBalancerAgentApi(base.BaseTestCase):
         self.assertEqual('topic', self.api.client.target.topic)
 
     def _call_test_helper(self, method_name, method_args):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.api.client, 'cast'),
             mock.patch.object(self.api.client, 'prepare'),
         ) as (
@@ -670,7 +669,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                     mock.ANY, member['member'], 'host')
 
     def test_create_pool_health_monitor(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(),
             self.pool(),
         ) as (hm, pool):
@@ -684,7 +683,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 mock.ANY, hm, pool_id, 'host')
 
     def test_delete_pool_health_monitor(self):
-        with contextlib.nested(
+        with nested(
             self.pool(),
             self.health_monitor()
         ) as (pool, hm):
@@ -701,7 +700,7 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 mock.ANY, hm, pool_id, 'host')
 
     def test_update_health_monitor_associated_with_pool(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(type='HTTP'),
             self.pool()
         ) as (monitor, pool):

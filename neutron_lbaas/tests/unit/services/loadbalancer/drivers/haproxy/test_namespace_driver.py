@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
-
 import mock
 from neutron_lib import exceptions
 import six
@@ -21,6 +19,7 @@ import six
 from neutron_lbaas.services.loadbalancer.drivers.haproxy \
     import namespace_driver
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 class TestHaproxyNSDriver(base.BaseTestCase):
@@ -71,7 +70,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 spawn.assert_called_once_with(self.fake_config)
 
     def test_update(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch.object(self.driver, '_spawn'),
             mock.patch.object(six.moves.builtins, 'open')
@@ -84,7 +83,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             spawn.assert_called_once_with(self.fake_config, ['-sf', '5'])
 
     def test_spawn(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(namespace_driver.hacfg, 'save_config'),
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
@@ -102,7 +101,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ])
 
     def test_undeploy_instance(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch.object(namespace_driver, 'kill_pids_in_file'),
             mock.patch.object(self.driver, '_unplug'),
@@ -127,7 +126,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ])
 
     def test_undeploy_instance_with_ns_cleanup(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch.object(self.driver, 'vif_driver'),
             mock.patch.object(namespace_driver, 'kill_pids_in_file'),
@@ -145,7 +144,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                namespace='qlbaas-pool_id')
 
     def test_remove_orphans(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, 'exists'),
             mock.patch.object(self.driver, 'undeploy_instance'),
             mock.patch('os.listdir'),
@@ -162,7 +161,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                              cleanup_namespace=True)
 
     def test_exists(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, '_get_state_file_path'),
             mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
             mock.patch('socket.socket'),
@@ -210,7 +209,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                            'hrsp_3xx,hrsp_4xx,hrsp_5xx,hrsp_other,hanafail,'
                            'req_rate,req_rate_max,req_tot,cli_abrt,srv_abrt,'
                            '\n')
-        with contextlib.nested(
+        with nested(
                 mock.patch.object(self.driver, '_get_state_file_path'),
                 mock.patch('socket.socket'),
                 mock.patch('os.path.exists'),
@@ -262,7 +261,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                     'subnet': {'cidr': '10.0.0.0/24',
                                                'gateway_ip': '10.0.0.1'}}]}
         test_address = '10.0.0.2'
-        with contextlib.nested(
+        with nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
                 mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
@@ -309,7 +308,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                     'subnet': {'cidr': '10.0.0.0/24',
                                                'gateway_ip': '10.0.0.1'}}]}
         test_address = '10.0.0.2'
-        with contextlib.nested(
+        with nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
                 mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
@@ -333,7 +332,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                      'fixed_ips': [{'ip_address': '10.0.0.2',
                                     'subnet': {'cidr': '10.0.0.0/24'}}]}
         test_address = '10.0.0.2'
-        with contextlib.nested(
+        with nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
                 mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
@@ -372,7 +371,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                [{'destination': '0.0.0.0/0',
                                                  'nexthop': '10.0.0.1'}]}}]}
         test_address = '10.0.0.2'
-        with contextlib.nested(
+        with nested(
                 mock.patch('neutron.agent.linux.ip_lib.device_exists'),
                 mock.patch('netaddr.IPNetwork'),
                 mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
@@ -409,7 +408,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.vif_driver.unplug('test_interface', namespace='test_ns')
 
     def test_kill_pids_in_file(self):
-        with contextlib.nested(
+        with nested(
             mock.patch('os.path.exists'),
             mock.patch.object(six.moves.builtins, 'open'),
             mock.patch('neutron.agent.linux.utils.execute'),
@@ -487,7 +486,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 update.assert_called_once_with(self.fake_config)
 
     def test_refresh_device(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, 'deploy_instance'),
             mock.patch.object(self.driver, 'undeploy_instance')
         ) as (deploy, undeploy):
@@ -499,7 +498,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.assertFalse(undeploy.called)
 
     def test_refresh_device_not_deployed(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, 'deploy_instance'),
             mock.patch.object(self.driver, 'exists'),
             mock.patch.object(self.driver, 'undeploy_instance')
@@ -511,7 +510,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             undeploy.assert_called_once_with(pool_id)
 
     def test_refresh_device_non_existing(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, 'deploy_instance'),
             mock.patch.object(self.driver, 'exists'),
             mock.patch.object(self.driver, 'undeploy_instance')
@@ -548,7 +547,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             refresh.assert_called_once_with('1')
 
     def test_delete_pool_existing(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, 'undeploy_instance'),
             mock.patch.object(self.driver, 'exists'),
         ) as (undeploy, exists):
@@ -557,7 +556,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             undeploy.assert_called_once_with('1', delete_namespace=True)
 
     def test_delete_pool_non_existing(self):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.driver, 'undeploy_instance'),
             mock.patch.object(self.driver, 'exists'),
         ) as (undeploy, exists):

@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import mock
 
 from neutron.tests import base
@@ -22,13 +21,14 @@ from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.services.loadbalancer.drivers.haproxy import jinja_cfg
+from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.services.loadbalancer.drivers.haproxy.\
     sample_configs import sample_configs
 
 
 class TestHaproxyCfg(base.BaseTestCase):
     def test_save_config(self):
-        with contextlib.nested(
+        with nested(
             mock.patch('neutron_lbaas.services.loadbalancer.'
                        'drivers.haproxy.jinja_cfg.render_loadbalancer_obj'),
             mock.patch('neutron.common.utils.replace_file')
@@ -336,7 +336,7 @@ class TestHaproxyCfg(base.BaseTestCase):
         cert.get_certificate.return_value = tls.certificate
         cert.get_intermediates.return_value = tls.intermediates
 
-        with contextlib.nested(
+        with nested(
             mock.patch.object(jinja_cfg, '_map_cert_tls_container'),
             mock.patch.object(jinja_cfg, '_store_listener_crt'),
             mock.patch.object(cert_parser, 'get_host_names'),

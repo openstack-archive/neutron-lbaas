@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import base64
 import copy
 import netaddr
 import threading
@@ -28,6 +27,7 @@ from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
+from oslo_serialization import base64
 from oslo_serialization import jsonutils
 from oslo_utils import excutils
 from six.moves import http_client
@@ -672,7 +672,7 @@ class vDirectRESTClient(object):
         self.base_uri = base_uri
         self.timeout = timeout
         if user and password:
-            self.auth = base64.encodestring('%s:%s' % (user, password))
+            self.auth = base64.encode_as_text('%s:%s' % (user, password))
             self.auth = self.auth.replace('\n', '')
         else:
             raise r_exc.AuthenticationMissing()

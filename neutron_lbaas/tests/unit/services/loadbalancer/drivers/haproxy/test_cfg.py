@@ -13,17 +13,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
-
 import mock
 
 from neutron_lbaas.services.loadbalancer.drivers.haproxy import cfg
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 class TestHaproxyCfg(base.BaseTestCase):
     def test_save_config(self):
-        with contextlib.nested(
+        with nested(
                 mock.patch('neutron_lbaas.services.loadbalancer.'
                            'drivers.haproxy.cfg._build_global'),
                 mock.patch('neutron_lbaas.services.loadbalancer.'
