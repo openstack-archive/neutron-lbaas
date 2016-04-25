@@ -6,6 +6,7 @@ neutron_lbaas.tests.unit.common.cert_manager.test_barbican
 neutron_lbaas.tests.unit.common.cert_manager.test_cert_manager
 neutron_lbaas.tests.unit.common.cert_manager.test_local
 neutron_lbaas.tests.unit.common.tls_utils.test_cert_parser
+neutron_lbaas.tests.unit.db.loadbalancer.test_db_loadbalancer
 neutron_lbaas.tests.unit.db.loadbalancer.test_db_loadbalancerv2
 neutron_lbaas.tests.unit.drivers.common.test_agent_driver_base
 neutron_lbaas.tests.unit.drivers.haproxy.test_namespace_driver

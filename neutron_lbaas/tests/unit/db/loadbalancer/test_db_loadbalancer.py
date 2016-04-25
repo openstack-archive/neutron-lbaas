@@ -1289,9 +1289,13 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                         {'monitor_id': monitor2['health_monitor']['id'],
                          'status': 'PENDING_CREATE',
                          'status_description': None}]
+                    monitors_status = res['pool']['health_monitors_status']
+
+                    def key_func(data):
+                        return data['monitor_id']
                     self.assertEqual(
-                        sorted(expected),
-                        sorted(res['pool']['health_monitors_status']))
+                        sorted(expected, key=key_func),
+                        sorted(monitors_status, key=key_func))
 
     def test_delete_healthmonitor_of_pool(self):
         with self.health_monitor(type="TCP") as monitor1:
@@ -1519,8 +1523,11 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                          {'pool_id': p2['pool']['id'],
                           'status': 'PENDING_CREATE',
                           'status_description': None}]
-            self.assertEqual(sorted(pool_data),
-                             sorted(healthmon['pools']))
+
+            def key_func(data):
+                return data['pool_id']
+            self.assertEqual(sorted(pool_data, key=key_func),
+                             sorted(healthmon['pools'], key=key_func))
             req = self.new_show_request(
                 'health_monitors',
                 hm['health_monitor']['id'],
@@ -1529,8 +1536,9 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 self.fmt,
                 req.get_response(self.ext_api)
             )
-            self.assertEqual(sorted(pool_data),
-                             sorted(hm['health_monitor']['pools']))
+            pools = hm['health_monitor']['pools']
+            self.assertEqual(sorted(pool_data, key=key_func),
+                             sorted(pools, key=key_func))
 
     def test_create_pool_health_monitor_already_associated(self):
         with nested(
