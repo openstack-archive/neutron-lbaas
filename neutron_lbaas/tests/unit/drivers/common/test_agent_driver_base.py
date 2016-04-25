@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import mock
 
 from neutron import context
@@ -24,6 +23,7 @@ from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.common import agent_driver_base
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 
@@ -61,7 +61,7 @@ class TestLoadBalancerAgentApi(base.BaseTestCase):
         self.assertEqual('topic', self.api.client.target.topic)
 
     def _call_test_helper(self, method_name, method_args):
-        with contextlib.nested(
+        with nested(
             mock.patch.object(self.api.client, 'cast'),
             mock.patch.object(self.api.client, 'prepare'),
         ) as (

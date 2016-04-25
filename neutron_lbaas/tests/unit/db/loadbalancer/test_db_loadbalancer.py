@@ -41,6 +41,7 @@ from neutron_lbaas.services.loadbalancer import (
 )
 from neutron_lbaas.services.loadbalancer.drivers import abstract_driver
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 DB_CORE_PLUGIN_KLASS = 'neutron.db.db_base_plugin_v2.NeutronDbPluginV2'
@@ -427,11 +428,11 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
 
     def test_update_vip_raises_vip_exists(self):
         with self.subnet() as subnet:
-            with contextlib.nested(
+            with nested(
                 self.pool(name="pool1"),
                 self.pool(name="pool2")
             ) as (pool1, pool2):
-                with contextlib.nested(
+                with nested(
                     self.vip(name='vip1', subnet=subnet, pool=pool1),
                     self.vip(name='vip2', subnet=subnet, pool=pool2)
                 ) as (vip1, vip2):
@@ -448,7 +449,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
 
     def test_update_vip_change_pool(self):
         with self.subnet() as subnet:
-            with contextlib.nested(
+            with nested(
                 self.pool(name="pool1"),
                 self.pool(name="pool2")
             ) as (pool1, pool2):
@@ -614,7 +615,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
 
     def test_list_vips_with_sort_emulated(self):
         with self.subnet() as subnet:
-            with contextlib.nested(
+            with nested(
                 self.vip(name='vip1', subnet=subnet, protocol_port=81),
                 self.vip(name='vip2', subnet=subnet, protocol_port=82),
                 self.vip(name='vip3', subnet=subnet, protocol_port=82)
@@ -627,20 +628,20 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
 
     def test_list_vips_with_pagination_emulated(self):
         with self.subnet() as subnet:
-            with contextlib.nested(self.vip(name='vip1', subnet=subnet),
-                                   self.vip(name='vip2', subnet=subnet),
-                                   self.vip(name='vip3', subnet=subnet)
-                                   ) as (vip1, vip2, vip3):
+            with nested(self.vip(name='vip1', subnet=subnet),
+                        self.vip(name='vip2', subnet=subnet),
+                        self.vip(name='vip3', subnet=subnet)
+                        ) as (vip1, vip2, vip3):
                 self._test_list_with_pagination('vip',
                                                 (vip1, vip2, vip3),
                                                 ('name', 'asc'), 2, 2)
 
     def test_list_vips_with_pagination_reverse_emulated(self):
         with self.subnet() as subnet:
-            with contextlib.nested(self.vip(name='vip1', subnet=subnet),
-                                   self.vip(name='vip2', subnet=subnet),
-                                   self.vip(name='vip3', subnet=subnet)
-                                   ) as (vip1, vip2, vip3):
+            with nested(self.vip(name='vip1', subnet=subnet),
+                        self.vip(name='vip2', subnet=subnet),
+                        self.vip(name='vip3', subnet=subnet)
+                        ) as (vip1, vip2, vip3):
                 self._test_list_with_pagination_reverse('vip',
                                                         (vip1, vip2, vip3),
                                                         ('name', 'asc'), 2, 2)
@@ -806,27 +807,27 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 self.assertEqual(v, res['pool'][k])
 
     def test_list_pools_with_sort_emulated(self):
-        with contextlib.nested(self.pool(name='p1'),
-                               self.pool(name='p2'),
-                               self.pool(name='p3')
-                               ) as (p1, p2, p3):
+        with nested(self.pool(name='p1'),
+                    self.pool(name='p2'),
+                    self.pool(name='p3')
+                    ) as (p1, p2, p3):
             self._test_list_with_sort('pool', (p3, p2, p1),
                                       [('name', 'desc')])
 
     def test_list_pools_with_pagination_emulated(self):
-        with contextlib.nested(self.pool(name='p1'),
-                               self.pool(name='p2'),
-                               self.pool(name='p3')
-                               ) as (p1, p2, p3):
+        with nested(self.pool(name='p1'),
+                    self.pool(name='p2'),
+                    self.pool(name='p3')
+                    ) as (p1, p2, p3):
             self._test_list_with_pagination('pool',
                                             (p1, p2, p3),
                                             ('name', 'asc'), 2, 2)
 
     def test_list_pools_with_pagination_reverse_emulated(self):
-        with contextlib.nested(self.pool(name='p1'),
-                               self.pool(name='p2'),
-                               self.pool(name='p3')
-                               ) as (p1, p2, p3):
+        with nested(self.pool(name='p1'),
+                    self.pool(name='p2'),
+                    self.pool(name='p3')
+                    ) as (p1, p2, p3):
             self._test_list_with_pagination_reverse('pool',
                                                     (p1, p2, p3),
                                                     ('name', 'asc'), 2, 2)
@@ -975,38 +976,38 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
 
     def test_list_members_with_sort_emulated(self):
         with self.pool() as pool:
-            with contextlib.nested(self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=81),
-                                   self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=82),
-                                   self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=83)
-                                   ) as (m1, m2, m3):
+            with nested(self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=81),
+                        self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=82),
+                        self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=83)
+                        ) as (m1, m2, m3):
                 self._test_list_with_sort('member', (m3, m2, m1),
                                           [('protocol_port', 'desc')])
 
     def test_list_members_with_pagination_emulated(self):
         with self.pool() as pool:
-            with contextlib.nested(self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=81),
-                                   self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=82),
-                                   self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=83)
-                                   ) as (m1, m2, m3):
+            with nested(self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=81),
+                        self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=82),
+                        self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=83)
+                        ) as (m1, m2, m3):
                 self._test_list_with_pagination(
                     'member', (m1, m2, m3), ('protocol_port', 'asc'), 2, 2
                 )
 
     def test_list_members_with_pagination_reverse_emulated(self):
         with self.pool() as pool:
-            with contextlib.nested(self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=81),
-                                   self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=82),
-                                   self.member(pool_id=pool['pool']['id'],
-                                               protocol_port=83)
-                                   ) as (m1, m2, m3):
+            with nested(self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=81),
+                        self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=82),
+                        self.member(pool_id=pool['pool']['id'],
+                                    protocol_port=83)
+                        ) as (m1, m2, m3):
                 self._test_list_with_pagination_reverse(
                     'member', (m1, m2, m3), ('protocol_port', 'asc'), 2, 2
                 )
@@ -1135,27 +1136,27 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 self.assertEqual(v, res['health_monitor'][k])
 
     def test_list_healthmonitors_with_sort_emulated(self):
-        with contextlib.nested(self.health_monitor(delay=30),
-                               self.health_monitor(delay=31),
-                               self.health_monitor(delay=32)
-                               ) as (m1, m2, m3):
+        with nested(self.health_monitor(delay=30),
+                    self.health_monitor(delay=31),
+                    self.health_monitor(delay=32)
+                    ) as (m1, m2, m3):
             self._test_list_with_sort('health_monitor', (m3, m2, m1),
                                       [('delay', 'desc')])
 
     def test_list_healthmonitors_with_pagination_emulated(self):
-        with contextlib.nested(self.health_monitor(delay=30),
-                               self.health_monitor(delay=31),
-                               self.health_monitor(delay=32)
-                               ) as (m1, m2, m3):
+        with nested(self.health_monitor(delay=30),
+                    self.health_monitor(delay=31),
+                    self.health_monitor(delay=32)
+                    ) as (m1, m2, m3):
             self._test_list_with_pagination('health_monitor',
                                             (m1, m2, m3),
                                             ('delay', 'asc'), 2, 2)
 
     def test_list_healthmonitors_with_pagination_reverse_emulated(self):
-        with contextlib.nested(self.health_monitor(delay=30),
-                               self.health_monitor(delay=31),
-                               self.health_monitor(delay=32)
-                               ) as (m1, m2, m3):
+        with nested(self.health_monitor(delay=30),
+                    self.health_monitor(delay=31),
+                    self.health_monitor(delay=32)
+                    ) as (m1, m2, m3):
             self._test_list_with_pagination_reverse('health_monitor',
                                                     (m1, m2, m3),
                                                     ('delay', 'asc'), 2, 2)
@@ -1447,7 +1448,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 self._delete('members', member2['member']['id'])
 
     def test_create_pool_health_monitor(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(),
             self.health_monitor(),
             self.pool(name="pool")
@@ -1478,7 +1479,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
     def test_driver_call_create_pool_health_monitor(self):
         with mock.patch.object(self.plugin.drivers['lbaas'],
                                'create_pool_health_monitor') as driver_call:
-            with contextlib.nested(
+            with nested(
                 self.health_monitor(),
                 self.pool()
             ) as (hm, pool):
@@ -1497,7 +1498,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                     mock.ANY, hm['health_monitor'], pool['pool']['id'])
 
     def test_pool_monitor_list_of_pools(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(),
             self.pool(),
             self.pool()
@@ -1532,7 +1533,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                              sorted(hm['health_monitor']['pools']))
 
     def test_create_pool_health_monitor_already_associated(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(),
             self.pool(name="pool")
         ) as (hm, pool):
@@ -1589,7 +1590,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
             self.assertFalse(updated_pool['status_description'])
 
     def test_update_pool_health_monitor(self):
-        with contextlib.nested(
+        with nested(
             self.health_monitor(),
             self.pool(name="pool")
         ) as (hm, pool):
@@ -1620,7 +1621,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
             self.assertEqual('ok', assoc['status_description'])
 
     def test_check_orphan_pool_associations(self):
-        with contextlib.nested(
+        with nested(
             #creating pools with default noop driver
             self.pool(),
             self.pool()

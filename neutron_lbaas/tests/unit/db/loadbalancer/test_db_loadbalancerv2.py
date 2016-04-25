@@ -46,6 +46,7 @@ from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import plugin as loadbalancer_plugin
 from neutron_lbaas.tests import base
+from neutron_lbaas.tests import nested
 
 
 DB_CORE_PLUGIN_CLASS = 'neutron.db.db_base_plugin_v2.NeutronDbPluginV2'
@@ -1137,7 +1138,7 @@ class LbaasListenerTests(ListenerTestBase):
 
         exc = ReplaceClass(status_code=404, message='Cert Not Found')
 
-        with contextlib.nested(
+        with nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'CERT_MANAGER_PLUGIN.CertManager.get_cert',
                        side_effect=exc),
@@ -1162,7 +1163,7 @@ class LbaasListenerTests(ListenerTestBase):
         }
         listener_data.update(extras)
 
-        with contextlib.nested(
+        with nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
@@ -1194,7 +1195,7 @@ class LbaasListenerTests(ListenerTestBase):
         }
         listener_data.update(extras)
 
-        with contextlib.nested(
+        with nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'cert_parser.validate_cert'),
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
@@ -1231,7 +1232,7 @@ class LbaasListenerTests(ListenerTestBase):
         extras['sni_container_refs'] = [sni_tls_container_ref_1,
                                         sni_tls_container_ref_2]
 
-        with contextlib.nested(
+        with nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'cert_parser.validate_cert'),
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
@@ -1268,9 +1269,9 @@ class LbaasListenerTests(ListenerTestBase):
 
     def test_cannot_create_listener_with_pool_loadbalancer_mismatch(self):
         with self.subnet() as subnet:
-            with contextlib.nested(self.loadbalancer(subnet=subnet),
-                                   self.loadbalancer(subnet=subnet)
-                                   ) as (lb1, lb2):
+            with nested(self.loadbalancer(subnet=subnet),
+                        self.loadbalancer(subnet=subnet)
+                        ) as (lb1, lb2):
                 lb_id1 = lb1['loadbalancer']['id']
                 lb_id2 = lb2['loadbalancer']['id']
                 with self.pool(loadbalancer_id=lb_id1) as p1:
@@ -1327,7 +1328,7 @@ class LbaasListenerTests(ListenerTestBase):
             'loadbalancer_id': self.lb_id
         }
 
-        with contextlib.nested(
+        with nested(
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                        'cert_parser.validate_cert'),
             mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
@@ -1584,7 +1585,7 @@ class LbaasL7Tests(ListenerTestBase):
 
             # Test url redirect action with invalid url specified
             try:
-                with contextlib.nested(
+                with nested(
                     self.l7policy(listener['listener']['id'],
                     action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
                     redirect_url='https:/acme.com')):
@@ -1610,7 +1611,7 @@ class LbaasL7Tests(ListenerTestBase):
 
             # Test invalid zero position for policy
             try:
-                with contextlib.nested(
+                with nested(
                     self.l7policy(listener['listener']['id'],
                     position=0)):
                     self.assertTrue(False)
@@ -1672,15 +1673,15 @@ class LbaasL7Tests(ListenerTestBase):
         }
         expected.update(extras)
 
-        with contextlib.nested(
+        with nested(
             self.listener(loadbalancer_id=self.lb_id),
             self.listener(loadbalancer_id=self.lb_id,
                 protocol_port=8080)) as (listener1, listener2):
-            with contextlib.nested(
+            with nested(
                 self.pool(loadbalancer_id=self.lb_id,
                           no_delete=True),
                 self.pool(loadbalancer_id=self.lb_id)) as (pool1, pool2):
-                with contextlib.nested(
+                with nested(
                     self.l7policy(
                         listener1['listener']['id'],
                         action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
@@ -1713,7 +1714,7 @@ class LbaasL7Tests(ListenerTestBase):
     def test_create_l7policies_ordering(self, **extras):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with contextlib.nested(
+            with nested(
                 self.l7policy(listener_id, name="1"),
                 self.l7policy(listener_id, name="2"),
                 self.l7policy(listener_id, name="3"),
@@ -1780,7 +1781,7 @@ class LbaasL7Tests(ListenerTestBase):
 
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with contextlib.nested(
+            with nested(
                 self.l7policy(listener_id, name="1"),
                 self.l7policy(listener_id, name="2"),
                 self.l7policy(listener_id, name="3"),
@@ -1862,7 +1863,7 @@ class LbaasL7Tests(ListenerTestBase):
 
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with contextlib.nested(
+            with nested(
                 self.l7policy(listener_id, name="0"),
                 self.l7policy(listener_id, name="1"),
                 self.l7policy(listener_id, name="2"),
@@ -1929,10 +1930,10 @@ class LbaasL7Tests(ListenerTestBase):
     def test_list_l7policies_with_sort_emulated(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with contextlib.nested(self.l7policy(listener_id, name="b"),
-                                   self.l7policy(listener_id, name="c"),
-                                   self.l7policy(listener_id, name="a")
-                                   ) as (p1, p2, p3):
+            with nested(self.l7policy(listener_id, name="b"),
+                        self.l7policy(listener_id, name="c"),
+                        self.l7policy(listener_id, name="a")
+                        ) as (p1, p2, p3):
                 self._test_list_with_sort('l7policy', (p3, p1, p2),
                                           [('name', 'asc')],
                                           resources='l7policies')
@@ -1940,14 +1941,14 @@ class LbaasL7Tests(ListenerTestBase):
     def test_list_l7policies_with_pagination_emulated(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with contextlib.nested(self.l7policy(listener_id, name="b"),
-                                   self.l7policy(listener_id, name="c"),
-                                   self.l7policy(listener_id, name="e"),
-                                   self.l7policy(listener_id, name="d"),
-                                   self.l7policy(listener_id, name="f"),
-                                   self.l7policy(listener_id, name="g"),
-                                   self.l7policy(listener_id, name="a")
-                                   ) as (p1, p2, p3, p4, p5, p6, p7):
+            with nested(self.l7policy(listener_id, name="b"),
+                        self.l7policy(listener_id, name="c"),
+                        self.l7policy(listener_id, name="e"),
+                        self.l7policy(listener_id, name="d"),
+                        self.l7policy(listener_id, name="f"),
+                        self.l7policy(listener_id, name="g"),
+                        self.l7policy(listener_id, name="a")
+                        ) as (p1, p2, p3, p4, p5, p6, p7):
                 self._test_list_with_pagination(
                     'l7policy', (p6, p5, p3, p4, p2, p1, p7),
                     ('name', 'desc'), 2, 4, resources='l7policies')
@@ -1955,14 +1956,14 @@ class LbaasL7Tests(ListenerTestBase):
     def test_list_l7policies_with_pagination_reverse_emulated(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with contextlib.nested(self.l7policy(listener_id, name="b"),
-                                   self.l7policy(listener_id, name="c"),
-                                   self.l7policy(listener_id, name="e"),
-                                   self.l7policy(listener_id, name="d"),
-                                   self.l7policy(listener_id, name="f"),
-                                   self.l7policy(listener_id, name="g"),
-                                   self.l7policy(listener_id, name="a")
-                                   ) as (p1, p2, p3, p4, p5, p6, p7):
+            with nested(self.l7policy(listener_id, name="b"),
+                        self.l7policy(listener_id, name="c"),
+                        self.l7policy(listener_id, name="e"),
+                        self.l7policy(listener_id, name="d"),
+                        self.l7policy(listener_id, name="f"),
+                        self.l7policy(listener_id, name="g"),
+                        self.l7policy(listener_id, name="a")
+                        ) as (p1, p2, p3, p4, p5, p6, p7):
                 self._test_list_with_pagination_reverse(
                     'l7policy', (p6, p5, p3, p4, p2, p1, p7),
                     ('name', 'desc'), 2, 4, resources='l7policies')
@@ -2059,7 +2060,7 @@ class LbaasL7Tests(ListenerTestBase):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             with self.l7policy(listener['listener']['id']) as policy:
                 policy_id = policy['l7policy']['id']
-                with contextlib.nested(
+                with nested(
                     self.l7policy_rule(policy_id),
                     self.l7policy_rule(policy_id, key='key1'),
                     self.l7policy_rule(policy_id, value='value2'),
@@ -2253,7 +2254,7 @@ class LbaasL7Tests(ListenerTestBase):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             with self.l7policy(listener['listener']['id']) as policy:
                 policy_id = policy['l7policy']['id']
-                with contextlib.nested(
+                with nested(
                     self.l7policy_rule(policy_id, no_delete=True),
                     self.l7policy_rule(policy_id, no_delete=True)
                 ) as (r0, r1):
@@ -2290,7 +2291,7 @@ class LbaasL7Tests(ListenerTestBase):
             listener_id = listener['listener']['id']
             with self.l7policy(listener_id) as policy:
                 policy_id = policy['l7policy']['id']
-                with contextlib.nested(
+                with nested(
                     self.l7policy_rule(policy_id, value="b"),
                     self.l7policy_rule(policy_id, value="c"),
                     self.l7policy_rule(policy_id, value="a")
@@ -2307,7 +2308,7 @@ class LbaasL7Tests(ListenerTestBase):
             listener_id = listener['listener']['id']
             with self.l7policy(listener_id) as policy:
                 policy_id = policy['l7policy']['id']
-                with contextlib.nested(
+                with nested(
                     self.l7policy_rule(policy_id, value="b"),
                     self.l7policy_rule(policy_id, value="c"),
                     self.l7policy_rule(policy_id, value="e"),
@@ -2329,7 +2330,7 @@ class LbaasL7Tests(ListenerTestBase):
             listener_id = listener['listener']['id']
             with self.l7policy(listener_id) as p:
                 policy_id = p['l7policy']['id']
-                with contextlib.nested(
+                with nested(
                     self.l7policy_rule(policy_id, value="b"),
                     self.l7policy_rule(policy_id, value="c"),
                     self.l7policy_rule(policy_id, value="e"),
@@ -2591,9 +2592,9 @@ class LbaasPoolTests(PoolTestBase):
 
     def test_cannot_create_pool_with_listener_loadbalancer_mismatch(self):
         with self.subnet() as subnet:
-            with contextlib.nested(self.loadbalancer(subnet=subnet),
-                                   self.loadbalancer(subnet=subnet)
-                                   ) as (lb1, lb2):
+            with nested(self.loadbalancer(subnet=subnet),
+                        self.loadbalancer(subnet=subnet)
+                        ) as (lb1, lb2):
                 lb_id1 = lb1['loadbalancer']['id']
                 lb_id2 = lb2['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id1) as l1:
@@ -2723,66 +2724,66 @@ class LbaasPoolTests(PoolTestBase):
                 self.assertEqual(expected_values[k], pool_list[0][k])
 
     def test_list_pools_with_sort_emulated(self):
-        with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=81,
-                                             protocol=lb_const.PROTOCOL_HTTPS),
-                               self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=82,
-                                             protocol=lb_const.PROTOCOL_TCP),
-                               self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=83,
-                                             protocol=lb_const.PROTOCOL_HTTP)
-                               ) as (l1, l2, l3):
-            with contextlib.nested(self.pool(listener_id=l1['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_HTTPS),
-                                   self.pool(listener_id=l2['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_TCP),
-                                   self.pool(listener_id=l3['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_HTTP)
-                                   ) as (p1, p2, p3):
+        with nested(self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=81,
+                                  protocol=lb_const.PROTOCOL_HTTPS),
+                    self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=82,
+                                  protocol=lb_const.PROTOCOL_TCP),
+                    self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=83,
+                                  protocol=lb_const.PROTOCOL_HTTP)
+                    ) as (l1, l2, l3):
+            with nested(self.pool(listener_id=l1['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_HTTPS),
+                        self.pool(listener_id=l2['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_TCP),
+                        self.pool(listener_id=l3['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_HTTP)
+                        ) as (p1, p2, p3):
                 self._test_list_with_sort('pool', (p2, p1, p3),
                                           [('protocol', 'desc')])
 
     def test_list_pools_with_pagination_emulated(self):
-        with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=81,
-                                             protocol=lb_const.PROTOCOL_HTTPS),
-                               self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=82,
-                                             protocol=lb_const.PROTOCOL_TCP),
-                               self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=83,
-                                             protocol=lb_const.PROTOCOL_HTTP)
-                               ) as (l1, l2, l3):
-            with contextlib.nested(self.pool(listener_id=l1['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_HTTPS),
-                                   self.pool(listener_id=l2['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_TCP),
-                                   self.pool(listener_id=l3['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_HTTP)
-                                   ) as (p1, p2, p3):
+        with nested(self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=81,
+                                  protocol=lb_const.PROTOCOL_HTTPS),
+                    self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=82,
+                                  protocol=lb_const.PROTOCOL_TCP),
+                    self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=83,
+                                  protocol=lb_const.PROTOCOL_HTTP)
+                    ) as (l1, l2, l3):
+            with nested(self.pool(listener_id=l1['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_HTTPS),
+                        self.pool(listener_id=l2['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_TCP),
+                        self.pool(listener_id=l3['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_HTTP)
+                        ) as (p1, p2, p3):
                 self._test_list_with_pagination('pool',
                                                 (p3, p1, p2),
                                                 ('protocol', 'asc'), 2, 2)
 
     def test_list_pools_with_pagination_reverse_emulated(self):
-        with contextlib.nested(self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=81,
-                                             protocol=lb_const.PROTOCOL_HTTPS),
-                               self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=82,
-                                             protocol=lb_const.PROTOCOL_TCP),
-                               self.listener(loadbalancer_id=self.lb_id,
-                                             protocol_port=83,
-                                             protocol=lb_const.PROTOCOL_HTTP)
-                               ) as (l1, l2, l3):
-            with contextlib.nested(self.pool(listener_id=l1['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_HTTPS),
-                                   self.pool(listener_id=l2['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_TCP),
-                                   self.pool(listener_id=l3['listener']['id'],
-                                             protocol=lb_const.PROTOCOL_HTTP)
-                                   ) as (p1, p2, p3):
+        with nested(self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=81,
+                                  protocol=lb_const.PROTOCOL_HTTPS),
+                    self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=82,
+                                  protocol=lb_const.PROTOCOL_TCP),
+                    self.listener(loadbalancer_id=self.lb_id,
+                                  protocol_port=83,
+                                  protocol=lb_const.PROTOCOL_HTTP)
+                    ) as (l1, l2, l3):
+            with nested(self.pool(listener_id=l1['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_HTTPS),
+                        self.pool(listener_id=l2['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_TCP),
+                        self.pool(listener_id=l3['listener']['id'],
+                                  protocol=lb_const.PROTOCOL_HTTP)
+                        ) as (p1, p2, p3):
                 self._test_list_with_pagination_reverse('pool',
                                                         (p3, p1, p2),
                                                         ('protocol', 'asc'),
