@@ -1050,12 +1050,12 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                                                 id=pool_id)
 
     def create_pool_member(self, context, pool_id, member):
-        self._check_pool_exists(context, pool_id)
+        member = member.get('member')
+        self.db.check_subnet_exists(context, member['subnet_id'])
         db_pool = self.db.get_pool(context, pool_id)
         self.db.test_and_set_status(context, models.LoadBalancer,
                                     db_pool.root_loadbalancer.id,
                                     constants.PENDING_UPDATE)
-        member = member.get('member')
         try:
             member_db = self.db.create_pool_member(context, member, pool_id)
         except Exception as exc:

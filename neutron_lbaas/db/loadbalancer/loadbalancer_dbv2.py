@@ -147,6 +147,12 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
     def _load_id(self, context, model_dict):
         model_dict['id'] = uuidutils.generate_uuid()
 
+    def check_subnet_exists(self, context, subnet_id):
+        try:
+            self._core_plugin.get_subnet(context, subnet_id)
+        except n_exc.SubnetNotFound:
+            raise loadbalancerv2.EntityNotFound(name="Subnet", id=subnet_id)
+
     def assert_modification_allowed(self, obj):
         status = getattr(obj, 'provisioning_status', None)
         if status in [constants.PENDING_DELETE, constants.PENDING_UPDATE,

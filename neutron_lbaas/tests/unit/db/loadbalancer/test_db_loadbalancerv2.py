@@ -3310,6 +3310,38 @@ class LbaasMemberTests(MemberTestBase):
                 self.pool_id,
                 {'member': member_data})
 
+    def test_create_member_nonexistent_subnet(self):
+        member_data = {
+            'address': '127.0.0.1',
+            'protocol_port': 80,
+            'weight': 1,
+            'subnet_id': uuidutils.generate_uuid(),
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id
+        }
+        self.assertRaises(
+            loadbalancerv2.EntityNotFound,
+            self.plugin.create_pool_member,
+            context.get_admin_context(),
+            self.pool_id,
+            {'member': member_data})
+
+    def test_create_member_nonexistent_pool(self):
+        member_data = {
+            'address': '127.0.0.1',
+            'protocol_port': 80,
+            'weight': 1,
+            'subnet_id': self.test_subnet_id,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id
+        }
+        self.assertRaises(
+            loadbalancerv2.EntityNotFound,
+            self.plugin.create_pool_member,
+            context.get_admin_context(),
+            uuidutils.generate_uuid(),
+            {'member': member_data})
+
     def test_update_member(self):
         keys = [('address', "127.0.0.1"),
                 ('tenant_id', self._tenant_id),
