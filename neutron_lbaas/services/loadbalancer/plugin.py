@@ -118,9 +118,8 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
                               if pool['provider'] not in provider_names])
         # resources are left without provider - stop the service
         if lost_providers:
-            LOG.exception(_LE("Delete associated loadbalancer pools before "
-                              "removing providers %s"),
-                          list(lost_providers))
+            LOG.error(_LE("Delete associated loadbalancer pools before "
+                          "removing providers %s"), list(lost_providers))
             raise SystemExit(1)
 
     def _get_driver_for_provider(self, provider):
