@@ -5,10 +5,14 @@ the LBaaS service by editing the [[local|localrc]] section of your
 local.conf file.
 
 Octavia is the LBaaS V2 reference service provider and is used in the
-examples below.  Enabling another service provider, such as the Haproxy,
-is also supported.  This can be done by enabling the driver plugin, if
+examples below. Enabling another service provider, such as the agent
+Haproxy driver, can be done by enabling its driver plugin, if
 applicable, and setting the appropriate service provider value for
-NEUTRON_LBAAS_SERVICE_PROVIDERV2.  In addition, you can enable multiple
+NEUTRON_LBAAS_SERVICE_PROVIDERV2, like the following:
+
+    NEUTRON_LBAAS_SERVICE_PROVIDERV2="LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default"
+
+In addition, you can enable multiple
 service providers by enabling the applicable driver plugins and
 space-delimiting the service provider values in
 NEUTRON_LBAAS_SERVICE_PROVIDERV2.
