@@ -566,7 +566,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                          cookie_name=None):
         """Update a pool with new session persistence type and cookie name."""
 
-        update_data = {}
+        update_data = {'session_persistence': None}
         if persistence_type:
             update_data = {"session_persistence": {
                 "type": persistence_type}}

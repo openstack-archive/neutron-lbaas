@@ -55,8 +55,8 @@ class PoolsClientJSON(rest_client.RestClient):
     def update_pool(self, pool_id, **kwargs):
         """Update a pool"""
         url = 'v2.0/lbaas/pools/{pool_id}'.format(pool_id=pool_id)
-        post_body = jsonutils.dumps({'pool': kwargs})
-        resp, body = self.put(url, post_body)
+        put_body = jsonutils.dumps({'pool': kwargs})
+        resp, body = self.put(url, put_body)
         body = jsonutils.loads(body)
         self.expected_success(200, resp.status)
         return rest_client.ResponseBody(resp, body['pool'])
