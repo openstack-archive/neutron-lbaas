@@ -12,8 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.api.v2 import attributes
 from neutron.plugins.common import constants
+from neutron_lib import constants as n_constants
 from oslo_config import cfg
 from oslo_log import log as logging
 
@@ -421,13 +421,13 @@ class NetScalerPluginDriver(abstract_driver.LoadBalancerAbstractDriver):
                                     ip_address):
         subnet = self.plugin._core_plugin.get_subnet(context, subnet_id)
         fixed_ip = {'subnet_id': subnet['id']}
-        if ip_address and ip_address != attributes.ATTR_NOT_SPECIFIED:
+        if ip_address and ip_address != n_constants.ATTR_NOT_SPECIFIED:
             fixed_ip['ip_address'] = ip_address
         port_data = {
             'tenant_id': tenant_id,
             'name': '_lb-snatport-' + subnet_id,
             'network_id': subnet['network_id'],
-            'mac_address': attributes.ATTR_NOT_SPECIFIED,
+            'mac_address': n_constants.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': '_lb-snatport-' + subnet_id,
             'device_owner': DRIVER_NAME,

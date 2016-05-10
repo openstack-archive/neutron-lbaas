@@ -15,7 +15,6 @@
 
 import re
 
-from neutron.api.v2 import attributes
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
@@ -93,14 +92,14 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         # resolve subnet and create port
         subnet = self._core_plugin.get_subnet(context, lb_db.vip_subnet_id)
         fixed_ip = {'subnet_id': subnet['id']}
-        if ip_address and ip_address != attributes.ATTR_NOT_SPECIFIED:
+        if ip_address and ip_address != n_constants.ATTR_NOT_SPECIFIED:
             fixed_ip['ip_address'] = ip_address
 
         port_data = {
             'tenant_id': lb_db.tenant_id,
             'name': 'loadbalancer-' + lb_db.id,
             'network_id': subnet['network_id'],
-            'mac_address': attributes.ATTR_NOT_SPECIFIED,
+            'mac_address': n_constants.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': lb_db.id,
             'device_owner': n_constants.DEVICE_OWNER_LOADBALANCERV2,
@@ -385,7 +384,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 # Check for unspecified loadbalancer_id and listener_id and
                 # set to None
                 for id in ['loadbalancer_id', 'default_pool_id']:
-                    if listener.get(id) == attributes.ATTR_NOT_SPECIFIED:
+                    if listener.get(id) == n_constants.ATTR_NOT_SPECIFIED:
                         listener[id] = None
 
                 self._validate_listener_data(context, listener)
@@ -668,7 +667,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             loadbalancer.stats)
 
     def create_l7policy(self, context, l7policy):
-        if l7policy['redirect_pool_id'] == attributes.ATTR_NOT_SPECIFIED:
+        if l7policy['redirect_pool_id'] == n_constants.ATTR_NOT_SPECIFIED:
             l7policy['redirect_pool_id'] = None
         self._validate_l7policy_data(context, l7policy)
 

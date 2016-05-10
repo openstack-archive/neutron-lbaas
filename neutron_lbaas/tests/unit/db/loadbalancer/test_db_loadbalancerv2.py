@@ -18,7 +18,6 @@ import copy
 
 import mock
 from neutron.api import extensions
-from neutron.api.v2 import attributes
 from neutron.common import config
 from neutron import context
 import neutron.db.l3_db  # noqa
@@ -965,7 +964,7 @@ class ListenerTestBase(LbaasPluginDbTestCase):
         super(ListenerTestBase, self).setUp()
         network = self._make_network(self.fmt, 'test-net', True)
         self.test_subnet = self._make_subnet(
-            self.fmt, network, gateway=attributes.ATTR_NOT_SPECIFIED,
+            self.fmt, network, gateway=n_constants.ATTR_NOT_SPECIFIED,
             cidr='10.0.0.0/24')
         self.test_subnet_id = self.test_subnet['subnet']['id']
         lb_res = self._create_loadbalancer(

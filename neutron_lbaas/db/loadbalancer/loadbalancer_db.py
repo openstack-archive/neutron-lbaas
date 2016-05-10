@@ -13,7 +13,6 @@
 #    under the License.
 #
 
-from neutron.api.v2 import attributes
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
@@ -326,7 +325,7 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
         # resolve subnet and create port
         subnet = self._core_plugin.get_subnet(context, subnet_id)
         fixed_ip = {'subnet_id': subnet['id']}
-        if ip_address and ip_address != attributes.ATTR_NOT_SPECIFIED:
+        if ip_address and ip_address != n_constants.ATTR_NOT_SPECIFIED:
             fixed_ip['ip_address'] = ip_address
             if subnet.get('gateway_ip') == ip_address:
                 raise n_exc.IpAddressInUse(net_id=subnet['network_id'],
@@ -336,7 +335,7 @@ class LoadBalancerPluginDb(loadbalancer.LoadBalancerPluginBase,
             'tenant_id': vip_db.tenant_id,
             'name': 'vip-' + vip_db.id,
             'network_id': subnet['network_id'],
-            'mac_address': attributes.ATTR_NOT_SPECIFIED,
+            'mac_address': n_constants.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': '',
             'device_owner': n_constants.DEVICE_OWNER_LOADBALANCER,

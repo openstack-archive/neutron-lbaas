@@ -25,6 +25,7 @@ from neutron.api.v2 import resource_helper
 from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
+from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as nexception
 
 from neutron_lbaas._i18n import _
@@ -125,7 +126,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'validate': {'type:uuid': None},
                       'is_visible': True},
         'address': {'allow_post': True, 'allow_put': False,
-                    'default': attr.ATTR_NOT_SPECIFIED,
+                    'default': n_constants.ATTR_NOT_SPECIFIED,
                     'validate': {'type:ip_address_or_none': None},
                     'is_visible': True},
         'port_id': {'allow_post': False, 'allow_put': False,
@@ -194,8 +195,8 @@ RESOURCE_ATTRIBUTE_MAP = {
                      'validate': {'type:values': ['TCP', 'HTTP', 'HTTPS']},
                      'is_visible': True},
         'provider': {'allow_post': True, 'allow_put': False,
-                     'validate': {'type:string': None},
-                     'is_visible': True, 'default': attr.ATTR_NOT_SPECIFIED},
+                     'validate': {'type:string': None}, 'is_visible': True,
+                     'default': n_constants.ATTR_NOT_SPECIFIED},
         'lb_method': {'allow_post': True, 'allow_put': True,
                       'validate': {'type:values': ['ROUND_ROBIN',
                                                    'LEAST_CONNECTIONS',

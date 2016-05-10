@@ -30,6 +30,7 @@ from neutron.tests.unit.api import test_extensions
 from neutron.tests.unit.db import test_agentschedulers_db
 import neutron.tests.unit.extensions
 from neutron.tests.unit.extensions import test_agent
+from neutron_lib import constants as n_constants
 import six
 from webob import exc
 
@@ -172,8 +173,8 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             'loadbalancer': {
                 'vip_subnet_id': subnet['id'],
                 'provider': 'lbaas',
-                'flavor_id': attributes.ATTR_NOT_SPECIFIED,
-                'vip_address': attributes.ATTR_NOT_SPECIFIED,
+                'flavor_id': n_constants.ATTR_NOT_SPECIFIED,
+                'vip_address': n_constants.ATTR_NOT_SPECIFIED,
                 'admin_state_up': True,
                 'tenant_id': self._tenant_id}}
         self.assertRaises(lbaas_agentschedulerv2.NoEligibleLbaasAgent,
@@ -207,8 +208,8 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                 'loadbalancer': {
                     'vip_subnet_id': subnet['id'],
                     'provider': 'lbaas',
-                    'flavor_id': attributes.ATTR_NOT_SPECIFIED,
-                    'vip_address': attributes.ATTR_NOT_SPECIFIED,
+                    'flavor_id': n_constants.ATTR_NOT_SPECIFIED,
+                    'vip_address': n_constants.ATTR_NOT_SPECIFIED,
                     'admin_state_up': True,
                     'tenant_id': self._tenant_id}}
             self.assertRaises(lbaas_agentschedulerv2.NoEligibleLbaasAgent,

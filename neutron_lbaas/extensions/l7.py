@@ -20,6 +20,7 @@ from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron import manager
 from neutron.plugins.common import constants
+from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as nexception
 
 from neutron_lbaas._i18n import _
@@ -96,7 +97,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                    'is_visible': True},
         'redirect_pool_id': {'allow_post': True, 'allow_put': True,
                              'validate': {'type:uuid_or_none': None},
-                             'default': attr.ATTR_NOT_SPECIFIED,
+                             'default': n_constants.ATTR_NOT_SPECIFIED,
                              'is_visible': True},
         'redirect_url': {'allow_post': True, 'allow_put': True,
                          'validate': {
