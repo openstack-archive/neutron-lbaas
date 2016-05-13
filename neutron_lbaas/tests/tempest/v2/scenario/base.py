@@ -30,7 +30,7 @@ from tempest import config
 from tempest import exceptions
 from tempest.lib import exceptions as lib_exc
 from tempest.scenario import manager
-from tempest.services.network import resources as net_resources
+from tempest.scenario import network_resources as net_resources
 from tempest import test
 
 from neutron_lbaas._i18n import _
@@ -106,7 +106,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         if not test.is_extension_enabled('lbaasv2', 'network'):
             msg = 'LBaaS Extension is not enabled'
             raise cls.skipException(msg)
-        if not (cfg.tenant_networks_reachable or cfg.public_network_id):
+        if not (cfg.project_networks_reachable or cfg.public_network_id):
             msg = ('Either tenant_networks_reachable must be "true", or '
                    'public_network_id must be defined.')
             raise cls.skipException(msg)
@@ -126,7 +126,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
         if tenant_net:
             tenant_subnet = self._list_subnets(tenant_id=self.tenant_id)[0]
             self.subnet = net_resources.DeletableSubnet(
-                client=self.network_client,
+                subnets_client=self.subnets_client,
+                routers_client=self.routers_client,
                 **tenant_subnet)
             self.network = tenant_net
         else:
@@ -187,7 +188,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         server = server['server']
         self.servers_keypairs[server['id']] = keypair
         if (config.network.public_network_id and not
-                config.network.tenant_networks_reachable):
+                config.network.project_networks_reachable):
             public_network_id = config.network.public_network_id
             floating_ip = self.create_floating_ip(
                 server, public_network_id)
@@ -408,7 +409,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         # tempest.conf file
         if ip_version == 4:
             if (config.network.public_network_id and not
-                    config.network.tenant_networks_reachable):
+                    config.network.project_networks_reachable):
                 load_balancer = net_resources.AttributeDict(self.load_balancer)
                 self._assign_floating_ip_to_lb_vip(load_balancer)
                 self.vip_ip = self.floating_ips[
@@ -418,7 +419,6 @@ class BaseTestCase(manager.NetworkScenarioTest):
         # vip port - see https://bugs.launchpad.net/neutron/+bug/1163569
         # However the linuxbridge-agent does, and it is necessary to add a
         # security group with a rule that allows tcp port 80 to the vip port.
-#        self.network_client.update_port(
         self.ports_client.update_port(
             self.load_balancer.get('vip_port_id'),
             security_groups=[self.security_group.id])
