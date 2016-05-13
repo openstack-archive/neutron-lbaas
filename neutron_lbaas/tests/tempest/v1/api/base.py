@@ -236,12 +236,13 @@ class BaseNetworkTest(test.BaseTestCase):
         ip_version = ip_version if ip_version is not None else cls._ip_version
         gateway_not_set = gateway == ''
         if ip_version == 4:
-            cidr = cidr or netaddr.IPNetwork(CONF.network.tenant_network_cidr)
-            mask_bits = mask_bits or CONF.network.tenant_network_mask_bits
+            cidr = cidr or netaddr.IPNetwork(CONF.network.project_network_cidr)
+            mask_bits = mask_bits or CONF.network.project_network_mask_bits
         elif ip_version == 6:
             cidr = (
-                cidr or netaddr.IPNetwork(CONF.network.tenant_network_v6_cidr))
-            mask_bits = mask_bits or CONF.network.tenant_network_v6_mask_bits
+                cidr or netaddr.IPNetwork(
+                    CONF.network.project_network_v6_cidr))
+            mask_bits = mask_bits or CONF.network.project_network_v6_mask_bits
         # Find a cidr that is not in use yet and create a subnet with it
         for subnet_cidr in cidr.subnet(mask_bits):
             if gateway_not_set:
