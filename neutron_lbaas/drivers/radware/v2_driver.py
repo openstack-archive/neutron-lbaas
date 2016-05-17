@@ -583,7 +583,7 @@ class OperationCompletionHandler(threading.Thread):
                                        oper.operation_url,
                                        None,
                                        None)
-        LOG.debug('Operation completion requested %(uri) and got: %(result)',
+        LOG.debug('Operation completion requested %(uri)s and got: %(result)s',
                   {'uri': oper.operation_url, 'result': result})
         completed = result[rest.RESP_DATA]['complete']
         reason = result[rest.RESP_REASON],

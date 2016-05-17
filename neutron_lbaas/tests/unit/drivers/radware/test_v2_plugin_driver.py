@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
 import copy
 import mock
 import re
@@ -125,9 +126,85 @@ WF_CREATE_PARAMS = {'parameters':
      "allocate_ha_ips": True, "data_port": 1,
      "data_ip_address": "192.168.200.99", "data_ip_mask": "255.255.255.0",
      "gateway": "192.168.200.1", "ha_port": 2}}
-WF_APPLY_EMPTY_LB_PARAMS = {'parameters': {
-    'loadbalancer': {'listeners': [], 'pools': [], 'admin_state_up': True,
-    'pip_address': u'10.0.0.2', 'vip_address': u'10.0.0.2'}}}
+
+WF_APPLY_PARAMS = {
+    'parameters': {'listeners': [], 'pools': [], 'admin_state_up': True,
+    'pip_address': u'10.0.0.2', 'vip_address': u'10.0.0.2'}}
+
+LISTENER = {
+    'id': None,
+    'admin_state_up': True,
+    'protocol_port': 80,
+    'protocol': lb_con.PROTOCOL_HTTP,
+    'default_pool': None,
+    'connection_limit': -1,
+    'l7_policies': []}
+
+L7_POLICY = {
+    'id': None,
+    'rules': [],
+    'redirect_pool_id': None,
+    'redirect_url': None,
+    'action': lb_con.L7_POLICY_ACTION_REJECT,
+    'position': 1,
+    'admin_state_up': True}
+
+L7_RULE = {
+    'id': None,
+    'type': lb_con.L7_RULE_TYPE_HOST_NAME,
+    'compare_type': lb_con.L7_RULE_COMPARE_TYPE_EQUAL_TO,
+    'admin_state_up': True,
+    'key': None,
+    'value': u'val1'}
+
+DEFAULT_POOL = {'id': None}
+
+SESSION_PERSISTENCE = {
+    'type': 'APP_COOKIE',
+    'cookie_name': 'sessionId'}
+
+CERTIFICATE = {
+    'id': None,
+    'certificate': 'certificate',
+    'intermediates': 'intermediates',
+    'private_key': 'private_key',
+    'passphrase': 'private_key_passphrase'}
+
+SNI_CERTIFICATE = {
+    'id': None,
+    'position': 0,
+    'certificate': 'certificate',
+    'intermediates': 'intermediates',
+    'private_key': 'private_key',
+    'passphrase': 'private_key_passphrase'}
+
+POOL = {
+    'id': None,
+    'protocol': lb_con.PROTOCOL_HTTP,
+    'lb_algorithm': 'ROUND_ROBIN',
+    'admin_state_up': True,
+    'members': []}
+
+MEMBER = {
+    'id': None,
+    'address': '10.0.1.10',
+    'protocol_port': 80,
+    'weight': 1, 'admin_state_up': True,
+    'subnet': '255.255.255.255',
+    'mask': '255.255.255.255',
+    'gw': '255.255.255.255',
+    'admin_state_up': True}
+
+HM = {
+    'id': None,
+    'expected_codes': '200',
+    'type': 'HTTP',
+    'delay': 1,
+    'timeout': 1,
+    'max_retries': 1,
+    'admin_state_up': True,
+    'url_path': '/',
+    'http_method': 'GET'}
 
 
 class TestLBaaSDriverBase(
@@ -199,6 +276,189 @@ class CertMock(cert_manager.Cert):
 
 
 class TestLBaaSDriver(TestLBaaSDriverBase):
+
+    @contextlib.contextmanager
+    def loadbalancer(self, fmt=None, subnet=None, no_delete=False, **kwargs):
+        with super(TestLBaaSDriver, self).loadbalancer(
+            fmt, subnet, no_delete, **kwargs) as lb:
+            self.wf_srv_params['name'] = 'srv_' + (
+                subnet['subnet']['network_id'])
+            self.wf_srv_params['tenantId'] = self._tenant_id
+            self.wf_srv_params['primary']['network']['portgroups'] =\
+                [subnet['subnet']['network_id']]
+            self.wf_create_params['parameters']['service_params'] =\
+                self.wf_srv_params
+            yield lb
+
+    @contextlib.contextmanager
+    def listener(self, fmt=None, protocol='HTTP', loadbalancer_id=None,
+                 protocol_port=80, default_pool_id=None, no_delete=False,
+                 **kwargs):
+        with super(TestLBaaSDriver, self).listener(
+            fmt, protocol, loadbalancer_id, protocol_port, default_pool_id,
+            no_delete, **kwargs) as listener:
+
+            l = copy.deepcopy(LISTENER)
+            self._update_dict(l, listener['listener'])
+            if 'default_tls_container_ref' in kwargs:
+                c = copy.deepcopy(CERTIFICATE)
+                self._update_dict(c,
+                                  {'id': kwargs['default_tls_container_ref']})
+                l['default_tls_certificate'] = c
+            if 'sni_container_refs' in kwargs:
+                l['sni_tls_certificates'] = []
+                pos = 0
+                for ref in kwargs['sni_container_refs']:
+                    s = copy.deepcopy(SNI_CERTIFICATE)
+                    self._update_dict(s, {'id': ref, 'position': pos})
+                    l['sni_tls_certificates'].append(s)
+                    pos = pos + 1
+            self.wf_apply_params['parameters']['listeners'].append(l)
+            yield listener
+
+    @contextlib.contextmanager
+    def l7policy(self, listener_id, fmt=None,
+                 action=lb_con.L7_POLICY_ACTION_REJECT,
+                 no_delete=False, **kwargs):
+        with super(TestLBaaSDriver, self).l7policy(
+            listener_id, fmt, action, no_delete, **kwargs) as policy:
+
+            p = copy.deepcopy(L7_POLICY)
+            self._update_dict(p, policy['l7policy'])
+            for l in self.wf_apply_params['parameters']['listeners']:
+                if l['id'] == listener_id:
+                    l['l7_policies'].append(p)
+                    break
+            yield policy
+
+    @contextlib.contextmanager
+    def l7policy_rule(self, l7policy_id, fmt=None, value='value1',
+                      type=lb_con.L7_RULE_TYPE_HOST_NAME,
+                      compare_type=lb_con.L7_RULE_COMPARE_TYPE_EQUAL_TO,
+                      no_delete=False, **kwargs):
+        with super(TestLBaaSDriver, self).l7policy_rule(
+            l7policy_id, fmt, value, type, compare_type,
+            no_delete, **kwargs) as rule:
+
+            r = copy.deepcopy(L7_RULE)
+            self._update_dict(r, rule['rule'])
+            for l in self.wf_apply_params['parameters']['listeners']:
+                #if l['id'] == listener_id:
+                for p in l['l7_policies']:
+                    if p['id'] == l7policy_id:
+                        p['rules'].append(r)
+                        break
+            yield rule
+
+    @contextlib.contextmanager
+    def pool(self, fmt=None, protocol='HTTP', lb_algorithm='ROUND_ROBIN',
+             no_delete=False, listener_id=None,
+             loadbalancer_id=None, **kwargs):
+        with super(TestLBaaSDriver, self).pool(
+            fmt, protocol, lb_algorithm, no_delete, listener_id,
+            loadbalancer_id, **kwargs) as pool:
+
+            p = copy.deepcopy(POOL)
+            self._update_dict(p, pool['pool'])
+            self.wf_apply_params['parameters']['pools'].append(p)
+            if listener_id:
+                p = copy.deepcopy(DEFAULT_POOL)
+                self._update_dict(p, pool['pool'])
+                for l in self.wf_apply_params['parameters']['listeners']:
+                    if l['id'] == listener_id:
+                        l['default_pool'] = p
+                        break
+            if 'session_persistence' in kwargs:
+                s = copy.deepcopy(SESSION_PERSISTENCE)
+                self._update_dict(s, kwargs['session_persistence'])
+                l['default_pool']['sessionpersistence'] = s
+            yield pool
+
+    @contextlib.contextmanager
+    def member(self, fmt=None, pool_id='pool1id', address='127.0.0.1',
+               protocol_port=80, subnet=None, no_delete=False,
+               **kwargs):
+        with super(TestLBaaSDriver, self).member(
+            fmt, pool_id, address, protocol_port, subnet,
+            no_delete, **kwargs) as member:
+
+            m = copy.deepcopy(MEMBER)
+            self._update_dict(m, member['member'])
+            for p in self.wf_apply_params['parameters']['pools']:
+                if p['id'] == pool_id:
+                    p['members'].append(m)
+                    break
+            yield member
+
+    @contextlib.contextmanager
+    def healthmonitor(self, fmt=None, pool_id='pool1id', type='TCP', delay=1,
+                      timeout=1, max_retries=1, no_delete=False, **kwargs):
+        with super(TestLBaaSDriver, self).healthmonitor(
+            fmt, pool_id, type, delay, timeout, max_retries,
+            no_delete, **kwargs) as hm:
+
+            m = copy.deepcopy(HM)
+            self._update_dict(m, hm['healthmonitor'])
+            for p in self.wf_apply_params['parameters']['pools']:
+                if p['id'] == pool_id:
+                    p['healthmonitor'] = m
+                    break
+            yield hm
+
+    def _update_dict(self, o, d):
+        for p in list(o.keys()):
+            if p in d:
+                o[p] = d[p]
+
+    def update_member(self, pool_id, **kwargs):
+        m = copy.deepcopy(MEMBER)
+        self._update_dict(m, kwargs)
+        for p in self.wf_apply_params['parameters']['pools']:
+            if p['id'] == pool_id:
+                for mem in p['members']:
+                    if mem['id'] == kwargs['id']:
+                        mem.update(m)
+                        break
+
+    def delete_member(self, id, pool_id):
+        for p in self.wf_apply_params['parameters']['pools']:
+            if p['id'] == pool_id:
+                for mem in p['members']:
+                    if mem['id'] == id:
+                        index = p['members'].index(mem)
+                        del p['members'][index]
+                        break
+
+    def add_network_to_service(self, subnet):
+        self.wf_srv_params['primary']['network']['portgroups'].append(
+            subnet['subnet']['network_id'])
+        self.wf_create_params['parameters']['service_params'] =\
+            self.wf_srv_params
+
+    def set_two_leg_mode(self, two_leg_mode):
+        self.wf_create_params['parameters']['twoleg_enabled'] = two_leg_mode
+
+    def compare_create_call(self):
+        create_call = self.driver_rest_call_mock.mock_calls[2][1][2]
+        self.assertEqual(create_call, self.wf_create_params)
+
+    def compare_apply_call(self):
+        def _sort_lists_by_id(o):
+            if isinstance(o, list):
+                o = sorted(o, key=lambda x: x['id'])
+                for i in o:
+                    i = _sort_lists_by_id(i)
+            elif isinstance(o, dict):
+                for k in o.keys():
+                    o[k] = _sort_lists_by_id(o[k])
+            return o
+
+        apply_call_i = len(self.driver_rest_call_mock.mock_calls) - 2
+        apply_call = self.driver_rest_call_mock.mock_calls[apply_call_i][1][2]
+        apply_call = _sort_lists_by_id(apply_call)
+        self.wf_apply_params = _sort_lists_by_id(self.wf_apply_params)
+        self.assertEqual(apply_call, self.wf_apply_params)
+
     def setUp(self):
         super(TestLBaaSDriver, self).setUp()
 
@@ -234,6 +494,10 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
         self.driver.queue = QueueMock(
             self.driver.completion_handler.handle_operation_completion)
 
+        self.wf_srv_params = copy.deepcopy(WF_SRV_PARAMS)
+        self.wf_create_params = copy.deepcopy(WF_CREATE_PARAMS)
+        self.wf_apply_params = copy.deepcopy(WF_APPLY_PARAMS)
+
         self.addCleanup(self.driver.completion_handler.join)
 
     def test_verify_workflow_templates(self):
@@ -263,23 +527,19 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
             with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
-                with self.listener(
-                    loadbalancer_id=lb_id) as listener:
+                with self.listener(loadbalancer_id=lb_id) as l:
+                    listener_id = l['listener']['id']
                     with self.pool(
                         protocol=lb_con.PROTOCOL_HTTP,
-                        listener_id=listener['listener']['id']) as pool:
-                        self.driver_rest_call_mock.assert_has_calls([])
-                        with self.member(pool_id=pool['pool']['id'],
-                                         subnet=vip_sub, address='10.0.1.10'):
-                            calls = [
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    mock.ANY,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
-                            self.driver_rest_call_mock.assert_has_calls(calls)
+                        listener_id=listener_id) as p:
+                        pool_id = p['pool']['id']
+                        self.driver_rest_call_mock.reset_mock()
+                        with self.member(
+                            pool_id=pool_id,
+                            subnet=vip_sub, address='10.0.1.10'):
+
+                            self.compare_create_call()
+                            self.compare_apply_call()
 
     def test_wf_deleted_on_lb_deletion(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
@@ -316,94 +576,37 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.pool(
                         protocol=lb_con.PROTOCOL_HTTP,
                         listener_id=l['listener']['id']) as p:
-                        self.driver_rest_call_mock.assert_has_calls([])
 
                         self.plugin_instance.update_loadbalancer(
                             context.get_admin_context(),
                             lb_id, {'loadbalancer': lb})
-                        self.driver_rest_call_mock.assert_has_calls([])
-
                         lb_db = self.plugin_instance.db.get_loadbalancer(
                             context.get_admin_context(),
                             lb_id)
                         self.driver.load_balancer.refresh(
                             context.get_admin_context(), lb_db)
-                        self.driver_rest_call_mock.assert_has_calls([])
 
                         with self.member(
                             no_delete=True, pool_id=p['pool']['id'],
-                            subnet=s, address='10.0.1.10') as m:
+                            subnet=s, address='10.0.1.10'):
 
-                            m_data = {
-                                "id": m['member']['id'],
-                                "address": "10.0.1.10",
-                                "protocol_port": 80,
-                                "weight": 1, "admin_state_up": True,
-                                "subnet": "255.255.255.255",
-                                "mask": "255.255.255.255",
-                                "gw": "255.255.255.255",
-                                "admin_state_up": True}
-                            pool_data = {
-                                "id": p['pool']['id'],
-                                "protocol": lb_con.PROTOCOL_HTTP,
-                                "lb_algorithm":
-                                    "ROUND_ROBIN",
-                                "admin_state_up": True,
-                                "members": [m_data]}
-                            def_pool_data = {
-                                "id": p['pool']['id']}
-                            wf_apply_params = {'parameters': {
-                                'listeners': [{
-                                    "id": l['listener']['id'],
-                                    "admin_state_up": True,
-                                    "protocol_port": 80,
-                                    "protocol": lb_con.PROTOCOL_HTTP,
-                                    "connection_limit": -1,
-                                    "admin_state_up": True,
-                                    "default_pool": def_pool_data,
-                                    "l7_policies": []}],
-                                "pools": [pool_data],
-                                "admin_state_up": True,
-                                "pip_address": "10.0.0.2",
-                                "vip_address": "10.0.0.2"}}
-                            calls = [
-                                mock.call(
-                                    'POST', '/api/workflowTemplate/' +
-                                    'os_lb_v2?name=LB_' + lb_id, mock.ANY,
-                                    v2_driver.TEMPLATE_HEADER),
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    wf_apply_params,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
+                            self.compare_apply_call()
 
-                            self.driver_rest_call_mock.assert_has_calls(calls)
                             self.driver_rest_call_mock.reset_mock()
                             rest_call_function_mock.__dict__.update(
                                 {'WORKFLOW_MISSING': False})
 
-                            calls = [
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    wf_apply_params,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
                             self.plugin_instance.update_loadbalancer(
                                 context.get_admin_context(),
                                 lb_id, {'loadbalancer': lb})
-                            self.driver_rest_call_mock.assert_has_calls(calls)
-                            self.driver_rest_call_mock.reset_mock()
+                            self.compare_apply_call()
 
+                            self.driver_rest_call_mock.reset_mock()
                             lb_db = self.plugin_instance.db.get_loadbalancer(
                                 context.get_admin_context(), lb_id)
                             self.driver.load_balancer.refresh(
                                 context.get_admin_context(), lb_db)
-                            self.driver_rest_call_mock.assert_has_calls(calls)
-                            self.driver_rest_call_mock.reset_mock()
+                            self.compare_apply_call()
 
                 self.plugin_instance.delete_loadbalancer(
                     context.get_admin_context(), lb_id)
@@ -441,111 +644,52 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
             with self.loadbalancer(subnet=s) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as l:
+                    listener_id = l['listener']['id']
                     with self.pool(
                         protocol=lb_con.PROTOCOL_HTTP,
-                        listener_id=l['listener']['id']) as p:
-                        with nested(
-                            self.member(
-                                no_delete=True, pool_id=p['pool']['id'],
-                                subnet=s, address='10.0.1.10'),
-                            self.member(
-                                no_delete=True, pool_id=p['pool']['id'],
-                                subnet=s, address='10.0.1.20')) as (m1, m2):
+                        listener_id=listener_id) as p:
+                        pool_id = p['pool']['id']
+                        with self.member(
+                            no_delete=True, address='10.0.1.10',
+                            pool_id=pool_id, subnet=s) as m1:
+                            member1_id = m1['member']['id']
 
-                            m1_data = {
-                                "id": m1['member']['id'],
-                                "address": "10.0.1.10",
-                                "protocol_port": 80,
-                                "weight": 1, "admin_state_up": True,
-                                "subnet": "255.255.255.255",
-                                "mask": "255.255.255.255",
-                                "gw": "255.255.255.255",
-                                "admin_state_up": True}
-                            m2_data = {
-                                "id": m2['member']['id'],
-                                "address": "10.0.1.20",
-                                "protocol_port": 80,
-                                "weight": 1, "admin_state_up": True,
-                                "subnet": "255.255.255.255",
-                                "mask": "255.255.255.255",
-                                "gw": "255.255.255.255",
-                                "admin_state_up": True}
-                            pool_data = {
-                                "id": p['pool']['id'],
-                                "protocol": lb_con.PROTOCOL_HTTP,
-                                "lb_algorithm": "ROUND_ROBIN",
-                                "admin_state_up": True,
-                                "members": [m1_data, m2_data]}
-                            def_pool_data = {
-                                "id": p['pool']['id']}
-                            listener_data = {
-                                    "id": l['listener']['id'],
-                                    "admin_state_up": True,
-                                    "protocol_port": 80,
-                                    "protocol": lb_con.PROTOCOL_HTTP,
-                                    "connection_limit": -1,
-                                    "admin_state_up": True,
-                                    "default_pool": def_pool_data,
-                                    "l7_policies": []}
-                            wf_apply_params = {'parameters': {
-                                'listeners': [listener_data],
-                                'pools': [pool_data],
-                                "admin_state_up": True,
-                                "pip_address": "10.0.0.2",
-                                "vip_address": "10.0.0.2"}}
-                            calls = [
-                                mock.call(
-                                    'POST', '/api/workflowTemplate/' +
-                                    'os_lb_v2?name=LB_' + lb_id, mock.ANY,
-                                    v2_driver.TEMPLATE_HEADER),
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    wf_apply_params,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
-
-                            self.driver_rest_call_mock.assert_has_calls(calls)
                             self.driver_rest_call_mock.reset_mock()
-                            member = self.plugin_instance.db.get_pool_member(
-                                context.get_admin_context(),
-                                m1['member']['id']).to_dict(pool=False)
+                            rest_call_function_mock.__dict__.update(
+                                {'WORKFLOW_MISSING': False})
 
-                            member['weight'] = 2
-                            m1_data['weight'] = 2
-                            self.plugin_instance.update_pool_member(
-                                context.get_admin_context(),
-                                m1['member']['id'], p['pool']['id'],
-                                {'member': member})
-                            calls = [
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    wf_apply_params,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
-                            self.driver_rest_call_mock.assert_has_calls(calls)
-                            self.driver_rest_call_mock.reset_mock()
+                            with self.member(
+                                no_delete=True, pool_id=pool_id,
+                                subnet=s, address='10.0.1.20') as m2:
+                                member2_id = m2['member']['id']
+                                self.compare_apply_call()
 
-                            self.plugin_instance.delete_pool_member(
-                                context.get_admin_context(),
-                                m2['member']['id'], p['pool']['id'])
-                            pool_data["members"] = [m1_data]
-                            calls = [
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    wf_apply_params,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
-                            self.driver_rest_call_mock.assert_has_calls(calls)
-                            lb = self.plugin_instance.db.get_loadbalancer(
-                                context.get_admin_context(),
-                                lb_id).to_dict(listener=False)
-                            self.assertEqual('ACTIVE',
+                                self.driver_rest_call_mock.reset_mock()
+                                m = self.plugin_instance.db.get_pool_member(
+                                    context.get_admin_context(),
+                                    m1['member']['id']).to_dict(pool=False)
+
+                                m['weight'] = 2
+                                self.plugin_instance.update_pool_member(
+                                    context.get_admin_context(),
+                                    m1['member']['id'], p['pool']['id'],
+                                    {'member': m})
+                                self.update_member(pool_id, id=member1_id,
+                                                   weight=2)
+                                self.compare_apply_call()
+
+                                self.driver_rest_call_mock.reset_mock()
+
+                                self.plugin_instance.delete_pool_member(
+                                    context.get_admin_context(),
+                                    member2_id, pool_id)
+                                self.delete_member(member2_id, pool_id)
+                                self.compare_apply_call()
+
+                                lb = self.plugin_instance.db.get_loadbalancer(
+                                    context.get_admin_context(),
+                                    lb_id).to_dict(listener=False)
+                                self.assertEqual('ACTIVE',
                                              lb['provisioning_status'])
 
     def test_build_objects_with_tls(self):
@@ -578,316 +722,73 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                             listener_id=listener['listener']['id']) as pool:
                             with self.member(pool_id=pool['pool']['id'],
                                              subnet=vip_sub,
-                                             address='10.0.1.10') as m:
+                                             address='10.0.1.10'):
+                                self.compare_apply_call()
 
-                                wf_srv_params = copy.deepcopy(WF_SRV_PARAMS)
-                                wf_params = copy.deepcopy(WF_CREATE_PARAMS)
-
-                                wf_srv_params['name'] = 'srv_' + (
-                                    vip_sub['subnet']['network_id'])
-                                wf_srv_params['tenantId'] = self._tenant_id
-                                wf_srv_params['primary']['network'][
-                                    'portgroups'] = [vip_sub['subnet'][
-                                         'network_id']]
-                                wf_params['parameters']['service_params'] = (
-                                    wf_srv_params)
-
-                                m_data = {
-                                    "id": m['member']['id'],
-                                    "address": "10.0.1.10",
-                                    "protocol_port": 80,
-                                    "weight": 1, "admin_state_up": True,
-                                    "subnet": "255.255.255.255",
-                                    "mask": "255.255.255.255",
-                                    "gw": "255.255.255.255",
-                                    'admin_state_up': True}
-                                default_tls_cert_data = {
-                                    'id': 'def1',
-                                    'certificate': 'certificate',
-                                    'intermediates': 'intermediates',
-                                    'private_key': 'private_key',
-                                    'passphrase': 'private_key_passphrase'}
-                                sni1_tls_cert_data = {
-                                    'id': 'sni1',
-                                    'position': 0,
-                                    'certificate': 'certificate',
-                                    'intermediates': 'intermediates',
-                                    'private_key': 'private_key',
-                                    'passphrase': 'private_key_passphrase'}
-                                sni2_tls_cert_data = {
-                                    'id': 'sni2',
-                                    'position': 1,
-                                    'certificate': 'certificate',
-                                    'intermediates': 'intermediates',
-                                    'private_key': 'private_key',
-                                    'passphrase': 'private_key_passphrase'}
-                                pool_data = {
-                                    "id": pool['pool']['id'],
-                                    "protocol": lb_con.PROTOCOL_HTTP,
-                                    "lb_algorithm": "ROUND_ROBIN",
-                                    "admin_state_up": True,
-                                    "members": [m_data]}
-                                def_pool_data = {
-                                    "id": pool['pool']['id']}
-                                wf_apply_one_leg_params = {'parameters': {
-                                    'listeners': [{
-                                        "id": listener['listener']['id'],
-                                        "admin_state_up": True,
-                                        "protocol_port": 80,
-                                        "protocol":
-                                        lb_con.PROTOCOL_TERMINATED_HTTPS,
-                                        "connection_limit": -1,
-                                        "default_pool": def_pool_data,
-                                        "default_tls_certificate":
-                                        default_tls_cert_data,
-                                        "sni_tls_certificates": [
-                                             sni1_tls_cert_data,
-                                             sni2_tls_cert_data],
-                                        "l7_policies": []}],
-                                    "pools": [pool_data],
-                                    "admin_state_up": True,
-                                    "pip_address": "10.0.0.2",
-                                    "vip_address": "10.0.0.2"}}
-
-                                calls = [
-                                    mock.call('GET',
-                                              '/api/workflow/LB_' + lb_id,
-                                              None, None),
-                                    mock.call(
-                                        'POST',
-                                        '/api/workflowTemplate/' +
-                                        'os_lb_v2?name=LB_' + lb_id,
-                                        wf_params,
-                                        v2_driver.TEMPLATE_HEADER),
-                                    mock.call(
-                                        'POST',
-                                        '/api/workflow/LB_' + lb_id +
-                                        '/action/apply',
-                                        wf_apply_one_leg_params,
-                                        v2_driver.TEMPLATE_HEADER)
-                                ]
-                                self.driver_rest_call_mock.assert_has_calls(
-                                    calls, any_order=True)
-
-    # This test some times fails with same input.
-    # mock calls are not found sometimes, will be back after fix
-    def _test_build_objects_with_l7(self):
+    def test_build_objects_with_l7(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
             with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(
                     protocol=lb_con.PROTOCOL_HTTP,
                     loadbalancer_id=lb_id) as listener:
+                    listener_id = listener['listener']['id']
                     with nested(
                         self.pool(
                             protocol=lb_con.PROTOCOL_HTTP,
-                            listener_id=listener['listener']['id']),
+                            listener_id=listener_id),
                         self.pool(
                             protocol=lb_con.PROTOCOL_HTTP,
                             loadbalancer_id=lb_id)) as (def_pool, pol_pool):
+                        def_pool_id = def_pool['pool']['id']
+                        pol_pool_id = pol_pool['pool']['id']
                         with self.l7policy(
-                            listener['listener']['id'],
+                            listener_id,
                             action=lb_con.L7_POLICY_ACTION_REDIRECT_TO_POOL,
-                            redirect_pool_id=pol_pool['pool']['id']) as policy:
+                            redirect_pool_id=pol_pool_id) as policy:
+                            policy_id = policy['l7policy']['id']
 
                             self.driver_rest_call_mock.reset_mock()
-
                             with nested(
                                 self.l7policy_rule(
-                                    l7policy_id=policy['l7policy']['id'],
-                                    key='key1', value='val1'),
+                                    l7policy_id=policy_id,
+                                    key=u'key1', value=u'val1'),
                                 self.l7policy_rule(
-                                    l7policy_id=policy['l7policy']['id'],
-                                    key='key2', value='val2'),
+                                    l7policy_id=policy_id,
+                                    key=u'key2', value=u'val2'),
                                 self.member(
-                                    pool_id=def_pool['pool']['id'],
+                                    pool_id=def_pool_id,
                                     subnet=vip_sub,
-                                    address='10.0.1.10'),
-                                self.member(
-                                    pool_id=pol_pool['pool']['id'],
+                                    address=u'10.0.1.10')) as (
+                                    rule1, rule2,
+                                    def_m):
+
+                                self.driver_rest_call_mock.reset_mock()
+                                rest_call_function_mock.__dict__.update(
+                                    {'WORKFLOW_MISSING': False})
+
+                                with self.member(
+                                    pool_id=pol_pool_id,
                                     subnet=vip_sub,
-                                    address='10.0.1.20')) as (
-                                    rule1, rule2, def_m, pol_m):
+                                    address=u'10.0.1.20'):
 
-                                wf_srv_params = copy.deepcopy(WF_SRV_PARAMS)
-                                wf_params = copy.deepcopy(WF_CREATE_PARAMS)
-
-                                wf_srv_params['name'] = 'srv_' + (
-                                    vip_sub['subnet']['network_id'])
-                                wf_srv_params['tenantId'] = self._tenant_id
-                                wf_srv_params['primary']['network'][
-                                    'portgroups'] = [vip_sub['subnet'][
-                                         'network_id']]
-                                wf_params['parameters']['service_params'] = (
-                                    wf_srv_params)
-                                rule1_data = {
-                                    'id': rule1['rule']['id'],
-                                    'type': lb_con.L7_RULE_TYPE_HOST_NAME,
-                                    'compare_type':
-                                        lb_con.L7_RULE_COMPARE_TYPE_EQUAL_TO,
-                                    'admin_state_up': True,
-                                    'key': 'key1',
-                                    'value': 'val1'}
-                                rule2_data = {
-                                    'id': rule2['rule']['id'],
-                                    'type': lb_con.L7_RULE_TYPE_HOST_NAME,
-                                    'compare_type':
-                                        lb_con.L7_RULE_COMPARE_TYPE_EQUAL_TO,
-                                    'admin_state_up': True,
-                                    'key': 'key2',
-                                    'value': 'val2'}
-                                l7_policy_data = {
-                                    'redirect_pool_id': pol_pool['pool']['id'],
-                                    'rules': [rule1_data, rule2_data],
-                                    'redirect_url': None,
-                                    'action': lb_con.
-                                    L7_POLICY_ACTION_REDIRECT_TO_POOL,
-                                    'position': 1,
-                                    'admin_state_up': True,
-                                    'id': policy['l7policy']['id']}
-                                def_m_data = {
-                                    'id': def_m['member']['id'],
-                                    'address': "10.0.1.10",
-                                    'protocol_port': 80,
-                                    'weight': 1, 'admin_state_up': True,
-                                    'subnet': '255.255.255.255',
-                                    'mask': '255.255.255.255',
-                                    'gw': '255.255.255.255',
-                                    'admin_state_up': True}
-                                pol_m_data = {
-                                    'id': pol_m['member']['id'],
-                                    'address': "10.0.1.20",
-                                    'protocol_port': 80,
-                                    'weight': 1, 'admin_state_up': True,
-                                    'subnet': '255.255.255.255',
-                                    'mask': '255.255.255.255',
-                                    'gw': '255.255.255.255',
-                                    'admin_state_up': True}
-                                def_pool_data = {
-                                    'id': def_pool['pool']['id']}
-                                default_pool_data = {
-                                    'id': def_pool['pool']['id'],
-                                    'protocol': lb_con.PROTOCOL_HTTP,
-                                    'lb_algorithm': 'ROUND_ROBIN',
-                                    'admin_state_up': True,
-                                    'members': [def_m_data]}
-                                pol_pool_data = {
-                                    'id': pol_pool['pool']['id'],
-                                    'protocol': lb_con.PROTOCOL_HTTP,
-                                    'lb_algorithm': 'ROUND_ROBIN',
-                                    'admin_state_up': True,
-                                    'members': [pol_m_data]}
-                                wf_apply_one_leg_params = {'parameters': {
-                                    'listeners': [{
-                                        'id': listener['listener']['id'],
-                                        'admin_state_up': True,
-                                        'protocol_port': 80,
-                                        'protocol': lb_con.PROTOCOL_HTTP,
-                                        'connection_limit': -1,
-                                        'default_pool': def_pool_data,
-                                        'l7_policies': [
-                                            l7_policy_data]}],
-                                    'pools': [default_pool_data,
-                                              pol_pool_data],
-                                    'admin_state_up': True,
-                                    'pip_address': '10.0.0.2',
-                                    'vip_address': '10.0.0.2'}}
-
-                                calls = [
-                                    mock.call(
-                                        'POST',
-                                        '/api/workflow/LB_' + lb_id +
-                                        '/action/apply',
-                                        wf_apply_one_leg_params,
-                                        v2_driver.TEMPLATE_HEADER)
-                                ]
-                                self.driver_rest_call_mock.assert_has_calls(
-                                    calls, any_order=True)
+                                    self.compare_apply_call()
 
     def test_build_objects_graph_one_leg(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
             with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as listener:
+                    listener_id = listener['listener']['id']
                     with self.pool(
                         protocol='HTTP',
-                        listener_id=listener['listener']['id']) as pool:
+                        listener_id=listener_id) as pool:
                         with nested(
                             self.member(pool_id=pool['pool']['id'],
                                         subnet=vip_sub, address='10.0.1.10'),
                             self.member(pool_id=pool['pool']['id'],
-                                        subnet=vip_sub, address='10.0.1.20')
-                        ) as (member1, member2):
-
-                            wf_srv_params = copy.deepcopy(WF_SRV_PARAMS)
-                            wf_params = copy.deepcopy(WF_CREATE_PARAMS)
-
-                            wf_srv_params['name'] = 'srv_' + (
-                                vip_sub['subnet']['network_id'])
-                            wf_srv_params['tenantId'] = self._tenant_id
-                            wf_srv_params['primary']['network'][
-                                'portgroups'] = [vip_sub['subnet'][
-                                     'network_id']]
-                            wf_params['parameters']['service_params'] = (
-                                wf_srv_params)
-
-                            member1_data = {
-                                "id": member1['member']['id'],
-                                "address": "10.0.1.10", "protocol_port": 80,
-                                "weight": 1, "admin_state_up": True,
-                                "subnet": "255.255.255.255",
-                                "mask": "255.255.255.255",
-                                "gw": "255.255.255.255",
-                                'admin_state_up': True}
-                            member2_data = {
-                                "id": member2['member']['id'],
-                                "address": "10.0.1.20", "protocol_port": 80,
-                                "weight": 1, "admin_state_up": True,
-                                "subnet": "255.255.255.255",
-                                "mask": "255.255.255.255",
-                                "gw": "255.255.255.255",
-                                "admin_state_up": True}
-                            def_pool_data = {
-                                "id": pool['pool']['id']}
-                            pool_data = {
-                                "id": pool['pool']['id'],
-                                "protocol": "HTTP",
-                                "lb_algorithm": "ROUND_ROBIN",
-                                "admin_state_up": True,
-                                "members": [
-                                    member1_data, member2_data]}
-                            wf_apply_one_leg_params = {'parameters': {
-                                'listeners': [{
-                                    "id": listener['listener']['id'],
-                                    "admin_state_up": True,
-                                    "protocol_port": 80,
-                                    "protocol": "HTTP",
-                                    "connection_limit": -1,
-                                    "default_pool": def_pool_data,
-                                    "l7_policies": []}],
-                                "pools": [pool_data],
-                                "admin_state_up": True,
-                                "pip_address": "10.0.0.2",
-                                "vip_address": "10.0.0.2"}}
-
-                            calls = [
-                                mock.call('GET', '/api/workflow/LB_' + lb_id,
-                                          None, None),
-                                mock.call(
-                                    'POST',
-                                    '/api/workflowTemplate/' +
-                                    'os_lb_v2?name=LB_' + lb_id,
-                                    wf_params,
-                                    v2_driver.TEMPLATE_HEADER),
-                                mock.call(
-                                    'POST',
-                                    '/api/workflow/LB_' + lb_id +
-                                    '/action/apply',
-                                    wf_apply_one_leg_params,
-                                    v2_driver.TEMPLATE_HEADER)
-                            ]
-                            self.driver_rest_call_mock.assert_has_calls(
-                                calls, any_order=True)
+                                        subnet=vip_sub, address='10.0.1.20')):
+                            self.compare_apply_call()
 
     def test_build_objects_graph_two_legs_full(self):
         with nested(
@@ -905,94 +806,27 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                             'type': "APP_COOKIE",
                             'cookie_name': 'sessionId'}) as pool:
                         with self.healthmonitor(
-                            type='HTTP', pool_id=pool['pool']['id']) as hm:
+                            type='HTTP', pool_id=pool['pool']['id']):
+
+                            self.driver_rest_call_mock.reset_mock()
+
                             with self.member(
                                 pool_id=pool['pool']['id'],
                                 subnet=member_sub1,
                                 address='20.0.1.10') as member:
 
-                                    wf_params = copy.deepcopy(WF_CREATE_PARAMS)
-                                    wf_srv_params = copy.deepcopy(
-                                        WF_SRV_PARAMS)
-                                    wf_srv_params['name'] = (
-                                        'srv_' + vip_sub['subnet'][
-                                            'network_id'])
-                                    wf_srv_params['tenantId'] = self._tenant_id
-                                    wf_srv_params['primary']['network'][
-                                        'portgroups'] = [
-                                            vip_sub['subnet']['network_id'],
-                                        member_sub1['subnet']['network_id']]
-                                    wf_params['parameters'][
-                                        'twoleg_enabled'] = True
-                                    wf_params['parameters'][
-                                        'service_params'] = (wf_srv_params)
-                                    hm_data = {
-                                        "admin_state_up": True,
-                                        "id": hm['healthmonitor']['id'],
-                                        "type": "HTTP", "delay": 1,
-                                        "timeout": 1,
-                                        "max_retries": 1,
-                                        "admin_state_up": True,
-                                        "url_path": "/", "http_method": "GET",
-                                        "expected_codes": '200'}
-                                    sp_data = {
-                                        "type": "APP_COOKIE",
-                                        "cookie_name": "sessionId"}
-                                    m_data = {
-                                        "id": member['member']['id'],
-                                        "address": "20.0.1.10",
-                                        "protocol_port": 80,
-                                        "weight": 1, "admin_state_up": True,
-                                        "subnet": "20.0.1.10",
-                                        "mask": "255.255.255.255",
-                                        "gw": "20.0.0.1",
-                                        "admin_state_up": True}
-                                    def_pool_data = {
-                                        "id": pool['pool']['id'],
-                                        "sessionpersistence":
-                                            sp_data}
-                                    pool_data = {
-                                        "id": pool['pool']['id'],
-                                        "protocol": "HTTP",
-                                        "lb_algorithm":
-                                            "ROUND_ROBIN",
-                                        "admin_state_up": True,
-                                        "healthmonitor": hm_data,
-                                        "members": [m_data]}
-                                    wf_apply_full_params = {'parameters': {
-                                        'listeners': [{
-                                            "id": listener['listener']['id'],
-                                            "admin_state_up": True,
-                                            "protocol_port": 80,
-                                            "protocol": "HTTP",
-                                            "connection_limit": -1,
-                                            "admin_state_up": True,
-                                            "default_pool": def_pool_data,
-                                            "l7_policies": []}],
-                                        "pools": [pool_data],
-                                        "admin_state_up": True,
-                                        "pip_address": "20.0.0.2",
-                                        "vip_address": "10.0.0.2"}}
-                                    calls = [
-                                        mock.call(
-                                            'GET',
-                                            '/api/workflow/LB_' + lb_id,
-                                            None, None),
-                                        mock.call(
-                                            'POST', '/api/workflowTemplate/' +
-                                            'os_lb_v2?name=LB_' + lb_id,
-                                            wf_params,
-                                            v2_driver.TEMPLATE_HEADER),
-                                        mock.call(
-                                            'POST', '/api/workflow/LB_' +
-                                            lb_id + '/action/apply',
-                                            wf_apply_full_params,
-                                            v2_driver.TEMPLATE_HEADER),
-                                        mock.call('GET', 'some_uri',
-                                                  None, None)]
-                                    self.driver_rest_call_mock.\
-                                        assert_has_calls(
-                                            calls, any_order=True)
+                                    self.update_member(
+                                        pool['pool']['id'],
+                                        id=member['member']['id'],
+                                        address='20.0.1.10',
+                                        subnet='20.0.1.10', gw='20.0.0.1')
+                                    self.wf_apply_params['parameters'][
+                                        'pip_address'] = '20.0.0.2'
+                                    self.set_two_leg_mode(True)
+                                    self.add_network_to_service(member_sub1)
+
+                                    self.compare_create_call()
+                                    self.compare_apply_call()
 
 
 class TestLBaaSDriverDebugOptions(TestLBaaSDriverBase):
