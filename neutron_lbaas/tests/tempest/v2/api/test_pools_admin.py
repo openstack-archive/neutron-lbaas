@@ -56,7 +56,7 @@ class TestPools(base.BaseAdminTestCase):
         PROTOCOL_PORT += 1
 
     def _prepare_and_create_pool(self, protocol=None, lb_algorithm=None,
-                                 listener_id=None, **kwargs):
+                                 listener_id=None, cleanup=True, **kwargs):
         self.increment_protocol_port()
         if not protocol:
             protocol = 'HTTP'
@@ -71,7 +71,8 @@ class TestPools(base.BaseAdminTestCase):
                                      lb_algorithm=lb_algorithm,
                                      listener_id=listener_id,
                                      **kwargs)
-        self.addCleanup(self._delete_pool, response['id'])
+        if cleanup:
+            self.addCleanup(self._delete_pool, response['id'])
         return response
 
     @test.attr(type='negative')
@@ -121,3 +122,41 @@ class TestPools(base.BaseAdminTestCase):
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool.get('tenant_id')
         self.assertEqual(pool_tenant, tenant)
+
+    @test.attr(type='smoke')
+    def test_update_pool_sesssion_persistence_app_cookie(self):
+        """Test update admin pool's session persistence"""
+        new_pool = self._prepare_and_create_pool()
+        session_persistence = {"type": "APP_COOKIE",
+                               "cookie_name": "my_cookie"}
+        pool = self._update_pool(new_pool.get('id'),
+                                 session_persistence=session_persistence)
+        self.assertEqual(session_persistence, pool.get('session_persistence'))
+
+    @test.attr(type='smoke')
+    def test_update_pool_sesssion_persistence_app_to_http(self):
+        """
+        Test update admin pool's session persistence type from
+        app cookie to http cookie
+        """
+        new_pool = self._prepare_and_create_pool()
+        session_persistence = {"type": "APP_COOKIE",
+                               "cookie_name": "my_cookie"}
+        pool = self._update_pool(new_pool.get('id'),
+                                 session_persistence=session_persistence)
+        self.assertEqual(session_persistence, pool.get('session_persistence'))
+        pool = self._update_pool(new_pool.get('id'),
+                                 session_persistence={"type": "HTTP_COOKIE"})
+        session_persistence = {"type": "HTTP_COOKIE",
+                               "cookie_name": None}
+        self.assertEqual(session_persistence, pool.get('session_persistence'))
+
+    @test.attr(type='smoke')
+    def test_delete_pool(self):
+        """Test delete admin pool"""
+        new_pool = self._prepare_and_create_pool(cleanup=False)
+        pool = self.pools_client.get_pool(new_pool.get('id'))
+        self.assertEqual(new_pool, pool)
+        self._delete_pool(new_pool.get('id'))
+        self.assertRaises(ex.NotFound, self.pools_client.get_pool,
+                          new_pool.get('id'))
