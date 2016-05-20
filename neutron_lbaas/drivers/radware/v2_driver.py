@@ -17,9 +17,9 @@ import netaddr
 import threading
 import time
 
-from neutron.api.v2 import attributes
 from neutron import context
 from neutron.plugins.common import constants
+from neutron_lib import constants as n_constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -493,7 +493,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             'tenant_id': lb.tenant_id,
             'name': proxy_port_name,
             'network_id': proxy_port_subnet['network_id'],
-            'mac_address': attributes.ATTR_NOT_SPECIFIED,
+            'mac_address': n_constants.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': '',
             'device_owner': 'neutron:' + constants.LOADBALANCERV2,

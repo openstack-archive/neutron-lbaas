@@ -16,9 +16,9 @@
 import copy
 
 import mock
-from neutron.api.v2 import attributes as attr
 from neutron.plugins.common import constants
 from neutron.tests.unit.api.v2 import test_base
+from neutron_lib import constants as n_constants
 from oslo_utils import uuidutils
 from webob import exc
 
@@ -178,7 +178,7 @@ class LoadBalancerExtensionTestCase(base.ExtensionTestCase):
         res = self.api.post(_get_path('lb/pools', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/%s' % self.fmt)
-        data['pool']['provider'] = attr.ATTR_NOT_SPECIFIED
+        data['pool']['provider'] = n_constants.ATTR_NOT_SPECIFIED
         instance.create_pool.assert_called_with(mock.ANY,
                                                 pool=data)
         self.assertEqual(exc.HTTPCreated.code, res.status_int)
@@ -517,8 +517,9 @@ class LoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.api.post(_get_path('lbaas/loadbalancers', fmt=self.fmt),
                             self.serialize(data),
                             content_type='application/{0}'.format(self.fmt))
-        data['loadbalancer'].update({'provider': attr.ATTR_NOT_SPECIFIED,
-                                     'flavor_id': attr.ATTR_NOT_SPECIFIED})
+        data['loadbalancer'].update({
+            'provider': n_constants.ATTR_NOT_SPECIFIED,
+            'flavor_id': n_constants.ATTR_NOT_SPECIFIED})
         instance.create_loadbalancer.assert_called_with(mock.ANY,
                                                         loadbalancer=data)
 

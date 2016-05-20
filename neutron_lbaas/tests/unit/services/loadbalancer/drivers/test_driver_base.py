@@ -14,9 +14,9 @@
 #
 
 import mock
-from neutron.api.v2 import attributes
 from neutron import context as ncontext
 from neutron.plugins.common import constants
+from neutron_lib import constants as n_constants
 
 from neutron_lbaas.drivers import driver_mixins
 from neutron_lbaas.extensions import loadbalancerv2
@@ -79,7 +79,7 @@ class TestBaseManager(test_db_loadbalancerv2.LbaasPluginDbTestCase):
         self.manager = DummyManager(self.driver)
         network = self._make_network(self.fmt, 'test-net', True)
         self.subnet = self._make_subnet(
-            self.fmt, network, gateway=attributes.ATTR_NOT_SPECIFIED,
+            self.fmt, network, gateway=n_constants.ATTR_NOT_SPECIFIED,
             cidr='10.0.0.0/24')
         self.subnet_id = self.subnet['subnet']['id']
         self.listener = self._setup_db_data(self.context)

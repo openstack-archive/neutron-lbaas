@@ -15,10 +15,10 @@
 import re
 
 import mock
-from neutron.api.v2 import attributes
 from neutron import context
 from neutron import manager
 from neutron.plugins.common import constants
+from neutron_lib import constants as n_constants
 from oslo_config import cfg
 from oslo_serialization import jsonutils
 from six.moves import queue as Queue
@@ -161,7 +161,7 @@ class TestLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'tenant_id': 'tenant_id',
             'name': 'port_name',
             'network_id': 'network_id',
-            'mac_address': attributes.ATTR_NOT_SPECIFIED,
+            'mac_address': n_constants.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': '',
             'device_owner': 'neutron:' + constants.LOADBALANCER,
