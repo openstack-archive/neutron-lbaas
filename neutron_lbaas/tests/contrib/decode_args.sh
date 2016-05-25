@@ -27,32 +27,39 @@
 testtype="$1"
 lbaasversion="$2"
 lbaastest="$3"
-lbaasenv=$(echo "$lbaastest" | perl -ne '/^(.*)-([^-]+)$/ && print "$1";')
-if [ -z "$lbaasenv" ]; then
-    lbaasenv=$lbaastest
-fi
-lbaasdriver=$(echo "$lbaastest" | perl -ne '/^(.*)-([^-]+)$/ && print "$2";')
-if [ -z "$lbaasdriver" ]; then
-    lbaasdriver='octavia'
-fi
 
-testenv=${lbaastest:-"apiv2"}
+case $testtype in
+    "dsvm-functional")
+        testenv=$testtype
+        ;;
 
-if [ "$lbaasversion" = "lbaasv1" ]; then
-    testenv="apiv1"
-elif [ "$lbaasversion" = "lbaasv2" ]; then
-    case "$lbaasenv" in
-        "api"|"healthmonitor"|"listener"|"loadbalancer"|"member"|"minimal"|"pool")
-            testenv="apiv2"
-            ;;
-        "scenario")
-            testenv="scenario"
-            ;;
-        *)
-            echo "Unrecognized env $lbaasenv".
-            exit 1
-            ;;
-    esac
-fi
+    "tempest")
+        lbaasenv=$(echo "$lbaastest" | perl -ne '/^(.*)-([^-]+)$/ && print "$1";')
+        if [ -z "$lbaasenv" ]; then
+            lbaasenv=$lbaastest
+        fi
+        lbaasdriver=$(echo "$lbaastest" | perl -ne '/^(.*)-([^-]+)$/ && print "$2";')
+        if [ -z "$lbaasdriver" ]; then
+            lbaasdriver='octavia'
+        fi
 
+        testenv=${lbaastest:-"apiv2"}
 
+        if [ "$lbaasversion" = "lbaasv1" ]; then
+            testenv="apiv1"
+        elif [ "$lbaasversion" = "lbaasv2" ]; then
+            case "$lbaasenv" in
+                "api"|"healthmonitor"|"listener"|"loadbalancer"|"member"|"minimal"|"pool")
+                    testenv="apiv2"
+                    ;;
+                "scenario")
+                    testenv="scenario"
+                    ;;
+                *)
+                    echo "Unrecognized env $lbaasenv".
+                    exit 1
+                    ;;
+            esac
+        fi
+        ;;
+esac

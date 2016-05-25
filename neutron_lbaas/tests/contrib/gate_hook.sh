@@ -50,6 +50,21 @@ EOF
 
 case "$testtype" in
 
+    "dsvm-functional")
+        PROJECT_NAME=neutron-lbaas
+        NEUTRON_LBAAS_PATH=$GATE_DEST/$PROJECT_NAME
+        DEVSTACK_PATH=$GATE_DEST/devstack
+        IS_GATE=True
+        USE_CONSTRAINT_ENV=False
+        export LOG_COLOR=False
+        source "$NEUTRON_LBAAS_PATH"/tools/configure_for_lbaas_func_testing.sh
+
+        # Make the workspace owned by the stack user
+        sudo chown -R "$STACK_USER":"$STACK_USER" "$BASE"
+
+        configure_host_for_lbaas_func_testing
+        ;;
+
     "tempest")
         # These are not needed with either v1 or v2
         ENABLED_SERVICES+="-c-api,-c-bak,-c-sch,-c-vol,-cinder,"
@@ -83,6 +98,7 @@ case "$testtype" in
         fi
 
         export ENABLED_SERVICES
+        "$GATE_DEST"/devstack-gate/devstack-vm-gate.sh
         ;;
 
     *)
@@ -90,6 +106,3 @@ case "$testtype" in
         exit 1
         ;;
 esac
-
-
-"$GATE_DEST"/devstack-gate/devstack-vm-gate.sh
