@@ -494,6 +494,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 pool_db.session_persistence = s_p
 
             context.session.add(pool_db)
+        context.session.refresh(pool_db.loadbalancer)
         return data_models.Pool.from_sqlalchemy_model(pool_db)
 
     def update_pool(self, context, id, pool):
