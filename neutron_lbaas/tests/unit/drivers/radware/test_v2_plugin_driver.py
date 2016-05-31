@@ -279,7 +279,9 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
     @contextlib.contextmanager
     def loadbalancer(self, fmt=None, subnet=None, no_delete=False, **kwargs):
         with super(TestLBaaSDriver, self).loadbalancer(
-            fmt, subnet, no_delete, **kwargs) as lb:
+            fmt, subnet, no_delete,
+            vip_address=WF_APPLY_PARAMS['parameters']['vip_address'],
+            **kwargs) as lb:
             self.wf_srv_params['name'] = 'srv_' + (
                 subnet['subnet']['network_id'])
             self.wf_srv_params['tenantId'] = self._tenant_id
@@ -428,6 +430,19 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                         del p['members'][index]
                         break
 
+    def delete_pool(self, id):
+        for p in self.wf_apply_params['parameters']['pools']:
+            if p['id'] == id:
+                index = self.wf_apply_params['parameters']['pools'].index(p)
+                del self.wf_apply_params['parameters']['pools'][index]
+                break
+        for l in self.wf_apply_params['parameters']['listeners']:
+            if l['default_pool']['id'] == id:
+                index = self.wf_apply_params['parameters']['listeners']\
+                    .index(l)
+                del self.wf_apply_params['parameters']['listeners'][index]
+                break
+
     def add_network_to_service(self, subnet):
         self.wf_srv_params['primary']['network']['portgroups'].append(
             subnet['subnet']['network_id'])
@@ -524,10 +539,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_wf_created_on_first_member_creation(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as l:
                     listener_id = l['listener']['id']
@@ -545,10 +557,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_wf_deleted_on_lb_deletion(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 get_calls = [
                     mock.call('GET', u'/api/workflow/LB_' +
                         lb['loadbalancer']['id'], None, None)]
@@ -575,10 +584,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_lb_crud(self):
         with self.subnet(cidr='10.0.0.0/24') as s:
-            with self.loadbalancer(
-                    subnet=s,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address'],
-                    no_delete=True) as lb:
+            with self.loadbalancer(subnet=s, no_delete=True) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as l:
                     with self.pool(
@@ -649,10 +655,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_member_crud(self):
         with self.subnet(cidr='10.0.0.0/24') as s:
-            with self.loadbalancer(
-                    subnet=s,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=s) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as l:
                     listener_id = l['listener']['id']
@@ -705,10 +708,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_build_objects_with_tls(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
                                 'cert_parser',
@@ -740,10 +740,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_build_objects_with_l7(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(
                     protocol=lb_con.PROTOCOL_HTTP,
@@ -784,10 +781,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_build_objects_graph_lb_pool(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as listener:
                     listener_id = listener['listener']['id']
@@ -811,10 +805,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
     def test_build_objects_graph_one_leg(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as listener:
                     listener_id = listener['listener']['id']
@@ -833,10 +824,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub, \
                 self.subnet(cidr='20.0.0.0/24') as member_sub1, \
                 self.subnet(cidr='30.0.0.0/24'):
-            with self.loadbalancer(
-                    subnet=vip_sub,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=vip_sub) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as listener:
                     with self.pool(
@@ -871,6 +859,31 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
                                     self.compare_create_call()
                                     self.compare_apply_call()
+
+    def test_pool_deletion_for_listener(self):
+        with self.subnet(cidr='10.0.0.0/24') as vip_sub:
+            with self.loadbalancer(subnet=vip_sub) as lb:
+                lb_id = lb['loadbalancer']['id']
+                with self.listener(loadbalancer_id=lb_id) as listener:
+                    with self.pool(
+                        protocol='HTTP',
+                        listener_id=listener['listener']['id'],
+                        no_delete=True) as p:
+
+                        with self.member(
+                            no_delete=True,
+                            pool_id=p['pool']['id'],
+                            subnet=vip_sub, address='10.0.1.10'):
+
+                            self.driver_rest_call_mock.reset_mock()
+                            rest_call_function_mock.__dict__.update(
+                                {'WORKFLOW_MISSING': False})
+
+                            self.plugin_instance.delete_pool(
+                                context.get_admin_context(), p['pool']['id'])
+                            self.delete_pool(p['pool']['id'])
+
+                            self.compare_apply_call()
 
 
 class TestLBaaSDriverDebugOptions(TestLBaaSDriverBase):
@@ -915,10 +928,7 @@ class TestLBaaSDriverDebugOptions(TestLBaaSDriverBase):
 
     def test_debug_options(self):
         with self.subnet(cidr='10.0.0.0/24') as s:
-            with self.loadbalancer(
-                    subnet=s,
-                    vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
-            ) as lb:
+            with self.loadbalancer(subnet=s) as lb:
                 lb_id = lb['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id) as l:
                     with self.pool(
