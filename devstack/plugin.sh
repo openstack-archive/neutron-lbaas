@@ -128,7 +128,6 @@ if is_service_enabled $LBAAS_ANY; then
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
         # Perform installation of service source
         echo_summary "Installing neutron-lbaas"
-        neutron_agent_lbaas_install_agent_packages
         neutron_lbaas_install
 
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
