@@ -718,11 +718,11 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                 default_pool = self.db.get_pool(context, default_pool_id)
                 lb_id = default_pool.loadbalancer.id
                 listener['loadbalancer_id'] = lb_id
+            else:
+                self._check_pool_loadbalancer_match(
+                    context, default_pool_id, lb_id)
         elif not lb_id:
             raise sharedpools.ListenerMustHaveLoadbalancer()
-        if default_pool_id and lb_id:
-            self._check_pool_loadbalancer_match(
-                context, default_pool_id, lb_id)
         self.db.test_and_set_status(context, models.LoadBalancer, lb_id,
                                     constants.PENDING_UPDATE)
 
