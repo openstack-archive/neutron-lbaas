@@ -64,7 +64,7 @@ function neutron_lbaas_configure_common {
 
     _neutron_deploy_rootwrap_filters $NEUTRON_LBAAS_DIR
 
-    $NEUTRON_BIN_DIR/neutron-db-manage --service lbaas --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
+    $NEUTRON_BIN_DIR/neutron-db-manage --subproject neutron-lbaas --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
 }
 
 function neutron_lbaas_configure_agent {
