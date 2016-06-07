@@ -606,6 +606,8 @@ class L7Policy(BaseDataModel):
         if self.listener:
             ret_dict['listeners'].append({'id': self.listener.id})
         ret_dict['rules'] = [{'id': rule.id} for rule in self.rules]
+        if ret_dict.get('action') == l_const.L7_POLICY_ACTION_REDIRECT_TO_POOL:
+            del ret_dict['redirect_url']
         return ret_dict
 
     @classmethod
@@ -662,7 +664,7 @@ class Listener(BaseDataModel):
         ret_dict = super(Listener, self).to_dict(
             loadbalancer=False, loadbalancer_id=False, default_pool=False,
             operating_status=False, provisioning_status=False,
-            sni_containers=False)
+            sni_containers=False, default_tls_container=False)
         # NOTE(blogan): Returning a list to future proof for M:N objects
         # that are not yet implemented.
         ret_dict['loadbalancers'] = []
@@ -671,7 +673,8 @@ class Listener(BaseDataModel):
         ret_dict['sni_container_refs'] = [container.tls_container_id
                                           for container in self.sni_containers]
         ret_dict['default_tls_container_ref'] = self.default_tls_container_id
-        ret_dict['l7_policies'] = [{'id': l7_policy.id}
+        del ret_dict['l7_policies']
+        ret_dict['l7policies'] = [{'id': l7_policy.id}
             for l7_policy in self.l7_policies]
         return ret_dict
 
@@ -724,12 +727,80 @@ class LoadBalancer(BaseDataModel):
     def attached_to_loadbalancer(self):
         return True
 
-    def to_api_dict(self):
+    def _construct_full_graph_api_dict(self):
+        api_listeners = []
+        for listener in self.listeners:
+            api_listener = listener.to_api_dict()
+            del api_listener['loadbalancers']
+            del api_listener['default_pool_id']
+            if listener.default_pool:
+                api_pool = listener.default_pool.to_api_dict()
+                del api_pool['listeners']
+                del api_pool['listener']
+                del api_pool['listener_id']
+                del api_pool['healthmonitor_id']
+                del api_pool['loadbalancers']
+                del api_pool['l7_policies']
+                del api_pool['sessionpersistence']
+                if listener.default_pool.healthmonitor:
+                    api_hm = listener.default_pool.healthmonitor.to_api_dict()
+                    del api_hm['pools']
+                    api_pool['healthmonitor'] = api_hm
+                api_pool['members'] = []
+                for member in listener.default_pool.members:
+                    api_member = member.to_api_dict()
+                    del api_member['pool_id']
+                    api_pool['members'].append(api_member)
+                api_listener['default_pool'] = api_pool
+            if listener.l7_policies and len(listener.l7_policies) > 0:
+                api_l7policies = []
+                for l7policy in listener.l7_policies:
+                    api_l7policy = l7policy.to_api_dict()
+                    del api_l7policy['redirect_pool_id']
+                    del api_l7policy['listeners']
+                    if l7policy.rules and len(l7policy.rules) > 0:
+                        api_l7rules = []
+                        for l7rule in l7policy.rules:
+                            api_l7rule = l7rule.to_api_dict()
+                            del api_l7rule['policies']
+                            api_l7rules.append(api_l7rule)
+                        api_l7policy['rules'] = api_l7rules
+                    if l7policy.redirect_pool:
+                        api_r_pool = l7policy.redirect_pool.to_api_dict()
+                        if l7policy.redirect_pool.healthmonitor:
+                            api_r_hm = (l7policy.redirect_pool.healthmonitor.
+                                        to_api_dict())
+                            del api_r_hm['pools']
+                            api_r_pool['healthmonitor'] = api_r_hm
+                        api_r_pool['members'] = []
+                        for r_member in l7policy.redirect_pool.members:
+                            api_r_member = r_member.to_api_dict()
+                            del api_r_member['pool_id']
+                            api_r_pool['members'].append(api_r_member)
+                        del api_r_pool['listeners']
+                        del api_r_pool['listener']
+                        del api_r_pool['listener_id']
+                        del api_r_pool['healthmonitor_id']
+                        del api_r_pool['loadbalancers']
+                        del api_r_pool['l7_policies']
+                        del api_r_pool['sessionpersistence']
+                        api_l7policy['redirect_pool'] = api_r_pool
+                    api_l7policies.append(api_l7policy)
+                api_listener['l7policies'] = api_l7policies
+            api_listeners.append(api_listener)
+        return api_listeners
+
+    def to_api_dict(self, full_graph=False):
         ret_dict = super(LoadBalancer, self).to_dict(
             vip_port=False, stats=False, listeners=False)
-        ret_dict['listeners'] = [{'id': listener.id}
-                                 for listener in self.listeners]
-        ret_dict['pools'] = [{'id': pool.id} for pool in self.pools]
+        if full_graph:
+            ret_dict['listeners'] = self._construct_full_graph_api_dict()
+            del ret_dict['pools']
+        else:
+            ret_dict['listeners'] = [{'id': listener.id}
+                                     for listener in self.listeners]
+            ret_dict['pools'] = [{'id': pool.id} for pool in self.pools]
+
         if self.provider:
             ret_dict['provider'] = self.provider.provider_name
 

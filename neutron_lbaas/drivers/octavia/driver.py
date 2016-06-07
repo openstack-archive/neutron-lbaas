@@ -193,6 +193,10 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
         return s
 
     @property
+    def allows_create_graph(self):
+        return True
+
+    @property
     def allocates_vip(self):
         return cfg.CONF.octavia.allocates_vip
 
@@ -200,32 +204,42 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager):
     def deletes_cascade(self):
         return True
 
+    def _construct_args(self, db_lb, create=True, graph=False):
+        args = {'name': db_lb.name,
+                'description': db_lb.description,
+                'enabled': db_lb.admin_state_up}
+        if not create:
+            return args
+
+        create_args = {'project_id': db_lb.tenant_id, 'id': db_lb.id,
+                       'vip': {'subnet_id': db_lb.vip_subnet_id,
+                               'ip_address': db_lb.vip_address,
+                               'port_id': db_lb.vip_port_id}}
+        args.update(create_args)
+
+        if not graph:
+            return args
+
+        if db_lb.listeners:
+            args['listeners'] = []
+        for db_listener in db_lb.listeners:
+            listener_args = self.driver.listener._construct_args(db_listener,
+                                                                 graph=True)
+            args['listeners'].append(listener_args)
+        return args
+
     def create_and_allocate_vip(self, context, lb):
         self.create(context, lb)
 
     @async_op
     def create(self, context, lb):
-        args = {
-            'id': lb.id,
-            'name': lb.name,
-            'description': lb.description,
-            'enabled': lb.admin_state_up,
-            'project_id': lb.tenant_id,
-            'vip': {
-                'subnet_id': lb.vip_subnet_id,
-                'ip_address': lb.vip_address,
-                'port_id': lb.vip_port_id,
-            }
-        }
+        graph = (lb.listeners and len(lb.listeners) > 0)
+        args = self._construct_args(lb, graph=graph)
         self.driver.req.post(self._url(lb), args)
 
     @async_op
     def update(self, context, old_lb, lb):
-        args = {
-            'name': lb.name,
-            'description': lb.description,
-            'enabled': lb.admin_state_up,
-        }
+        args = self._construct_args(lb, create=False)
         self.driver.req.put(self._url(lb, lb.id), args)
 
     @async_op
@@ -256,8 +270,7 @@ class ListenerManager(driver_base.BaseListenerManager):
             s += '/%s' % id
         return s
 
-    @classmethod
-    def _write(cls, write_func, url, listener, create=True):
+    def _construct_args(self, listener, create=True, graph=False):
         sni_container_ids = [sni.tls_container_id
                              for sni in listener.sni_containers]
         args = {
@@ -271,19 +284,40 @@ class ListenerManager(driver_base.BaseListenerManager):
             'default_pool_id': listener.default_pool_id,
             'sni_containers': sni_container_ids
         }
-        if create:
-            args['project_id'] = listener.tenant_id
-            args['id'] = listener.id
-        write_func(url, args)
+
+        if not create:
+            return args
+
+        args['project_id'] = listener.tenant_id
+        args['id'] = listener.id
+
+        if not graph:
+            return args
+
+        del args['default_pool_id']
+
+        if listener.default_pool:
+            pool = listener.default_pool
+            args['default_pool'] = self.driver.pool._construct_args(pool,
+                                                                    graph=True)
+        if listener.l7_policies:
+            args['l7policies'] = []
+            l7_policies = listener.l7_policies
+            for l7_policy in l7_policies:
+                l7_policy_args = self.driver.l7policy._construct_args(
+                    l7_policy, graph=True)
+                args['l7policies'].append(l7_policy_args)
+        return args
 
     @async_op
     def create(self, context, listener):
-        self._write(self.driver.req.post, self._url(listener), listener)
+        args = self._construct_args(listener)
+        self.driver.req.post(self._url(listener), args)
 
     @async_op
     def update(self, context, old_listener, listener):
-        self._write(self.driver.req.put, self._url(listener, id=listener.id),
-                    listener, create=False)
+        args = self._construct_args(listener, create=False)
+        self.driver.req.put(self._url(listener, id=listener.id), args)
 
     @async_op
     def delete(self, context, listener):
@@ -300,8 +334,7 @@ class PoolManager(driver_base.BasePoolManager):
             s += '/%s' % id
         return s
 
-    @classmethod
-    def _write(cls, write_func, url, pool, create=True):
+    def _construct_args(self, pool, create=True, graph=False):
         args = {
             'name': pool.name,
             'description': pool.description,
@@ -316,21 +349,38 @@ class PoolManager(driver_base.BasePoolManager):
             }
         else:
             args['session_persistence'] = None
-        if create:
-            args['project_id'] = pool.tenant_id
-            args['id'] = pool.id
-            if pool.listeners:
-                args['listener_id'] = pool.listeners[0].id
-        write_func(url, args)
+
+        if not create:
+            return args
+
+        args['project_id'] = pool.tenant_id
+        args['id'] = pool.id
+        if pool.listeners:
+            args['listener_id'] = pool.listeners[0].id
+
+        if not graph:
+            return args
+
+        if pool.members:
+            args['members'] = []
+            for member in pool.members:
+                member_args = self.driver.member._construct_args(member)
+                args['members'].append(member_args)
+        if pool.healthmonitor:
+            hm_args = self.driver.health_monitor._construct_args(
+                pool.healthmonitor)
+            args['health_monitor'] = hm_args
+        return args
 
     @async_op
     def create(self, context, pool):
-        self._write(self.driver.req.post, self._url(pool), pool)
+        args = self._construct_args(pool)
+        self.driver.req.post(self._url(pool), args)
 
     @async_op
     def update(self, context, old_pool, pool):
-        self._write(self.driver.req.put, self._url(pool, id=pool.id), pool,
-                    create=False)
+        args = self._construct_args(pool, create=False)
+        self.driver.req.put(self._url(pool, id=pool.id), args)
 
     @async_op
     def delete(self, context, pool):
@@ -348,26 +398,33 @@ class MemberManager(driver_base.BaseMemberManager):
             s += '/%s' % id
         return s
 
-    @async_op
-    def create(self, context, member):
+    def _construct_args(self, member, create=True):
         args = {
-            'id': member.id,
             'enabled': member.admin_state_up,
-            'ip_address': member.address,
             'protocol_port': member.protocol_port,
-            'weight': member.weight,
+            'weight': member.weight
+        }
+        if not create:
+            return args
+
+        create_args = {
+            'id': member.id,
+            'ip_address': member.address,
             'subnet_id': member.subnet_id,
             'project_id': member.tenant_id
         }
+        args.update(create_args)
+
+        return args
+
+    @async_op
+    def create(self, context, member):
+        args = self._construct_args(member)
         self.driver.req.post(self._url(member), args)
 
     @async_op
     def update(self, context, old_member, member):
-        args = {
-            'enabled': member.admin_state_up,
-            'protocol_port': member.protocol_port,
-            'weight': member.weight,
-        }
+        args = self._construct_args(member, create=False)
         self.driver.req.put(self._url(member, member.id), args)
 
     @async_op
@@ -384,8 +441,7 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
             hm.pool.id)
         return s
 
-    @classmethod
-    def _write(cls, write_func, url, hm, create=True):
+    def _construct_args(self, hm, create=True):
         args = {
             'type': hm.type,
             'delay': hm.delay,
@@ -399,15 +455,17 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
         }
         if create:
             args['project_id'] = hm.tenant_id
-        write_func(url, args)
+        return args
 
     @async_op
     def create(self, context, hm):
-        self._write(self.driver.req.post, self._url(hm), hm)
+        args = self._construct_args(hm)
+        self.driver.req.post(self._url(hm), args)
 
     @async_op
     def update(self, context, old_hm, hm):
-        self._write(self.driver.req.put, self._url(hm), hm, create=False)
+        args = self._construct_args(hm, create=False)
+        self.driver.req.put(self._url(hm), args)
 
     @async_op
     def delete(self, context, hm):
@@ -425,36 +483,55 @@ class L7PolicyManager(driver_base.BaseL7PolicyManager):
             s += '/%s' % id
         return s
 
-    @classmethod
-    def _write(cls, write_func, url, l7p, create=True):
+    def _construct_args(self, l7p, create=True, graph=False):
         args = {
             'name': l7p.name,
             'description': l7p.description,
             'action': l7p.action,
-            'redirect_pool_id': l7p.redirect_pool_id,
             'redirect_url': l7p.redirect_url,
             'position': l7p.position,
             'enabled': l7p.admin_state_up
         }
         if args['action'] == constants.L7_POLICY_ACTION_REJECT:
             del args['redirect_url']
-            del args['redirect_pool_id']
         elif args['action'] == constants.L7_POLICY_ACTION_REDIRECT_TO_POOL:
+            args['redirect_pool_id'] = l7p.redirect_pool_id
             del args['redirect_url']
         elif args['action'] == constants.L7_POLICY_ACTION_REDIRECT_TO_URL:
+            if args.get('redirect_pool_id'):
+                del args['redirect_pool_id']
+        if not create:
+            return args
+
+        args['id'] = l7p.id
+
+        if not graph:
+            if l7p.listener_id:
+                args['listener_id'] = l7p.listener_id
+            return args
+
+        if (l7p.redirect_pool and l7p.action ==
+                constants.L7_POLICY_ACTION_REDIRECT_TO_POOL):
             del args['redirect_pool_id']
-        if create:
-            args['id'] = l7p.id
-        write_func(url, args)
+            pool_args = self.driver.pool._construct_args(l7p.redirect_pool,
+                                                         graph=True)
+            args['redirect_pool'] = pool_args
+        if l7p.rules:
+            args['l7rules'] = []
+            for rule in l7p.rules:
+                rule_args = self.driver.l7rule._construct_args(rule)
+                args['l7rules'].append(rule_args)
+        return args
 
     @async_op
     def create(self, context, l7p):
-        self._write(self.driver.req.post, self._url(l7p), l7p)
+        args = self._construct_args(l7p)
+        self.driver.req.post(self._url(l7p), args)
 
     @async_op
     def update(self, context, old_l7p, l7p):
-        self._write(self.driver.req.put, self._url(l7p, id=l7p.id),
-                    l7p, create=False)
+        args = self._construct_args(l7p, create=False)
+        self.driver.req.put(self._url(l7p, id=l7p.id), args)
 
     @async_op
     def delete(self, context, l7p):
@@ -474,7 +551,7 @@ class L7RuleManager(driver_base.BaseL7RuleManager):
         return s
 
     @classmethod
-    def _write(cls, write_func, url, l7r, create=True):
+    def _construct_args(cls, l7r, create=True):
         args = {
             'type': l7r.type,
             'compare_type': l7r.compare_type,
@@ -484,16 +561,17 @@ class L7RuleManager(driver_base.BaseL7RuleManager):
         }
         if create:
             args['id'] = l7r.id
-        write_func(url, args)
+        return args
 
     @async_op
     def create(self, context, l7r):
-        self._write(self.driver.req.post, self._url(l7r), l7r)
+        args = self._construct_args(l7r)
+        self.driver.req.post(self._url(l7r), args)
 
     @async_op
     def update(self, context, old_l7r, l7r):
-        self._write(self.driver.req.put, self._url(l7r, id=l7r.id),
-                    l7r, create=False)
+        args = self._construct_args(l7r, create=False)
+        self.driver.req.put(self._url(l7r, id=l7r.id), args)
 
     @async_op
     def delete(self, context, l7r):

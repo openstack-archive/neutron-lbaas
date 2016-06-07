@@ -60,6 +60,10 @@ class LoggingNoopLoadBalancerManager(LoggingNoopCommonManager,
                                      driver_base.BaseLoadBalancerManager):
 
     @property
+    def allows_create_graph(self):
+        return True
+
+    @property
     def allocates_vip(self):
         LOG.debug('allocates_vip queried')
         return False

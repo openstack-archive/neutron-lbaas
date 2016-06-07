@@ -40,6 +40,7 @@ from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.logging_noop import driver as noop_driver
 import neutron_lbaas.extensions
 from neutron_lbaas.extensions import l7
+from neutron_lbaas.extensions import lb_graph
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -64,12 +65,14 @@ _subnet_id = "0c798ed8-33ba-11e2-8b28-000c291c4d14"
 class LbaasTestMixin(object):
     resource_keys = list(loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_keys.extend(l7.RESOURCE_ATTRIBUTE_MAP.keys())
+    resource_keys.extend(lb_graph.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_prefix_map = dict(
         (k, loadbalancerv2.LOADBALANCERV2_PREFIX)
         for k in resource_keys)
 
     def _get_loadbalancer_optional_args(self):
-        return 'description', 'vip_address', 'admin_state_up', 'name'
+        return ('description', 'vip_address', 'admin_state_up', 'name',
+                'listeners')
 
     def _create_loadbalancer(self, fmt, subnet_id,
                              expected_res_status=None, **kwargs):
@@ -81,6 +84,22 @@ class LbaasTestMixin(object):
                 data['loadbalancer'][arg] = kwargs[arg]
 
         lb_req = self.new_create_request('loadbalancers', data, fmt)
+        lb_res = lb_req.get_response(self.ext_api)
+        if expected_res_status:
+            self.assertEqual(expected_res_status, lb_res.status_int)
+
+        return lb_res
+
+    def _create_graph(self, fmt, subnet_id, expected_res_status=None,
+                      **kwargs):
+        data = {'vip_subnet_id': subnet_id, 'tenant_id': self._tenant_id}
+        args = self._get_loadbalancer_optional_args()
+        for arg in args:
+            if arg in kwargs and kwargs[arg] is not None:
+                data[arg] = kwargs[arg]
+
+        data = {'graph': {'loadbalancer': data, 'tenant_id': self._tenant_id}}
+        lb_req = self.new_create_request('graphs', data, fmt)
         lb_res = lb_req.get_response(self.ext_api)
         if expected_res_status:
             self.assertEqual(expected_res_status, lb_res.status_int)
@@ -249,14 +268,69 @@ class LbaasTestMixin(object):
                                             tmp_subnet['subnet']['id'],
                                             **kwargs)
             if res.status_int >= webob.exc.HTTPClientError.code:
-                raise webob.exc.HTTPClientError(
+                exc = webob.exc.HTTPClientError(
                     explanation=_("Unexpected error code: %s") %
                     res.status_int
                 )
+                exc.code = res.status_int
+                exc.status_code = res.status_int
+                raise exc
             lb = self.deserialize(fmt or self.fmt, res)
             yield lb
             if not no_delete:
                 self._delete('loadbalancers', lb['loadbalancer']['id'])
+
+    @contextlib.contextmanager
+    def graph(self, fmt=None, subnet=None, no_delete=False, **kwargs):
+        if not fmt:
+            fmt = self.fmt
+
+        with test_db_base_plugin_v2.optional_ctx(
+            subnet, self.subnet) as tmp_subnet:
+
+            res = self._create_graph(fmt, tmp_subnet['subnet']['id'],
+                                     **kwargs)
+            if res.status_int >= webob.exc.HTTPClientError.code:
+                exc = webob.exc.HTTPClientError(
+                    explanation=_("Unexpected error code: %s") %
+                    res.status_int
+                )
+                exc.code = res.status_int
+                exc.status_code = res.status_int
+                raise exc
+            graph = self.deserialize(fmt or self.fmt, res)
+            yield graph
+            if not no_delete:
+                # delete loadbalancer children if this was a loadbalancer
+                # graph create call
+                lb = graph['graph']['loadbalancer']
+                for listener in lb.get('listeners', []):
+                    pool = listener.get('default_pool')
+                    if pool:
+                        hm = pool.get('healthmonitor')
+                        if hm:
+                            self._delete('healthmonitors', hm['id'])
+                        members = pool.get('members', [])
+                        for member in members:
+                            self._delete('pools', pool['id'],
+                                         subresource='members',
+                                         sub_id=member['id'])
+                        self._delete('pools', pool['id'])
+                    policies = listener.get('l7policies', [])
+                    for policy in policies:
+                        r_pool = policy.get('redirect_pool')
+                        if r_pool:
+                            r_hm = r_pool.get('healthmonitor')
+                            if r_hm:
+                                self._delete('healthmonitors', r_hm['id'])
+                            r_members = r_pool.get('members', [])
+                            for r_member in r_members:
+                                self._delete('pools', r_pool['id'],
+                                             subresource='members',
+                                             sub_id=r_member['id'])
+                            self._delete('pools', r_pool['id'])
+                    self._delete('listeners', listener['id'])
+                self._delete('loadbalancers', lb['id'])
 
     @contextlib.contextmanager
     def listener(self, fmt=None, protocol='HTTP', loadbalancer_id=None,
@@ -348,14 +422,8 @@ class LbaasTestMixin(object):
             member = self.deserialize(fmt or self.fmt, res)
         yield member
         if not no_delete:
-            del_req = self.new_delete_request(
-                'pools',
-                fmt=fmt,
-                id=pool_id,
-                subresource='members',
-                sub_id=member['member']['id'])
-            del_res = del_req.get_response(self.ext_api)
-            self.assertEqual(webob.exc.HTTPNoContent.code, del_res.status_int)
+            self._delete('pools', id=pool_id, subresource='members',
+                         sub_id=member['member']['id'])
 
     @contextlib.contextmanager
     def healthmonitor(self, fmt=None, pool_id='pool1id', type='TCP', delay=1,
@@ -461,6 +529,8 @@ class ExtendedPluginAwareExtensionManager(object):
             extensions_list.append(sharedpools)
         if 'l7' in self.extension_aliases:
             extensions_list.append(l7)
+        if 'lb-graph' in self.extension_aliases:
+            extensions_list.append(lb_graph)
         for extension in extensions_list:
             if 'RESOURCE_ATTRIBUTE_MAP' in extension.__dict__:
                 loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.update(
@@ -957,6 +1027,336 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
                     acontext, lb_id, delete_vip_port=True)
                 port = self.plugin.db._core_plugin.get_port(acontext, port_id)
                 self.assertIsNotNone(port)
+
+
+class TestLoadBalancerGraphCreation(LbaasPluginDbTestCase):
+
+    def _assert_graphs_equal(self, expected_graph, observed_graph):
+        observed_graph_copy = copy.deepcopy(observed_graph)
+        for k in ('id', 'vip_address', 'vip_subnet_id'):
+            self.assertTrue(observed_graph_copy.get(k, None))
+
+        expected_graph['id'] = observed_graph_copy['id']
+        expected_graph['vip_port_id'] = observed_graph_copy['vip_port_id']
+        expected_listeners = expected_graph.pop('listeners', [])
+        observed_listeners = observed_graph_copy.pop('listeners', [])
+        actual = dict((k, v)
+                      for k, v in observed_graph_copy.items()
+                      if k in expected_graph)
+        self.assertEqual(expected_graph, actual)
+        for observed_listener in observed_listeners:
+            self.assertTrue(observed_listener.get('id'))
+            observed_listener.pop('id')
+            default_pool = observed_listener.get('default_pool')
+            l7_policies = observed_listener.get('l7policies')
+            if default_pool:
+                self.assertTrue(default_pool.get('id'))
+                default_pool.pop('id')
+                hm = default_pool.get('healthmonitor')
+                if hm:
+                    self.assertTrue(hm.get('id'))
+                    hm.pop('id')
+                for member in default_pool.get('members', []):
+                    self.assertTrue(member.get('id'))
+                    member.pop('id')
+            if l7_policies:
+                for policy in l7_policies:
+                    self.assertTrue(policy.get('id'))
+                    policy.pop('id')
+                    r_pool = policy.get('redirect_pool')
+                    rules = policy.get('rules')
+                    if r_pool:
+                        self.assertTrue(r_pool.get('id'))
+                        r_pool.pop('id')
+                        r_hm = r_pool.get('healthmonitor')
+                        if r_hm:
+                            self.assertTrue(r_hm.get('id'))
+                            r_hm.pop('id')
+                        for r_member in r_pool.get('members', []):
+                            self.assertTrue(r_member.get('id'))
+                            r_member.pop('id')
+                    if rules:
+                        for rule in rules:
+                            self.assertTrue(rule.get('id'))
+                            rule.pop('id')
+            self.assertIn(observed_listener, expected_listeners)
+
+    def _validate_graph_statuses(self, graph):
+        lb_id = graph['id']
+        for listener in graph.get('listeners', []):
+            kwargs = {'listener_id': listener['id']}
+            pool = listener.get('default_pool')
+            if pool:
+                kwargs['pool_id'] = pool['id']
+                hm = pool.get('health_monitor')
+                if hm:
+                    kwargs['hm_id'] = hm['id']
+                for member in pool.get('members', []):
+                    kwargs['member_id'] = member['id']
+                    self._validate_statuses(lb_id, **kwargs)
+                if pool.get('members'):
+                    continue
+            self._validate_statuses(lb_id, **kwargs)
+
+    def _get_expected_lb(self, expected_listeners):
+        expected_lb = {
+            'name': 'vip1',
+            'description': '',
+            'admin_state_up': True,
+            'provisioning_status': constants.ACTIVE,
+            'operating_status': lb_const.ONLINE,
+            'tenant_id': self._tenant_id,
+            'listeners': expected_listeners,
+            'provider': 'lbaas'
+        }
+        return expected_lb
+
+    def _get_listener_bodies(self, name='listener1', protocol_port=80,
+                             create_default_pool=None,
+                             expected_default_pool=None,
+                             create_l7_policies=None,
+                             expected_l7_policies=None):
+        create_listener = {
+            'name': name,
+            'protocol_port': protocol_port,
+            'protocol': lb_const.PROTOCOL_HTTP,
+            'tenant_id': self._tenant_id,
+        }
+        if create_default_pool:
+            create_listener['default_pool'] = create_default_pool
+        if create_l7_policies:
+            create_listener['l7policies'] = create_l7_policies
+        expected_listener = {
+            'description': '',
+            'default_tls_container_ref': None,
+            'sni_container_refs': [],
+            'connection_limit': -1,
+            'admin_state_up': True,
+            'l7policies': []
+        }
+        expected_listener.update(create_listener)
+        if expected_default_pool:
+            expected_listener['default_pool'] = expected_default_pool
+        expected_listener['default_tls_container_id'] = None
+        expected_listener['l7policies'] = expected_l7_policies or []
+        return create_listener, expected_listener
+
+    def _get_pool_bodies(self, name='pool1', create_members=None,
+                         expected_members=None, create_hm=None,
+                         expected_hm=None):
+        create_pool = {
+            'name': name,
+            'protocol': lb_const.PROTOCOL_HTTP,
+            'lb_algorithm': lb_const.LB_METHOD_ROUND_ROBIN,
+            'tenant_id': self._tenant_id
+        }
+        if create_members:
+            create_pool['members'] = create_members
+        if create_hm:
+            create_pool['healthmonitor'] = create_hm
+        expected_pool = {
+            'description': '',
+            'session_persistence': None,
+            'members': [],
+            'admin_state_up': True
+        }
+        expected_pool.update(create_pool)
+        if expected_members:
+            expected_pool['members'] = expected_members
+        if expected_hm:
+            expected_pool['healthmonitor'] = expected_hm
+        return create_pool, expected_pool
+
+    def _get_member_bodies(self, name='member1'):
+        create_member = {
+            'name': name,
+            'address': '10.0.0.1',
+            'protocol_port': 80,
+            'subnet_id': self._subnet_id,
+            'tenant_id': self._tenant_id
+        }
+        expected_member = {
+            'weight': 1,
+            'admin_state_up': True,
+        }
+        expected_member.update(create_member)
+        return create_member, expected_member
+
+    def _get_hm_bodies(self, name='hm1'):
+        create_hm = {
+            'name': name,
+            'type': lb_const.HEALTH_MONITOR_HTTP,
+            'delay': 1,
+            'timeout': 1,
+            'max_retries': 1,
+            'tenant_id': self._tenant_id
+        }
+        expected_hm = {
+            'http_method': 'GET',
+            'url_path': '/',
+            'expected_codes': '200',
+            'admin_state_up': True
+        }
+        expected_hm.update(create_hm)
+        return create_hm, expected_hm
+
+    def _get_l7policies_bodies(self, name='l7policy_name', create_rules=None,
+                               expected_rules=None, create_r_pool=None,
+                               expected_r_pool=None):
+        c_policy = {
+            'name': name,
+            'action': lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id
+        }
+        if create_r_pool:
+            c_policy['redirect_pool'] = create_r_pool
+        if create_rules:
+            c_policy['rules'] = create_rules
+        e_policy = {
+            'description': '',
+            'position': 1
+        }
+        e_policy.update(c_policy)
+        if expected_r_pool:
+            e_policy['redirect_pool'] = expected_r_pool
+        if expected_rules:
+            e_policy['rules'] = expected_rules
+        create_l7policies = [c_policy]
+        expected_l7policies = [e_policy]
+        return create_l7policies, expected_l7policies
+
+    def _get_l7rules_bodes(self):
+        create_rule = {
+            'compare_type': lb_const.L7_RULE_COMPARE_TYPE_EQUAL_TO,
+            'type': lb_const.L7_RULE_TYPE_HOST_NAME,
+            'invert': False,
+            'value': 'localhost',
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id
+        }
+        create_rules = [create_rule]
+        expected_rule = {
+            'key': None
+        }
+        expected_rule.update(create_rule)
+        expected_rules = [expected_rule]
+        return create_rules, expected_rules
+
+    def create_graph(self, expected_lb_graph, listeners):
+        with self.subnet() as subnet:
+            expected_lb_graph['vip_subnet_id'] = subnet['subnet']['id']
+            for listener in listeners:
+                for member in listener.get('default_pool',
+                                           {}).get('members', []):
+                    member['subnet_id'] = subnet['subnet']['id']
+            for listener in expected_lb_graph.get('listeners', []):
+                for member in listener.get('default_pool',
+                                           {}).get('members', []):
+                    member['subnet_id'] = subnet['subnet']['id']
+            name = expected_lb_graph.get('name')
+            kwargs = {'name': name, 'subnet': subnet, 'listeners': listeners}
+            with self.graph(**kwargs) as graph:
+                lb = graph['graph']['loadbalancer']
+                self._assert_graphs_equal(expected_lb_graph, lb)
+                self._validate_graph_statuses(lb)
+            return graph
+
+    def test_with_one_listener(self):
+        create_listener, expected_listener = self._get_listener_bodies()
+        expected_lb = self._get_expected_lb([expected_listener])
+        self.create_graph(expected_lb, [create_listener])
+
+    def test_with_many_listeners(self):
+        create_listener1, expected_listener1 = self._get_listener_bodies()
+        create_listener2, expected_listener2 = self._get_listener_bodies(
+            name='listener2', protocol_port=81)
+        expected_lb = self._get_expected_lb(
+            [expected_listener1, expected_listener2])
+        self.create_graph(expected_lb,
+                          [create_listener1, create_listener2])
+
+    def test_with_many_listeners_same_port(self):
+        create_listener1, expected_listener1 = self._get_listener_bodies()
+        create_listener2, expected_listener2 = self._get_listener_bodies()
+        try:
+            self.create_graph(
+                {}, [create_listener1, create_listener2])
+        except webob.exc.HTTPClientError as exc:
+            self.assertEqual(exc.status_code, 409)
+
+    def test_with_one_listener_one_pool(self):
+        create_pool, expected_pool = self._get_pool_bodies()
+        create_listener, expected_listener = self._get_listener_bodies(
+            create_default_pool=create_pool,
+            expected_default_pool=expected_pool)
+        expected_lb = self._get_expected_lb([expected_listener])
+        self.create_graph(expected_lb, [create_listener])
+
+    def test_with_many_listeners_many_pools(self):
+        create_pool1, expected_pool1 = self._get_pool_bodies()
+        create_pool2, expected_pool2 = self._get_pool_bodies(name='pool2')
+        create_listener1, expected_listener1 = self._get_listener_bodies(
+            create_default_pool=create_pool1,
+            expected_default_pool=expected_pool1)
+        create_listener2, expected_listener2 = self._get_listener_bodies(
+            name='listener2', protocol_port=81,
+            create_default_pool=create_pool2,
+            expected_default_pool=expected_pool2)
+        expected_lb = self._get_expected_lb(
+            [expected_listener1, expected_listener2])
+        self.create_graph(
+            expected_lb, [create_listener1, create_listener2])
+
+    def test_with_one_listener_one_member(self):
+        create_member, expected_member = self._get_member_bodies()
+        create_pool, expected_pool = self._get_pool_bodies(
+            create_members=[create_member],
+            expected_members=[expected_member])
+        create_listener, expected_listener = self._get_listener_bodies(
+            create_default_pool=create_pool,
+            expected_default_pool=expected_pool)
+        expected_lb = self._get_expected_lb([expected_listener])
+        self.create_graph(expected_lb, [create_listener])
+
+    def test_with_one_listener_one_hm(self):
+        create_hm, expected_hm = self._get_hm_bodies()
+        create_pool, expected_pool = self._get_pool_bodies(
+            create_hm=create_hm,
+            expected_hm=expected_hm)
+        create_listener, expected_listener = self._get_listener_bodies(
+            create_default_pool=create_pool,
+            expected_default_pool=expected_pool)
+        expected_lb = self._get_expected_lb([expected_listener])
+        self.create_graph(expected_lb, [create_listener])
+
+    def test_with_one_of_everything(self):
+        create_member, expected_member = self._get_member_bodies()
+        create_hm, expected_hm = self._get_hm_bodies()
+        create_pool, expected_pool = self._get_pool_bodies(
+            create_members=[create_member],
+            expected_members=[expected_member],
+            create_hm=create_hm,
+            expected_hm=expected_hm)
+        create_r_member, expected_r_member = self._get_member_bodies(
+            name='r_member1')
+        create_r_hm, expected_r_hm = self._get_hm_bodies(name='r_hm1')
+        create_r_pool, expected_r_pool = self._get_pool_bodies(
+            create_members=[create_r_member],
+            expected_members=[expected_r_member],
+            create_hm=create_r_hm,
+            expected_hm=expected_r_hm)
+        create_rules, expected_rules = self._get_l7rules_bodes()
+        create_l7_policies, expected_l7_policies = self._get_l7policies_bodies(
+            create_rules=create_rules, expected_rules=expected_rules,
+            create_r_pool=create_r_pool, expected_r_pool=expected_r_pool)
+        create_listener, expected_listener = self._get_listener_bodies(
+            create_default_pool=create_pool,
+            expected_default_pool=expected_pool,
+            create_l7_policies=create_l7_policies,
+            expected_l7_policies=expected_l7_policies)
+        expected_lb = self._get_expected_lb([expected_listener])
+        self.create_graph(expected_lb, [create_listener])
 
 
 class ListenerTestBase(LbaasPluginDbTestCase):

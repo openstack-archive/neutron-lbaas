@@ -21,12 +21,13 @@ from neutron.callbacks import resources
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
 from neutron.plugins.common import constants
-from neutron_lib import constants as n_constants
+from neutron_lib import constants as n_const
 from neutron_lib import exceptions as n_exc
 from oslo_db import exception
 from oslo_log import log as logging
 from oslo_utils import excutils
 from oslo_utils import uuidutils
+from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
 
@@ -92,17 +93,17 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         # resolve subnet and create port
         subnet = self._core_plugin.get_subnet(context, lb_db.vip_subnet_id)
         fixed_ip = {'subnet_id': subnet['id']}
-        if ip_address and ip_address != n_constants.ATTR_NOT_SPECIFIED:
+        if ip_address and ip_address != n_const.ATTR_NOT_SPECIFIED:
             fixed_ip['ip_address'] = ip_address
 
         port_data = {
             'tenant_id': lb_db.tenant_id,
             'name': 'loadbalancer-' + lb_db.id,
             'network_id': subnet['network_id'],
-            'mac_address': n_constants.ATTR_NOT_SPECIFIED,
+            'mac_address': n_const.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': lb_db.id,
-            'device_owner': n_constants.DEVICE_OWNER_LOADBALANCERV2,
+            'device_owner': n_const.DEVICE_OWNER_LOADBALANCERV2,
             'fixed_ips': [fixed_ip]
         }
 
@@ -203,6 +204,66 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                     model_db.operating_status != operating_status):
                 model_db.operating_status = operating_status
 
+    def create_loadbalancer_graph(self, context, loadbalancer,
+                                  allocate_vip=True):
+        l7policies_ids = []
+        with context.session.begin(subtransactions=True):
+            listeners = loadbalancer.pop('listeners', [])
+            lb_db = self.create_loadbalancer(context, loadbalancer,
+                                             allocate_vip=allocate_vip)
+            for listener in listeners:
+                listener['loadbalancer_id'] = lb_db.id
+                default_pool = listener.pop('default_pool', None)
+                if (default_pool and
+                        default_pool != n_const.ATTR_NOT_SPECIFIED):
+                    default_pool['loadbalancer_id'] = lb_db.id
+                    hm = default_pool.pop('healthmonitor', None)
+                    if hm and hm != n_const.ATTR_NOT_SPECIFIED:
+                        hm_db = self.create_healthmonitor(context, hm)
+                        default_pool['healthmonitor_id'] = hm_db.id
+                    members = default_pool.pop('members', [])
+                    pool_db = self.create_pool(context, default_pool)
+                    listener['default_pool_id'] = pool_db.id
+                    for member in members:
+                        member['pool_id'] = pool_db.id
+                        self.create_pool_member(context, member, pool_db.id)
+                l7policies = listener.pop('l7policies', None)
+                listener_db = self.create_listener(context, listener)
+                if (l7policies and l7policies !=
+                        n_const.ATTR_NOT_SPECIFIED):
+                    for l7policy in l7policies:
+                        l7policy['listener_id'] = listener_db.id
+                        redirect_pool = l7policy.pop('redirect_pool', None)
+                        l7rules = l7policy.pop('rules', [])
+                        if (redirect_pool and redirect_pool !=
+                                n_const.ATTR_NOT_SPECIFIED):
+                            redirect_pool['loadbalancer_id'] = lb_db.id
+                            rhm = redirect_pool.pop('healthmonitor', None)
+                            rmembers = redirect_pool.pop('members', [])
+                            if rhm and rhm != n_const.ATTR_NOT_SPECIFIED:
+                                rhm_db = self.create_healthmonitor(context,
+                                                                   rhm)
+                                redirect_pool['healthmonitor_id'] = rhm_db.id
+                            rpool_db = self.create_pool(context, redirect_pool)
+                            l7policy['redirect_pool_id'] = rpool_db.id
+                            for rmember in rmembers:
+                                rmember['pool_id'] = rpool_db.id
+                                self.create_pool_member(context, rmember,
+                                                        rpool_db.id)
+                        l7policy_db = self.create_l7policy(context, l7policy)
+                        l7policies_ids.append(l7policy_db.id)
+                        if (l7rules and l7rules !=
+                                n_const.ATTR_NOT_SPECIFIED):
+                            for l7rule in l7rules:
+                                self.create_l7policy_rule(
+                                    context, l7rule, l7policy_db.id)
+        # SQL Alchemy cache issue where l7rules won't show up as intended.
+        for l7policy_id in l7policies_ids:
+            l7policy_db = self._get_resource(context, models.L7Policy,
+                                           l7policy_id)
+            context.session.expire(l7policy_db)
+        return self.get_loadbalancer(context, lb_db.id)
+
     def create_loadbalancer(self, context, loadbalancer, allocate_vip=True):
         with context.session.begin(subtransactions=True):
             self._load_id(context, loadbalancer)
@@ -215,6 +276,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             lb_db.stats = self._create_loadbalancer_stats(
                 context, lb_db.id)
             context.session.add(lb_db)
+            context.session.flush()
 
         # create port outside of lb create transaction since it can sometimes
         # cause lock wait timeouts
@@ -225,7 +287,11 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                                                     vip_address)
             except Exception:
                 with excutils.save_and_reraise_exception():
-                    context.session.delete(lb_db)
+                    try:
+                        context.session.delete(lb_db)
+                    except sqlalchemy_exc.InvalidRequestError:
+                        # Revert already completed.
+                        pass
                     context.session.flush()
         return data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
 
@@ -247,7 +313,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             port_db = self._core_plugin._get_port(context, port_id)
         except n_exc.PortNotFound:
             return
-        if port_db['device_owner'] == n_constants.DEVICE_OWNER_LOADBALANCERV2:
+        if port_db['device_owner'] == n_const.DEVICE_OWNER_LOADBALANCERV2:
             filters = {'vip_port_id': [port_id]}
             if len(self.get_loadbalancers(context, filters=filters)) > 0:
                 reason = _('has device owner %s') % port_db['device_owner']
@@ -384,14 +450,17 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 # Check for unspecified loadbalancer_id and listener_id and
                 # set to None
                 for id in ['loadbalancer_id', 'default_pool_id']:
-                    if listener.get(id) == n_constants.ATTR_NOT_SPECIFIED:
+                    if listener.get(id) == n_const.ATTR_NOT_SPECIFIED:
                         listener[id] = None
 
                 self._validate_listener_data(context, listener)
                 sni_container_ids = []
                 if 'sni_container_ids' in listener:
                     sni_container_ids = listener.pop('sni_container_ids')
-                listener_db_entry = models.Listener(**listener)
+                try:
+                    listener_db_entry = models.Listener(**listener)
+                except Exception as exc:
+                    raise exc
                 for container_id in sni_container_ids:
                     sni = models.SNI(listener_id=listener_db_entry.id,
                                      tls_container_id=container_id)
@@ -485,7 +554,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             pool['provisioning_status'] = constants.PENDING_CREATE
             pool['operating_status'] = lb_const.OFFLINE
 
-            session_info = pool.pop('session_persistence')
+            session_info = pool.pop('session_persistence', None)
             pool_db = models.PoolV2(**pool)
 
             if session_info:
@@ -667,8 +736,11 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             loadbalancer.stats)
 
     def create_l7policy(self, context, l7policy):
-        if l7policy['redirect_pool_id'] == n_constants.ATTR_NOT_SPECIFIED:
+        if (l7policy.get('redirect_pool_id') and
+                l7policy['redirect_pool_id'] == n_const.ATTR_NOT_SPECIFIED):
             l7policy['redirect_pool_id'] = None
+        if not l7policy.get('position'):
+            l7policy['position'] = 2147483647
         self._validate_l7policy_data(context, l7policy)
 
         with context.session.begin(subtransactions=True):
