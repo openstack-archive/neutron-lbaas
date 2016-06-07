@@ -803,6 +803,12 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         return self.db.get_listener(context, id).to_api_dict()
 
     def delete_listener(self, context, id):
+        old_listener = self.db.get_listener(context, id)
+        if old_listener.l7_policies:
+            raise loadbalancerv2.EntityInUse(
+                entity_using=models.L7Policy.NAME,
+                id=old_listener.l7_policies[0].id,
+                entity_in_use=models.Listener.NAME)
         self.db.test_and_set_status(context, models.Listener, id,
                                     constants.PENDING_DELETE)
         listener_db = self.db.get_listener(context, id)
