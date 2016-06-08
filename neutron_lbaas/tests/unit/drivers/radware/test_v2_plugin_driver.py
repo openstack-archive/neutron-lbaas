@@ -774,6 +774,30 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
                                     self.compare_apply_call()
 
+    def test_build_objects_graph_lb_pool(self):
+        with self.subnet(cidr='10.0.0.0/24') as vip_sub:
+            with self.loadbalancer(subnet=vip_sub) as lb:
+                lb_id = lb['loadbalancer']['id']
+                with self.listener(loadbalancer_id=lb_id) as listener:
+                    listener_id = listener['listener']['id']
+                    with self.pool(
+                        protocol=lb_con.PROTOCOL_HTTP,
+                        listener_id=listener_id) as pool:
+                        with nested(
+                            self.member(pool_id=pool['pool']['id'],
+                                        subnet=vip_sub, address='10.0.1.10'),
+                            self.member(pool_id=pool['pool']['id'],
+                                        subnet=vip_sub, address='10.0.1.20')):
+
+                            self.driver_rest_call_mock.reset_mock()
+                            rest_call_function_mock.__dict__.update(
+                                {'WORKFLOW_MISSING': False})
+
+                            with self.pool(
+                                protocol=lb_con.PROTOCOL_HTTP,
+                                loadbalancer_id=lb_id):
+                                self.compare_apply_call()
+
     def test_build_objects_graph_one_leg(self):
         with self.subnet(cidr='10.0.0.0/24') as vip_sub:
             with self.loadbalancer(subnet=vip_sub) as lb:
