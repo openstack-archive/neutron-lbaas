@@ -155,9 +155,9 @@ class BaseManagerMixin(object):
         if isinstance(obj, data_models.HealthMonitor):
             # Health Monitor does not have an operating status
             obj_op_status = None
-        LOG.debug("Updating object of type {0} with id of {1} to "
-                  "provisioning_status = {2}, operating_status = {3}".format(
-                      obj.__class__, obj.id, constants.ACTIVE, obj_op_status))
+        LOG.debug("Updating object of type %s with id of %s to "
+                  "provisioning_status = %s, operating_status = %s",
+                  obj.__class__, obj.id, constants.ACTIVE, obj_op_status)
         self.driver.plugin.db.update_status(
             context, obj_sa_cls, obj.id,
             provisioning_status=constants.ACTIVE,
@@ -185,27 +185,27 @@ class BaseManagerMixin(object):
         LOG.debug("Starting failed_completion method after a failed driver "
                   "action.")
         if isinstance(obj, data_models.LoadBalancer):
-            LOG.debug("Updating load balancer {0} to provisioning_status = "
-                      "{1}, operating_status = {2}.".format(
-                          obj.root_loadbalancer.id, constants.ERROR,
-                          lb_const.OFFLINE))
+            LOG.debug("Updating load balancer %s to provisioning_status = "
+                      "%s, operating_status = %s.",
+                      obj.root_loadbalancer.id, constants.ERROR,
+                      lb_const.OFFLINE)
             self.driver.plugin.db.update_status(
                 context, models.LoadBalancer, obj.root_loadbalancer.id,
                 provisioning_status=constants.ERROR,
                 operating_status=lb_const.OFFLINE)
             return
         obj_sa_cls = data_models.DATA_MODEL_TO_SA_MODEL_MAP[obj.__class__]
-        LOG.debug("Updating object of type {0} with id of {1} to "
-                  "provisioning_status = {2}, operating_status = {3}".format(
-                      obj.__class__, obj.id, constants.ERROR,
-                      lb_const.OFFLINE))
+        LOG.debug("Updating object of type %s with id of %s to "
+                  "provisioning_status = %s, operating_status = %s",
+                  obj.__class__, obj.id, constants.ERROR,
+                  lb_const.OFFLINE)
         self.driver.plugin.db.update_status(
             context, obj_sa_cls, obj.id,
             provisioning_status=constants.ERROR,
             operating_status=lb_const.OFFLINE)
-        LOG.debug("Updating load balancer {0} to "
-                  "provisioning_status = {1}".format(obj.root_loadbalancer.id,
-                                                     constants.ACTIVE))
+        LOG.debug("Updating load balancer %s to "
+                  "provisioning_status = %s", obj.root_loadbalancer.id,
+                  constants.ACTIVE)
         self.driver.plugin.db.update_status(
             context, models.LoadBalancer, obj.root_loadbalancer.id,
             provisioning_status=constants.ACTIVE)
