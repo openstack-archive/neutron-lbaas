@@ -2943,6 +2943,17 @@ class LbaasPoolTests(PoolTestBase):
                     self.plugin.db.get_pool_member,
                     ctx, member_id)
 
+    def test_delete_pool_and_hm(self):
+        with self.pool(listener_id=self.listener_id) as pool:
+            pool_id = pool['pool']['id']
+            with self.healthmonitor(pool_id=pool_id):
+                # verify pool deletion is prevented if HM is associated
+                ctx = context.get_admin_context()
+                self.assertRaises(
+                    loadbalancerv2.EntityInUse,
+                    self.plugin.delete_pool,
+                    ctx, pool_id)
+
     def test_cannot_add_multiple_pools_to_listener(self):
         with self.pool(listener_id=self.listener_id):
             data = {'pool': {'name': '',
@@ -3786,6 +3797,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                   'pool_id': self.pool_id}}
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(201, resp.status_int)
+        self._delete('healthmonitors', body['healthmonitor']['id'])
 
     def test_create_health_monitor_with_http_method_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
@@ -3821,6 +3833,7 @@ class LbaasHealthMonitorTests(HealthMonitorTestBase):
                                   'pool_id': self.pool_id}}
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(201, resp.status_int)
+        self._delete('healthmonitors', body['healthmonitor']['id'])
 
     def test_create_health_monitor_with_url_path_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
