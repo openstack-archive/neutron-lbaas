@@ -38,11 +38,13 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         conf.haproxy.send_gratuitous_arp = 3
         self.conf = conf
         self.rpc_mock = mock.Mock()
+        self._process_monitor = mock.Mock()
         with mock.patch(
                 'neutron.common.utils.load_class_by_alias_or_classname'):
             self.driver = namespace_driver.HaproxyNSDriver(
                 conf,
-                self.rpc_mock
+                self.rpc_mock,
+                self._process_monitor
             )
         self.vif_driver = mock.Mock()
         self.driver.vif_driver = self.vif_driver
@@ -67,19 +69,17 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.assertEqual(namespace_driver.DRIVER_NAME, self.driver.get_name())
 
     @mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
+    @mock.patch('os.makedirs')
     @mock.patch('os.path.dirname')
     @mock.patch('os.path.isdir')
     @mock.patch('shutil.rmtree')
     def test_undeploy_instance(self, mock_shutil, mock_isdir, mock_dirname,
-                               mock_ip_wrap):
+                               mock_makedirs, mock_ip_wrap):
         self.driver._get_state_file_path = mock.Mock(return_value='/path')
-        namespace_driver.kill_pids_in_file = mock.Mock()
         self.driver._unplug = mock.Mock()
         mock_dirname.return_value = '/path/' + self.lb.id
         mock_isdir.return_value = False
-
         self.driver.undeploy_instance(self.lb.id)
-        namespace_driver.kill_pids_in_file.assert_called_once_with('/path')
         calls = [mock.call(self.lb.id, 'pid'), mock.call(self.lb.id, '')]
         self.driver._get_state_file_path.has_calls(calls)
         self.assertFalse(self.driver._unplug.called)
@@ -89,7 +89,6 @@ class TestHaproxyNSDriver(base.BaseTestCase):
 
         self.driver.deployed_loadbalancers[self.lb.id] = self.lb
         mock_isdir.return_value = True
-        namespace_driver.kill_pids_in_file.reset_mock()
         mock_isdir.reset_mock()
         mock_ns = mock_ip_wrap.return_value
         mock_ns.get_devices.return_value = [collections.namedtuple(
@@ -97,7 +96,6 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.driver.undeploy_instance(self.lb.id, cleanup_namespace=True,
                                       delete_namespace=True)
         ns = namespace_driver.get_ns_name(self.lb.id)
-        namespace_driver.kill_pids_in_file.assert_called_once_with('/path')
         calls = [mock.call(self.lb.id, 'pid'), mock.call(self.lb.id, '')]
         self.driver._get_state_file_path.has_calls(calls)
         self.driver._unplug.assert_called_once_with(ns, self.lb.vip_port)
@@ -427,7 +425,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             namespace=namespace_driver.get_ns_name(self.lb.id))
         mock_ns.netns.execute.assert_called_once_with(
             ['haproxy', '-f', conf_dir % 'haproxy.conf', '-p',
-             conf_dir % 'haproxy.pid'])
+             conf_dir % 'haproxy.pid'], addl_env=None, run_as_root=False)
         self.assertIn(self.lb.id, self.driver.deployed_loadbalancers)
         self.assertEqual(self.lb,
                          self.driver.deployed_loadbalancers[self.lb.id])
@@ -665,28 +663,6 @@ class TestHealthMonitorManager(BaseTestHealthMonitorManager):
 
 
 class TestNamespaceDriverModule(base.BaseTestCase):
-
-    @mock.patch('os.path.exists')
-    @mock.patch('neutron.agent.linux.utils.execute')
-    def test_kill_pids_in_file(self, execute, exists):
-        pid_path = '/var/lib/data'
-        with mock.patch('six.moves.builtins.open') as m_open:
-            exists.return_value = False
-            file_mock = mock.MagicMock()
-            m_open.return_value = file_mock
-            file_mock.__enter__.return_value = file_mock
-            file_mock.__iter__.return_value = iter(['123'])
-            namespace_driver.kill_pids_in_file(pid_path)
-            # sometimes fails
-            # exists.assert_called_once_with(pid_path)
-            self.assertFalse(m_open.called)
-            self.assertFalse(execute.called)
-
-            exists.return_value = True
-            execute.side_effect = RuntimeError
-            namespace_driver.kill_pids_in_file(pid_path)
-            # sometimes fails
-            # execute.assert_called_once_with(['kill', '-9', '123'])
 
     def test_get_ns_name(self):
         ns_name = namespace_driver.get_ns_name('woohoo')

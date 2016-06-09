@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron.agent.linux import external_process
 from neutron.agent import rpc as agent_rpc
 from neutron import context as ncontext
 from neutron.plugins.common import constants
@@ -65,6 +66,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self.context,
             self.conf.host
         )
+        self._process_monitor = external_process.ProcessMonitor(
+            config=self.conf, resource_type='loadbalancer')
         self._load_drivers()
 
         self.agent_state = {
@@ -90,7 +93,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                 driver_inst = importutils.import_object(
                     driver,
                     self.conf,
-                    self.plugin_rpc
+                    self.plugin_rpc,
+                    self._process_monitor
                 )
             except ImportError:
                 msg = _('Error importing loadbalancer device driver: %s')
