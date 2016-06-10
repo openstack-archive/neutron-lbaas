@@ -559,7 +559,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 ('admin_state_up', False),
                 ('status', 'PENDING_UPDATE')]
 
-        with self.vip(name=name) as vip:
+        with self.vip(name=name, address='10.0.0.2') as vip:
             keys.append(('subnet_id', vip['vip']['subnet_id']))
             data = {'vip': {'name': name,
                             'connection_limit': 100,
@@ -605,7 +605,7 @@ class TestLoadBalancer(LoadBalancerPluginDbTestCase):
                 ('connection_limit', -1),
                 ('admin_state_up', True),
                 ('status', 'PENDING_CREATE')]
-        with self.vip(name=name) as vip:
+        with self.vip(name=name, address='10.0.0.2') as vip:
             keys.append(('subnet_id', vip['vip']['subnet_id']))
             req = self.new_list_request('vips')
             res = self.deserialize(self.fmt, req.get_response(self.ext_api))
