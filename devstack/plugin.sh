@@ -8,13 +8,14 @@ function neutron_lbaas_install {
 function neutron_agent_lbaas_install_agent_packages {
     if is_ubuntu; then
         if [[ ${OFFLINE} == False ]]; then
-            BACKPORT="deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse"
+            UBUNTU_CODENAME=$(lsb_release -cs)
+            BACKPORT="deb http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME}-backports main restricted universe multiverse"
             BACKPORT_EXISTS=$(grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/* | grep "${BACKPORT}") || true
             if [[ -z "${BACKPORT_EXISTS}" ]]; then
                 sudo add-apt-repository "${BACKPORT}" -y
             fi
             sudo apt-get update
-            sudo apt-get install haproxy -t trusty-backports
+            sudo apt-get install haproxy -t ${UBUNTU_CODENAME}-backports
         fi
     fi
     if is_fedora || is_suse; then
