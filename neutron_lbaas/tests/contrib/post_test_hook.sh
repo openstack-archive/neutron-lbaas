@@ -7,8 +7,8 @@ TEMPEST_CONFIG_DIR="$BASE/new/tempest/etc"
 SCRIPTS_DIR="/usr/os-testr-env/bin"
 OCTAVIA_DIR="$BASE/new/octavia"
 
-LBAAS_VERSION=$1
-LBAAS_TEST=$2
+LBAAS_VERSION=$2
+LBAAS_TEST=$3
 
 if [ "$LBAAS_VERSION" = "lbaasv1" ]; then
     testenv="apiv1"

@@ -5,14 +5,14 @@ set -ex
 GATE_DEST=$BASE/new
 DEVSTACK_PATH=$GATE_DEST/devstack
 
-testenv=${2:-"apiv2"}
+testenv=${3:-"apiv2"}
 
-if [ "$1" = "lbaasv1" ]; then
+if [ "$2" = "lbaasv1" ]; then
     testenv="apiv1"
-elif [ "$1" = "lbaasv2" ]; then
-    if [ "$2" = "healthmonitor" ] || [ "$2" = "listener" ] || [ "$2" = "loadbalancer" ] || [ "$2" = "member" ] || [ "$2" = "minimal" ] || [ "$2" = "pool" ]; then
+elif [ "$2" = "lbaasv2" ]; then
+    if [ "$3" = "healthmonitor" ] || [ "$3" = "listener" ] || [ "$3" = "loadbalancer" ] || [ "$3" = "member" ] || [ "$3" = "minimal" ] || [ "$3" = "pool" ]; then
         testenv="apiv2"
-    elif [ "$2" = "scenario" ]; then
+    elif [ "$3" = "scenario" ]; then
           testenv="scenario"
     fi
 fi
