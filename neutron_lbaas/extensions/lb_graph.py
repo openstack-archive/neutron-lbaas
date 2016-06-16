@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib import constants as n_constants
 from oslo_log import log as logging
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import resource_helper
 from neutron.common import exceptions as nexception
 from neutron.plugins.common import constants
@@ -54,7 +54,7 @@ EXISTING_ATTR_GRAPH_ATTR_MAP = {
     'listeners': {
         'default_pool': {
             'allow_post': True, 'allow_put': False, 'is_visible': True,
-            'default': attr.ATTR_NOT_SPECIFIED
+            'default': n_constants.ATTR_NOT_SPECIFIED
         },
         'l7policies': {
             'allow_post': True, 'allow_put': False,
@@ -64,7 +64,7 @@ EXISTING_ATTR_GRAPH_ATTR_MAP = {
     'pools': {
         'healthmonitor': {
             'allow_post': True, 'allow_put': False, 'is_visible': True,
-            'default': attr.ATTR_NOT_SPECIFIED
+            'default': n_constants.ATTR_NOT_SPECIFIED
         },
         'members': {
             'allow_post': True, 'allow_put': False,
@@ -78,7 +78,7 @@ EXISTING_ATTR_GRAPH_ATTR_MAP = {
         },
         'redirect_pool': {
             'allow_post': True, 'allow_put': False, 'is_visible': True,
-            'default': attr.ATTR_NOT_SPECIFIED
+            'default': n_constants.ATTR_NOT_SPECIFIED
         },
         'listener_id': {
             'allow_post': False, 'allow_put': False, 'is_visible': True

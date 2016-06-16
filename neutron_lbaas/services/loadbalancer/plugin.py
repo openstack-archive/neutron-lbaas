@@ -24,6 +24,7 @@ from neutron.plugins.common import constants
 from neutron.services.flavors import flavors_plugin
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
+from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -174,7 +175,7 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
 
     def _get_provider_name(self, context, pool):
         if ('provider' in pool and
-            pool['provider'] != attrs.ATTR_NOT_SPECIFIED):
+            pool['provider'] != n_constants.ATTR_NOT_SPECIFIED):
             provider_name = pconf.normalize_provider_name(pool['provider'])
             self.validate_provider(provider_name)
             return provider_name
@@ -188,10 +189,10 @@ class LoadBalancerPlugin(ldb.LoadBalancerPluginDb,
         # This validation is because the new API version also has a resource
         # called pool and these attributes have to be optional in the old API
         # so they are not required attributes of the new.  Its complicated.
-        if pool['pool']['lb_method'] == attrs.ATTR_NOT_SPECIFIED:
+        if pool['pool']['lb_method'] == n_constants.ATTR_NOT_SPECIFIED:
             raise loadbalancerv2.RequiredAttributeNotSpecified(
                 attr_name='lb_method')
-        if pool['pool']['subnet_id'] == attrs.ATTR_NOT_SPECIFIED:
+        if pool['pool']['subnet_id'] == n_constants.ATTR_NOT_SPECIFIED:
             raise loadbalancerv2.RequiredAttributeNotSpecified(
                 attr_name='subnet_id')
 
@@ -466,7 +467,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def _get_provider_name(self, entity):
         if ('provider' in entity and
-                entity['provider'] != attrs.ATTR_NOT_SPECIFIED):
+                entity['provider'] != n_constants.ATTR_NOT_SPECIFIED):
             provider_name = pconf.normalize_provider_name(entity['provider'])
             del entity['provider']
             self.validate_provider(provider_name)
@@ -534,7 +535,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         # the provider, when flavor templating arrives.
 
         if ('provider' in loadbalancer and
-            loadbalancer['provider'] != attrs.ATTR_NOT_SPECIFIED):
+            loadbalancer['provider'] != n_constants.ATTR_NOT_SPECIFIED):
             raise loadbalancerv2.ProviderFlavorConflict()
 
         plugin = manager.NeutronManager.get_service_plugins().get(
@@ -567,7 +568,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         loadbalancer['provider'] = provider
 
     def _get_tweaked_resource_attribute_map(self):
-        memo = {id(attrs.ATTR_NOT_SPECIFIED): attrs.ATTR_NOT_SPECIFIED}
+        memo = {id(n_constants.ATTR_NOT_SPECIFIED):
+                n_constants.ATTR_NOT_SPECIFIED}
         ram = copy.deepcopy(attrs.RESOURCE_ATTRIBUTE_MAP, memo=memo)
         del ram['listeners']['loadbalancer_id']
         del ram['pools']['listener_id']
@@ -607,7 +609,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                 context, {'listener': listener}, True, 'listener',
                 ram['listeners'])
             l7policies = listener.get('l7policies')
-            if l7policies and l7policies != attrs.ATTR_NOT_SPECIFIED:
+            if l7policies and l7policies != n_constants.ATTR_NOT_SPECIFIED:
                 prepped_policies = []
                 for policy in l7policies:
                     prepped_policy = napi_base.Controller.prepare_request_body(
@@ -615,7 +617,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                         ram['l7policies'])
                     l7rules = policy.get('rules')
                     redirect_pool = policy.get('redirect_pool')
-                    if l7rules and l7rules != attrs.ATTR_NOT_SPECIFIED:
+                    if l7rules and l7rules != n_constants.ATTR_NOT_SPECIFIED:
                         prepped_rules = []
                         for rule in l7rules:
                             prepped_rule = (
@@ -625,7 +627,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                             prepped_rules.append(prepped_rule)
                         prepped_policy['l7_rules'] = prepped_rules
                     if (redirect_pool and
-                            redirect_pool != attrs.ATTR_NOT_SPECIFIED):
+                            redirect_pool != n_constants.ATTR_NOT_SPECIFIED):
                         prepped_r_pool = (
                             napi_base.Controller.prepare_request_body(
                                 context, {'pool': redirect_pool}, True, 'pool',
@@ -640,7 +642,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                             prepped_r_members.append(prepped_r_member)
                         prepped_r_pool['members'] = prepped_r_members
                         r_hm = redirect_pool.get('healthmonitor')
-                        if r_hm and r_hm != attrs.ATTR_NOT_SPECIFIED:
+                        if r_hm and r_hm != n_constants.ATTR_NOT_SPECIFIED:
                             prepped_r_hm = (
                                 napi_base.Controller.prepare_request_body(
                                     context, {'healthmonitor': r_hm},
@@ -651,7 +653,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                     prepped_policies.append(prepped_policy)
                 prepped_listener['l7_policies'] = prepped_policies
             pool = listener.get('default_pool')
-            if pool and pool != attrs.ATTR_NOT_SPECIFIED:
+            if pool and pool != n_constants.ATTR_NOT_SPECIFIED:
                 prepped_pool = napi_base.Controller.prepare_request_body(
                     context, {'pool': pool}, True, 'pool',
                     ram['pools'])
@@ -663,7 +665,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                     prepped_members.append(prepped_member)
                 prepped_pool['members'] = prepped_members
                 hm = pool.get('healthmonitor')
-                if hm and hm != attrs.ATTR_NOT_SPECIFIED:
+                if hm and hm != n_constants.ATTR_NOT_SPECIFIED:
                     prepped_hm = napi_base.Controller.prepare_request_body(
                         context, {'healthmonitor': hm}, True, 'healthmonitor',
                         ram['healthmonitors'])
@@ -675,7 +677,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def create_loadbalancer(self, context, loadbalancer):
         loadbalancer = loadbalancer.get('loadbalancer')
-        if loadbalancer['flavor_id'] != attrs.ATTR_NOT_SPECIFIED:
+        if loadbalancer['flavor_id'] != n_constants.ATTR_NOT_SPECIFIED:
             self._insert_provider_name_from_flavor(context, loadbalancer)
         else:
             del loadbalancer['flavor_id']
@@ -697,7 +699,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def create_graph(self, context, graph):
         loadbalancer = graph.get('graph', {}).get('loadbalancer')
         loadbalancer = self._prepare_loadbalancer_graph(context, loadbalancer)
-        if loadbalancer['flavor_id'] != attrs.ATTR_NOT_SPECIFIED:
+        if loadbalancer['flavor_id'] != n_constants.ATTR_NOT_SPECIFIED:
             self._insert_provider_name_from_flavor(context, loadbalancer)
         else:
             del loadbalancer['flavor_id']
