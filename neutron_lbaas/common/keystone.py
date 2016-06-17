@@ -107,7 +107,7 @@ def get_session():
             kwargs['project_domain_name'] = (cfg.CONF.service_auth.
                                              admin_project_domain)
         else:
-            raise Exception('Unknown keystone version!')
+            raise Exception(_('Unknown keystone version!'))
 
         try:
             kc = client.Password(**kwargs)
