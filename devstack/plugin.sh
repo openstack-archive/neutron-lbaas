@@ -7,15 +7,15 @@ function neutron_lbaas_install {
 
 function neutron_agent_lbaas_install_agent_packages {
     if is_ubuntu; then
-        if [[ ${OFFLINE} == False ]]; then
-            UBUNTU_CODENAME=$(lsb_release -cs)
-            BACKPORT="deb http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME}-backports main restricted universe multiverse"
+        if [[ ${OFFLINE} == False && ${os_CODENAME} =~ (trusty|precise) ]]; then
+            # Check for specific version of Ubuntu that requires backports repository for haproxy 1.5.14 or greater
+            BACKPORT="deb http://archive.ubuntu.com/ubuntu ${os_CODENAME}-backports main restricted universe multiverse"
             BACKPORT_EXISTS=$(grep ^ /etc/apt/sources.list /etc/apt/sources.list.d/* | grep "${BACKPORT}") || true
             if [[ -z "${BACKPORT_EXISTS}" ]]; then
                 sudo add-apt-repository "${BACKPORT}" -y
             fi
             sudo apt-get update
-            sudo apt-get install haproxy -t ${UBUNTU_CODENAME}-backports
+            sudo apt-get install haproxy -t ${os_CODENAME}-backports
         fi
     fi
     if is_fedora || is_suse; then
