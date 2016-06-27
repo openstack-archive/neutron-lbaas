@@ -495,10 +495,10 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         except (lbaas_agentschedulerv2.NoEligibleLbaasAgent,
                 lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
             raise no_agent
-        except Exception:
+        except Exception as e:
             LOG.exception(_LE("There was an error in the driver"))
             self._handle_driver_error(context, db_entity)
-            raise loadbalancerv2.DriverError()
+            raise loadbalancerv2.DriverError(msg=e)
 
     def _handle_driver_error(self, context, db_entity):
         lb_id = db_entity.root_loadbalancer.id
