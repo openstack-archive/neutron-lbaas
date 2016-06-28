@@ -221,7 +221,7 @@ class TestPools(base.BaseTestCase):
 
     @test.attr(type='negative')
     def test_create_pool_invalid_session_persistence_field(self):
-        """Test create pool with invalid session persistance field"""
+        """Test create pool with invalid session persistence field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
                           protocol='HTTP',
                           session_persistence={'type': 'HTTP'},
