@@ -63,5 +63,26 @@ For example
     ENABLED_SERVICES+=,q-lbaasv2
     ENABLED_SERVICES+=,octavia,o-cw,o-hk,o-hm,o-api
 
+
+3) Enable the dashboard of LBaaS V2
+
+If using LBaaS V2 and you want to add horizon support, add lines in the form:
+
+    enable_plugin neutron-lbaas-dashboard <neutron-lbaas-dashboard GITURL> [GITREF]
+
+where
+
+    <neutron-lbaas-dashboard GITURL> is the URL of a neutron-lbaas-dashboard repository
+    [GITREF] is an optional git ref (branch/ref/tag).  The default is
+             master.
+
+For example
+
+    enable_plugin neutron-lbaas-dashboard https://git.openstack.org/openstack/neutron-lbaas-dashboard stable/liberty
+
+Once you enable the neutron-lbaas-dashboard plugin in your local.conf, ensure ``horizon`` and
+``q-lbaasv2`` services are enabled. If both of them are enabled,
+neutron-lbaas-dashboard will be enabled automatically
+
 For more information, see the "Externally Hosted Plugins" section of
 http://docs.openstack.org/developer/devstack/plugins.html.
