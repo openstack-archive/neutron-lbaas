@@ -335,7 +335,10 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         listeners = [
             listener for listener in lb.listeners
             if listener.provisioning_status != constants.PENDING_DELETE and
-            (listener.default_pool and listener.default_pool.members)]
+            (listener.default_pool and
+             listener.default_pool.provisioning_status !=
+             constants.PENDING_DELETE and
+             listener.default_pool.members)]
         for listener in listeners:
             listener_dict = {}
             for prop in LISTENER_PROPERTIES:
