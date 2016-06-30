@@ -21,4 +21,4 @@ WebTest>=2.0 # MIT
 reno>=1.8.0 # Apache2
 # Needed to run DB commands in virtualenvs
 PyMySQL>=0.6.2 # MIT License
-tempest>=11.0.0 # Apache-2.0
+tempest>=12.1.0 # Apache-2.0

@@ -16,9 +16,8 @@
 
 from tempest.common import cred_provider
 from tempest import config
+from tempest.lib.services.identity.v2.tenants_client import TenantsClient
 from tempest import manager
-from tempest.services.identity.v2.json.tenants_client import \
-    TenantsClient
 
 from neutron_lbaas.tests.tempest.lib.services.network.json.network_client import \
     NetworkClientJSON
