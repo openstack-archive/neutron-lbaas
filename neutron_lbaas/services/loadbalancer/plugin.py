@@ -1035,11 +1035,11 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         return self.db.get_pool(context, id).to_api_dict()
 
     def delete_pool(self, context, id):
-        old_lb = self.db.get_pool(context, id)
-        if old_lb.healthmonitor:
+        old_pool = self.db.get_pool(context, id)
+        if old_pool.healthmonitor:
             raise loadbalancerv2.EntityInUse(
                 entity_using=models.HealthMonitorV2.NAME,
-                id=old_lb.healthmonitor.id,
+                id=old_pool.healthmonitor.id,
                 entity_in_use=models.PoolV2.NAME)
         self.db.test_and_set_status(context, models.PoolV2, id,
                                     constants.PENDING_DELETE)
