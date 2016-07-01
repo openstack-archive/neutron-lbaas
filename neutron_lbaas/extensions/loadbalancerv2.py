@@ -144,6 +144,40 @@ def _validate_connection_limit(data, min_value=lb_const.MIN_CONNECT_VALUE):
 attr.validators['type:connection_limit'] = _validate_connection_limit
 
 
+# TODO(iranzo) Remove when available in neutron-lib, see bug 1598879.
+
+def _validate_integer(data, valid_values=None):
+    """This function validates if the data is an integer.
+
+    It checks both number or string provided to validate it's an
+    integer and returns a message with the error if it's not
+
+    :param data: The string or number to validate as integer
+    :param valid_values: None (for future usage)
+    :return: Message if not an integer.
+    """
+
+    if valid_values and (data not in valid_values):
+        msg = (_("'%(data)s' is not within '%(valid_values)s'") %
+               {'data': data, 'valid_values': valid_values})
+        return msg
+
+    msg = _("'%s' is not an integer") % data
+    try:
+        fl_n = float(data)
+        int_n = int(data)
+    except (ValueError, TypeError, OverflowError):
+        LOG.debug(msg)
+        return msg
+    else:
+        # Fail test if non equal or boolean
+        if fl_n != int_n or isinstance(data, bool):
+            LOG.debug(msg)
+            return msg
+
+
+attr.validators['type:integer'] = _validate_integer
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -377,8 +411,8 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                               'is_visible': True},
             'weight': {'allow_post': True, 'allow_put': True,
                        'default': 1,
-                       'validate': {'type:range': [0, 256]},
-                       'convert_to': converters.convert_to_int,
+                       'validate': {'type:range': [0, 256],
+                                    'type:integer': None},
                        'is_visible': True},
             'admin_state_up': {'allow_post': True, 'allow_put': True,
                                'default': True,

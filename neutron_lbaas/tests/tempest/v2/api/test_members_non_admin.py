@@ -230,6 +230,17 @@ class MemberTestJSON(base.BaseTestCase):
                           self.pool_id, **member_opts)
 
     @test.attr(type='negative')
+    def test_create_member_nonint_weight(self):
+        """Test create member with nonint weight"""
+        member_opts = {}
+        member_opts['address'] = "127.0.0.1"
+        member_opts['protocol_port'] = 80
+        member_opts['subnet_id'] = self.subnet_id
+        member_opts['weight'] = 0.1
+        self.assertRaises(ex.BadRequest, self._create_member,
+                          self.pool_id, **member_opts)
+
+    @test.attr(type='negative')
     def test_create_member_empty_tenant_id(self):
         """Test create member with an empty tenant_id"""
         member_opts = {}
