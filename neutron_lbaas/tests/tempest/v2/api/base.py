@@ -18,6 +18,7 @@ import time
 from oslo_log import log as logging
 from tempest.api.network import base
 from tempest import config
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions
 
 from neutron_lbaas._i18n import _, _LI
@@ -90,23 +91,26 @@ class BaseTestCase(base.BaseNetworkTest):
                 for pool in listener.get('pools'):
                     hm = pool.get('healthmonitor')
                     if hm:
-                        cls._try_delete_resource(
+                        test_utils.call_and_ignore_notfound_exc(
                             cls.health_monitors_client.delete_health_monitor,
                             pool.get('healthmonitor').get('id'))
                         cls._wait_for_load_balancer_status(lb_id)
-                    cls._try_delete_resource(cls.pools_client.delete_pool,
-                                             pool.get('id'))
+                    test_utils.call_and_ignore_notfound_exc(
+                        cls.pools_client.delete_pool,
+                        pool.get('id'))
                     cls._wait_for_load_balancer_status(lb_id)
                     health_monitor = pool.get('healthmonitor')
                     if health_monitor:
-                        cls._try_delete_resource(
+                        test_utils.call_and_ignore_notfound_exc(
                             cls.health_monitors_client.delete_health_monitor,
                             health_monitor.get('id'))
                     cls._wait_for_load_balancer_status(lb_id)
-                cls._try_delete_resource(cls.listeners_client.delete_listener,
-                                         listener.get('id'))
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.listeners_client.delete_listener,
+                    listener.get('id'))
                 cls._wait_for_load_balancer_status(lb_id)
-            cls._try_delete_resource(cls._delete_load_balancer, lb_id)
+            test_utils.call_and_ignore_notfound_exc(
+                cls._delete_load_balancer, lb_id)
 
         super(BaseTestCase, cls).resource_cleanup()
 

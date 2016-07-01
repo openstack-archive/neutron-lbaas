@@ -16,6 +16,7 @@
 
 from tempest import config
 from tempest.lib.common.utils import data_utils
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -60,12 +61,14 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
 
     @classmethod
     def resource_cleanup(cls):
-        cls._try_delete_resource(cls._delete_load_balancer,
-                                 cls.load_balancer['id'])
+        test_utils.call_and_ignore_notfound_exc(
+            cls._delete_load_balancer,
+            cls.load_balancer['id'])
         cls._wait_for_load_balancer_status(
             load_balancer_id=cls.load_balancer['id'], delete=True)
-        cls._try_delete_resource(cls._delete_load_balancer,
-                                 cls.tenant_load_balancer['id'])
+        test_utils.call_and_ignore_notfound_exc(
+            cls._delete_load_balancer,
+            cls.tenant_load_balancer['id'])
         cls._wait_for_load_balancer_status(
             load_balancer_id=cls.tenant_load_balancer['id'], delete=True)
 

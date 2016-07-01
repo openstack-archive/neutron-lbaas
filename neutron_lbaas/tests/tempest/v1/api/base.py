@@ -18,6 +18,7 @@ import netaddr
 from tempest import config
 from tempest import exceptions
 from tempest.lib.common.utils import data_utils
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
 
@@ -111,98 +112,93 @@ class BaseNetworkTest(test.BaseTestCase):
         if CONF.service_available.neutron:
             # Clean up ipsec policies
             for ipsecpolicy in cls.ipsecpolicies:
-                cls._try_delete_resource(cls.client.delete_ipsecpolicy,
-                                         ipsecpolicy['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_ipsecpolicy,
+                    ipsecpolicy['id'])
             # Clean up firewall policies
             for fw_policy in cls.fw_policies:
-                cls._try_delete_resource(cls.client.delete_firewall_policy,
-                                         fw_policy['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_firewall_policy,
+                    fw_policy['id'])
             # Clean up firewall rules
             for fw_rule in cls.fw_rules:
-                cls._try_delete_resource(cls.client.delete_firewall_rule,
-                                         fw_rule['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_firewall_rule,
+                    fw_rule['id'])
             # Clean up ike policies
             for ikepolicy in cls.ikepolicies:
-                cls._try_delete_resource(cls.client.delete_ikepolicy,
-                                         ikepolicy['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_ikepolicy,
+                    ikepolicy['id'])
             # Clean up vpn services
             for vpnservice in cls.vpnservices:
-                cls._try_delete_resource(cls.client.delete_vpnservice,
-                                         vpnservice['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_vpnservice,
+                    vpnservice['id'])
             # Clean up floating IPs
             for floating_ip in cls.floating_ips:
-                cls._try_delete_resource(cls.client.delete_floatingip,
-                                         floating_ip['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_floatingip,
+                    floating_ip['id'])
             # Clean up routers
             for router in cls.routers:
-                cls._try_delete_resource(cls.delete_router,
-                                         router)
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.delete_router,
+                    router)
 
             # Clean up health monitors
             for health_monitor in cls.health_monitors:
-                cls._try_delete_resource(cls.client.delete_health_monitor,
-                                         health_monitor['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_health_monitor,
+                    health_monitor['id'])
             # Clean up members
             for member in cls.members:
-                cls._try_delete_resource(cls.client.delete_member,
-                                         member['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_member,
+                    member['id'])
             # Clean up vips
             for vip in cls.vips:
-                cls._try_delete_resource(cls.client.delete_vip,
-                                         vip['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_vip,
+                    vip['id'])
             # Clean up pools
             for pool in cls.pools:
-                cls._try_delete_resource(cls.client.delete_pool,
-                                         pool['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_pool,
+                    pool['id'])
             # Clean up metering label rules
             for metering_label_rule in cls.metering_label_rules:
-                cls._try_delete_resource(
+                test_utils.call_and_ignore_notfound_exc(
                     cls.admin_client.delete_metering_label_rule,
                     metering_label_rule['id'])
             # Clean up metering labels
             for metering_label in cls.metering_labels:
-                cls._try_delete_resource(
+                test_utils.call_and_ignore_notfound_exc(
                     cls.admin_client.delete_metering_label,
                     metering_label['id'])
             # Clean up ports
             for port in cls.ports:
-                cls._try_delete_resource(cls.client.delete_port,
-                                         port['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_port,
+                    port['id'])
             # Clean up subnets
             for subnet in cls.subnets:
-                cls._try_delete_resource(cls.client.delete_subnet,
-                                         subnet['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_subnet,
+                    subnet['id'])
             # Clean up networks
             for network in cls.networks:
-                cls._try_delete_resource(cls.client.delete_network,
-                                         network['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.client.delete_network,
+                    network['id'])
 
             # Clean up shared networks
             for network in cls.shared_networks:
-                cls._try_delete_resource(cls.admin_client.delete_network,
-                                         network['id'])
+                test_utils.call_and_ignore_notfound_exc(
+                    cls.admin_client.delete_network,
+                    network['id'])
 
         super(BaseNetworkTest, cls).resource_cleanup()
-
-    @classmethod
-    def _try_delete_resource(self, delete_callable, *args, **kwargs):
-        """Cleanup resources in case of test-failure
-
-        Some resources are explicitly deleted by the test.
-        If the test failed to delete a resource, this method will execute
-        the appropriate delete methods. Otherwise, the method ignores NotFound
-        exceptions thrown for resources that were correctly deleted by the
-        test.
-
-        :param delete_callable: delete method
-        :param args: arguments for delete method
-        :param kwargs: keyword arguments for delete method
-        """
-        try:
-            delete_callable(*args, **kwargs)
-        # if resource is not found, this means it was deleted in the test
-        except lib_exc.NotFound:
-            pass
 
     @classmethod
     def create_network(cls, network_name=None):
