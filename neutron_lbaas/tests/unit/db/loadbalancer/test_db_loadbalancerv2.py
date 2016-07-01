@@ -1778,6 +1778,55 @@ class LbaasListenerTests(ListenerTestBase):
                               sni_tls_container_ref_5],
                              listener['sni_container_refs'])
 
+    def test_update_listener_with_empty_tls(self):
+        default_tls_container_ref = uuidutils.generate_uuid()
+        sni_tls_container_ref_1 = uuidutils.generate_uuid()
+        sni_tls_container_ref_2 = uuidutils.generate_uuid()
+        sni_tls_container_ref_3 = uuidutils.generate_uuid()
+        sni_tls_container_ref_4 = uuidutils.generate_uuid()
+
+        listener_data = {
+            'protocol': lb_const.PROTOCOL_TERMINATED_HTTPS,
+            'default_tls_container_ref': default_tls_container_ref,
+            'sni_container_refs': [sni_tls_container_ref_1,
+                                   sni_tls_container_ref_2],
+            'protocol_port': 443,
+            'admin_state_up': True,
+            'tenant_id': self._tenant_id,
+            'loadbalancer_id': self.lb_id
+        }
+
+        with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                       'cert_parser.validate_cert') as validate_cert_mock,\
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.'
+                           'get_cert') as get_cert_mock:
+            get_cert_mock.start().return_value = CertMock(
+                'mock_cert')
+            validate_cert_mock.start().return_value = True
+
+            # Default container and two SNI containers
+            # Test order and validation behavior.
+            listener = self.plugin.create_listener(
+                context.get_admin_context(), {'listener': listener_data})
+            expected = [sni_tls_container_ref_1, sni_tls_container_ref_2]
+            self.assertEqual(expected, listener['sni_container_refs'])
+            # Default container and two other SNI containers
+            # Test order and validation behavior.
+            listener_data.pop('loadbalancer_id')
+            listener_data.pop('protocol')
+            listener_data.pop('provisioning_status')
+            listener_data.pop('operating_status')
+            listener_data['sni_container_refs'] = [
+                sni_tls_container_ref_3, sni_tls_container_ref_4]
+            listener_data['default_tls_container_ref'] = ''
+            listener = self.plugin.update_listener(
+                context.get_admin_context(),
+                listener['id'],
+                {'listener': listener_data}
+            )
+            self.assertEqual('', listener['default_tls_container_ref'])
+
     def test_delete_listener(self):
         with self.listener(no_delete=True,
                            loadbalancer_id=self.lb_id) as listener:
