@@ -28,6 +28,7 @@ from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
 from neutron_lib.api import converters
+from neutron_lib.api import validators
 from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as nexception
 
@@ -141,7 +142,7 @@ def _validate_connection_limit(data, min_value=lb_const.MIN_CONNECT_VALUE):
         LOG.debug(msg)
         return msg
 
-attr.validators['type:connection_limit'] = _validate_connection_limit
+validators.validators['type:connection_limit'] = _validate_connection_limit
 
 
 RESOURCE_ATTRIBUTE_MAP = {
