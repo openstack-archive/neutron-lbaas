@@ -64,6 +64,10 @@ class LoggingNoopLoadBalancerManager(LoggingNoopCommonManager,
         return True
 
     @property
+    def allows_healthmonitor_thresholds(self):
+        return True
+
+    @property
     def allocates_vip(self):
         LOG.debug('allocates_vip queried')
         return False

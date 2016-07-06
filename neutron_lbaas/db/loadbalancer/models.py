@@ -113,6 +113,7 @@ class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
     name = sa.Column(sa.String(attr.NAME_MAX_LEN), nullable=True)
+    max_retries_down = sa.Column(sa.Integer, nullable=True)
 
     @property
     def root_loadbalancer(self):
