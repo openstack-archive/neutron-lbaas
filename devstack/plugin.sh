@@ -50,14 +50,14 @@ function neutron_lbaas_configure_common {
     fi
 
     # Ensure config is set up properly for authentication neutron-lbaas
-    iniset $NEUTRON_LBAAS_CONF service_auth auth_uri $AUTH_URI
+    iniset $NEUTRON_LBAAS_CONF service_auth auth_url $AUTH_URL
     iniset $NEUTRON_LBAAS_CONF service_auth admin_tenant_name $ADMIN_TENANT_NAME
     iniset $NEUTRON_LBAAS_CONF service_auth admin_user $ADMIN_USER
     iniset $NEUTRON_LBAAS_CONF service_auth admin_password $ADMIN_PASSWORD
     iniset $NEUTRON_LBAAS_CONF service_auth auth_version $AUTH_VERSION
 
     # Ensure config is set up properly for authentication neutron
-    iniset $NEUTRON_CONF service_auth auth_uri $AUTH_URI
+    iniset $NEUTRON_CONF service_auth auth_url $AUTH_URL
     iniset $NEUTRON_CONF service_auth admin_tenant_name $ADMIN_TENANT_NAME
     iniset $NEUTRON_CONF service_auth admin_user $ADMIN_USER
     iniset $NEUTRON_CONF service_auth admin_password $ADMIN_PASSWORD
