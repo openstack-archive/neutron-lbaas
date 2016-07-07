@@ -434,11 +434,11 @@ class BaseTestCase(manager.NetworkScenarioTest):
             try:
                 lb = self.load_balancers_client.get_load_balancer(
                     load_balancer_id)
-            except lib_exc.NotFound as e:
+            except lib_exc.NotFound:
                 if delete:
                     return
                 else:
-                    raise e
+                    raise
             if (lb.get('provisioning_status') == provisioning_status and
                     lb.get('operating_status') == operating_status):
                 break

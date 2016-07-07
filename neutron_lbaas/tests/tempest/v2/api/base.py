@@ -186,13 +186,13 @@ class BaseTestCase(base.BaseNetworkTest):
                         lb.get('operating_status') == operating_status):
                     break
                 time.sleep(interval_time)
-            except exceptions.NotFound as e:
+            except exceptions.NotFound:
                 # if wait is for delete operation do break
                 if delete:
                     break
                 else:
                     # raise original exception
-                    raise e
+                    raise
         else:
             if delete:
                 raise exceptions.TimeoutException(

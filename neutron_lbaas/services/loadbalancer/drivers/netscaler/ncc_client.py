@@ -161,7 +161,7 @@ class NSClient(object):
             if e.status == requests.codes.NOT_FOUND and method == 'DELETE':
                 return 200, {}
             else:
-                raise e
+                raise
 
         return response_status, resp_dict
 
