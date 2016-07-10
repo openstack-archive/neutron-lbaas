@@ -14,7 +14,6 @@
 #    under the License.
 
 from neutron import context
-from neutron import quota
 from neutron.tests.unit.api.v2 import test_base
 from oslo_config import cfg
 
@@ -23,19 +22,7 @@ from neutron_lbaas.tests import base
 _get_path = test_base._get_path
 
 
-class LBaaSQuotaExtensionTestCase(base.QuotaExtensionTestCase):
-
-    def setUp(self):
-        super(LBaaSQuotaExtensionTestCase, self).setUp()
-        cfg.CONF.set_override(
-            'quota_items',
-            ['vip', 'pool', 'member', 'health_monitor', 'extra1',
-             'loadbalancer', 'listener', 'healthmonitor'],
-            group='QUOTAS')
-        quota.register_resources_from_config()
-
-
-class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
+class LBaaSQuotaExtensionDbTestCase(base.QuotaExtensionTestCase):
     fmt = 'json'
 
     def setUp(self):
@@ -153,8 +140,7 @@ class LBaaSQuotaExtensionDbTestCase(LBaaSQuotaExtensionTestCase):
         self.assertEqual(-1, quota['quota']['healthmonitor'])
 
 
-class LBaaSQuotaExtensionCfgTestCase(
-    LBaaSQuotaExtensionTestCase):
+class LBaaSQuotaExtensionCfgTestCase(base.QuotaExtensionTestCase):
 
     def setUp(self):
         cfg.CONF.set_override(
