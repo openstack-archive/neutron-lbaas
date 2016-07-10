@@ -14,12 +14,9 @@
 #    under the License.
 
 from oslo_log.helpers import log_method_call as call_log
-from oslo_log import log as logging
 
 from neutron_lbaas.common import cert_manager
 from neutron_lbaas.drivers import driver_base
-
-LOG = logging.getLogger(__name__)
 
 
 class EdgeDriverBaseManager(object):

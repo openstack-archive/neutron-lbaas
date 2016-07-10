@@ -15,16 +15,12 @@
 from functools import wraps
 
 from neutron import context as ncontext
-from oslo_log import log as logging
 from oslo_utils import excutils
 
 from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers import driver_mixins
 from neutron_lbaas.services.loadbalancer import constants
-
-
-LOG = logging.getLogger(__name__)
 
 
 class NotImplementedManager(object):
