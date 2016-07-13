@@ -351,9 +351,9 @@ class NetScalerCommonManager(BaseManagerMixin):
                 self.successful_completion(context, obj)
             else:
                 self.track_provision_status(obj)
-        except Exception as e:
+        except Exception:
             self.failed_completion(context, obj)
-            raise e
+            raise
 
     def update(self, context, old_obj, obj):
         LOG.debug("%s, update %s", self.__class__.__name__, old_obj.id)
@@ -363,9 +363,9 @@ class NetScalerCommonManager(BaseManagerMixin):
                 self.successful_completion(context, obj)
             else:
                 self.track_provision_status(obj)
-        except Exception as e:
+        except Exception:
             self.failed_completion(context, obj)
-            raise e
+            raise
 
     def delete(self, context, obj):
         LOG.debug("%s, delete %s", self.__class__.__name__, obj.id)
@@ -375,9 +375,9 @@ class NetScalerCommonManager(BaseManagerMixin):
                 self.successful_completion(context, obj, delete=True)
             else:
                 self.track_provision_status(obj)
-        except Exception as e:
+        except Exception:
             self.failed_completion(context, obj)
-            raise e
+            raise
 
     def track_provision_status(self, obj):
         for lb in self._get_loadbalancers(obj):
