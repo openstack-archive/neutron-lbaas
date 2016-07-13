@@ -14,7 +14,6 @@
 #    under the License.
 
 from neutron_lib import constants as n_constants
-from oslo_log import log as logging
 
 from neutron.api import extensions
 from neutron.api.v2 import resource_helper
@@ -23,8 +22,6 @@ from neutron.plugins.common import constants
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.extensions import loadbalancerv2
-
-LOG = logging.getLogger(__name__)
 
 
 class ProviderCannotCreateLoadBalancerGraph(nexception.BadRequest):
