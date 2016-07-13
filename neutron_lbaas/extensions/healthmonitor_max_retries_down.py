@@ -14,14 +14,14 @@
 #    under the License.
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
+from neutron_lib.api import converters
 
 EXTENDED_ATTRIBUTES_2_0 = {
     'healthmonitors': {
         'max_retries_down': {
             'allow_post': True, 'allow_put': True,
             'default': 3, 'validate': {'type:range': [1, 10]},
-            'convert_to': attr.convert_to_int, 'is_visible': True
+            'convert_to': converters.convert_to_int, 'is_visible': True
         }
     }
 }

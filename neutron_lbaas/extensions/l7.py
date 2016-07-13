@@ -20,6 +20,7 @@ from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron import manager
 from neutron.plugins.common import constants
+from neutron_lib.api import converters
 from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as nexception
 
@@ -106,7 +107,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                          'is_visible': True},
         # range max is (2^31 - 1) to get around MySQL quirk
         'position': {'allow_post': True, 'allow_put': True,
-                     'convert_to': attr.convert_to_int,
+                     'convert_to': converters.convert_to_int,
                      'validate': {'type:range': [1, 2147483647]},
                      'default': 2147483647,
                      'is_visible': True},
@@ -114,7 +115,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                  'is_visible': True},
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
-                           'convert_to': attr.convert_to_boolean,
+                           'convert_to': converters.convert_to_boolean,
                            'is_visible': True},
         'status': {'allow_post': False, 'allow_put': False,
                    'is_visible': True}
@@ -145,7 +146,7 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                              'is_visible': True},
             'invert': {'allow_post': True, 'allow_put': True,
                        'default': False,
-                       'convert_to': attr.convert_to_boolean,
+                       'convert_to': converters.convert_to_boolean,
                        'is_visible': True},
             'key': {'allow_post': True, 'allow_put': True,
                     'validate': {'type:string_or_none': None},
@@ -156,7 +157,7 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                       'is_visible': True},
             'admin_state_up': {'allow_post': True, 'allow_put': True,
                                'default': True,
-                               'convert_to': attr.convert_to_boolean,
+                               'convert_to': converters.convert_to_boolean,
                                'is_visible': True},
             'status': {'allow_post': False, 'allow_put': False,
                        'is_visible': True}
