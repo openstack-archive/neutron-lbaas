@@ -33,6 +33,7 @@ from sqlalchemy.orm import exc
 from sqlalchemy.orm import validates
 
 from neutron_lbaas._i18n import _, _LE
+from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
@@ -71,7 +72,7 @@ class PoolStatistics(model_base.BASEV2):
         return value
 
 
-class Vip(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant,
+class Vip(model_base.BASEV2, models_v2.HasId, models.HasTenant,
           models_v2.HasStatusDescription):
     """Represents a v2 neutron loadbalancer vip."""
 
@@ -91,7 +92,7 @@ class Vip(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant,
     port = orm.relationship(models_v2.Port)
 
 
-class Member(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant,
+class Member(model_base.BASEV2, models_v2.HasId, models.HasTenant,
              models_v2.HasStatusDescription):
     """Represents a v2 neutron loadbalancer member."""
 
@@ -107,7 +108,7 @@ class Member(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant,
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
 
 
-class Pool(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant,
+class Pool(model_base.BASEV2, models_v2.HasId, models.HasTenant,
            models_v2.HasStatusDescription):
     """Represents a v2 neutron loadbalancer pool."""
 
@@ -142,7 +143,7 @@ class Pool(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant,
     )
 
 
-class HealthMonitor(model_base.BASEV2, models_v2.HasId, models_v2.HasTenant):
+class HealthMonitor(model_base.BASEV2, models_v2.HasId, models.HasTenant):
     """Represents a v2 neutron loadbalancer healthmonitor."""
 
     type = sa.Column(sa.Enum("PING", "TCP", "HTTP", "HTTPS",
