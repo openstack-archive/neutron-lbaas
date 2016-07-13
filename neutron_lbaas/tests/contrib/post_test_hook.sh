@@ -48,7 +48,7 @@ function generate_testr_results {
     sudo -H -u "$owner" chmod o+rw .
     sudo -H -u "$owner" chmod o+rw -R .testrepository
     if [ -f ".testrepository/0" ] ; then
-        subunit-1to2 < .testrepository/0 > ./testrepository.subunit
+        .tox/"$testenv"/bin/subunit-1to2 < .testrepository/0 > ./testrepository.subunit
         $SCRIPTS_DIR/subunit2html ./testrepository.subunit testr_results.html
         gzip -9 ./testrepository.subunit
         gzip -9 ./testr_results.html
@@ -56,9 +56,17 @@ function generate_testr_results {
     fi
 }
 
-owner=tempest
-# Configure the api and scenario tests to use the tempest.conf set by devstack
-sudo_env="TEMPEST_CONFIG_DIR=$TEMPEST_CONFIG_DIR"
+case $testtype in
+    "dsvm-functional")
+        owner=stack
+        sudo_env=
+        ;;
+    "tempest")
+        owner=tempest
+        # Configure the api and scenario tests to use the tempest.conf set by devstack
+        sudo_env="TEMPEST_CONFIG_DIR=$TEMPEST_CONFIG_DIR"
+        ;;
+esac
 
 # Set owner permissions according to job's requirements.
 cd "$NEUTRON_LBAAS_DIR"
