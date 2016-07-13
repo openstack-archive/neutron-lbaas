@@ -1374,6 +1374,16 @@ class LbaasListenerTests(ListenerTestBase):
             resp, body = self._get_loadbalancer_api(self.lb_id)
             self.assertEqual(0, len(body['loadbalancer']['listeners']))
 
+    def test_delete_listener_with_l7policy(self):
+        with self.listener(loadbalancer_id=self.lb_id,
+                           no_delete=True) as listener:
+            with self.l7policy(listener['listener']['id'], no_delete=True):
+                ctx = context.get_admin_context()
+                self.assertRaises(
+                    loadbalancerv2.EntityInUse,
+                    self.plugin.delete_listener,
+                    ctx, listener['listener']['id'])
+
     def test_show_listener(self):
         name = 'show_listener'
         expected_values = {'name': name,
