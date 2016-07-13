@@ -18,7 +18,6 @@ import mock
 
 from neutron_lbaas.agent import agent_api as api
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 class TestApiCache(base.BaseTestCase):
@@ -37,12 +36,8 @@ class TestApiCache(base.BaseTestCase):
         if method in add_host:
             expected_kwargs['host'] = self.api.host
 
-        with nested(
-            mock.patch.object(self.api.client, 'call'),
-            mock.patch.object(self.api.client, 'prepare'),
-        ) as (
-            rpc_mock, prepare_mock
-        ):
+        with mock.patch.object(self.api.client, 'call') as rpc_mock, \
+                mock.patch.object(self.api.client, 'prepare') as prepare_mock:
             prepare_mock.return_value = self.api.client
             rpc_mock.return_value = 'foo'
             rv = getattr(self.api, method)(**kwargs)

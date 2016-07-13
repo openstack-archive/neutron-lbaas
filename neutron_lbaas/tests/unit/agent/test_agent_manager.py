@@ -21,7 +21,6 @@ from neutron_lbaas.agent import agent_manager as manager
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 class TestManager(base.BaseTestCase):
@@ -86,11 +85,9 @@ class TestManager(base.BaseTestCase):
         self.assertTrue(self.log.exception.called)
 
     def _sync_state_helper(self, ready, reloaded, destroyed):
-        with nested(
-            mock.patch.object(self.mgr, '_reload_loadbalancer'),
-            mock.patch.object(self.mgr, '_destroy_loadbalancer')
-        ) as (reload, destroy):
-
+        with mock.patch.object(self.mgr, '_reload_loadbalancer') as reload, \
+                mock.patch.object(self.mgr, '_destroy_loadbalancer') as \
+                destroy:
             self.rpc_mock.get_ready_devices.return_value = ready
 
             self.mgr.sync_state()
