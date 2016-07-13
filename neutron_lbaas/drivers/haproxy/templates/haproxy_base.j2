@@ -20,6 +20,7 @@ global
     group {{ usergroup }}
     log /dev/log local0
     log /dev/log local1 notice
+    maxconn {{ connection_limit }}
     stats socket {{ sock_path }} mode 0666 level user
 
 defaults

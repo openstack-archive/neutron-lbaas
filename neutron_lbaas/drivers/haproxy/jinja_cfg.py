@@ -248,12 +248,23 @@ def _transform_loadbalancer(loadbalancer, haproxy_base_dir):
     listeners = [_transform_listener(x, haproxy_base_dir)
         for x in loadbalancer.listeners if x.admin_state_up]
     pools = [_transform_pool(x) for x in loadbalancer.pools]
+    connection_limit = _compute_global_connection_limit(listeners)
     return {
         'name': loadbalancer.name,
         'vip_address': loadbalancer.vip_address,
+        'connection_limit': connection_limit,
         'listeners': listeners,
         'pools': pools
     }
+
+
+def _compute_global_connection_limit(listeners):
+    # NOTE(dlundquist): HAProxy has a global default connection limit
+    # of 2000, so we will include 2000 connections for each listener
+    # without a connection limit specified. This way we provide the
+    # same behavior as a default haproxy configuration without
+    # connection limit specified in the case of a single load balancer.
+    return sum([x.get('connection_limit', 2000) for x in listeners])
 
 
 def _transform_listener(listener, haproxy_base_dir):

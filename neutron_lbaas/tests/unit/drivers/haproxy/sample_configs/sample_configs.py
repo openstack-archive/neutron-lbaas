@@ -102,18 +102,21 @@ RET_LB = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER],
+    'connection_limit': RET_LISTENER['connection_limit'],
     'pools': [RET_POOL]}
 
 RET_LB_TLS = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER_TLS],
+    'connection_limit': RET_LISTENER_TLS['connection_limit'],
     'pools': [RET_POOL]}
 
 RET_LB_TLS_SNI = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER_TLS_SNI],
+    'connection_limit': RET_LISTENER_TLS_SNI['connection_limit'],
     'pools': [RET_POOL]}
 
 
@@ -148,7 +151,8 @@ def sample_vip_port_tuple():
 
 
 def sample_listener_tuple(proto=None, monitor=True, persistence=True,
-                          persistence_type=None, tls=False, sni=False):
+                          persistence_type=None, tls=False, sni=False,
+                          connection_limit=98):
     proto = 'HTTP' if proto is None else proto
     port = '443' if proto is 'HTTPS' or proto is 'TERMINATED_HTTPS' else '80'
     in_listener = collections.namedtuple(
@@ -164,7 +168,7 @@ def sample_listener_tuple(proto=None, monitor=True, persistence=True,
         default_pool=sample_pool_tuple(
             proto=proto, monitor=monitor, persistence=persistence,
             persistence_type=persistence_type),
-        connection_limit=98,
+        connection_limit=connection_limit,
         admin_state_up=True,
         default_tls_container_id='cont_id_1' if tls else '',
         sni_container_ids=['cont_id_2', 'cont_id_3'] if sni else [],
@@ -284,6 +288,7 @@ def sample_base_expected_config(backend, frontend=None):
             "    group nogroup\n"
             "    log /dev/log local0\n"
             "    log /dev/log local1 notice\n"
+            "    maxconn 98\n"
             "    stats socket /sock_path mode 0666 level user\n\n"
             "defaults\n"
             "    log global\n"
