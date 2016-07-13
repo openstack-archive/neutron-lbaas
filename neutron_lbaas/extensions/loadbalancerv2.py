@@ -102,7 +102,7 @@ class MemberAddressTypeSubnetTypeMismatch(nexception.NeutronException):
 
 
 class DriverError(nexception.NeutronException):
-    message = _("An error happened in the driver")
+    message = _("Driver error: %(msg)s")
 
 
 class SessionPersistenceConfigurationInvalid(nexception.BadRequest):
