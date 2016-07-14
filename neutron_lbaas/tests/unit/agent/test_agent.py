@@ -18,7 +18,6 @@ from oslo_config import cfg
 
 from neutron_lbaas.agent import agent
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 class TestLbaasService(base.BaseTestCase):
@@ -36,13 +35,11 @@ class TestLbaasService(base.BaseTestCase):
 
     def test_main(self):
         logging_str = 'neutron.agent.common.config.setup_logging'
-        with nested(
-            mock.patch(logging_str),
-            mock.patch.object(agent.service, 'launch'),
-            mock.patch('sys.argv'),
-            mock.patch.object(agent.manager, 'LbaasAgentManager'),
-            mock.patch.object(cfg.CONF, 'register_opts')
-        ) as (mock_logging, mock_launch, sys_argv, mgr_cls, ro):
+        with mock.patch(logging_str), \
+                mock.patch.object(agent.service, 'launch') as mock_launch, \
+                mock.patch('sys.argv'), \
+                mock.patch.object(agent.manager, 'LbaasAgentManager'), \
+                mock.patch.object(cfg.CONF, 'register_opts'):
             agent.main()
 
             mock_launch.assert_called_once_with(mock.ANY, mock.ANY)

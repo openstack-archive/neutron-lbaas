@@ -17,22 +17,19 @@ import mock
 
 from neutron_lbaas.services.loadbalancer.drivers.haproxy import cfg
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 class TestHaproxyCfg(base.BaseTestCase):
     def test_save_config(self):
-        with nested(
+        with mock.patch('neutron_lbaas.services.loadbalancer.'
+                        'drivers.haproxy.cfg._build_global') as b_g, \
                 mock.patch('neutron_lbaas.services.loadbalancer.'
-                           'drivers.haproxy.cfg._build_global'),
+                           'drivers.haproxy.cfg._build_defaults') as b_d, \
                 mock.patch('neutron_lbaas.services.loadbalancer.'
-                           'drivers.haproxy.cfg._build_defaults'),
+                           'drivers.haproxy.cfg._build_frontend') as b_f, \
                 mock.patch('neutron_lbaas.services.loadbalancer.'
-                           'drivers.haproxy.cfg._build_frontend'),
-                mock.patch('neutron_lbaas.services.loadbalancer.'
-                           'drivers.haproxy.cfg._build_backend'),
-                mock.patch('neutron.common.utils.replace_file')
-        ) as (b_g, b_d, b_f, b_b, replace):
+                           'drivers.haproxy.cfg._build_backend') as b_b, \
+                mock.patch('neutron.common.utils.replace_file') as replace:
             test_config = ['globals', 'defaults', 'frontend', 'backend']
             b_g.return_value = [test_config[0]]
             b_d.return_value = [test_config[1]]

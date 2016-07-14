@@ -22,7 +22,6 @@ from neutron_lbaas.db.loadbalancer import loadbalancer_db
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
 from neutron_lbaas.services.loadbalancer.drivers.netscaler \
     import netscaler_driver
-from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 
@@ -93,10 +92,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
         self.context = context.get_admin_context()
 
     def test_create_vip(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 testvip = self._build_testvip_contents(subnet['subnet'],
@@ -125,10 +123,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                     constants.ACTIVE)
 
     def test_create_vip_without_connection(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 testvip = self._build_testvip_contents(subnet['subnet'],
@@ -160,10 +157,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                     constants.ERROR)
 
     def test_update_vip(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 with self.vip(pool=pool, subnet=subnet) as vip:
@@ -201,16 +197,14 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                         constants.ACTIVE)
 
     def test_delete_vip(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
-                with nested(
-                    self.vip(pool=pool, subnet=subnet),
-                    mock.patch.object(self.driver.plugin, '_delete_db_vip')
-                ) as (vip, mock_delete_db_vip):
+                with self.vip(pool=pool, subnet=subnet) as vip, \
+                        mock.patch.object(self.driver.plugin,
+                            '_delete_db_vip') as mock_delete_db_vip:
                     mock_delete_db_vip.return_value = None
                     #reset the remove_resource() mock
                     self.remove_resource_mock.reset_mock()
@@ -225,12 +219,13 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                          .assert_called_once_with(None, vip_resource_path))
 
     def test_create_pool(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet'),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_ports'),
-            mock.patch.object(self.driver.plugin._core_plugin, 'create_port')
-        ) as (subnet, mock_get_subnet, mock_get_ports, mock_create_port):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_ports') as mock_get_ports, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'create_port') as mock_create_port:
             mock_get_subnet.return_value = subnet['subnet']
             mock_get_ports.return_value = None
             mock_create_port.return_value = TESTPOOL_SNAT_PORT
@@ -258,12 +253,13 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                 constants.ACTIVE)
 
     def test_create_pool_with_error(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet'),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_ports'),
-            mock.patch.object(self.driver.plugin._core_plugin, 'create_port')
-        ) as (subnet, mock_get_subnet, mock_get_ports, mock_create_port):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_ports') as mock_get_ports, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'create_port') as mock_create_port:
             mock_get_subnet.return_value = subnet['subnet']
             mock_get_ports.return_value = None
             mock_create_port.return_value = TESTPOOL_SNAT_PORT
@@ -294,12 +290,13 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                 constants.ERROR)
 
     def test_create_pool_with_snatportcreate_failure(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet'),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_ports'),
-            mock.patch.object(self.driver.plugin._core_plugin, 'create_port')
-        ) as (subnet, mock_get_subnet, mock_get_ports, mock_create_port):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_ports') as mock_get_ports, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'create_port') as mock_create_port:
             mock_get_subnet.return_value = subnet['subnet']
             mock_get_ports.return_value = None
             mock_create_port.side_effect = exceptions.NeutronException()
@@ -312,10 +309,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                               self.context, testpool)
 
     def test_update_pool(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 updated_pool = self._build_updated_testpool_contents(
@@ -349,23 +345,19 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                     constants.ACTIVE)
 
     def test_delete_pool(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
-            with nested(
-                self.pool(provider=LBAAS_PROVIDER_NAME),
-                mock.patch.object(self.driver.plugin._core_plugin,
-                                  'delete_port'),
-                mock.patch.object(self.driver.plugin._core_plugin,
-                                  'get_ports'),
-                mock.patch.object(self.driver.plugin,
-                                  'get_pools'),
-                mock.patch.object(self.driver.plugin,
-                                  '_delete_db_pool')
-            ) as (pool, mock_delete_port, mock_get_ports, mock_get_pools,
-                  mock_delete_db_pool):
+            with self.pool(provider=LBAAS_PROVIDER_NAME) as pool, \
+                    mock.patch.object(self.driver.plugin._core_plugin,
+                                      'delete_port') as mock_delete_port, \
+                    mock.patch.object(self.driver.plugin._core_plugin,
+                                      'get_ports') as mock_get_ports, \
+                    mock.patch.object(self.driver.plugin,
+                                      'get_pools') as mock_get_pools, \
+                    mock.patch.object(self.driver.plugin,
+                        '_delete_db_pool') as mock_delete_db_pool:
                 mock_delete_port.return_value = None
                 mock_get_ports.return_value = [{'id': TESTPOOL_PORT_ID}]
                 mock_get_pools.return_value = []
@@ -383,11 +375,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                      .assert_called_once_with(None, pool_resource_path))
 
     def test_create_member(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin,
-                              'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 testmember = self._build_testmember_contents(pool['pool'])
@@ -415,10 +405,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                     constants.ACTIVE)
 
     def test_update_member(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 with self.member(pool_id=pool['pool']['id']) as member:
@@ -454,16 +443,14 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                         constants.ACTIVE)
 
     def test_delete_member(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
-                with nested(
-                    self.member(pool_id=pool['pool']['id']),
-                    mock.patch.object(self.driver.plugin, '_delete_db_member')
-                ) as (member, mock_delete_db_member):
+                with self.member(pool_id=pool['pool']['id']) as member, \
+                        mock.patch.object(self.driver.plugin,
+                            '_delete_db_member') as mock_delete_db_member:
                     mock_delete_db_member.return_value = None
                     # reset the remove_resource() mock
                     self.remove_resource_mock.reset_mock()
@@ -479,10 +466,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                          .assert_called_once_with(None, member_resource_path))
 
     def test_create_pool_health_monitor(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 testhealthmonitor = self._build_testhealthmonitor_contents(
@@ -519,10 +505,9 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                         constants.ACTIVE, ""))
 
     def test_update_pool_health_monitor(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
                 with self.health_monitor(
@@ -562,17 +547,16 @@ class TestNetScalerPluginDriver(TestLoadBalancerPluginBase):
                             constants.ACTIVE, ""))
 
     def test_delete_pool_health_monitor(self):
-        with nested(
-            self.subnet(),
-            mock.patch.object(self.driver.plugin._core_plugin, 'get_subnet')
-        ) as (subnet, mock_get_subnet):
+        with self.subnet() as subnet, \
+                mock.patch.object(self.driver.plugin._core_plugin,
+                                  'get_subnet') as mock_get_subnet:
             mock_get_subnet.return_value = subnet['subnet']
             with self.pool(provider=LBAAS_PROVIDER_NAME) as pool:
-                with nested(
-                    self.health_monitor(pool_id=pool['pool']['id']),
-                    mock.patch.object(self.driver.plugin,
-                                      '_delete_db_pool_health_monitor')
-                ) as (health_monitor, mock_delete_db_monitor):
+                with self.health_monitor(
+                        pool_id=pool['pool']['id']) as health_monitor, \
+                        mock.patch.object(self.driver.plugin,
+                            '_delete_db_pool_health_monitor') as \
+                        mock_delete_db_monitor:
                     mock_delete_db_monitor.return_value = None
                     # reset the remove_resource() mock
                     self.remove_resource_mock.reset_mock()

@@ -23,7 +23,6 @@ from neutron_lib import exceptions
 from neutron_lbaas.drivers.haproxy import namespace_driver
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 class TestHaproxyNSDriver(base.BaseTestCase):
@@ -159,11 +158,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                            'hrsp_3xx,hrsp_4xx,hrsp_5xx,hrsp_other,hanafail,'
                            'req_rate,req_rate_max,req_tot,cli_abrt,srv_abrt,'
                            '\n')
-        with nested(
-                mock.patch.object(self.driver, '_get_state_file_path'),
-                mock.patch('socket.socket'),
-                mock.patch('os.path.exists'),
-        ) as (gsp, mocket, path_exists):
+        with mock.patch.object(self.driver, '_get_state_file_path') as gsp, \
+                mock.patch('socket.socket') as mocket, \
+                mock.patch('os.path.exists') as path_exists:
             gsp.side_effect = lambda x, y, z: '/pool/' + y
             path_exists.return_value = True
             mocket.return_value = mocket

@@ -21,18 +21,15 @@ from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.services.loadbalancer.drivers.haproxy import jinja_cfg
-from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.services.loadbalancer.drivers.haproxy.\
     sample_configs import sample_configs
 
 
 class TestHaproxyCfg(base.BaseTestCase):
     def test_save_config(self):
-        with nested(
-            mock.patch('neutron_lbaas.services.loadbalancer.'
-                       'drivers.haproxy.jinja_cfg.render_loadbalancer_obj'),
-            mock.patch('neutron.common.utils.replace_file')
-        ) as (r_t, replace):
+        with mock.patch('neutron_lbaas.services.loadbalancer.drivers.haproxy.'
+                        'jinja_cfg.render_loadbalancer_obj') as r_t, \
+                mock.patch('neutron.common.utils.replace_file') as replace:
             r_t.return_value = 'fake_rendered_template'
             lb = mock.Mock()
             jinja_cfg.save_config('test_conf_path', lb, 'test_sock_path',
@@ -336,12 +333,13 @@ class TestHaproxyCfg(base.BaseTestCase):
         cert.get_certificate.return_value = tls.certificate
         cert.get_intermediates.return_value = tls.intermediates
 
-        with nested(
-            mock.patch.object(jinja_cfg, '_map_cert_tls_container'),
-            mock.patch.object(jinja_cfg, '_store_listener_crt'),
-            mock.patch.object(cert_parser, 'get_host_names'),
-            mock.patch.object(jinja_cfg, 'CERT_MANAGER_PLUGIN')
-        ) as (map, store_cert, get_host_names, cert_mgr):
+        with mock.patch.object(jinja_cfg, '_map_cert_tls_container') as map, \
+                mock.patch.object(jinja_cfg,
+                                  '_store_listener_crt') as store_cert, \
+                mock.patch.object(cert_parser,
+                                  'get_host_names') as get_host_names, \
+                mock.patch.object(jinja_cfg,
+                                  'CERT_MANAGER_PLUGIN') as cert_mgr:
             map.return_value = tls
             cert_mgr_mock = mock.Mock(spec=cert_manager.CertManager)
             cert_mgr_mock.get_cert.return_value = cert
