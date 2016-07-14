@@ -280,11 +280,12 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                       'script': 'script2'}
                 ssh_client.exec_command(cmd)
 
-    def _create_listener(self, load_balancer_id):
+    def _create_listener(self, load_balancer_id, port=80, protocol='HTTP',
+                         **kwargs):
         """Create a listener with HTTP protocol listening on port 80."""
         self.listener = self.listeners_client.create_listener(
             loadbalancer_id=load_balancer_id,
-            protocol='HTTP', protocol_port=80)
+            protocol=protocol, protocol_port=port, **kwargs)
         self.assertTrue(self.listener)
         self.addCleanup(self._cleanup_listener, self.listener.get('id'),
                         load_balancer_id=load_balancer_id)
@@ -485,13 +486,13 @@ class BaseTestCase(manager.NetworkScenarioTest):
                   pool_id=pool_id,
                   type=sp_type))
 
-    def _check_load_balancing(self):
+    def _check_load_balancing(self, port=80):
         """
         1. Send NUM requests on the floating ip associated with the VIP
         2. Check that the requests are shared between the two servers
         """
 
-        self._check_connection(self.vip_ip)
+        self._check_connection(self.vip_ip, port=port)
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
         for member, counter in six.iteritems(counters):
             self.assertGreater(counter, 0, 'Member %s never balanced' % member)
@@ -508,11 +509,12 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 return False
             except error.HTTPError:
                 return False
-        timeout = config.validation .ping_timeout
+        timeout = config.validation.ping_timeout
         start = time.time()
         while not try_connect(check_ip, port):
             if (time.time() - start) > timeout:
-                message = "Timed out trying to connect to %s" % check_ip
+                message = ("Timed out trying to connect to {0}:{1} after "
+                           "{2} seconds".format(check_ip, port, timeout))
                 raise exceptions.TimeoutException(message)
 
     def _send_requests(self, vip_ip, servers):
