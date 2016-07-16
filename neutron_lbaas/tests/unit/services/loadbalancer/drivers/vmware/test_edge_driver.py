@@ -21,7 +21,6 @@ from neutron.plugins.common import constants
 from neutron import manager
 from neutron_lbaas.db.loadbalancer import loadbalancer_db as lb_db
 from neutron_lbaas.services.loadbalancer.drivers.vmware import db
-from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 
@@ -65,10 +64,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
     def test_create_pool_successful(self):
         pool = {'id': POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'add_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.edge_driver, 'pool_successful')
-        ) as (mock_add_pool, mock_pool_successful):
+        with mock.patch.object(db,
+                               'add_nsxv_edge_pool_mapping') as mock_add_pool, \
+                mock.patch.object(self.edge_driver,
+                                  'pool_successful') as mock_pool_successful:
             self.edge_driver.create_pool_successful(self.context,
                                                     pool,
                                                     EDGE_ID, EDGE_POOL_ID)
@@ -79,10 +78,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
     def test_delete_pool_successful(self):
         pool = {'id': POOL_ID}
 
-        with nested(
-            mock.patch.object(self.service_plugin, '_delete_db_pool'),
-            mock.patch.object(db, 'delete_nsxv_edge_pool_mapping')
-        ) as (mock_del_db_pool, mock_del_mapping):
+        with mock.patch.object(self.service_plugin,
+                               '_delete_db_pool') as mock_del_db_pool, \
+                mock.patch.object(db, 'delete_nsxv_edge_pool_mapping') as \
+                mock_del_mapping:
             self.edge_driver.delete_pool_successful(self.context, pool)
             mock_del_db_pool.assert_called_with(self.context, POOL_ID)
             mock_del_mapping.assert_called_with(self.context, POOL_ID)
@@ -139,12 +138,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
         mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'update_pool')
-        ) as (mock_get_mapping, mock_update_pool):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_'
+                                   'mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'update_pool') as mock_update_pool:
             mock_get_mapping.return_value = mapping
             self.edge_driver.update_pool(self.context, from_pool, to_pool)
             mock_update_pool.assert_called_with(self.context, from_pool,
@@ -160,14 +157,12 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'health_monitors_status': [], 'provider': 'vmwareedge'}
         mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.service_plugin, 'get_pool',
-                              return_value={}),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'delete_pool')
-        ) as (mock_get_mapping, mock_get_pool, mock_delete_pool):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_'
+                                   'mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin, 'get_pool',
+                                  return_value={}), \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'delete_pool') as mock_delete_pool:
             mock_get_mapping.return_value = mapping
             self.edge_driver.delete_pool(self.context, lbaas_pool)
             mock_delete_pool.assert_called_with(self.context, lbaas_pool,
@@ -175,11 +170,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
     def test_create_vip_successful(self):
         vip = {'pool_id': POOL_ID}
-        with nested(
-            mock.patch.object(db, 'add_nsxv_edge_vip_mapping'),
-            mock.patch.object(self.edge_driver, 'vip_successful')
-        ) as (mock_add_vip_mapping, mock_vip_successful):
-
+        with mock.patch.object(db, 'add_nsxv_edge_vip_'
+                                   'mapping') as mock_add_vip_mapping, \
+                mock.patch.object(self.edge_driver,
+                                  'vip_successful') as mock_vip_successful:
             self.edge_driver.create_vip_successful(
                 self.context, vip, EDGE_ID, APP_PROFILE_ID, EDGE_VSE_ID,
                 EDGE_FW_RULE_ID)
@@ -191,11 +185,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
     def test_delete_vip_successful(self):
         vip = {'pool_id': POOL_ID, 'id': VIP_ID}
-        with nested(
-            mock.patch.object(db, 'delete_nsxv_edge_vip_mapping'),
-            mock.patch.object(self.service_plugin, '_delete_db_vip')
-        ) as (mock_del_vip_mapping, mock_del_vip):
-
+        with mock.patch.object(db, 'delete_nsxv_edge_vip_'
+                                   'mapping') as mock_del_vip_mapping, \
+                mock.patch.object(self.service_plugin,
+                                  '_delete_db_vip') as mock_del_vip:
             self.edge_driver.delete_vip_successful(self.context, vip)
             mock_del_vip_mapping.assert_called_with(self.context, POOL_ID)
             mock_del_vip.assert_called_with(self.context, VIP_ID)
@@ -227,11 +220,9 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'session_persistence': {'type': 'SOURCE_IP'}}
         mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'create_vip')
-        ) as (mock_get_mapping, mock_create_vip):
+        with mock.patch.object(db, 'get_nsxv_edge_pool_mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'create_vip') as mock_create_vip:
             mock_get_mapping.return_value = mapping
             self.edge_driver.create_vip(self.context, lbaas_vip)
             mock_create_vip.assert_called_with(self.context, lbaas_vip,
@@ -258,13 +249,10 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
         vip_mapping = {'edge_id': EDGE_ID, 'edge_vse_id': EDGE_VSE_ID,
                        'edge_app_profile_id': APP_PROFILE_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(db, 'get_nsxv_edge_vip_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'update_vip')
-        ) as (mock_get_pool_mapping, mock_get_vip_mapping, mock_upd_vip):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_mapping') as mock_get_pool_mapping, \
+                mock.patch.object(db, 'get_nsxv_edge_vip_mapping') as mock_get_vip_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'update_vip') as mock_upd_vip:
             mock_get_pool_mapping.return_value = pool_mapping
             mock_get_vip_mapping.return_value = vip_mapping
             self.edge_driver.update_vip(self.context, vip_from, vip_to)
@@ -283,12 +271,9 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
                    'edge_app_profile_id': APP_PROFILE_ID,
                    'edge_fw_rule_id': EDGE_FW_RULE_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_vip_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'delete_vip')
-        ) as (mock_get_mapping, mock_del_vip):
-
+        with mock.patch.object(db, 'get_nsxv_edge_vip_mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'delete_vip') as mock_del_vip:
             mock_get_mapping.return_value = mapping
             self.edge_driver.delete_vip(self.context, lbaas_vip)
             mock_del_vip.assert_called_with(self.context, lbaas_vip, mapping)
@@ -317,12 +302,9 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'pool_id': POOL_ID}
         mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'create_member')
-        ) as (mock_get_mapping, mock_create_member):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'create_member') as mock_create_member:
             mock_get_mapping.return_value = mapping
             self.edge_driver.create_member(self.context, lbaas_member)
             mock_create_member.assert_called_with(self.context, lbaas_member,
@@ -341,12 +323,9 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'pool_id': POOL_ID}
         mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'update_member')
-        ) as (mock_get_mapping, mock_update_member):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'update_member') as mock_update_member:
             mock_get_mapping.return_value = mapping
             self.edge_driver.update_member(self.context, member_from,
                                            member_to)
@@ -361,12 +340,9 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'pool_id': POOL_ID}
         mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'delete_member')
-        ) as (mock_get_mapping, mock_delete_member):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_mapping') as mock_get_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'delete_member') as mock_delete_member:
             mock_get_mapping.return_value = mapping
             self.edge_driver.delete_member(self.context, lbaas_member)
             mock_delete_member.assert_called_with(self.context, lbaas_member,
@@ -374,11 +350,11 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
 
     def test_create_pool_health_monitor_successful(self):
         hmon = {'id': HEALTHMON_ID}
-        with nested(
-            mock.patch.object(db, 'add_nsxv_edge_monitor_mapping'),
-            mock.patch.object(self.edge_driver,
-                              'pool_health_monitor_successful')
-        ) as (mock_add_pool_mon_mapping, mock_pool_hmon_successful):
+        with mock.patch.object(db, 'add_nsxv_edge_monitor_'
+                                   'mapping') as mock_add_pool_mon_mapping, \
+                mock.patch.object(self.edge_driver,
+                                  'pool_health_monitor_'
+                                  'successful') as mock_pool_hmon_successful:
             self.edge_driver.create_pool_health_monitor_successful(
                 self.context, hmon, POOL_ID, EDGE_ID, EDGE_MON_ID)
             mock_add_pool_mon_mapping.assert_called_with(
@@ -389,12 +365,11 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
     def test_delete_pool_health_monitor_successful(self):
         hmon = {'id': HEALTHMON_ID, 'pool_id': POOL_ID}
         hmon_mapping = {'edge_id': EDGE_ID}
-        with nested(
-            mock.patch.object(db, 'delete_nsxv_edge_monitor_mapping'),
-            mock.patch.object(self.service_plugin,
-                              '_delete_db_pool_health_monitor')
-        ) as (mock_del_pool_hmon_mapping, mock_del_db_pool_hmon):
-
+        with mock.patch.object(db, 'delete_nsxv_edge_monitor_'
+                                   'mapping') as mock_del_pool_hmon_mapping, \
+                mock.patch.object(self.service_plugin,
+                                  '_delete_db_pool_health_'
+                                  'monitor') as mock_del_db_pool_hmon:
             self.edge_driver.delete_pool_health_monitor_successful(
                 self.context, hmon, POOL_ID, hmon_mapping)
             mock_del_pool_hmon_mapping.assert_called_with(
@@ -431,14 +406,13 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
             'type': 'PING', 'id': HEALTHMON_ID}
         pool_mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(db, 'get_nsxv_edge_monitor_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'create_pool_health_monitor')
-        ) as (mock_get_pool_mapping, mock_get_mon_mapping,
-              mock_create_pool_hm):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_'
+                                   'mapping') as mock_get_pool_mapping, \
+                mock.patch.object(db, 'get_nsxv_edge_monitor_'
+                                      'mapping') as mock_get_mon_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'create_pool_health_'
+                                  'monitor') as mock_create_pool_hm:
             mock_get_pool_mapping.return_value = pool_mapping
             mock_get_mon_mapping.return_value = None
             self.edge_driver.create_pool_health_monitor(self.context,
@@ -462,13 +436,13 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
         pool_mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
         mon_mapping = {'edge_id': EDGE_ID, 'edge_monitor_id': EDGE_MON_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(db, 'get_nsxv_edge_monitor_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'update_pool_health_monitor')
-        ) as (mock_get_pool_mapping, mock_get_mon_mapping, mock_upd_pool_hm):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_'
+                                   'mapping') as mock_get_pool_mapping, \
+                mock.patch.object(db, 'get_nsxv_edge_monitor_'
+                                      'mapping') as mock_get_mon_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'update_pool_health_'
+                                  'monitor') as mock_upd_pool_hm:
             mock_get_pool_mapping.return_value = pool_mapping
             mock_get_mon_mapping.return_value = mon_mapping
             self.edge_driver.update_pool_health_monitor(
@@ -487,13 +461,13 @@ class TestEdgeLoadBalancerPlugin(TestLoadBalancerPluginBase):
         pool_mapping = {'edge_id': EDGE_ID, 'edge_pool_id': EDGE_POOL_ID}
         mon_mapping = {'edge_id': EDGE_ID, 'edge_monitor_id': EDGE_MON_ID}
 
-        with nested(
-            mock.patch.object(db, 'get_nsxv_edge_pool_mapping'),
-            mock.patch.object(db, 'get_nsxv_edge_monitor_mapping'),
-            mock.patch.object(self.service_plugin._core_plugin.nsx_v,
-                              'delete_pool_health_monitor')
-        ) as (mock_get_pool_mapping, mock_get_mon_mapping, mock_del_pool_hm):
-
+        with mock.patch.object(db, 'get_nsxv_edge_pool_'
+                                   'mapping') as mock_get_pool_mapping, \
+                mock.patch.object(db, 'get_nsxv_edge_monitor_'
+                                      'mapping') as mock_get_mon_mapping, \
+                mock.patch.object(self.service_plugin._core_plugin.nsx_v,
+                                  'delete_pool_health_'
+                                  'monitor') as mock_del_pool_hm:
             mock_get_pool_mapping.return_value = pool_mapping
             mock_get_mon_mapping.return_value = mon_mapping
             self.edge_driver.delete_pool_health_monitor(self.context, hmon,

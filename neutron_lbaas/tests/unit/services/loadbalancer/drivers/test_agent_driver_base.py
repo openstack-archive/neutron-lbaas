@@ -29,7 +29,6 @@ from neutron_lbaas.extensions import loadbalancer
 from neutron_lbaas.services.loadbalancer.drivers.common \
     import agent_driver_base
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
 
 
@@ -409,10 +408,8 @@ class TestLoadBalancerCallbacks(TestLoadBalancerPluginBase):
             self.assertTrue(mock_log.warning.called)
 
     def test_update_status_health_monitor(self):
-        with nested(
-            self.health_monitor(),
-            self.pool()
-        ) as (hm, pool):
+        with self.health_monitor() as hm, \
+                self.pool() as pool:
             pool_id = pool['pool']['id']
             ctx = context.get_admin_context()
             self.plugin_instance.create_pool_health_monitor(ctx, hm, pool_id)
@@ -438,12 +435,8 @@ class TestLoadBalancerAgentApi(base.BaseTestCase):
         self.assertEqual('topic', self.api.client.target.topic)
 
     def _call_test_helper(self, method_name, method_args):
-        with nested(
-            mock.patch.object(self.api.client, 'cast'),
-            mock.patch.object(self.api.client, 'prepare'),
-        ) as (
-            rpc_mock, prepare_mock
-        ):
+        with mock.patch.object(self.api.client, 'cast') as rpc_mock, \
+                mock.patch.object(self.api.client, 'prepare') as prepare_mock:
             prepare_mock.return_value = self.api.client
             getattr(self.api, method_name)(mock.sentinel.context,
                                            host='host',
@@ -669,10 +662,8 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                     mock.ANY, member['member'], 'host')
 
     def test_create_pool_health_monitor(self):
-        with nested(
-            self.health_monitor(),
-            self.pool(),
-        ) as (hm, pool):
+        with self.health_monitor() as hm, \
+                self.pool() as pool:
             pool_id = pool['pool']['id']
             ctx = context.get_admin_context()
             self.plugin_instance.create_pool_health_monitor(ctx, hm, pool_id)
@@ -683,10 +674,8 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 mock.ANY, hm, pool_id, 'host')
 
     def test_delete_pool_health_monitor(self):
-        with nested(
-            self.pool(),
-            self.health_monitor()
-        ) as (pool, hm):
+        with self.pool() as pool, \
+                self.health_monitor() as hm:
             pool_id = pool['pool']['id']
             ctx = context.get_admin_context()
             self.plugin_instance.create_pool_health_monitor(ctx, hm, pool_id)
@@ -700,10 +689,8 @@ class TestLoadBalancerPluginNotificationWrapper(TestLoadBalancerPluginBase):
                 mock.ANY, hm, pool_id, 'host')
 
     def test_update_health_monitor_associated_with_pool(self):
-        with nested(
-            self.health_monitor(type='HTTP'),
-            self.pool()
-        ) as (monitor, pool):
+        with self.health_monitor(type='HTTP') as monitor, \
+                self.pool() as pool:
             data = {
                 'health_monitor': {
                     'id': monitor['health_monitor']['id'],

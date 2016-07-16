@@ -19,7 +19,6 @@ import six
 from neutron_lbaas.services.loadbalancer.drivers.haproxy \
     import namespace_driver
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 class TestHaproxyNSDriver(base.BaseTestCase):
@@ -70,11 +69,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 spawn.assert_called_once_with(self.fake_config)
 
     def test_update(self):
-        with nested(
-            mock.patch.object(self.driver, '_get_state_file_path'),
-            mock.patch.object(self.driver, '_spawn'),
-            mock.patch.object(six.moves.builtins, 'open')
-        ) as (gsp, spawn, mock_open):
+        with mock.patch.object(self.driver, '_get_state_file_path') as gsp, \
+                mock.patch.object(self.driver, '_spawn') as spawn, \
+                mock.patch.object(six.moves.builtins, 'open') as mock_open:
             mock_open.return_value = ['5']
 
             self.driver.update(self.fake_config)
@@ -83,11 +80,11 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             spawn.assert_called_once_with(self.fake_config, ['-sf', '5'])
 
     def test_spawn(self):
-        with nested(
-            mock.patch.object(namespace_driver.hacfg, 'save_config'),
-            mock.patch.object(self.driver, '_get_state_file_path'),
-            mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
-        ) as (mock_save, gsp, ip_wrap):
+        with mock.patch.object(namespace_driver.hacfg,
+                               'save_config') as mock_save, \
+                mock.patch.object(self.driver,
+                                  '_get_state_file_path') as gsp, \
+                mock.patch('neutron.agent.linux.ip_lib.IPWrapper') as ip_wrap:
             gsp.side_effect = lambda x, y: y
 
             self.driver._spawn(self.fake_config)
@@ -101,14 +98,14 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ])
 
     def test_undeploy_instance(self):
-        with nested(
-            mock.patch.object(self.driver, '_get_state_file_path'),
-            mock.patch.object(namespace_driver, 'kill_pids_in_file'),
-            mock.patch.object(self.driver, '_unplug'),
-            mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-            mock.patch('os.path.isdir'),
-            mock.patch('shutil.rmtree')
-        ) as (gsp, kill, unplug, ip_wrap, isdir, rmtree):
+        with mock.patch.object(self.driver, '_get_state_file_path') as gsp, \
+                mock.patch.object(namespace_driver,
+                                  'kill_pids_in_file') as kill, \
+                mock.patch.object(self.driver, '_unplug') as unplug, \
+                mock.patch('neutron.agent.linux.ip_lib.'
+                           'IPWrapper') as ip_wrap, \
+                mock.patch('os.path.isdir') as isdir, \
+                mock.patch('shutil.rmtree') as rmtree:
             gsp.side_effect = lambda x, y: '/pool/' + y
 
             self.driver.pool_to_port_id['pool_id'] = 'port_id'
@@ -126,14 +123,13 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             ])
 
     def test_undeploy_instance_with_ns_cleanup(self):
-        with nested(
-            mock.patch.object(self.driver, '_get_state_file_path'),
-            mock.patch.object(self.driver, 'vif_driver'),
-            mock.patch.object(namespace_driver, 'kill_pids_in_file'),
-            mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-            mock.patch('os.path.isdir'),
-            mock.patch('shutil.rmtree')
-        ) as (gsp, vif, kill, ip_wrap, isdir, rmtree):
+        with mock.patch.object(self.driver, '_get_state_file_path'), \
+                mock.patch.object(self.driver, 'vif_driver') as vif, \
+                mock.patch.object(namespace_driver, 'kill_pids_in_file'), \
+                mock.patch('neutron.agent.linux.ip_lib.'
+                           'IPWrapper') as ip_wrap, \
+                mock.patch('os.path.isdir'), \
+                mock.patch('shutil.rmtree'):
             device = mock.Mock()
             device_name = 'port_device'
             device.name = device_name
@@ -144,12 +140,11 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                namespace='qlbaas-pool_id')
 
     def test_remove_orphans(self):
-        with nested(
-            mock.patch.object(self.driver, 'exists'),
-            mock.patch.object(self.driver, 'undeploy_instance'),
-            mock.patch('os.listdir'),
-            mock.patch('os.path.exists')
-        ) as (exists, undeploy, listdir, path_exists):
+        with mock.patch.object(self.driver, 'exists') as exists, \
+                mock.patch.object(self.driver,
+                                  'undeploy_instance') as undeploy, \
+                mock.patch('os.listdir') as listdir, \
+                mock.patch('os.path.exists'):
             known = ['known1', 'known2']
             unknown = ['unknown1', 'unknown2']
             listdir.return_value = known + unknown
@@ -161,12 +156,10 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                              cleanup_namespace=True)
 
     def test_exists(self):
-        with nested(
-            mock.patch.object(self.driver, '_get_state_file_path'),
-            mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-            mock.patch('socket.socket'),
-            mock.patch('os.path.exists'),
-        ) as (gsp, ip_wrap, socket, path_exists):
+        with mock.patch.object(self.driver, '_get_state_file_path') as gsp, \
+                mock.patch('neutron.agent.linux.ip_lib.IPWrapper') as ip_wrap, \
+                mock.patch('socket.socket'), \
+                mock.patch('os.path.exists') as path_exists:
             gsp.side_effect = lambda x, y, z: '/pool/' + y
 
             ip_wrap.return_value.netns.exists.return_value = True
@@ -209,11 +202,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                            'hrsp_3xx,hrsp_4xx,hrsp_5xx,hrsp_other,hanafail,'
                            'req_rate,req_rate_max,req_tot,cli_abrt,srv_abrt,'
                            '\n')
-        with nested(
-                mock.patch.object(self.driver, '_get_state_file_path'),
-                mock.patch('socket.socket'),
-                mock.patch('os.path.exists'),
-        ) as (gsp, socket, path_exists):
+        with mock.patch.object(self.driver, '_get_state_file_path') as gsp, \
+                mock.patch('socket.socket') as socket, \
+                mock.patch('os.path.exists') as path_exists:
             gsp.side_effect = lambda x, y, z: '/pool/' + y
             path_exists.return_value = True
             socket.return_value = socket
@@ -261,11 +252,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                     'subnet': {'cidr': '10.0.0.0/24',
                                                'gateway_ip': '10.0.0.1'}}]}
         test_address = '10.0.0.2'
-        with nested(
-                mock.patch('neutron.agent.linux.ip_lib.device_exists'),
-                mock.patch('netaddr.IPNetwork'),
-                mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-        ) as (dev_exists, ip_net, ip_wrap):
+        with mock.patch('neutron.agent.linux.ip_lib.device_exists') as dev_exists, \
+                mock.patch('netaddr.IPNetwork') as ip_net, \
+                mock.patch('neutron.agent.linux.ip_lib.IPWrapper') as ip_wrap:
             self.vif_driver.get_device_name.return_value = 'test_interface'
             dev_exists.return_value = False
             ip_net.return_value = ip_net
@@ -308,11 +297,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                     'subnet': {'cidr': '10.0.0.0/24',
                                                'gateway_ip': '10.0.0.1'}}]}
         test_address = '10.0.0.2'
-        with nested(
-                mock.patch('neutron.agent.linux.ip_lib.device_exists'),
-                mock.patch('netaddr.IPNetwork'),
-                mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-        ) as (dev_exists, ip_net, ip_wrap):
+        with mock.patch('neutron.agent.linux.ip_lib.device_exists') as dev_exists, \
+                mock.patch('netaddr.IPNetwork') as ip_net, \
+                mock.patch('neutron.agent.linux.ip_lib.IPWrapper') as ip_wrap:
             self.vif_driver.get_device_name.return_value = 'test_interface'
             dev_exists.return_value = False
             ip_net.return_value = ip_net
@@ -332,11 +319,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                      'fixed_ips': [{'ip_address': '10.0.0.2',
                                     'subnet': {'cidr': '10.0.0.0/24'}}]}
         test_address = '10.0.0.2'
-        with nested(
-                mock.patch('neutron.agent.linux.ip_lib.device_exists'),
-                mock.patch('netaddr.IPNetwork'),
-                mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-        ) as (dev_exists, ip_net, ip_wrap):
+        with mock.patch('neutron.agent.linux.ip_lib.device_exists') as dev_exists, \
+                mock.patch('netaddr.IPNetwork') as ip_net, \
+                mock.patch('neutron.agent.linux.ip_lib.IPWrapper') as ip_wrap:
             self.vif_driver.get_device_name.return_value = 'test_interface'
             dev_exists.return_value = False
             ip_net.return_value = ip_net
@@ -371,11 +356,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                [{'destination': '0.0.0.0/0',
                                                  'nexthop': '10.0.0.1'}]}}]}
         test_address = '10.0.0.2'
-        with nested(
-                mock.patch('neutron.agent.linux.ip_lib.device_exists'),
-                mock.patch('netaddr.IPNetwork'),
-                mock.patch('neutron.agent.linux.ip_lib.IPWrapper'),
-        ) as (dev_exists, ip_net, ip_wrap):
+        with mock.patch('neutron.agent.linux.ip_lib.device_exists') as dev_exists, \
+                mock.patch('netaddr.IPNetwork') as ip_net, \
+                mock.patch('neutron.agent.linux.ip_lib.IPWrapper') as ip_wrap:
             self.vif_driver.get_device_name.return_value = 'test_interface'
             dev_exists.return_value = False
             ip_net.return_value = ip_net
@@ -408,12 +391,12 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.vif_driver.unplug('test_interface', namespace='test_ns')
 
     def test_kill_pids_in_file(self):
-        with nested(
-            mock.patch('os.path.exists'),
-            mock.patch.object(six.moves.builtins, 'open'),
-            mock.patch('neutron.agent.linux.utils.execute'),
-            mock.patch.object(namespace_driver.LOG, 'exception'),
-        ) as (path_exists, mock_open, mock_execute, mock_log):
+        with mock.patch('os.path.exists') as path_exists, \
+                mock.patch.object(six.moves.builtins, 'open') as mock_open, \
+                mock.patch('neutron.agent.linux.utils.'
+                           'execute') as mock_execute, \
+                mock.patch.object(namespace_driver.LOG,
+                                  'exception') as mock_log:
             file_mock = mock.MagicMock()
             mock_open.return_value = file_mock
             file_mock.__enter__.return_value = file_mock
@@ -486,10 +469,9 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                 update.assert_called_once_with(self.fake_config)
 
     def test_refresh_device(self):
-        with nested(
-            mock.patch.object(self.driver, 'deploy_instance'),
-            mock.patch.object(self.driver, 'undeploy_instance')
-        ) as (deploy, undeploy):
+        with mock.patch.object(self.driver, 'deploy_instance') as deploy, \
+                mock.patch.object(self.driver,
+                                  'undeploy_instance') as undeploy:
             pool_id = 'pool_id1'
             self.driver._refresh_device(pool_id)
             self.rpc_mock.get_logical_device.assert_called_once_with(pool_id)
@@ -498,11 +480,10 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             self.assertFalse(undeploy.called)
 
     def test_refresh_device_not_deployed(self):
-        with nested(
-            mock.patch.object(self.driver, 'deploy_instance'),
-            mock.patch.object(self.driver, 'exists'),
-            mock.patch.object(self.driver, 'undeploy_instance')
-        ) as (deploy, exists, undeploy):
+        with mock.patch.object(self.driver, 'deploy_instance') as deploy, \
+                mock.patch.object(self.driver, 'exists') as exists, \
+                mock.patch.object(self.driver,
+                                  'undeploy_instance') as undeploy:
             pool_id = 'pool_id1'
             deploy.return_value = False
             exists.return_value = True
@@ -510,11 +491,10 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             undeploy.assert_called_once_with(pool_id)
 
     def test_refresh_device_non_existing(self):
-        with nested(
-            mock.patch.object(self.driver, 'deploy_instance'),
-            mock.patch.object(self.driver, 'exists'),
-            mock.patch.object(self.driver, 'undeploy_instance')
-        ) as (deploy, exists, undeploy):
+        with mock.patch.object(self.driver, 'deploy_instance') as deploy, \
+                mock.patch.object(self.driver, 'exists') as exists, \
+                mock.patch.object(self.driver,
+                                  'undeploy_instance') as undeploy:
             pool_id = 'pool_id1'
             deploy.return_value = False
             exists.return_value = False
@@ -547,19 +527,15 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             refresh.assert_called_once_with('1')
 
     def test_delete_pool_existing(self):
-        with nested(
-            mock.patch.object(self.driver, 'undeploy_instance'),
-            mock.patch.object(self.driver, 'exists'),
-        ) as (undeploy, exists):
+        with mock.patch.object(self.driver, 'undeploy_instance') as undeploy, \
+                mock.patch.object(self.driver, 'exists') as exists:
             exists.return_value = True
             self.driver.delete_pool({'id': '1'})
             undeploy.assert_called_once_with('1', delete_namespace=True)
 
     def test_delete_pool_non_existing(self):
-        with nested(
-            mock.patch.object(self.driver, 'undeploy_instance'),
-            mock.patch.object(self.driver, 'exists'),
-        ) as (undeploy, exists):
+        with mock.patch.object(self.driver, 'undeploy_instance') as undeploy, \
+                mock.patch.object(self.driver, 'exists') as exists:
             exists.return_value = False
             self.driver.delete_pool({'id': '1'})
             self.assertFalse(undeploy.called)

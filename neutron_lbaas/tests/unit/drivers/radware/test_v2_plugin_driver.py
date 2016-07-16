@@ -29,7 +29,6 @@ from neutron_lbaas.drivers.radware import exceptions as r_exc
 from neutron_lbaas.drivers.radware import v2_driver
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_con
-from neutron_lbaas.tests import nested
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
 GET_200 = ('/api/workflow/', '/api/workflowTemplate')
@@ -711,13 +710,12 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
             ) as lb:
                 lb_id = lb['loadbalancer']['id']
-                with nested(
-                    mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                               'cert_parser', autospec=True),
-                    mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                               'CERT_MANAGER_PLUGIN.CertManager',
-                               autospec=True)
-                ) as (cert_parser_mock, cert_manager_mock):
+                with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                                'cert_parser',
+                                autospec=True) as cert_parser_mock, \
+                        mock.patch('neutron_lbaas.services.loadbalancer.'
+                                   'plugin.CERT_MANAGER_PLUGIN.CertManager',
+                                   autospec=True) as cert_manager_mock:
                     cert_mock = mock.Mock(spec=cert_manager.Cert)
                     cert_mock.get_certificate.return_value = 'certificate'
                     cert_mock.get_intermediates.return_value = 'intermediates'
@@ -751,13 +749,10 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     protocol=lb_con.PROTOCOL_HTTP,
                     loadbalancer_id=lb_id) as listener:
                     listener_id = listener['listener']['id']
-                    with nested(
-                        self.pool(
-                            protocol=lb_con.PROTOCOL_HTTP,
-                            listener_id=listener_id),
-                        self.pool(
-                            protocol=lb_con.PROTOCOL_HTTP,
-                            loadbalancer_id=lb_id)) as (def_pool, pol_pool):
+                    with self.pool(protocol=lb_con.PROTOCOL_HTTP,
+                                   listener_id=listener_id) as def_pool, \
+                            self.pool(protocol=lb_con.PROTOCOL_HTTP,
+                                      loadbalancer_id=lb_id) as pol_pool:
                         def_pool_id = def_pool['pool']['id']
                         pol_pool_id = pol_pool['pool']['id']
                         with self.l7policy(
@@ -767,20 +762,15 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                             policy_id = policy['l7policy']['id']
 
                             self.driver_rest_call_mock.reset_mock()
-                            with nested(
-                                self.l7policy_rule(
-                                    l7policy_id=policy_id,
-                                    key=u'key1', value=u'val1'),
-                                self.l7policy_rule(
-                                    l7policy_id=policy_id,
-                                    key=u'key2', value=u'val2'),
-                                self.member(
-                                    pool_id=def_pool_id,
-                                    subnet=vip_sub,
-                                    address=u'10.0.1.10')) as (
-                                    rule1, rule2,
-                                    def_m):
-
+                            with self.l7policy_rule(l7policy_id=policy_id,
+                                                    key=u'key1',
+                                                    value=u'val1'), \
+                                    self.l7policy_rule(l7policy_id=policy_id,
+                                                       key=u'key2',
+                                                       value=u'val2'), \
+                                    self.member(pool_id=def_pool_id,
+                                                subnet=vip_sub,
+                                                address=u'10.0.1.10'):
                                 self.driver_rest_call_mock.reset_mock()
                                 rest_call_function_mock.__dict__.update(
                                     {'WORKFLOW_MISSING': False})
@@ -804,12 +794,12 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.pool(
                         protocol=lb_con.PROTOCOL_HTTP,
                         listener_id=listener_id) as pool:
-                        with nested(
-                            self.member(pool_id=pool['pool']['id'],
-                                        subnet=vip_sub, address='10.0.1.10'),
-                            self.member(pool_id=pool['pool']['id'],
-                                        subnet=vip_sub, address='10.0.1.20')):
-
+                        with self.member(pool_id=pool['pool']['id'],
+                                         subnet=vip_sub,
+                                         address='10.0.1.10'), \
+                                self.member(pool_id=pool['pool']['id'],
+                                            subnet=vip_sub,
+                                            address='10.0.1.20'):
                             self.driver_rest_call_mock.reset_mock()
                             rest_call_function_mock.__dict__.update(
                                 {'WORKFLOW_MISSING': False})
@@ -831,19 +821,18 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
                     with self.pool(
                         protocol='HTTP',
                         listener_id=listener_id) as pool:
-                        with nested(
-                            self.member(pool_id=pool['pool']['id'],
-                                        subnet=vip_sub, address='10.0.1.10'),
-                            self.member(pool_id=pool['pool']['id'],
-                                        subnet=vip_sub, address='10.0.1.20')):
+                        with self.member(pool_id=pool['pool']['id'],
+                                         subnet=vip_sub,
+                                         address='10.0.1.10'), \
+                                self.member(pool_id=pool['pool']['id'],
+                                            subnet=vip_sub,
+                                            address='10.0.1.20'):
                             self.compare_apply_call()
 
     def test_build_objects_graph_two_legs_full(self):
-        with nested(
-            self.subnet(cidr='10.0.0.0/24'),
-            self.subnet(cidr='20.0.0.0/24'),
-            self.subnet(cidr='30.0.0.0/24')
-        ) as (vip_sub, member_sub1, member_sub2):
+        with self.subnet(cidr='10.0.0.0/24') as vip_sub, \
+                self.subnet(cidr='20.0.0.0/24') as member_sub1, \
+                self.subnet(cidr='30.0.0.0/24'):
             with self.loadbalancer(
                     subnet=vip_sub,
                     vip_address=WF_APPLY_PARAMS['parameters']['vip_address']
