@@ -18,8 +18,8 @@ import shutil
 import socket
 
 import netaddr
+from neutron.agent.linux import external_process
 from neutron.agent.linux import ip_lib
-from neutron.agent.linux import utils as linux_utils
 from neutron.common import utils as n_utils
 from neutron.plugins.common import constants
 from neutron_lib import exceptions
@@ -27,7 +27,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron_lbaas._i18n import _, _LI, _LE, _LW
+from neutron_lbaas._i18n import _, _LI, _LW
 from neutron_lbaas.agent import agent_device_driver
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
@@ -42,6 +42,7 @@ STATS_TYPE_BACKEND_RESPONSE = '1'
 STATS_TYPE_SERVER_REQUEST = 4
 STATS_TYPE_SERVER_RESPONSE = '2'
 DRIVER_NAME = 'haproxy_ns'
+HAPROXY_SERVICE_NAME = 'haproxy'
 
 STATE_PATH_V2_APPEND = 'v2'
 
@@ -54,8 +55,9 @@ def get_ns_name(namespace_id):
 
 class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
 
-    def __init__(self, conf, plugin_rpc):
-        super(HaproxyNSDriver, self).__init__(conf, plugin_rpc)
+    def __init__(self, conf, plugin_rpc, process_monitor):
+        super(HaproxyNSDriver, self).__init__(conf, plugin_rpc,
+                                              process_monitor)
         self.state_path = conf.haproxy.loadbalancer_state_path
         self.state_path = os.path.join(
             self.conf.haproxy.loadbalancer_state_path, STATE_PATH_V2_APPEND)
@@ -105,11 +107,17 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         cleanup_namespace = kwargs.get('cleanup_namespace', False)
         delete_namespace = kwargs.get('delete_namespace', False)
         namespace = get_ns_name(loadbalancer_id)
-        pid_path = self._get_state_file_path(loadbalancer_id, 'haproxy.pid')
-
-        # kill the process
-        kill_pids_in_file(pid_path)
-
+        pid_data = self._get_state_file_path(loadbalancer_id, 'haproxy.pid')
+        pid_path = os.path.split(pid_data)[0]
+        self.process_monitor.unregister(uuid=loadbalancer_id,
+                                        service_name=HAPROXY_SERVICE_NAME)
+        pm = external_process.ProcessManager(uuid=loadbalancer_id,
+                                             namespace=namespace,
+                                             service=HAPROXY_SERVICE_NAME,
+                                             conf=self.conf,
+                                             pids_path=pid_path,
+                                             pid_file=pid_data)
+        pm.disable()
         # unplug the ports
         if loadbalancer_id in self.deployed_loadbalancers:
             self._unplug(namespace,
@@ -338,25 +346,37 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         self.vif_driver.unplug(interface_name, namespace=namespace)
 
     def _spawn(self, loadbalancer, extra_cmd_args=()):
+        def callback(pid_path):
+            conf_path = self._get_state_file_path(loadbalancer.id,
+                                                  'haproxy.conf')
+            sock_path = self._get_state_file_path(loadbalancer.id,
+                                                  'haproxy_stats.sock')
+            user_group = self.conf.haproxy.user_group
+            haproxy_base_dir = self._get_state_file_path(loadbalancer.id, '')
+            jinja_cfg.save_config(conf_path,
+                                  loadbalancer,
+                                  sock_path,
+                                  user_group,
+                                  haproxy_base_dir)
+            cmd = ['haproxy', '-f', conf_path, '-p', pid_path]
+            cmd.extend(extra_cmd_args)
+            return cmd
+
+        pid_data = self._get_state_file_path(loadbalancer.id, 'haproxy.pid')
+        pid_path = os.path.split(pid_data)[0]
         namespace = get_ns_name(loadbalancer.id)
-        conf_path = self._get_state_file_path(loadbalancer.id, 'haproxy.conf')
-        pid_path = self._get_state_file_path(loadbalancer.id,
-                                             'haproxy.pid')
-        sock_path = self._get_state_file_path(loadbalancer.id,
-                                              'haproxy_stats.sock')
-        user_group = self.conf.haproxy.user_group
-        haproxy_base_dir = self._get_state_file_path(loadbalancer.id, '')
-        jinja_cfg.save_config(conf_path,
-                              loadbalancer,
-                              sock_path,
-                              user_group,
-                              haproxy_base_dir)
-        cmd = ['haproxy', '-f', conf_path, '-p', pid_path]
-        cmd.extend(extra_cmd_args)
-
-        ns = ip_lib.IPWrapper(namespace=namespace)
-        ns.netns.execute(cmd)
-
+        pm = external_process.ProcessManager(
+            uuid=loadbalancer.id,
+            default_cmd_callback=callback,
+            namespace=namespace,
+            service=HAPROXY_SERVICE_NAME,
+            conf=self.conf,
+            pids_path=pid_path,
+            pid_file=pid_data)
+        pm.enable(reload_cfg=False)
+        self.process_monitor.register(uuid=loadbalancer.id,
+                                      service_name=HAPROXY_SERVICE_NAME,
+                                      monitored_process=pm)
         # remember deployed loadbalancer id
         self.deployed_loadbalancers[loadbalancer.id] = loadbalancer
 
@@ -465,17 +485,3 @@ class HealthMonitorManager(agent_device_driver.BaseHealthMonitorManager):
     def delete(self, hm):
         hm.pool.healthmonitor = None
         self.driver.loadbalancer.refresh(hm.pool.loadbalancer)
-
-
-def kill_pids_in_file(pid_path):
-    if os.path.exists(pid_path):
-        with open(pid_path, 'r') as pids:
-            for pid in pids:
-                pid = pid.strip()
-                try:
-                    linux_utils.execute(['kill', '-9', pid], run_as_root=True)
-                except RuntimeError:
-                    LOG.exception(
-                        _LE('Unable to kill haproxy process: %s'),
-                        pid
-                    )
