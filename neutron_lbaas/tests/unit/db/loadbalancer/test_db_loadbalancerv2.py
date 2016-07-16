@@ -47,7 +47,6 @@ from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import plugin as loadbalancer_plugin
 from neutron_lbaas.tests import base
-from neutron_lbaas.tests import nested
 
 
 DB_CORE_PLUGIN_CLASS = 'neutron.db.db_base_plugin_v2.NeutronDbPluginV2'
@@ -1544,13 +1543,11 @@ class LbaasListenerTests(ListenerTestBase):
 
         exc = ReplaceClass(status_code=404, message='Cert Not Found')
 
-        with nested(
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert',
-                       side_effect=exc),
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
-        ) as (get_cert_mock, rm_consumer_mock):
+        with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                        'CERT_MANAGER_PLUGIN.CertManager.get_cert',
+                        side_effect=exc), \
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.delete_cert'):
             self.assertRaises(loadbalancerv2.TLSContainerNotFound,
                               self.plugin.create_listener,
                               context.get_admin_context(),
@@ -1569,12 +1566,11 @@ class LbaasListenerTests(ListenerTestBase):
         }
         listener_data.update(extras)
 
-        with nested(
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
-        ) as (get_cert_mock, rm_consumer_mock):
+        with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                        'CERT_MANAGER_PLUGIN.CertManager.get_cert') as \
+                get_cert_mock, \
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.delete_cert'):
             get_cert_mock.side_effect = Exception('RandomFailure')
 
             self.assertRaises(loadbalancerv2.CertManagerError,
@@ -1601,14 +1597,14 @@ class LbaasListenerTests(ListenerTestBase):
         }
         listener_data.update(extras)
 
-        with nested(
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'cert_parser.validate_cert'),
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert'),
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.delete_cert')
-        ) as (validate_cert_mock, get_cert_mock, rm_consumer_mock):
+        with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                        'cert_parser.validate_cert') as validate_cert_mock, \
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.get_cert') as \
+                get_cert_mock, \
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.delete_cert') as \
+                rm_consumer_mock:
             get_cert_mock.start().return_value = CertMock(
                 'mock_cert')
             validate_cert_mock.side_effect = exceptions.MisMatchedKey
@@ -1638,12 +1634,11 @@ class LbaasListenerTests(ListenerTestBase):
         extras['sni_container_refs'] = [sni_tls_container_ref_1,
                                         sni_tls_container_ref_2]
 
-        with nested(
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'cert_parser.validate_cert'),
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert')
-        ) as (validate_cert_mock, get_cert_mock):
+        with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                        'cert_parser.validate_cert') as validate_cert_mock, \
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.get_cert') as \
+                get_cert_mock:
             get_cert_mock.start().return_value = CertMock(
                 'mock_cert')
             validate_cert_mock.start().return_value = True
@@ -1674,25 +1669,24 @@ class LbaasListenerTests(ListenerTestBase):
                         pass
 
     def test_cannot_create_listener_with_pool_loadbalancer_mismatch(self):
-        with self.subnet() as subnet:
-            with nested(self.loadbalancer(subnet=subnet),
-                        self.loadbalancer(subnet=subnet)
-                        ) as (lb1, lb2):
-                lb_id1 = lb1['loadbalancer']['id']
-                lb_id2 = lb2['loadbalancer']['id']
-                with self.pool(loadbalancer_id=lb_id1) as p1:
-                    p_id = p1['pool']['id']
-                    data = {'listener': {'name': '',
-                                         'protocol_port': 80,
-                                         'protocol': 'HTTP',
-                                         'connection_limit': 100,
-                                         'admin_state_up': True,
-                                         'tenant_id': self._tenant_id,
-                                         'default_pool_id': p_id,
-                                         'loadbalancer_id': lb_id2}}
-                    resp, body = self._create_listener_api(data)
-                    self.assertEqual(resp.status_int,
-                                     webob.exc.HTTPBadRequest.code)
+        with self.subnet() as subnet, \
+                self.loadbalancer(subnet=subnet) as lb1, \
+                self.loadbalancer(subnet=subnet) as lb2:
+            lb_id1 = lb1['loadbalancer']['id']
+            lb_id2 = lb2['loadbalancer']['id']
+            with self.pool(loadbalancer_id=lb_id1) as p1:
+                p_id = p1['pool']['id']
+                data = {'listener': {'name': '',
+                                     'protocol_port': 80,
+                                     'protocol': 'HTTP',
+                                     'connection_limit': 100,
+                                     'admin_state_up': True,
+                                     'tenant_id': self._tenant_id,
+                                     'default_pool_id': p_id,
+                                     'loadbalancer_id': lb_id2}}
+                resp, body = self._create_listener_api(data)
+                self.assertEqual(resp.status_int,
+                                 webob.exc.HTTPBadRequest.code)
 
     def test_update_listener(self):
         name = 'new_listener'
@@ -1734,12 +1728,11 @@ class LbaasListenerTests(ListenerTestBase):
             'loadbalancer_id': self.lb_id
         }
 
-        with nested(
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'cert_parser.validate_cert'),
-            mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
-                       'CERT_MANAGER_PLUGIN.CertManager.get_cert')
-        ) as (validate_cert_mock, get_cert_mock):
+        with mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                        'cert_parser.validate_cert') as validate_cert_mock, \
+                mock.patch('neutron_lbaas.services.loadbalancer.plugin.'
+                           'CERT_MANAGER_PLUGIN.CertManager.get_cert') as \
+                get_cert_mock:
             get_cert_mock.start().return_value = CertMock(
                 'mock_cert')
             validate_cert_mock.start().return_value = True
@@ -2001,10 +1994,9 @@ class LbaasL7Tests(ListenerTestBase):
 
             # Test url redirect action with invalid url specified
             try:
-                with nested(
-                    self.l7policy(listener['listener']['id'],
-                    action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
-                    redirect_url='https:/acme.com')):
+                with self.l7policy(listener['listener']['id'],
+                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL,
+                        redirect_url='https:/acme.com'):
                     self.assertTrue(False)
             except webob.exc.HTTPClientError:
                 pass
@@ -2027,9 +2019,7 @@ class LbaasL7Tests(ListenerTestBase):
 
             # Test invalid zero position for policy
             try:
-                with nested(
-                    self.l7policy(listener['listener']['id'],
-                    position=0)):
+                with self.l7policy(listener['listener']['id'], position=0):
                     self.assertTrue(False)
             except webob.exc.HTTPClientError:
                 pass
@@ -2089,59 +2079,47 @@ class LbaasL7Tests(ListenerTestBase):
         }
         expected.update(extras)
 
-        with nested(
-            self.listener(loadbalancer_id=self.lb_id),
-            self.listener(loadbalancer_id=self.lb_id,
-                protocol_port=8080)) as (listener1, listener2):
-            with nested(
-                self.pool(loadbalancer_id=self.lb_id,
-                          no_delete=True),
-                self.pool(loadbalancer_id=self.lb_id)) as (pool1, pool2):
-                with nested(
-                    self.l7policy(
-                        listener1['listener']['id'],
-                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
-                        redirect_pool_id=pool1['pool']['id']),
-                    self.l7policy(
-                        listener1['listener']['id'],
-                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
-                        redirect_pool_id=pool2['pool']['id']),
-                    self.l7policy(
-                        listener2['listener']['id'],
-                        action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
-                        redirect_pool_id=pool1['pool']['id'])) as (
-                        policy1, policy2, policy3):
+        with self.listener(loadbalancer_id=self.lb_id) as listener1, \
+                self.listener(loadbalancer_id=self.lb_id, protocol_port=8080) as listener2, \
+                self.pool(loadbalancer_id=self.lb_id, no_delete=True) as pool1, \
+                self.pool(loadbalancer_id=self.lb_id) as pool2, \
+                self.l7policy(listener1['listener']['id'],
+                    action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                    redirect_pool_id=pool1['pool']['id']) as policy1, \
+                self.l7policy(listener1['listener']['id'],
+                    action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                    redirect_pool_id=pool2['pool']['id']), \
+                self.l7policy(listener2['listener']['id'],
+                    action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                    redirect_pool_id=pool1['pool']['id']) as policy3:
+            ctx = context.get_admin_context()
+            self.plugin.delete_pool(ctx, pool1['pool']['id'])
 
-                    ctx = context.get_admin_context()
-                    self.plugin.delete_pool(ctx, pool1['pool']['id'])
+            l7policy1 = self.plugin.get_l7policy(
+                ctx, policy1['l7policy']['id'])
+            self.assertEqual(l7policy1['action'],
+                lb_const.L7_POLICY_ACTION_REJECT)
+            self.assertEqual(l7policy1['redirect_pool_id'], None)
 
-                    l7policy1 = self.plugin.get_l7policy(
-                        ctx, policy1['l7policy']['id'])
-                    self.assertEqual(l7policy1['action'],
-                        lb_const.L7_POLICY_ACTION_REJECT)
-                    self.assertEqual(l7policy1['redirect_pool_id'], None)
-
-                    l7policy3 = self.plugin.get_l7policy(
-                        ctx, policy3['l7policy']['id'])
-                    self.assertEqual(l7policy3['action'],
-                        lb_const.L7_POLICY_ACTION_REJECT)
-                    self.assertEqual(l7policy3['redirect_pool_id'], None)
+            l7policy3 = self.plugin.get_l7policy(
+                ctx, policy3['l7policy']['id'])
+            self.assertEqual(l7policy3['action'],
+                lb_const.L7_POLICY_ACTION_REJECT)
+            self.assertEqual(l7policy3['redirect_pool_id'], None)
 
     def test_create_l7policies_ordering(self, **extras):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with nested(
-                self.l7policy(listener_id, name="1"),
-                self.l7policy(listener_id, name="2"),
-                self.l7policy(listener_id, name="3"),
-                self.l7policy(listener_id, position=1, name="4"),
-                self.l7policy(listener_id, position=2, name="5"),
-                self.l7policy(listener_id, position=4, name="6"),
-                self.l7policy(listener_id, name="7"),
-                self.l7policy(listener_id, position=8, name="8"),
-                self.l7policy(listener_id, position=1, name="9"),
-                self.l7policy(listener_id, position=1, name="10")
-            ):
+            with self.l7policy(listener_id, name="1"), \
+                    self.l7policy(listener_id, name="2"), \
+                    self.l7policy(listener_id, name="3"), \
+                    self.l7policy(listener_id, position=1, name="4"), \
+                    self.l7policy(listener_id, position=2, name="5"), \
+                    self.l7policy(listener_id, position=4, name="6"), \
+                    self.l7policy(listener_id, name="7"), \
+                    self.l7policy(listener_id, position=8, name="8"), \
+                    self.l7policy(listener_id, position=1, name="9"), \
+                    self.l7policy(listener_id, position=1, name="10"):
                 listener_db = self.plugin.db._get_resource(
                     context.get_admin_context(),
                     models.Listener, listener['listener']['id'])
@@ -2197,18 +2175,16 @@ class LbaasL7Tests(ListenerTestBase):
 
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with nested(
-                self.l7policy(listener_id, name="1"),
-                self.l7policy(listener_id, name="2"),
-                self.l7policy(listener_id, name="3"),
-                self.l7policy(listener_id, name="4"),
-                self.l7policy(listener_id, name="5"),
-                self.l7policy(listener_id, name="6"),
-                self.l7policy(listener_id, name="7"),
-                self.l7policy(listener_id, name="8"),
-                self.l7policy(listener_id, name="9"),
-                self.l7policy(listener_id, name="10"),
-            ) as (p1, p2, p3, p4, p5, p6, p7, p8, p9, p10):
+            with self.l7policy(listener_id, name="1") as p1, \
+                    self.l7policy(listener_id, name="2") as p2, \
+                    self.l7policy(listener_id, name="3"), \
+                    self.l7policy(listener_id, name="4"), \
+                    self.l7policy(listener_id, name="5") as p5, \
+                    self.l7policy(listener_id, name="6") as p6, \
+                    self.l7policy(listener_id, name="7"), \
+                    self.l7policy(listener_id, name="8"), \
+                    self.l7policy(listener_id, name="9"), \
+                    self.l7policy(listener_id, name="10") as p10:
                 c = context.get_admin_context()
 
                 listener_db = self.plugin.db._get_resource(
@@ -2279,15 +2255,13 @@ class LbaasL7Tests(ListenerTestBase):
 
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with nested(
-                self.l7policy(listener_id, name="0"),
-                self.l7policy(listener_id, name="1"),
-                self.l7policy(listener_id, name="2"),
-                self.l7policy(listener_id, name="3", no_delete=True),
-                self.l7policy(listener_id, name="4"),
-                self.l7policy(listener_id, name="5", no_delete=True),
-                self.l7policy(listener_id, name="6")
-            ) as (p0, p1, p2, p3, p4, p5, p6):
+            with self.l7policy(listener_id, name="0"), \
+                    self.l7policy(listener_id, name="1"), \
+                    self.l7policy(listener_id, name="2"), \
+                    self.l7policy(listener_id, name="3", no_delete=True) as p3, \
+                    self.l7policy(listener_id, name="4"), \
+                    self.l7policy(listener_id, name="5", no_delete=True) as p5, \
+                    self.l7policy(listener_id, name="6"):
                 c = context.get_admin_context()
 
                 self.plugin.db.update_status(
@@ -2346,10 +2320,9 @@ class LbaasL7Tests(ListenerTestBase):
     def test_list_l7policies_with_sort_emulated(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with nested(self.l7policy(listener_id, name="b"),
-                        self.l7policy(listener_id, name="c"),
-                        self.l7policy(listener_id, name="a")
-                        ) as (p1, p2, p3):
+            with self.l7policy(listener_id, name="b") as p1, \
+                    self.l7policy(listener_id, name="c") as p2, \
+                    self.l7policy(listener_id, name="a") as p3:
                 self._test_list_with_sort('l7policy', (p3, p1, p2),
                                           [('name', 'asc')],
                                           resources='l7policies')
@@ -2357,14 +2330,13 @@ class LbaasL7Tests(ListenerTestBase):
     def test_list_l7policies_with_pagination_emulated(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with nested(self.l7policy(listener_id, name="b"),
-                        self.l7policy(listener_id, name="c"),
-                        self.l7policy(listener_id, name="e"),
-                        self.l7policy(listener_id, name="d"),
-                        self.l7policy(listener_id, name="f"),
-                        self.l7policy(listener_id, name="g"),
-                        self.l7policy(listener_id, name="a")
-                        ) as (p1, p2, p3, p4, p5, p6, p7):
+            with self.l7policy(listener_id, name="b") as p1, \
+                    self.l7policy(listener_id, name="c") as p2, \
+                    self.l7policy(listener_id, name="e") as p3, \
+                    self.l7policy(listener_id, name="d") as p4, \
+                    self.l7policy(listener_id, name="f") as p5, \
+                    self.l7policy(listener_id, name="g") as p6, \
+                    self.l7policy(listener_id, name="a") as p7:
                 self._test_list_with_pagination(
                     'l7policy', (p6, p5, p3, p4, p2, p1, p7),
                     ('name', 'desc'), 2, 4, resources='l7policies')
@@ -2372,14 +2344,13 @@ class LbaasL7Tests(ListenerTestBase):
     def test_list_l7policies_with_pagination_reverse_emulated(self):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
-            with nested(self.l7policy(listener_id, name="b"),
-                        self.l7policy(listener_id, name="c"),
-                        self.l7policy(listener_id, name="e"),
-                        self.l7policy(listener_id, name="d"),
-                        self.l7policy(listener_id, name="f"),
-                        self.l7policy(listener_id, name="g"),
-                        self.l7policy(listener_id, name="a")
-                        ) as (p1, p2, p3, p4, p5, p6, p7):
+            with self.l7policy(listener_id, name="b") as p1, \
+                    self.l7policy(listener_id, name="c") as p2, \
+                    self.l7policy(listener_id, name="e") as p3, \
+                    self.l7policy(listener_id, name="d") as p4, \
+                    self.l7policy(listener_id, name="f") as p5, \
+                    self.l7policy(listener_id, name="g") as p6, \
+                    self.l7policy(listener_id, name="a") as p7:
                 self._test_list_with_pagination_reverse(
                     'l7policy', (p6, p5, p3, p4, p2, p1, p7),
                     ('name', 'desc'), 2, 4, resources='l7policies')
@@ -2476,20 +2447,17 @@ class LbaasL7Tests(ListenerTestBase):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             with self.l7policy(listener['listener']['id']) as policy:
                 policy_id = policy['l7policy']['id']
-                with nested(
-                    self.l7policy_rule(policy_id),
-                    self.l7policy_rule(policy_id, key='key1'),
-                    self.l7policy_rule(policy_id, value='value2'),
-                    self.l7policy_rule(policy_id,
-                                       type=lb_const.L7_RULE_TYPE_PATH),
-                    self.l7policy_rule(
-                        policy_id,
-                        compare_type=lb_const.L7_RULE_COMPARE_TYPE_REGEX),
-                    self.l7policy_rule(
-                        policy_id,
-                        invert=True)
-                ) as (r_def, r_key, r_value, r_type, r_compare_type, r_invert):
-
+                with self.l7policy_rule(policy_id) as r_def, \
+                        self.l7policy_rule(policy_id,
+                                           key='key1') as r_key, \
+                        self.l7policy_rule(policy_id,
+                                           value='value2') as r_value, \
+                        self.l7policy_rule(policy_id,
+                            type=lb_const.L7_RULE_TYPE_PATH) as r_type, \
+                        self.l7policy_rule(policy_id, compare_type=lb_const.
+                            L7_RULE_COMPARE_TYPE_REGEX) as r_compare_type, \
+                        self.l7policy_rule(policy_id,
+                                           invert=True) as r_invert:
                     ctx = context.get_admin_context()
                     rdb = self.plugin.get_l7policy_rule(
                         ctx, r_def['rule']['id'], policy_id)
@@ -2670,10 +2638,8 @@ class LbaasL7Tests(ListenerTestBase):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             with self.l7policy(listener['listener']['id']) as policy:
                 policy_id = policy['l7policy']['id']
-                with nested(
-                    self.l7policy_rule(policy_id, no_delete=True),
-                    self.l7policy_rule(policy_id, no_delete=True)
-                ) as (r0, r1):
+                with self.l7policy_rule(policy_id, no_delete=True) as r0, \
+                        self.l7policy_rule(policy_id, no_delete=True):
                     req = self.new_show_request('l7policies',
                                                 policy_id,
                                                 fmt=self.fmt)
@@ -2707,11 +2673,9 @@ class LbaasL7Tests(ListenerTestBase):
             listener_id = listener['listener']['id']
             with self.l7policy(listener_id) as policy:
                 policy_id = policy['l7policy']['id']
-                with nested(
-                    self.l7policy_rule(policy_id, value="b"),
-                    self.l7policy_rule(policy_id, value="c"),
-                    self.l7policy_rule(policy_id, value="a")
-                ) as (r1, r2, r3):
+                with self.l7policy_rule(policy_id, value="b") as r1, \
+                        self.l7policy_rule(policy_id, value="c") as r2, \
+                        self.l7policy_rule(policy_id, value="a") as r3:
                     self._test_list_with_sort('l7policy', (r3, r1, r2),
                                               [('value', 'asc')],
                                               id=policy_id,
@@ -2724,15 +2688,13 @@ class LbaasL7Tests(ListenerTestBase):
             listener_id = listener['listener']['id']
             with self.l7policy(listener_id) as policy:
                 policy_id = policy['l7policy']['id']
-                with nested(
-                    self.l7policy_rule(policy_id, value="b"),
-                    self.l7policy_rule(policy_id, value="c"),
-                    self.l7policy_rule(policy_id, value="e"),
-                    self.l7policy_rule(policy_id, value="d"),
-                    self.l7policy_rule(policy_id, value="f"),
-                    self.l7policy_rule(policy_id, value="g"),
-                    self.l7policy_rule(policy_id, value="a")
-                ) as (r1, r2, r3, r4, r5, r6, r7):
+                with self.l7policy_rule(policy_id, value="b") as r1, \
+                        self.l7policy_rule(policy_id, value="c") as r2, \
+                        self.l7policy_rule(policy_id, value="e") as r3, \
+                        self.l7policy_rule(policy_id, value="d") as r4, \
+                        self.l7policy_rule(policy_id, value="f") as r5, \
+                        self.l7policy_rule(policy_id, value="g") as r6, \
+                        self.l7policy_rule(policy_id, value="a") as r7:
                     self._test_list_with_pagination(
                         'l7policy', (r6, r5, r3, r4, r2, r1, r7),
                         ('value', 'desc'), 2, 4,
@@ -2746,15 +2708,13 @@ class LbaasL7Tests(ListenerTestBase):
             listener_id = listener['listener']['id']
             with self.l7policy(listener_id) as p:
                 policy_id = p['l7policy']['id']
-                with nested(
-                    self.l7policy_rule(policy_id, value="b"),
-                    self.l7policy_rule(policy_id, value="c"),
-                    self.l7policy_rule(policy_id, value="e"),
-                    self.l7policy_rule(policy_id, value="d"),
-                    self.l7policy_rule(policy_id, value="f"),
-                    self.l7policy_rule(policy_id, value="g"),
-                    self.l7policy_rule(policy_id, value="a")
-                ) as (r1, r2, r3, r4, r5, r6, r7):
+                with self.l7policy_rule(policy_id, value="b") as r1, \
+                        self.l7policy_rule(policy_id, value="c") as r2, \
+                        self.l7policy_rule(policy_id, value="e") as r3, \
+                        self.l7policy_rule(policy_id, value="d") as r4, \
+                        self.l7policy_rule(policy_id, value="f") as r5, \
+                        self.l7policy_rule(policy_id, value="g") as r6, \
+                        self.l7policy_rule(policy_id, value="a") as r7:
                     self._test_list_with_pagination_reverse(
                         'l7policy', (r6, r5, r3, r4, r2, r1, r7),
                         ('value', 'desc'), 2, 4,
@@ -3019,9 +2979,8 @@ class LbaasPoolTests(PoolTestBase):
 
     def test_cannot_create_pool_with_listener_loadbalancer_mismatch(self):
         with self.subnet() as subnet:
-            with nested(self.loadbalancer(subnet=subnet),
-                        self.loadbalancer(subnet=subnet)
-                        ) as (lb1, lb2):
+            with self.loadbalancer(subnet=subnet) as lb1, \
+                    self.loadbalancer(subnet=subnet) as lb2:
                 lb_id1 = lb1['loadbalancer']['id']
                 lb_id2 = lb2['loadbalancer']['id']
                 with self.listener(loadbalancer_id=lb_id1) as l1:
@@ -3151,70 +3110,64 @@ class LbaasPoolTests(PoolTestBase):
                 self.assertEqual(expected_values[k], pool_list[0][k])
 
     def test_list_pools_with_sort_emulated(self):
-        with nested(self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=81,
-                                  protocol=lb_const.PROTOCOL_HTTPS),
-                    self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=82,
-                                  protocol=lb_const.PROTOCOL_TCP),
-                    self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=83,
-                                  protocol=lb_const.PROTOCOL_HTTP)
-                    ) as (l1, l2, l3):
-            with nested(self.pool(listener_id=l1['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_HTTPS),
-                        self.pool(listener_id=l2['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_TCP),
-                        self.pool(listener_id=l3['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_HTTP)
-                        ) as (p1, p2, p3):
-                self._test_list_with_sort('pool', (p2, p1, p3),
-                                          [('protocol', 'desc')])
+        with self.listener(loadbalancer_id=self.lb_id,
+                           protocol_port=81,
+                           protocol=lb_const.PROTOCOL_HTTPS) as l1, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=82,
+                              protocol=lb_const.PROTOCOL_TCP) as l2, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=83,
+                              protocol=lb_const.PROTOCOL_HTTP) as l3, \
+                self.pool(listener_id=l1['listener']['id'],
+                          protocol=lb_const.PROTOCOL_HTTPS) as p1, \
+                self.pool(listener_id=l2['listener']['id'],
+                          protocol=lb_const.PROTOCOL_TCP) as p2, \
+                self.pool(listener_id=l3['listener']['id'],
+                          protocol=lb_const.PROTOCOL_HTTP) as p3:
+            self._test_list_with_sort('pool', (p2, p1, p3),
+                                      [('protocol', 'desc')])
 
     def test_list_pools_with_pagination_emulated(self):
-        with nested(self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=81,
-                                  protocol=lb_const.PROTOCOL_HTTPS),
-                    self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=82,
-                                  protocol=lb_const.PROTOCOL_TCP),
-                    self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=83,
-                                  protocol=lb_const.PROTOCOL_HTTP)
-                    ) as (l1, l2, l3):
-            with nested(self.pool(listener_id=l1['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_HTTPS),
-                        self.pool(listener_id=l2['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_TCP),
-                        self.pool(listener_id=l3['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_HTTP)
-                        ) as (p1, p2, p3):
-                self._test_list_with_pagination('pool',
-                                                (p3, p1, p2),
-                                                ('protocol', 'asc'), 2, 2)
+        with self.listener(loadbalancer_id=self.lb_id,
+                           protocol_port=81,
+                           protocol=lb_const.PROTOCOL_HTTPS) as l1, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=82,
+                              protocol=lb_const.PROTOCOL_TCP) as l2, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=83,
+                              protocol=lb_const.PROTOCOL_HTTP) as l3, \
+                self.pool(listener_id=l1['listener']['id'],
+                          protocol=lb_const.PROTOCOL_HTTPS) as p1, \
+                self.pool(listener_id=l2['listener']['id'],
+                          protocol=lb_const.PROTOCOL_TCP) as p2, \
+                self.pool(listener_id=l3['listener']['id'],
+                          protocol=lb_const.PROTOCOL_HTTP) as p3:
+            self._test_list_with_pagination('pool',
+                                            (p3, p1, p2),
+                                            ('protocol', 'asc'), 2, 2)
 
     def test_list_pools_with_pagination_reverse_emulated(self):
-        with nested(self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=81,
-                                  protocol=lb_const.PROTOCOL_HTTPS),
-                    self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=82,
-                                  protocol=lb_const.PROTOCOL_TCP),
-                    self.listener(loadbalancer_id=self.lb_id,
-                                  protocol_port=83,
-                                  protocol=lb_const.PROTOCOL_HTTP)
-                    ) as (l1, l2, l3):
-            with nested(self.pool(listener_id=l1['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_HTTPS),
-                        self.pool(listener_id=l2['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_TCP),
-                        self.pool(listener_id=l3['listener']['id'],
-                                  protocol=lb_const.PROTOCOL_HTTP)
-                        ) as (p1, p2, p3):
-                self._test_list_with_pagination_reverse('pool',
-                                                        (p3, p1, p2),
-                                                        ('protocol', 'asc'),
-                                                        2, 2)
+        with self.listener(loadbalancer_id=self.lb_id,
+                           protocol_port=81,
+                           protocol=lb_const.PROTOCOL_HTTPS) as l1, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=82,
+                              protocol=lb_const.PROTOCOL_TCP) as l2, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=83,
+                              protocol=lb_const.PROTOCOL_HTTP) as l3, \
+                self.pool(listener_id=l1['listener']['id'],
+                          protocol=lb_const.PROTOCOL_HTTPS) as p1, \
+                self.pool(listener_id=l2['listener']['id'],
+                          protocol=lb_const.PROTOCOL_TCP) as p2, \
+                self.pool(listener_id=l3['listener']['id'],
+                          protocol=lb_const.PROTOCOL_HTTP) as p3:
+            self._test_list_with_pagination_reverse('pool',
+                                                    (p3, p1, p2),
+                                                    ('protocol', 'asc'),
+                                                    2, 2)
 
     def test_get_listener_shows_default_pool(self):
         with self.pool(listener_id=self.listener_id) as pool:
