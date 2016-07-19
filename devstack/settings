@@ -1,12 +1,12 @@
 # settings for LBaaS devstack pluginlib/neutron_plugins/services/loadbalancer
 
-# For backward compatibility, treat q-lbaas and q-lbaasv1 the same.
+# For backward compatibility, treat q-lbaas as lbaas v1.
 # In the future, the q-lbaas may default to q-lbaasv2
 
 AGENT_LBAASV1_BINARY="$NEUTRON_BIN_DIR/neutron-lbaas-agent"
 AGENT_LBAASV2_BINARY="$NEUTRON_BIN_DIR/neutron-lbaasv2-agent"
 
-LBAAS_V1="q-lbaas q-lbaasv1"
+LBAAS_V1="q-lbaas"
 LBAAS_V2="q-lbaasv2"
 LBAAS_ANY="$LBAAS_V1 $LBAAS_V2"
 
