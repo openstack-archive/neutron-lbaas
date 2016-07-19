@@ -813,9 +813,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                 validate_tls_container(container_ref)
 
         to_validate = []
-        if not listener['default_tls_container_ref']:
-            raise loadbalancerv2.TLSDefaultContainerNotSpecified()
         if not curr_listener:
+            if not listener['default_tls_container_ref']:
+                raise loadbalancerv2.TLSDefaultContainerNotSpecified()
             to_validate.extend([listener['default_tls_container_ref']])
             if 'sni_container_refs' in listener:
                 to_validate.extend(listener['sni_container_refs'])
@@ -898,9 +898,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         try:
             curr_listener = curr_listener_db.to_dict()
 
-            default_tls_container_ref = listener.get(
-                'default_tls_container_ref')
-            if not default_tls_container_ref:
+            if 'default_tls_container_ref' not in listener:
                 listener['default_tls_container_ref'] = (
                     # NOTE(blogan): not changing to ref bc this dictionary is
                     # created from a data model
