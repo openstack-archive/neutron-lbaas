@@ -81,7 +81,9 @@ case "$testtype" in
             ENABLED_SERVICES+="-ceilometer-collector,"
         fi
 
-        if [ "$testenv" != "apiv1" ]; then
+        if [ "$testenv" == "apiv1" ]; then
+            ENABLED_SERVICES+="q-lbaas,"
+        else
             # Override enabled services, so we can turn on lbaasv2.
             # While we're at it, disable cinder and swift, since we don't need them.
             ENABLED_SERVICES+="q-lbaasv2,-q-lbaas,"
