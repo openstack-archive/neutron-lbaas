@@ -1,0 +1,7 @@
+---
+features:
+  - Implements ProcessMonitor in the HaproxyNSDriver class (v2) to utilize the
+    external_process module in order to monitor and respawn the haproxy
+    processes if and when needed. The LBaaS agent (v2) will load
+    external_process related options in order to take a configured action when
+    haproxy process dies unexpectedly.

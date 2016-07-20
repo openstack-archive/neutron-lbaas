@@ -22,9 +22,10 @@ import six
 class AgentDeviceDriver(object):
     """Abstract device driver that defines the API required by LBaaS agent."""
 
-    def __init__(self, conf, plugin_rpc):
+    def __init__(self, conf, plugin_rpc, process_monitor=None):
         self.conf = conf
         self.plugin_rpc = plugin_rpc
+        self.process_monitor = process_monitor
 
     @abc.abstractproperty
     def loadbalancer(self):
