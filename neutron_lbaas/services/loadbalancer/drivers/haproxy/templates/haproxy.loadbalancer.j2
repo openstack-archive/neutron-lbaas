@@ -17,7 +17,6 @@
 {% set loadbalancer_name = loadbalancer.name %}
 {% set usergroup = user_group %}
 {% set sock_path = stats_sock %}
-{% set connection_limit = loadbalancer.connection_limit %}
 
 {% block proxies %}
 {% from 'haproxy_proxies.j2' import frontend_macro as frontend_macro, backend_macro%}

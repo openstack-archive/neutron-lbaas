@@ -102,21 +102,18 @@ RET_LB = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER],
-    'connection_limit': RET_LISTENER['connection_limit'],
     'pools': [RET_POOL]}
 
 RET_LB_TLS = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER_TLS],
-    'connection_limit': RET_LISTENER_TLS['connection_limit'],
     'pools': [RET_POOL]}
 
 RET_LB_TLS_SNI = {
     'name': 'test-lb',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER_TLS_SNI],
-    'connection_limit': RET_LISTENER_TLS_SNI['connection_limit'],
     'pools': [RET_POOL]}
 
 
@@ -287,7 +284,6 @@ def sample_base_expected_config(backend, frontend=None):
             "    group nogroup\n"
             "    log /dev/log local0\n"
             "    log /dev/log local1 notice\n"
-            "    maxconn 98\n"
             "    stats socket /sock_path mode 0666 level user\n\n"
             "defaults\n"
             "    log global\n"
