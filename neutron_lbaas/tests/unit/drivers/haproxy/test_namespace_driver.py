@@ -570,7 +570,8 @@ class TestListenerManager(BaseTestListenerManager):
         self.driver.reset_mock()
         self.listener_manager.delete(self.listener2)
         self.assertFalse(self.refresh.called)
-        self.driver.undeploy_instance.assert_called_once_with(self.in_lb.id)
+        self.driver.undeploy_instance.assert_called_once_with(
+            self.in_lb.id, delete_namespace=True)
 
 
 class BaseTestPoolManager(BaseTestListenerManager):
