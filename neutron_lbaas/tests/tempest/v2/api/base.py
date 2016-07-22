@@ -89,6 +89,7 @@ class BaseTestCase(base.BaseNetworkTest):
                 continue
             for listener in lb.get('listeners'):
                 for pool in listener.get('pools'):
+                    # delete pool's health-monitor
                     hm = pool.get('healthmonitor')
                     if hm:
                         test_utils.call_and_ignore_notfound_exc(
@@ -99,16 +100,23 @@ class BaseTestCase(base.BaseNetworkTest):
                         cls.pools_client.delete_pool,
                         pool.get('id'))
                     cls._wait_for_load_balancer_status(lb_id)
-                    health_monitor = pool.get('healthmonitor')
-                    if health_monitor:
+                    # delete pool's members
+                    members = pool.get('members', [])
+                    for member in members:
                         test_utils.call_and_ignore_notfound_exc(
-                            cls.health_monitors_client.delete_health_monitor,
-                            health_monitor.get('id'))
+                            cls.members_client.delete_member,
+                            pool.get('id'), member.get('id'))
+                        cls._wait_for_load_balancer_status(lb_id)
+                    # delete pool
+                    test_utils.call_and_ignore_notfound_exc(
+                        cls.pools_client.delete_pool, pool.get('id'))
                     cls._wait_for_load_balancer_status(lb_id)
+                # delete listener
                 test_utils.call_and_ignore_notfound_exc(
                     cls.listeners_client.delete_listener,
                     listener.get('id'))
                 cls._wait_for_load_balancer_status(lb_id)
+            # delete load-balancer
             test_utils.call_and_ignore_notfound_exc(
                 cls._delete_load_balancer, lb_id)
 
