@@ -3714,6 +3714,26 @@ class LbaasStatusesTest(MemberTestBase):
         self._assertNotDegraded(self._traverse_statuses(statuses,
             listener='listener_HTTPS'))
 
+    def test_degraded_with_pool_error(self):
+        ctx = context.get_admin_context()
+        ERROR = constants.ERROR
+        lb_dict = self._create_new_populated_loadbalancer()
+        lb_id = lb_dict['id']
+        statuses = self._get_loadbalancer_statuses_api(lb_id)[1]
+        stat = self._traverse_statuses(statuses, listener="listener_HTTP",
+                                       pool="pool_HTTP")
+        pool_id = stat['id']
+        self.plugin.db.update_status(ctx, models.PoolV2, pool_id,
+                                     provisioning_status=ERROR)
+        statuses = self._get_loadbalancer_statuses_api(lb_id)[1]
+        #Assert the parents of the pool are degraded
+        self._assertDegraded(self._traverse_statuses(statuses,
+                                                    listener='listener_HTTP'))
+        self._assertDegraded(self._traverse_statuses(statuses))
+        #Verify siblings are not degraded
+        self._assertNotDegraded(self._traverse_statuses(statuses,
+            listener='listener_HTTPS'))
+
     def _assertOnline(self, obj):
         OS = "operating_status"
         if OS in obj:

@@ -1341,7 +1341,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                 [ps["id"] for ps in lb_status["pools"]]):
                 lb_status["pools"].append(pool_status)
             if self._is_degraded(curr_listener.default_pool):
-                self._set_degraded(self, listener_status, lb_status)
+                self._set_degraded(listener_status, lb_status)
             members = curr_listener.default_pool.members
             for curr_member in members:
                 if not curr_member.admin_state_up:
