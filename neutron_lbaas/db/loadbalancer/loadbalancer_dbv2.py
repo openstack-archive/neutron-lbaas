@@ -18,6 +18,7 @@ import re
 from neutron.callbacks import events
 from neutron.callbacks import registry
 from neutron.callbacks import resources
+from neutron.db import api as db_api
 from neutron.db import common_db_mixin as base_db
 from neutron import manager
 from neutron.plugins.common import constants
@@ -312,7 +313,11 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             lb_db = self._get_resource(context, models.LoadBalancer, id)
             context.session.delete(lb_db)
         if delete_vip_port and lb_db.vip_port:
-            self._core_plugin.delete_port(context, lb_db.vip_port_id)
+            self._delete_vip_port(context, lb_db.vip_port_id)
+
+    @db_api.retry_db_errors
+    def _delete_vip_port(self, context, vip_port_id):
+        self._core_plugin.delete_port(context, vip_port_id)
 
     def prevent_lbaasv2_port_deletion(self, context, port_id):
         try:
