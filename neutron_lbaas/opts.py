@@ -12,7 +12,6 @@
 
 import itertools
 
-import neutron.agent.linux.interface
 import neutron.conf.agent.common
 import neutron.conf.services.provider_configuration
 
@@ -32,7 +31,7 @@ def list_agent_opts():
         ('DEFAULT',
          itertools.chain(
              neutron_lbaas.agent.agent.OPTS,
-             neutron.agent.linux.interface.OPTS,
+             neutron.conf.agent.common.INTERFACE_OPTS,
              neutron.conf.agent.common.INTERFACE_DRIVER_OPTS)
          ),
         ('haproxy',

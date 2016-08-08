@@ -15,8 +15,6 @@
 
 import sys
 
-from neutron.agent.linux import external_process
-from neutron.agent.linux import interface
 from neutron.common import config as common_config
 from neutron.common import rpc as n_rpc
 from neutron.conf.agent import common as config
@@ -51,8 +49,8 @@ def main():
     cfg.CONF.register_opts(OPTS)
     cfg.CONF.register_opts(manager.OPTS)
     # import interface options just in case the driver uses namespaces
-    cfg.CONF.register_opts(interface.OPTS)
-    cfg.CONF.register_opts(external_process.OPTS)
+    config.register_interface_opts(cfg.CONF)
+    config.register_external_process_opts(cfg.CONF)
     config.register_interface_driver_opts_helper(cfg.CONF)
     config.register_agent_state_opts_helper(cfg.CONF)
     config.register_root_helper(cfg.CONF)
