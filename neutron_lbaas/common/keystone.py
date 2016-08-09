@@ -76,6 +76,11 @@ OPTS = [
         'endpoint_type',
         default='public',
         help=_('The endpoint_type to be used')
+    ),
+    cfg.BoolOpt(
+        'insecure',
+        default=False,
+        help=_('Disable server certificate verification')
     )
 ]
 
@@ -92,6 +97,7 @@ def get_session():
     if not _SESSION:
 
         auth_url = cfg.CONF.service_auth.auth_url
+        insecure = cfg.CONF.service_auth.insecure
         kwargs = {'auth_url': auth_url,
                   'username': cfg.CONF.service_auth.admin_user,
                   'password': cfg.CONF.service_auth.admin_password}
@@ -111,7 +117,7 @@ def get_session():
 
         try:
             kc = client.Password(**kwargs)
-            _SESSION = session.Session(auth=kc)
+            _SESSION = session.Session(auth=kc, verify=not insecure)
         except Exception:
             with excutils.save_and_reraise_exception():
                 LOG.exception(_LE("Error creating Keystone session."))
