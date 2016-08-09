@@ -63,7 +63,7 @@ class vDirectRESTClient(object):
                   'ssl=%(ssl)r', debug_params)
 
     def _flip_servers(self):
-        LOG.warning(_LW('Fliping servers. Current is: %(server)s, '
+        LOG.warning(_LW('Flipping servers. Current is: %(server)s, '
                  'switching to %(secondary)s'),
                  {'server': self.server,
                  'secondary': self.secondary_server})
