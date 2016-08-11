@@ -755,9 +755,6 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             listener_db = self._get_resource(
                 context, models.Listener, listener_id)
 
-            if not listener_db:
-                raise loadbalancerv2.EntityNotFound(
-                    name=models.Listener.NAME, id=listener_id)
             self._load_id(context, l7policy)
 
             l7policy['provisioning_status'] = constants.PENDING_CREATE
