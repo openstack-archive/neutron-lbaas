@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy.ext import declarative
-
 from neutron.api.v2 import attributes as attr
 from neutron.db import model_base
 from neutron.db import models_v2
@@ -25,29 +23,6 @@ from sqlalchemy import orm
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.services.loadbalancer import constants as lb_const
-
-
-class HasTenant(object):
-    # NOTE(dasm): Temporary solution!
-    # Remove when I87a8ef342ccea004731ba0192b23a8e79bc382dc will be merged!
-
-    project_id = sa.Column(sa.String(attr.TENANT_ID_MAX_LEN), index=True)
-
-    def __init__(self, *args, **kwargs):
-        # NOTE(dasm): debtcollector requires init in class
-        super(HasTenant, self).__init__(*args, **kwargs)
-
-    def get_tenant_id(self):
-        return self.project_id
-
-    def set_tenant_id(self, value):
-        self.project_id = value
-
-    @declarative.declared_attr
-    def tenant_id(cls):
-        return orm.synonym(
-            'project_id',
-            descriptor=property(cls.get_tenant_id, cls.set_tenant_id))
 
 
 class SessionPersistenceV2(model_base.BASEV2):
@@ -91,7 +66,7 @@ class LoadBalancerStatistics(model_base.BASEV2):
         return value
 
 
-class MemberV2(model_base.BASEV2, models_v2.HasId, HasTenant):
+class MemberV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a v2 neutron load balancer member."""
 
     NAME = 'member'
@@ -118,7 +93,8 @@ class MemberV2(model_base.BASEV2, models_v2.HasId, HasTenant):
         return self.pool.loadbalancer
 
 
-class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, HasTenant):
+class HealthMonitorV2(model_base.BASEV2, model_base.HasId,
+                      model_base.HasProject):
     """Represents a v2 neutron load balancer healthmonitor."""
 
     NAME = 'healthmonitor'
@@ -144,7 +120,7 @@ class HealthMonitorV2(model_base.BASEV2, models_v2.HasId, HasTenant):
         return self.pool.loadbalancer
 
 
-class LoadBalancer(model_base.BASEV2, models_v2.HasId, HasTenant):
+class LoadBalancer(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a v2 neutron load balancer."""
 
     NAME = 'loadbalancer'
@@ -186,7 +162,7 @@ class LoadBalancer(model_base.BASEV2, models_v2.HasId, HasTenant):
         return self
 
 
-class PoolV2(model_base.BASEV2, models_v2.HasId, HasTenant):
+class PoolV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a v2 neutron load balancer pool."""
 
     NAME = 'pool'
@@ -267,7 +243,7 @@ class SNI(model_base.BASEV2):
         return self.listener.loadbalancer
 
 
-class L7Rule(model_base.BASEV2, models_v2.HasId, HasTenant):
+class L7Rule(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents L7 Rule."""
 
     NAME = 'l7rule'
@@ -294,7 +270,7 @@ class L7Rule(model_base.BASEV2, models_v2.HasId, HasTenant):
         return self.policy.listener.loadbalancer
 
 
-class L7Policy(model_base.BASEV2, models_v2.HasId, HasTenant):
+class L7Policy(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents L7 Policy."""
 
     NAME = 'l7policy'
@@ -335,7 +311,7 @@ class L7Policy(model_base.BASEV2, models_v2.HasId, HasTenant):
         return self.listener.loadbalancer
 
 
-class Listener(model_base.BASEV2, models_v2.HasId, HasTenant):
+class Listener(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents a v2 neutron listener."""
 
     NAME = 'listener'
