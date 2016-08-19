@@ -50,4 +50,4 @@ class TestBarbicanACLAuth(base.BaseTestCase):
 
     def test_load_auth_driver(self):
         bcm = barbican_cert_manager.CertManager()
-        self.assertTrue(isinstance(bcm.auth, barbican_acl.BarbicanACLAuth))
+        self.assertIsInstance(bcm.auth, barbican_acl.BarbicanACLAuth)
