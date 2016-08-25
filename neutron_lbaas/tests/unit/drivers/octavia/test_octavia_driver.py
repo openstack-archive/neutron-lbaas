@@ -73,7 +73,7 @@ class BaseOctaviaDriverTest(test_db_loadbalancerv2.LbaasPluginDbTestCase):
         hm = data_models.HealthMonitor(id=id, pool=pool)
         sp = data_models.SessionPersistence(pool_id=pool.id, pool=pool)
         l7policy = data_models.L7Policy(
-            id=id, listener=listener,
+            id=id, listener=listener, listener_id=listener.id,
             action=constants.L7_POLICY_ACTION_REDIRECT_TO_POOL)
         l7rule = data_models.L7Rule(
             id=id, policy=l7policy, type=constants.L7_RULE_TYPE_PATH,
