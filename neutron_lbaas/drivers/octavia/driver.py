@@ -510,8 +510,6 @@ class L7PolicyManager(driver_base.BaseL7PolicyManager):
         args['id'] = l7p.id
 
         if not graph:
-            if l7p.listener_id:
-                args['listener_id'] = l7p.listener_id
             return args
 
         if (l7p.redirect_pool and l7p.action ==
