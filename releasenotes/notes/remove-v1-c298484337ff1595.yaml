@@ -1,0 +1,10 @@
+---
+prelude: >
+    LBaaS API v1 has been removed. Do not upgrade before
+    migrating to LBaaS API v2.
+features:
+  - LBaaS API v1 has been removed.
+upgrade:
+  - MUST migrate to LBaaS v2 before upgrading.
+critical:
+  - LBaaS API v1 has been removed.
