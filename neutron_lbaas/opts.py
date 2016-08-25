@@ -14,7 +14,7 @@ import itertools
 
 import neutron.agent.common.config
 import neutron.agent.linux.interface
-import neutron.services.provider_configuration
+import neutron.conf.services.provider_configuration
 
 import neutron_lbaas.agent.agent
 import neutron_lbaas.common.cert_manager
@@ -46,7 +46,7 @@ def list_opts():
         ('service_auth',
          neutron_lbaas.common.keystone.OPTS),
         ('service_providers',
-         neutron.services.provider_configuration.serviceprovider_opts),
+         neutron.conf.services.provider_configuration.serviceprovider_opts),
         ('certificates',
          itertools.chain(
              neutron_lbaas.common.cert_manager.cert_manager_opts,
