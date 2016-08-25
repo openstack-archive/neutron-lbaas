@@ -1051,7 +1051,7 @@ class TestLoadBalancerGraphCreation(LbaasPluginDbTestCase):
         self.assertEqual(expected_graph, actual)
         for observed_listener in observed_listeners:
             self.assertTrue(observed_listener.get('id'))
-            observed_listener.pop('id')
+            listener_id = observed_listener.pop('id')
             default_pool = observed_listener.get('default_pool')
             l7_policies = observed_listener.get('l7policies')
             if default_pool:
@@ -1067,7 +1067,10 @@ class TestLoadBalancerGraphCreation(LbaasPluginDbTestCase):
             if l7_policies:
                 for policy in l7_policies:
                     self.assertTrue(policy.get('id'))
+                    self.assertTrue(policy.get('listener_id'))
+                    self.assertEqual(listener_id, policy.get('listener_id'))
                     policy.pop('id')
+                    policy.pop('listener_id')
                     r_pool = policy.get('redirect_pool')
                     rules = policy.get('rules')
                     if r_pool:
@@ -2353,6 +2356,7 @@ class LbaasL7Tests(ListenerTestBase):
 
         with self.listener(loadbalancer_id=self.lb_id) as listener:
             listener_id = listener['listener']['id']
+            expected['listener_id'] = listener_id
             with self.l7policy(listener_id, name="0") as p:
                 req = self.new_show_request('l7policies',
                                             p['l7policy']['id'],

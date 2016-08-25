@@ -603,7 +603,7 @@ class L7Policy(BaseDataModel):
 
     def to_api_dict(self):
         ret_dict = super(L7Policy, self).to_dict(
-            listener=False, listener_id=False,
+            listener=False, listener_id=True,
             provisioning_status=False, redirect_pool=False)
         ret_dict['listeners'] = []
         if self.listener:
