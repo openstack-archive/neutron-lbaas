@@ -14,16 +14,12 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as ex
 from tempest import test
 
 from neutron_lbaas.tests.tempest.v2.api import base
-
-
-CONF = config.CONF
 
 
 class LoadBalancersTestAdmin(base.BaseAdminTestCase):

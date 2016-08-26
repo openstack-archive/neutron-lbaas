@@ -13,15 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from netaddr import IPAddress
-from tempest import config
+import netaddr
 from tempest.lib.common.utils import data_utils
 from tempest.lib import exceptions as ex
 from tempest import test
 
 from neutron_lbaas.tests.tempest.v2.api import base
-
-CONF = config.CONF
 
 
 class LoadBalancersTestJSON(base.BaseTestCase):
@@ -181,7 +178,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             vip_subnet_id=self.subnet['id'])
         self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         load_balancer_ip_initial = load_balancer['vip_address']
-        ip = IPAddress(load_balancer_ip_initial)
+        ip = netaddr.IPAddress(load_balancer_ip_initial)
         self.assertEqual(ip.version, 4)
         load_balancer = self.load_balancers_client.get_load_balancer(
             load_balancer['id'])
