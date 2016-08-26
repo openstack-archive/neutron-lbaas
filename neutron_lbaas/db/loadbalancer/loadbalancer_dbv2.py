@@ -31,6 +31,7 @@ from oslo_utils import uuidutils
 from sqlalchemy import exc as sqlalchemy_exc
 from sqlalchemy import orm
 from sqlalchemy.orm import exc
+from sqlalchemy.orm import lazyload
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas import agent_scheduler
@@ -61,7 +62,12 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         resource = None
         try:
             if for_update:
-                query = self._model_query(context, model).filter(
+                # To lock the instance for update, return a single
+                # instance, instead of an instance with LEFT OUTER
+                # JOINs that do not work in PostgreSQL
+                query = self._model_query(context, model).options(
+                    lazyload('*')
+                ).filter(
                     model.id == id).with_lockmode('update')
                 resource = query.one()
             else:
