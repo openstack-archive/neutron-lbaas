@@ -25,7 +25,7 @@ from oslo_service import service
 
 from neutron_lbaas._i18n import _, _LE
 from neutron_lbaas.drivers import driver_base
-from neutron_lbaas.drivers.driver_mixins import BaseManagerMixin
+from neutron_lbaas.drivers import driver_mixins
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
 
 DEFAULT_PERIODIC_TASK_INTERVAL = "2"
@@ -330,7 +330,7 @@ class NetScalerLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
         return
 
 
-class NetScalerCommonManager(BaseManagerMixin):
+class NetScalerCommonManager(driver_mixins.BaseManagerMixin):
 
     def __init__(self, driver):
         super(NetScalerCommonManager, self).__init__(driver)
