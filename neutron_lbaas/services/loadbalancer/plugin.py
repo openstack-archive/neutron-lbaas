@@ -67,6 +67,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                                    "lbaas_agent_schedulerv2",
                                    "service-type",
                                    "lb-graph",
+                                   "lb_network_vip",
                                    "hm_max_retries_down"]
     path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
 

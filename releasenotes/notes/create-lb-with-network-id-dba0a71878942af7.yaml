@@ -1,0 +1,14 @@
+---
+features:
+  - |
+    Adds support for creating a loadbalancer with a
+    Neutron network id.
+
+    * Adds an optional ``vip_network_id`` attribute
+      when creating a loadbalancer.
+    * When creating a loadbalancer, ``vip_subnet_id``
+      is optional if a ``vip_network_id`` is proviced.
+    * If ``vip_network_id`` is provided the vip will
+      be allocated on a subnet with an available
+      address. An IPv4 subnet will be chosen if
+      possible.

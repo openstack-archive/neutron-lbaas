@@ -23,6 +23,7 @@ from oslo_utils import uuidutils
 from webob import exc
 
 from neutron_lbaas.extensions import healthmonitor_max_retries_down as hm_down
+from neutron_lbaas.extensions import lb_network_vip
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.tests import base
@@ -42,6 +43,8 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
             resource_map[k].update(sharedpools.EXTENDED_ATTRIBUTES_2_0[k])
         for k in hm_down.EXTENDED_ATTRIBUTES_2_0.keys():
             resource_map[k].update(hm_down.EXTENDED_ATTRIBUTES_2_0[k])
+        for k in lb_network_vip.EXTENDED_ATTRIBUTES_2_0.keys():
+            resource_map[k].update(lb_network_vip.EXTENDED_ATTRIBUTES_2_0[k])
         self._setUpExtension(
             'neutron_lbaas.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
             constants.LOADBALANCERV2, resource_map,
@@ -68,7 +71,41 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
                             content_type='application/{0}'.format(self.fmt))
         data['loadbalancer'].update({
             'provider': n_constants.ATTR_NOT_SPECIFIED,
-            'flavor_id': n_constants.ATTR_NOT_SPECIFIED})
+            'flavor_id': n_constants.ATTR_NOT_SPECIFIED,
+            'vip_network_id': n_constants.ATTR_NOT_SPECIFIED})
+        instance.create_loadbalancer.assert_called_with(mock.ANY,
+                                                        loadbalancer=data)
+
+        self.assertEqual(exc.HTTPCreated.code, res.status_int)
+        res = self.deserialize(res)
+        self.assertIn('loadbalancer', res)
+        self.assertEqual(return_value, res['loadbalancer'])
+
+    def test_loadbalancer_create_with_vip_network_id(self):
+        lb_id = _uuid()
+        project_id = _uuid()
+        vip_subnet_id = _uuid()
+        data = {'loadbalancer': {'name': 'lb1',
+                                 'description': 'descr_lb1',
+                                 'tenant_id': project_id,
+                                 'project_id': project_id,
+                                 'vip_network_id': _uuid(),
+                                 'admin_state_up': True,
+                                 'vip_address': '127.0.0.1'}}
+        return_value = copy.copy(data['loadbalancer'])
+        return_value.update({'id': lb_id, 'vip_subnet_id': vip_subnet_id})
+        del return_value['vip_network_id']
+
+        instance = self.plugin.return_value
+        instance.create_loadbalancer.return_value = return_value
+
+        res = self.api.post(_get_path('lbaas/loadbalancers', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/{0}'.format(self.fmt))
+        data['loadbalancer'].update({
+            'provider': n_constants.ATTR_NOT_SPECIFIED,
+            'flavor_id': n_constants.ATTR_NOT_SPECIFIED,
+            'vip_subnet_id': n_constants.ATTR_NOT_SPECIFIED})
         instance.create_loadbalancer.assert_called_with(mock.ANY,
                                                         loadbalancer=data)
 

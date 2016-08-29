@@ -42,6 +42,7 @@ import neutron_lbaas.extensions
 from neutron_lbaas.extensions import healthmonitor_max_retries_down
 from neutron_lbaas.extensions import l7
 from neutron_lbaas.extensions import lb_graph
+from neutron_lbaas.extensions import lb_network_vip
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -66,6 +67,7 @@ class LbaasTestMixin(object):
     resource_keys = list(loadbalancerv2.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_keys.extend(l7.RESOURCE_ATTRIBUTE_MAP.keys())
     resource_keys.extend(lb_graph.RESOURCE_ATTRIBUTE_MAP.keys())
+    resource_keys.extend(lb_network_vip.EXTENDED_ATTRIBUTES_2_0.keys())
     resource_keys.extend(healthmonitor_max_retries_down.
                          EXTENDED_ATTRIBUTES_2_0.keys())
     resource_prefix_map = dict(
@@ -74,7 +76,7 @@ class LbaasTestMixin(object):
 
     def _get_loadbalancer_optional_args(self):
         return ('description', 'vip_address', 'admin_state_up', 'name',
-                'listeners')
+                'listeners', 'vip_network_id', 'vip_subnet_id')
 
     def _create_loadbalancer(self, fmt, subnet_id,
                              expected_res_status=None, **kwargs):
@@ -82,8 +84,11 @@ class LbaasTestMixin(object):
                                  'tenant_id': self._tenant_id}}
         args = self._get_loadbalancer_optional_args()
         for arg in args:
-            if arg in kwargs and kwargs[arg] is not None:
-                data['loadbalancer'][arg] = kwargs[arg]
+            if arg in kwargs:
+                if kwargs[arg] is not None:
+                    data['loadbalancer'][arg] = kwargs[arg]
+                else:
+                    data['loadbalancer'].pop(arg, None)
 
         lb_req = self.new_create_request('loadbalancers', data, fmt)
         lb_res = lb_req.get_response(self.ext_api)
@@ -534,6 +539,8 @@ class ExtendedPluginAwareExtensionManager(object):
             extensions_list.append(l7)
         if 'lb-graph' in self.extension_aliases:
             extensions_list.append(lb_graph)
+        if 'lb_network_vip' in self.extension_aliases:
+            extensions_list.append(lb_network_vip)
         if 'hm_max_retries_down' in self.extension_aliases:
             extensions_list.append(healthmonitor_max_retries_down)
         for extension in extensions_list:
@@ -771,6 +778,47 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
     def test_create_loadbalancer_with_vip_address_outside_subnet(self):
         with testtools.ExpectedException(webob.exc.HTTPClientError):
             self.test_create_loadbalancer(vip_address='9.9.9.9')
+
+    def test_create_loadbalancer_with_no_vip_network_or_subnet(self):
+        with testtools.ExpectedException(webob.exc.HTTPClientError):
+            self.test_create_loadbalancer(
+                vip_network_id=None,
+                vip_subnet_id=None,
+                expected_res_status=400)
+
+    def test_create_loadbalancer_with_vip_network_id(self):
+        expected = {
+            'name': 'vip1',
+            'description': '',
+            'admin_state_up': True,
+            'provisioning_status': constants.ACTIVE,
+            'operating_status': lb_const.ONLINE,
+            'tenant_id': self._tenant_id,
+            'listeners': [],
+            'pools': [],
+            'provider': 'lbaas'
+        }
+
+        with self.subnet() as subnet:
+            expected['vip_subnet_id'] = subnet['subnet']['id']
+            name = expected['name']
+            extras = {
+                'vip_network_id': subnet['subnet']['network_id'],
+                'vip_subnet_id': None
+            }
+
+            with self.loadbalancer(name=name, subnet=subnet, **extras) as lb:
+                lb_id = lb['loadbalancer']['id']
+                for k in ('id', 'vip_address', 'vip_subnet_id'):
+                    self.assertTrue(lb['loadbalancer'].get(k, None))
+
+                expected['vip_port_id'] = lb['loadbalancer']['vip_port_id']
+                actual = dict((k, v)
+                              for k, v in lb['loadbalancer'].items()
+                              if k in expected)
+                self.assertEqual(expected, actual)
+                self._validate_statuses(lb_id)
+            return lb
 
     def test_update_loadbalancer(self):
         name = 'new_loadbalancer'
