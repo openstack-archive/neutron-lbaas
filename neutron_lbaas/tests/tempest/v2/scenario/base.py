@@ -118,13 +118,14 @@ class BaseTestCase(manager.NetworkScenarioTest):
         The configured private network and associated subnet is used as a
         fallback in absence of tenant networking.
         """
+        tenant_id = self.networks_client.tenant_id
         try:
-            tenant_net = self._list_networks(tenant_id=self.tenant_id)[0]
+            tenant_net = self._list_networks(tenant_id=tenant_id)[0]
         except IndexError:
             tenant_net = None
 
         if tenant_net:
-            self.subnet = self._list_subnets(tenant_id=self.tenant_id)[0]
+            self.subnet = self._list_subnets(tenant_id=tenant_id)[0]
             self.addCleanup(test_utils.call_and_ignore_notfound_exc,
                             self.networks_client.delete_network,
                             self.subnet['id'])
@@ -141,7 +142,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
     def _create_security_group_for_test(self):
         self.security_group = self._create_security_group(
-            tenant_id=self.tenant_id)
+            tenant_id=self.networks_client.tenant_id)
         self._create_security_group_rules_for_port(self.port1)
         self._create_security_group_rules_for_port(self.port2)
 
@@ -154,12 +155,13 @@ class BaseTestCase(manager.NetworkScenarioTest):
         }
         self._create_security_group_rule(
             secgroup=self.security_group,
-            tenant_id=self.tenant_id,
+            tenant_id=self.networks_client.tenant_id,
             **rule)
 
     def _ipv6_subnet(self, address6_mode):
-        router = self._get_router(tenant_id=self.tenant_id)
-        self.network = self._create_network(tenant_id=self.tenant_id)
+        tenant_id = self.networks_client.tenant_id
+        router = self._get_router(tenant_id=tenant_id)
+        self.network = self._create_network(tenant_id=tenant_id)
         self.subnet = self._create_subnet(network=self.network,
                                           namestart='sub6',
                                           ip_version=6,
@@ -386,7 +388,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.check_floating_ip_status(floating_ip, "ACTIVE")
 
     def _create_load_balancer(self, ip_version=4, persistence_type=None):
-        self.create_lb_kwargs = {'tenant_id': self.tenant_id,
+        tenant_id = self.networks_client.tenant_id
+        self.create_lb_kwargs = {'tenant_id': tenant_id,
                                  'vip_subnet_id': self.subnet['id']}
         self.load_balancer = self.load_balancers_client.create_load_balancer(
             **self.create_lb_kwargs)
