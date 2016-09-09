@@ -18,6 +18,7 @@ import mock
 import webob
 
 from neutron.db import servicetype_db as st_db
+from neutron.quota import resource_registry
 from neutron.tests import base as n_base
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron.tests.unit.extensions import base as ext_base
@@ -224,4 +225,10 @@ class ExtensionTestCase(ext_base.ExtensionTestCase):
 
 
 class QuotaExtensionTestCase(test_quotasv2.QuotaExtensionTestCase):
-    pass
+
+    def setUp(self):
+        super(QuotaExtensionTestCase, self).setUp()
+        resource_registry.register_resource_by_name('pool')
+        resource_registry.register_resource_by_name('loadbalancer')
+        resource_registry.register_resource_by_name('listener')
+        resource_registry.register_resource_by_name('healthmonitor')
