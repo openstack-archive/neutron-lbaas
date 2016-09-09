@@ -21,4 +21,4 @@ WebOb>=1.2.3 # MIT
 WebTest>=2.0 # MIT
 reno>=0.1.1 # Apache2
 # Needed to run DB commands in virtualenvs
-PyMySQL>=0.6.2 # MIT License
+PyMySQL!=0.7.7,>=0.6.2 # MIT License
