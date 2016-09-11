@@ -13,6 +13,10 @@ enable_plugin barbican https://git.openstack.org/openstack/barbican
 # Sort out our gate args
 . $(dirname "$0")/decode_args.sh
 
+if egrep --quiet '(vmx|svm)' /proc/cpuinfo; then
+    export DEVSTACK_GATE_LIBVIRT_TYPE=kvm
+fi
+
 
 function _setup_octavia {
     export DEVSTACK_LOCAL_CONFIG+="
