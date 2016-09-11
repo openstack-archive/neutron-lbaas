@@ -297,7 +297,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
 
     def remove_workflow(self, ctx, manager, lb):
         wf_name = self._get_wf_name(lb)
-        LOG.debug('Remove the workflow %s' % wf_name)
+        LOG.debug('Remove the workflow %s', wf_name)
         resource = '/api/workflow/%s' % (wf_name)
         rest_return = self.rest_client.call('DELETE', resource, None, None)
         response = _rest_wrapper(rest_return, [204, 202, 404])
