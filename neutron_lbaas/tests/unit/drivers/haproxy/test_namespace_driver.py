@@ -174,11 +174,15 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                            '\n')
         with mock.patch.object(self.driver, '_get_state_file_path') as gsp, \
                 mock.patch('socket.socket') as mocket, \
-                mock.patch('os.path.exists') as path_exists:
+                mock.patch('os.path.exists') as path_exists, \
+                mock.patch.object(data_models.LoadBalancer, 'from_dict') \
+                as lb_from_dict, \
+                mock.patch.object(self.driver, '_is_active') as is_active:
             gsp.side_effect = lambda x, y, z: '/pool/' + y
             path_exists.return_value = True
             mocket.return_value = mocket
             mocket.recv.return_value = raw_stats
+            is_active.return_value = True
 
             exp_stats = {'connection_errors': '0',
                          'active_connections': '3',
@@ -211,9 +215,51 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                              self.driver.get_stats(self.lb.id))
 
             path_exists.return_value = False
+            is_active.return_value = True
+            listener = data_models.Listener(
+                provisioning_status=constants.PENDING_CREATE,
+                admin_state_up=True)
+            self.lb.listeners.append(listener)
+            lb_from_dict.return_value = \
+                data_models.LoadBalancer.from_dict(self.lb)
+
+            self.lb.listeners.append(listener)
+            self.assertEqual({}, self.driver.get_stats(self.lb.id))
+
+            path_exists.return_value = False
             mocket.reset_mock()
+            is_active.return_value = False
             self.assertEqual({}, self.driver.get_stats(self.lb.id))
             self.assertFalse(mocket.called)
+
+    def test_is_active(self):
+        # test no listeners
+        ret_val = self.driver._is_active(self.lb)
+        self.assertFalse(ret_val)
+
+        # test bad VIP status
+        listener = data_models.Listener(
+            provisioning_status=constants.PENDING_CREATE,
+            admin_state_up=True)
+        self.lb.listeners.append(listener)
+        self.lb.vip_port.status = constants.DOWN
+        ret_val = self.driver._is_active(self.lb)
+        self.assertFalse(ret_val)
+        self.lb.vip_port.status = constants.PENDING_CREATE
+        self.lb.vip_port.admin_state_up = False
+        ret_val = self.driver._is_active(self.lb)
+        self.assertFalse(ret_val)
+
+        # test bad LB status
+        self.lb.vip_port.admin_state_up = True
+        self.lb.operating_status = 'OFFLINE'
+        ret_val = self.driver._is_active(self.lb)
+        self.assertFalse(ret_val)
+
+        # test everything good
+        self.lb.operating_status = 'ONLINE'
+        ret_val = self.driver._is_active(self.lb)
+        self.assertTrue(ret_val)
 
     def test_deploy_instance(self):
         self.driver.deployable = mock.Mock(return_value=False)
