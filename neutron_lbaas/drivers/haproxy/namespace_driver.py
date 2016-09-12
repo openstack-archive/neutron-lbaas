@@ -184,8 +184,16 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             lb_stats['members'] = self._get_servers_stats(parsed_stats)
             return lb_stats
         else:
-            LOG.warning(_LW('Stats socket not found for loadbalancer %s'),
-                        loadbalancer_id)
+            lb_config = self.plugin_rpc.get_loadbalancer(loadbalancer_id)
+            loadbalancer = data_models.LoadBalancer.from_dict(lb_config)
+            if self._is_active(loadbalancer):
+                LOG.warning(_LW('Stats socket not found for loadbalancer %s'),
+                            loadbalancer_id)
+            else:
+                LOG.debug('Stats socket not found for loadbalancer %s,'
+                          ' but loadbalancer has no VIP in state UP.'
+                          ' Perhaps the lbaas-listener is not yet created?',
+                          loadbalancer_id)
             return {}
 
     @n_utils.synchronized('haproxy-driver')
@@ -415,6 +423,15 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                                       monitored_process=pm)
         # remember deployed loadbalancer id
         self.deployed_loadbalancers[loadbalancer.id] = loadbalancer
+
+    def _is_active(self, loadbalancer):
+        # haproxy will be unable to start without any active vip
+        if (len(loadbalancer.listeners) == 0 or
+                loadbalancer.vip_port.status == constants.DOWN or
+                not loadbalancer.vip_port.admin_state_up or
+                loadbalancer.operating_status != lb_const.ONLINE):
+            return False
+        return True
 
 
 class LoadBalancerManager(agent_device_driver.BaseLoadBalancerManager):
