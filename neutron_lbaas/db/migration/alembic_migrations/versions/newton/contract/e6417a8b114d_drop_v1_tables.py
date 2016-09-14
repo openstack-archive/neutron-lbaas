@@ -22,8 +22,15 @@ Create Date: 2016-08-23 12:48:46.985939
 
 from alembic import op
 
+from neutron.db import migration
+
+
 revision = 'e6417a8b114d'
 down_revision = '4b4dc6d5d843'
+
+
+# milestone identifier, used by neutron-db-manage
+neutron_milestone = [migration.NEWTON]
 
 
 def upgrade():
