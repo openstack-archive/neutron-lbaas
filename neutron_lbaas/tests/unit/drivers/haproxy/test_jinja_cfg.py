@@ -447,6 +447,14 @@ class TestHaproxyCfg(base.BaseTestCase):
         ret = jinja_cfg._transform_loadbalancer(in_lb, '/v2')
         self.assertEqual(sample_configs.RET_LB, ret)
 
+    def test_compute_global_connection_limit(self):
+        lts = [
+                sample_configs.sample_listener_tuple(connection_limit=None),
+                sample_configs.sample_listener_tuple()]
+        in_listeners = [jinja_cfg._transform_listener(x, '/v2') for x in lts]
+        ret = jinja_cfg._compute_global_connection_limit(in_listeners)
+        self.assertEqual(2098, ret)
+
     def test_include_member(self):
         ret = jinja_cfg._include_member(
             sample_configs.sample_member_tuple('sample_member_id_1',
