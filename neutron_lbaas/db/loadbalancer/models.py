@@ -14,9 +14,9 @@
 #    under the License.
 
 from neutron.api.v2 import attributes as attr
-from neutron.db import model_base
 from neutron.db import models_v2
 from neutron.db import servicetype_db as st_db
+from neutron_lib.db import model_base
 import sqlalchemy as sa
 from sqlalchemy.ext import orderinglist
 from sqlalchemy import orm
