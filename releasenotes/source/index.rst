@@ -5,6 +5,7 @@
 .. toctree::
    :maxdepth: 1
 
-   liberty
-   mitaka
    unreleased
+   newton
+   mitaka
+   liberty
