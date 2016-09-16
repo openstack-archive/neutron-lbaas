@@ -25,6 +25,7 @@ function neutron_agent_lbaas_install_agent_packages {
 
 function neutron_lbaas_configure_common {
     cp $NEUTRON_LBAAS_DIR/etc/neutron_lbaas.conf.sample $NEUTRON_LBAAS_CONF
+    cp $NEUTRON_LBAAS_DIR/etc/services_lbaas.conf.sample $SERVICES_LBAAS_CONF
 
     inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
     iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV2
