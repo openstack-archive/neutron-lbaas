@@ -31,6 +31,7 @@ from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants
+from neutron.quota import resource_registry
 from neutron.services import service_base
 
 from neutron_lbaas._i18n import _
@@ -453,6 +454,7 @@ class Loadbalancerv2(api_extensions.ExtensionDescriptor):
             {}, RESOURCE_ATTRIBUTE_MAP)
         action_map = {'loadbalancer': {'stats': 'GET', 'statuses': 'GET'}}
         plural_mappings['members'] = 'member'
+        resource_registry.register_resource_by_name('member', 'members')
         plural_mappings['sni_container_refs'] = 'sni_container_ref'
         plural_mappings['sni_container_ids'] = 'sni_container_id'
         resources = resource_helper.build_resource_info(
@@ -466,7 +468,6 @@ class Loadbalancerv2(api_extensions.ExtensionDescriptor):
             # Special handling needed for sub-resources with 'y' ending
             # (e.g. proxies -> proxy)
             resource_name = collection_name[:-1]
-
             parent = SUB_RESOURCE_ATTRIBUTE_MAP[collection_name].get('parent')
             params = SUB_RESOURCE_ATTRIBUTE_MAP[collection_name].get(
                 'parameters')

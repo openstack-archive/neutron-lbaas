@@ -232,3 +232,4 @@ class QuotaExtensionTestCase(test_quotasv2.QuotaExtensionTestCase):
         resource_registry.register_resource_by_name('loadbalancer')
         resource_registry.register_resource_by_name('listener')
         resource_registry.register_resource_by_name('healthmonitor')
+        resource_registry.register_resource_by_name('member')
