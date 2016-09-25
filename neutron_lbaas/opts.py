@@ -26,13 +26,26 @@ import neutron_lbaas.drivers.radware.base_v2_driver
 import neutron_lbaas.extensions.loadbalancerv2
 
 
+# TODO(johndperkins): Remove when https://review.openstack.org/#/c/343045
+# merges
+try:
+    import neutron.conf.agent.common
+except ImportError:
+    pass
+
+try:
+    _INTERFACE_DRIVER_OPTS = neutron.agent.common.config.INTERFACE_DRIVER_OPTS
+except AttributeError:
+    _INTERFACE_DRIVER_OPTS = neutron.conf.agent.common.INTERFACE_DRIVER_OPTS
+
+
 def list_agent_opts():
     return [
         ('DEFAULT',
          itertools.chain(
              neutron_lbaas.agent.agent.OPTS,
              neutron.agent.linux.interface.OPTS,
-             neutron.agent.common.config.INTERFACE_DRIVER_OPTS)
+             _INTERFACE_DRIVER_OPTS)
          )
     ]
 
@@ -64,7 +77,7 @@ def list_service_opts():
          neutron_lbaas.drivers.radware.base_v2_driver.driver_debug_opts),
         ('haproxy',
          itertools.chain(
-             neutron.agent.common.config.INTERFACE_DRIVER_OPTS,
+             _INTERFACE_DRIVER_OPTS,
              neutron_lbaas.agent.agent.OPTS,
          )),
         ('octavia',
