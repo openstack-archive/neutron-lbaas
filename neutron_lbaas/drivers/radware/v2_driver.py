@@ -79,7 +79,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
     # Assumptions:
     # 1) We have only one worflow that takes care of l2-l4 and service creation
     # 2) The workflow template exists on the vDirect server
-    # 3) The workflow expose one operaion named 'update' (plus ctor and dtor)
+    # 3) The workflow expose one operation named 'update' (plus ctor and dtor)
     # 4) The 'update' operation gets the loadbalancer object graph as input
     # 5) The object graph is enehanced by our code before it is sent to the
     #    workflow
