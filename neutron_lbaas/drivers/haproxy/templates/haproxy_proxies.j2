@@ -69,7 +69,7 @@ backend {{ pool.id }}
 {% endif %}
 {% endif %}
 {% if pool.health_monitor %}
-    timeout check {{ pool.health_monitor.timeout }}
+    timeout check {{ pool.health_monitor.timeout }}s
 {% if pool.health_monitor.type == constants.HEALTH_MONITOR_HTTP or pool.health_monitor.type == constants.HEALTH_MONITOR_HTTPS %}
     option httpchk {{ pool.health_monitor.http_method }} {{ pool.health_monitor.url_path }}
     http-check expect rstatus {{ pool.health_monitor.expected_codes }}
