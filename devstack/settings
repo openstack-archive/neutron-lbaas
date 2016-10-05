@@ -18,7 +18,7 @@ AUTH_VERSION=${AUTH_VERSION:-"2"}
 LBAAS_AGENT_CONF_PATH=/etc/neutron/services/loadbalancer/haproxy
 LBAAS_AGENT_CONF_FILENAME=$LBAAS_AGENT_CONF_PATH/lbaas_agent.ini
 
-LBAASV2_PLUGIN=${LBAASV2_PLUGIN:-"neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2"}
+LBAASV2_PLUGIN=${LBAASV2_PLUGIN:-"lbaasv2"}
 
 NEUTRON_LBAAS_DIR=$DEST/neutron-lbaas
 
