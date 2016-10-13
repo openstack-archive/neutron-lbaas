@@ -192,7 +192,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
             ]},
             'agent_type': lb_const.AGENT_TYPE_LOADBALANCERV2}
         helpers._register_agent(lbaas_hosta)
-        is_agent_down_str = 'neutron.db.agents_db.AgentDbMixin.is_agent_down'
+        is_agent_down_str = 'neutron.agent.common.utils.is_agent_down'
         with mock.patch(is_agent_down_str) as mock_is_agent_down:
             mock_is_agent_down.return_value = False
             with self.loadbalancer() as loadbalancer:
