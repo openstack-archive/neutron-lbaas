@@ -22,6 +22,9 @@ if [ "$testenv" = "apiv2" ]; then
             test_subset+="neutron_lbaas.tests.tempest.v2.api.test_members_non_admin.MemberTestJSON.test_add_member(?!_) "
             test_subset+="neutron_lbaas.tests.tempest.v2.api.test_health_monitors_non_admin.TestHealthMonitors.test_create_health_monitor(?!_)"
             ;;
+        api)
+            test_subset="load_balancers listeners pools members health_monitor"
+            ;;
         healthmonitor)
             test_subset="health_monitor"
             ;;
