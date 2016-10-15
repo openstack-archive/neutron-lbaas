@@ -15,8 +15,8 @@
 
 import random
 
-from neutron.db import agents_db
 from neutron.db import agentschedulers_db
+from neutron.db.models import agent as agents_db
 from neutron_lib.db import model_base
 from oslo_log import log as logging
 import six
