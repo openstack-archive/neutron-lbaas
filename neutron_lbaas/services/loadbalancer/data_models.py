@@ -25,8 +25,8 @@ These data models do provide methods for instantiation from SQLAlchemy models
 and also converting to dictionaries.
 """
 
+from neutron.db.models import servicetype as servicetype_db
 from neutron.db import models_v2
-from neutron.db import servicetype_db
 from neutron_lib.db import model_base
 import six
 from sqlalchemy.ext import orderinglist
