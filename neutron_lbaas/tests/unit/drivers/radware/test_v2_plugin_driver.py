@@ -124,7 +124,7 @@ WF_CREATE_PARAMS = {'parameters':
      "ha_ip_pool_name": "default", "allocate_ha_vrrp": True,
      "allocate_ha_ips": True, "data_port": 1,
      "data_ip_address": "192.168.200.99", "data_ip_mask": "255.255.255.0",
-     "gateway": "192.168.200.1", "ha_port": 2}}
+     "gateway": "192.168.200.1", "ha_port": 2}, 'tenants': "_REPLACE_"}
 
 WF_APPLY_PARAMS = {
     'parameters': {'listeners': [], 'pools': [], 'admin_state_up': True,
@@ -510,6 +510,7 @@ class TestLBaaSDriver(TestLBaaSDriverBase):
 
         self.wf_srv_params = copy.deepcopy(WF_SRV_PARAMS)
         self.wf_create_params = copy.deepcopy(WF_CREATE_PARAMS)
+        self.wf_create_params['tenants'] = [self._tenant_id]
         self.wf_apply_params = copy.deepcopy(WF_APPLY_PARAMS)
 
         self.addCleanup(self.driver.completion_handler.join)
@@ -946,6 +947,7 @@ class TestLBaaSDriverDebugOptions(TestLBaaSDriverBase):
                             wf_srv_params['primary']['network'][
                                 'portgroups'] = [s['subnet'][
                                      'network_id']]
+                            wf_params['tenants'] = [self._tenant_id]
                             wf_params['parameters']['service_params'] = (
                                 wf_srv_params)
                             wf_params['parameters']['configure_l3'] = False
