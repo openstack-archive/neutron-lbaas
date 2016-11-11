@@ -213,7 +213,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         _rest_wrapper(self.rest_client.call(
             'POST', tmpl_resource,
             {'parameters': dict(self.workflow_params,
-                                service_params=service)},
+                                service_params=service),
+            'tenants': [lb.tenant_id]},
             TEMPLATE_HEADER))
 
     @log_helpers.log_method_call
