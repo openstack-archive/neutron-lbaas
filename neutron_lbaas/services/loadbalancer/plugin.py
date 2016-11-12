@@ -16,12 +16,13 @@
 import copy
 import six
 
+from neutron_lib.plugins import directory
+
 from neutron.api.v2 import attributes as attrs
 from neutron.api.v2 import base as napi_base
 from neutron import context as ncontext
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import flavors
-from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services.flavors import flavors_plugin
 from neutron.services import provider_configuration as pconf
@@ -212,8 +213,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             loadbalancer['provider'] != n_constants.ATTR_NOT_SPECIFIED):
             raise loadbalancerv2.ProviderFlavorConflict()
 
-        plugin = manager.NeutronManager.get_service_plugins().get(
-            constants.FLAVORS)
+        plugin = directory.get_plugin(constants.FLAVORS)
         if not plugin:
             raise loadbalancerv2.FlavorsPluginNotLoaded()
 

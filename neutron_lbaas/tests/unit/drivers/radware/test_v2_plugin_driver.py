@@ -15,10 +15,10 @@
 import contextlib
 import copy
 import mock
+from neutron_lib.plugins import directory
 import re
 
 from neutron import context
-from neutron import manager
 from neutron.plugins.common import constants
 from oslo_config import cfg
 from oslo_serialization import jsonutils
@@ -213,8 +213,7 @@ class TestLBaaSDriverBase(
         super(TestLBaaSDriverBase, self).setUp(
             lbaas_provider=RADWARE_PROVIDER)
 
-        loaded_plugins = manager.NeutronManager().get_service_plugins()
-        self.plugin_instance = loaded_plugins[constants.LOADBALANCERV2]
+        self.plugin_instance = directory.get_plugin(constants.LOADBALANCERV2)
         self.driver = self.plugin_instance.drivers['radwarev2']
 
 

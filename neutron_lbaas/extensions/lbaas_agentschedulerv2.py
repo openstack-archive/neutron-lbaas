@@ -15,11 +15,12 @@
 
 import abc
 
+from neutron_lib.plugins import directory
+
 from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.extensions import agent
-from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron import policy
 from neutron import wsgi
@@ -36,8 +37,7 @@ LOADBALANCER_AGENT = 'loadbalancer-hosting-agent'
 
 class LoadBalancerSchedulerController(wsgi.Controller):
     def index(self, request, **kwargs):
-        lbaas_plugin = manager.NeutronManager.get_service_plugins().get(
-            plugin_const.LOADBALANCERV2)
+        lbaas_plugin = directory.get_plugin(plugin_const.LOADBALANCERV2)
         if not lbaas_plugin:
             return {'load_balancers': []}
 
@@ -52,8 +52,7 @@ class LoadBalancerSchedulerController(wsgi.Controller):
 
 class LbaasAgentHostingLoadBalancerController(wsgi.Controller):
     def index(self, request, **kwargs):
-        lbaas_plugin = manager.NeutronManager.get_service_plugins().get(
-            plugin_const.LOADBALANCERV2)
+        lbaas_plugin = directory.get_plugin(plugin_const.LOADBALANCERV2)
         if not lbaas_plugin:
             return
 
