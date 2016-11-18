@@ -16,6 +16,8 @@ function neutron_agent_lbaas_install_agent_packages {
             fi
             sudo apt-get update
             sudo apt-get install haproxy -t ${os_CODENAME}-backports
+        elif [[ ${OFFLINE} == False ]]; then
+            install_package haproxy
         fi
     fi
     if is_fedora || is_suse; then
