@@ -82,8 +82,10 @@ class BaseDataModel(object):
                 continue
             if attr_mapping and attr_name in attr_mapping.keys():
                 attr = getattr(sa_model, attr_mapping[attr_name])
-            else:
+            elif hasattr(sa_model, attr_name):
                 attr = getattr(sa_model, attr_name)
+            else:
+                continue
             # Handles M:1 or 1:1 relationships
             if isinstance(attr, model_base.BASEV2):
                 if hasattr(instance, attr_name):
@@ -161,6 +163,17 @@ class HostRoute(BaseDataModel):
         self.nexthop = nexthop
 
 
+class Network(BaseDataModel):
+
+    fields = ['id', 'name', 'description', 'mtu']
+
+    def __init__(self, id=None, name=None, description=None, mtu=None):
+        self.id = id
+        self.name = name
+        self.description = description
+        self.mtu = mtu
+
+
 class Subnet(BaseDataModel):
 
     fields = ['id', 'name', 'tenant_id', 'network_id', 'ip_version', 'cidr',
@@ -227,11 +240,12 @@ class Port(BaseDataModel):
 
     fields = ['id', 'tenant_id', 'name', 'network_id', 'mac_address',
               'admin_state_up', 'status', 'device_id', 'device_owner',
-              'fixed_ips']
+              'fixed_ips', 'network']
 
     def __init__(self, id=None, tenant_id=None, name=None, network_id=None,
                  mac_address=None, admin_state_up=None, status=None,
-                 device_id=None, device_owner=None, fixed_ips=None):
+                 device_id=None, device_owner=None, fixed_ips=None,
+                 network=None):
         self.id = id
         self.tenant_id = tenant_id
         self.name = name
@@ -242,12 +256,16 @@ class Port(BaseDataModel):
         self.device_id = device_id
         self.device_owner = device_owner
         self.fixed_ips = fixed_ips or []
+        self.network = network
 
     @classmethod
     def from_dict(cls, model_dict):
         fixed_ips = model_dict.pop('fixed_ips', [])
         model_dict['fixed_ips'] = [IPAllocation.from_dict(fixed_ip)
                                    for fixed_ip in fixed_ips]
+        if model_dict.get('network'):
+            network_dict = model_dict.pop('network')
+            model_dict['network'] = Network.from_dict(network_dict)
         return super(Port, cls).from_dict(model_dict)
 
 
