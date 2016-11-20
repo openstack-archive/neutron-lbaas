@@ -155,6 +155,12 @@ class TestLoadBalancerCallbacks(
                 ctx, expected_lb['vip_subnet_id'])
             subnet = data_models.Subnet.from_dict(subnet).to_dict()
             expected_lb['vip_port']['fixed_ips'][0]['subnet'] = subnet
+            network = self.plugin_instance.db._core_plugin.get_network(
+                ctx, expected_lb['vip_port']['network_id']
+            )
+            expected_lb['vip_port']['network'] = {}
+            for key in ('id', 'name', 'description', 'mtu'):
+                expected_lb['vip_port']['network'][key] = network[key]
             del expected_lb['stats']
             self.assertEqual(expected_lb, load_balancer)
 

@@ -315,7 +315,8 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                 port.id,
                 interface_name,
                 port.mac_address,
-                namespace=namespace
+                namespace=namespace,
+                mtu=port.network.mtu
             )
 
         cidrs = [
