@@ -22,10 +22,10 @@ from neutron.callbacks import resources
 from neutron.common import ipv6_utils
 from neutron.db import api as db_api
 from neutron.db import common_db_mixin as base_db
-from neutron import manager
 from neutron.plugins.common import constants
 from neutron_lib import constants as n_const
 from neutron_lib import exceptions as n_exc
+from neutron_lib.plugins import directory
 from oslo_db import exception
 from oslo_log import log as logging
 from oslo_utils import excutils
@@ -57,7 +57,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
     @property
     def _core_plugin(self):
-        return manager.NeutronManager.get_plugin()
+        return directory.get_plugin()
 
     def _get_resource(self, context, model, id, for_update=False):
         resource = None
@@ -927,7 +927,6 @@ def _prevent_lbaasv2_port_delete_callback(resource, event, trigger, **kwargs):
     context = kwargs['context']
     port_id = kwargs['port_id']
     port_check = kwargs['port_check']
-    lbaasv2plugin = manager.NeutronManager.get_service_plugins().get(
-                         constants.LOADBALANCERV2)
+    lbaasv2plugin = directory.get_plugin(constants.LOADBALANCERV2)
     if lbaasv2plugin and port_check:
         lbaasv2plugin.db.prevent_lbaasv2_port_deletion(context, port_id)

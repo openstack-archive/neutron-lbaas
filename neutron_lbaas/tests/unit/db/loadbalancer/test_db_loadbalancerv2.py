@@ -25,13 +25,13 @@ from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as n_exc
+from neutron_lib.plugins import directory
 from oslo_config import cfg
 from oslo_utils import uuidutils
 import six
 import testtools
 import webob.exc
 
-from neutron import manager
 from neutron_lbaas._i18n import _
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common import exceptions
@@ -1006,16 +1006,15 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
         ctx = context.get_admin_context()
         port['device_owner'] = n_constants.DEVICE_OWNER_LOADBALANCERV2
         myloadbalancers = [{'name': 'lb1'}]
-        with mock.patch.object(manager.NeutronManager, 'get_plugin') as gp:
-            self.plugin.db.get_loadbalancers = mock.Mock(
-                                               return_value=myloadbalancers)
-            plugin = mock.Mock()
-            gp.return_value = plugin
-            plugin._get_port.return_value = port
-            self.assertRaises(n_exc.ServicePortInUse,
-                              self.plugin.db.prevent_lbaasv2_port_deletion,
-                              ctx,
-                              port['id'])
+        plugin = mock.Mock()
+        directory.add_plugin(n_constants.CORE, plugin)
+        self.plugin.db.get_loadbalancers = (
+            mock.Mock(return_value=myloadbalancers))
+        plugin._get_port.return_value = port
+        self.assertRaises(n_exc.ServicePortInUse,
+                          self.plugin.db.prevent_lbaasv2_port_deletion,
+                          ctx,
+                          port['id'])
 
 
 class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):

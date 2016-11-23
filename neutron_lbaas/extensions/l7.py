@@ -14,11 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.plugins import directory
+
 from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
-from neutron import manager
 from neutron.plugins.common import constants
 from neutron_lib.api import converters
 from neutron_lib import constants as n_constants
@@ -204,8 +205,7 @@ class L7(extensions.ExtensionDescriptor):
             constants.LOADBALANCERV2,
             register_quota=True)
 
-        plugin = manager.NeutronManager.get_service_plugins()[
-            constants.LOADBALANCERV2]
+        plugin = directory.get_plugin(constants.LOADBALANCERV2)
 
         for collection_name in SUB_RESOURCE_ATTRIBUTE_MAP:
             # Special handling needed for sub-resources with 'y' ending

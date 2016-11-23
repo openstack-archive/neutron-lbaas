@@ -16,6 +16,7 @@
 
 import abc
 
+from neutron_lib.plugins import directory
 from oslo_config import cfg
 from oslo_log import log as logging
 import six
@@ -24,7 +25,6 @@ from neutron.api import extensions
 from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
-from neutron import manager
 from neutron.plugins.common import constants
 from neutron.services import service_base
 from neutron_lib.api import converters
@@ -458,8 +458,7 @@ class Loadbalancerv2(extensions.ExtensionDescriptor):
             constants.LOADBALANCERV2,
             action_map=action_map,
             register_quota=True)
-        plugin = manager.NeutronManager.get_service_plugins()[
-            constants.LOADBALANCERV2]
+        plugin = directory.get_plugin(constants.LOADBALANCERV2)
         for collection_name in SUB_RESOURCE_ATTRIBUTE_MAP:
             # Special handling needed for sub-resources with 'y' ending
             # (e.g. proxies -> proxy)

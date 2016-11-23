@@ -18,12 +18,13 @@ import copy
 from datetime import datetime
 
 import mock
+from neutron_lib.plugins import directory
+
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron import context
 from neutron.db import agents_db
 from neutron.extensions import agent
-from neutron import manager
 from neutron.plugins.common import constants as plugin_const
 from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
@@ -118,9 +119,8 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
         # the global attribute map
         attributes.RESOURCE_ATTRIBUTE_MAP.update(
             agent.RESOURCE_ATTRIBUTE_MAP)
-        self.lbaas_plugin = manager.NeutronManager.get_service_plugins()[
-            plugin_const.LOADBALANCERV2]
-        self.core_plugin = manager.NeutronManager.get_plugin()
+        self.lbaas_plugin = directory.get_plugin(plugin_const.LOADBALANCERV2)
+        self.core_plugin = directory.get_plugin()
         self.addCleanup(self.restore_attribute_map)
 
     def restore_attribute_map(self):
