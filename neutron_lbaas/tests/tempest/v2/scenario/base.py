@@ -21,7 +21,6 @@ import tempfile
 import time
 
 from oslo_log import log as logging
-import six
 from six.moves import http_cookiejar
 from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
@@ -211,14 +210,14 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.assertEqual(len(self.servers_keypairs), 2)
 
     def _stop_server(self):
-        for name, value in six.iteritems(self.servers):
+        for name, value in self.servers.items():
             if name == 'primary':
                 self.servers_client.stop_server(value)
                 waiters.wait_for_server_status(self.servers_client,
                                                value, 'SHUTOFF')
 
     def _start_server(self):
-        for name, value in six.iteritems(self.servers):
+        for name, value in self.servers.items():
             if name == 'primary':
                 self.servers_client.start(value)
                 waiters.wait_for_server_status(self.servers_client,
@@ -230,7 +229,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         1. SSH to the instance
         2. Start two http backends listening on ports 80 and 88 respectively
         """
-        for server_id, ip in six.iteritems(self.server_ips):
+        for server_id, ip in self.server_ips.items():
             private_key = self.servers_keypairs[server_id]['private_key']
             server = self.servers_client.show_server(server_id)['server']
             server_name = server['name']
@@ -350,7 +349,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         In case there is only one server, create both members with the same ip
         but with different ports to listen on.
         """
-        for server_id, ip in six.iteritems(self.server_fixed_ips):
+        for server_id, ip in self.server_fixed_ips.items():
             if len(self.server_fixed_ips) == 1:
                 member1 = self.members_client.create_member(
                     pool_id=pool_id,
@@ -494,7 +493,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
         self._check_connection(self.vip_ip, port=port)
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
-        for member, counter in six.iteritems(counters):
+        for member, counter in counters.items():
             self.assertGreater(counter, 0, 'Member %s never balanced' % member)
 
     def _check_connection(self, check_ip, port=80):
@@ -535,7 +534,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
 
         # Assert that no traffic is sent to server1.
-        for member, counter in six.iteritems(counters):
+        for member, counter in counters.items():
             if member == 'server1':
                 self.assertEqual(counter, 0,
                                  'Member %s is not balanced' % member)
@@ -546,7 +545,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         Assert that no traffic is sent to any servers
         """
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
-        for member, counter in six.iteritems(counters):
+        for member, counter in counters.items():
             self.assertEqual(counter, 0, 'Member %s is balanced' % member)
 
     def _check_source_ip_persistence(self):

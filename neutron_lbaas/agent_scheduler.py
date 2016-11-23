@@ -19,7 +19,6 @@ from neutron.db import agentschedulers_db
 from neutron.db.models import agent as agents_db
 from neutron_lib.db import model_base
 from oslo_log import log as logging
-import six
 import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm import joinedload
@@ -69,7 +68,7 @@ class LbaasAgentSchedulerDbMixin(agentschedulers_db.AgentSchedulerDbMixin,
         if active is not None:
             query = query.filter_by(admin_state_up=active)
         if filters:
-            for key, value in six.iteritems(filters):
+            for key, value in filters.items():
                 column = getattr(agents_db.Agent, key, None)
                 if column:
                     query = query.filter(column.in_(value))
