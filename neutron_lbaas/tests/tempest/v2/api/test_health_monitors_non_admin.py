@@ -53,12 +53,10 @@ class TestHealthMonitors(base.BaseTestCase):
                                       'max_retries': 10, 'timeout': 5,
                                       'pool_id': cls.pool.get('id')}
 
-    @test.attr(type='smoke')
     def test_list_health_monitors_empty(self):
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertEmpty(hm_list)
 
-    @test.attr(type='smoke')
     def test_list_health_monitors_one(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_list = self.health_monitors_client.list_health_monitors()
@@ -98,13 +96,11 @@ class TestHealthMonitors(base.BaseTestCase):
         hm = self.health_monitors_client.get_health_monitor(new_hm.get('id'))
         self.assertEqual(new_hm, hm)
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_attribute(self):
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='HTTP', delay=3, max_retries=10,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_required_field_type(self):
         """Test if a non_admin user can create a health monitor with type
         missing
@@ -113,7 +109,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           delay=3, max_retries=10, timeout=5,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_required_field_delay(self):
         """Test if a non_admin user can create a health monitor with delay
         missing
@@ -122,7 +117,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           type='HTTP', max_retries=10, timeout=5,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_required_field_timeout(self):
         """Test if a non_admin user can create a health monitor with timeout
         missing
@@ -131,7 +125,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           type='HTTP', delay=3, max_retries=10,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_required_field_max_retries(self):
         """Test if a non_admin user can create a health monitor with max_retries
         missing
@@ -140,7 +133,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           type='HTTP', delay=3, timeout=5,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_required_field_pool_id(self):
         """Test if a non_admin user can create a health monitor with pool_id
         missing
@@ -148,7 +140,6 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='HTTP', delay=3, max_retries=10, timeout=5)
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_admin_state_up(self):
         """Test if a non_admin user can create a health monitor with
         admin_state_up missing
@@ -158,7 +149,6 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertEqual(hm, hm_test)
         self.assertTrue(hm_test.get('admin_state_up'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_http_method(self):
         """Test if a non_admin user can create a health monitor with
         http_method missing
@@ -169,7 +159,6 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertEqual(hm, hm_test)
         self.assertEqual('GET', hm_test.get('http_method'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_url_path(self):
         """Test if a non_admin user can create a health monitor with
         url_path missing
@@ -179,7 +168,6 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertEqual(hm, hm_test)
         self.assertEqual('/', hm_test.get('url_path'))
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_expected_codes(self):
         """Test if a non_admin user can create a health monitor with
         expected_codes missing
@@ -357,49 +345,42 @@ class TestHealthMonitors(base.BaseTestCase):
             hm.get('id'), max_retries=max_retries)
         self.assertEqual(max_retries, new_hm.get('max_retries'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_admin_state_up(self):
         """Test update health monitor with missing admin state field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertTrue(new_hm.get('admin_state_up'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_delay(self):
         """Test update health monitor with missing delay field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('delay'), new_hm.get('delay'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_timeout(self):
         """Test update health monitor with missing timeout field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('timeout'), new_hm.get('timeout'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_max_retries(self):
         """Test update health monitor with missing max retries field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('max_retries'), new_hm.get('max_retries'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_http_method(self):
         """Test update health monitor with missing http_method field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('http_method'), new_hm.get('http_method'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_url_path(self):
         """Test update health monitor with missing url_path field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_hm = self._update_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('url_path'), new_hm.get('url_path'))
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_missing_expected_codes(self):
         """Test update health monitor with missing expected_codes field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
@@ -512,7 +493,6 @@ class TestHealthMonitors(base.BaseTestCase):
                           self._update_health_monitor,
                           hm.get('id'), expected_codes='')
 
-    @test.attr(type='smoke')
     def test_update_health_monitor_extra_attribute(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,

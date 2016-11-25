@@ -64,7 +64,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
     def test_list_listeners(self):
         """Test get listeners with one listener"""
         listeners = self.listeners_client.list_listeners()
@@ -138,7 +137,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
     def test_create_listener_missing_admin_state_up(self):
         """Test create listener with a missing admin_state_up field"""
         create_new_listener_kwargs = self.create_listener_kwargs
@@ -305,7 +303,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
     def test_create_listener_empty_name(self):
         """Test create listener with an empty name"""
         create_new_listener_kwargs = self.create_listener_kwargs
@@ -322,7 +319,6 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
 
-    @test.attr(type='smoke')
     def test_create_listener_empty_description(self):
         """Test create listener with an empty description"""
         create_new_listener_kwargs = self.create_listener_kwargs
@@ -438,7 +434,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
     def test_update_listener_missing_name(self):
         """Test update listener with a missing name"""
         old_listener = self.listeners_client.get_listener(
@@ -452,7 +447,6 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('name'), old_name)
 
-    @test.attr(type='smoke')
     def test_update_listener_missing_description(self):
         """Test update listener with a missing description"""
         old_listener = self.listeners_client.get_listener(
@@ -466,7 +460,6 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('description'), old_description)
 
-    @test.attr(type='smoke')
     def test_update_listener_missing_admin_state_up(self):
         """Test update listener with a missing admin_state_up"""
         old_listener = self.listeners_client.get_listener(
@@ -480,7 +473,6 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('admin_state_up'), old_admin_state_up)
 
-    @test.attr(type='smoke')
     def test_update_listener_missing_connection_limit(self):
         """Test update listener with a missing connection_limit"""
         old_listener = self.listeners_client.get_listener(
@@ -515,7 +507,6 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
     def test_update_listener_empty_name(self):
         """Test update a listener with an empty name"""
         self._update_listener(self.listener_id,
@@ -526,7 +517,6 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('name'), "")
 
-    @test.attr(type='smoke')
     def test_update_listener_empty_description(self):
         """Test update a listener with an empty description"""
         self._update_listener(self.listener_id,

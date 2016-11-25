@@ -68,7 +68,6 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
         cls._wait_for_load_balancer_status(
             load_balancer_id=cls.tenant_load_balancer['id'], delete=True)
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_tenant_id_field_for_admin(self):
         """
         Test create load balancer with a missing tenant id field.
@@ -80,7 +79,6 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
         self.assertEqual(self.load_balancer.get('tenant_id'),
                          admin_lb.get('tenant_id'))
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_tenant_id_for_tenant(self):
         """
         Test create load balancer with a missing tenant id field. Verify
@@ -105,7 +103,6 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
         self.assertEqual(self.tenant,
                          self.tenant_load_balancer.get('tenant_id'))
 
-    @test.attr(type='smoke')
     def test_update_load_balancer_description(self):
         """Test update admin load balancer description"""
         new_description = "Updated Description"
