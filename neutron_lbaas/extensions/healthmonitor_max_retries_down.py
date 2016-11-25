@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.api import extensions
 from neutron_lib.api import converters
+from neutron_lib.api import extensions
 
 EXTENDED_ATTRIBUTES_2_0 = {
     'healthmonitors': {
