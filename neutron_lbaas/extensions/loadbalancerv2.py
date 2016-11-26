@@ -20,6 +20,7 @@ from neutron_lib.api import converters
 from neutron_lib.api import extensions as api_extensions
 from neutron_lib.api import validators
 from neutron_lib import constants as n_constants
+from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as nexception
 from neutron_lib.plugins import directory
 from oslo_config import cfg
@@ -27,7 +28,6 @@ from oslo_log import log as logging
 import six
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants
@@ -152,16 +152,17 @@ RESOURCE_ATTRIBUTE_MAP = {
                'is_visible': True,
                'primary_key': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'default': '',
                  'is_visible': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'validate': {'type:not_empty_string':
-                                   attr.TENANT_ID_MAX_LEN},
+                                   db_const.PROJECT_ID_FIELD_SIZE},
                       'required_by_policy': True,
                       'is_visible': True},
         'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+                        'validate': {
+                            'type:string': db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'vip_subnet_id': {'allow_post': True, 'allow_put': False,
                           'validate': {'type:uuid': None},
@@ -187,7 +188,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                              'is_visible': True},
         'flavor_id': {'allow_post': True, 'allow_put': False,
                       'is_visible': True,
-                      'validate': {'type:string': attr.NAME_MAX_LEN},
+                      'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                       'default': n_constants.ATTR_NOT_SPECIFIED}
     },
     'listeners': {
@@ -197,15 +198,16 @@ RESOURCE_ATTRIBUTE_MAP = {
                'primary_key': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'validate': {'type:not_empty_string':
-                                   attr.TENANT_ID_MAX_LEN},
+                                   db_const.PROJECT_ID_FIELD_SIZE},
                       'required_by_policy': True,
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'default': '',
                  'is_visible': True},
         'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+                        'validate': {
+                            'type:string': db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'loadbalancer_id': {'allow_post': True, 'allow_put': False,
                             'validate': {'type:uuid': None},
@@ -250,14 +252,15 @@ RESOURCE_ATTRIBUTE_MAP = {
                'primary_key': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'validate': {'type:not_empty_string':
-                                   attr.TENANT_ID_MAX_LEN},
+                                   db_const.PROJECT_ID_FIELD_SIZE},
                       'required_by_policy': True,
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'is_visible': True, 'default': ''},
         'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+                        'validate': {
+                            'type:string': db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'listener_id': {'allow_post': True, 'allow_put': False,
                         'validate': {'type:uuid': None},
@@ -301,7 +304,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                'primary_key': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'validate': {'type:not_empty_string':
-                                   attr.TENANT_ID_MAX_LEN},
+                                   db_const.PROJECT_ID_FIELD_SIZE},
                       'required_by_policy': True,
                       'is_visible': True},
         'pool_id': {'allow_post': True, 'allow_put': False,
@@ -349,7 +352,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                            'convert_to': converters.convert_to_boolean,
                            'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
-                 'validate': {'type:string': attr.NAME_MAX_LEN},
+                 'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'default': '',
                  'is_visible': True}
     }
@@ -366,7 +369,7 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                    'primary_key': True},
             'tenant_id': {'allow_post': True, 'allow_put': False,
                           'validate': {'type:not_empty_string':
-                                       attr.TENANT_ID_MAX_LEN},
+                                       db_const.PROJECT_ID_FIELD_SIZE},
                           'required_by_policy': True,
                           'is_visible': True},
             'address': {'allow_post': True, 'allow_put': False,
@@ -389,7 +392,7 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                           'validate': {'type:uuid': None},
                           'is_visible': True},
             'name': {'allow_post': True, 'allow_put': True,
-                     'validate': {'type:string': attr.NAME_MAX_LEN},
+                     'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                      'default': '',
                      'is_visible': True},
         }

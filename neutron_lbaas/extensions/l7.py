@@ -17,11 +17,11 @@
 from neutron_lib.api import converters
 from neutron_lib.api import extensions as api_extensions
 from neutron_lib import constants as n_constants
+from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as nexception
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes as attr
 from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants
@@ -81,7 +81,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                'is_visible': True,
                'primary_key': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
-                      'validate': {'type:string': attr.NAME_MAX_LEN},
+                      'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                       'required_by_policy': True,
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
@@ -89,7 +89,8 @@ RESOURCE_ATTRIBUTE_MAP = {
                  'default': '',
                  'is_visible': True},
         'description': {'allow_post': True, 'allow_put': True,
-                        'validate': {'type:string': attr.DESCRIPTION_MAX_LEN},
+                        'validate': {
+                            'type:string': db_const.DESCRIPTION_FIELD_SIZE},
                         'is_visible': True, 'default': ''},
         'listener_id': {'allow_post': True, 'allow_put': False,
                         'validate': {'type:uuid': None},

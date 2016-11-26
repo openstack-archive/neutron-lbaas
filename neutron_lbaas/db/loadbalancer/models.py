@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.api.v2 import attributes as attr
 from neutron.db.models import servicetype as st_db
 from neutron.db import models_v2
+from neutron_lib.db import constants as db_const
 from neutron_lib.db import model_base
 import sqlalchemy as sa
 from sqlalchemy.ext import orderinglist
@@ -86,7 +86,7 @@ class MemberV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     subnet_id = sa.Column(sa.String(36), nullable=True)
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     operating_status = sa.Column(sa.String(16), nullable=False)
-    name = sa.Column(sa.String(attr.NAME_MAX_LEN), nullable=True)
+    name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE), nullable=True)
 
     @property
     def root_loadbalancer(self):
@@ -112,7 +112,7 @@ class HealthMonitorV2(model_base.BASEV2, model_base.HasId,
     expected_codes = sa.Column(sa.String(64), nullable=True)
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     admin_state_up = sa.Column(sa.Boolean(), nullable=False)
-    name = sa.Column(sa.String(attr.NAME_MAX_LEN), nullable=True)
+    name = sa.Column(sa.String(db_const.NAME_FIELD_SIZE), nullable=True)
     max_retries_down = sa.Column(sa.Integer, nullable=True)
 
     @property
