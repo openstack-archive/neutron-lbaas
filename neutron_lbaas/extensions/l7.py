@@ -194,7 +194,6 @@ class L7(extensions.ExtensionDescriptor):
 
     def get_resources(cls):
         l7_plurals = {'l7policies': 'l7policy', 'rules': 'rule'}
-        attr.PLURALS.update(l7_plurals)
 
         plural_mappings = resource_helper.build_plural_mappings(
             l7_plurals, RESOURCE_ATTRIBUTE_MAP)

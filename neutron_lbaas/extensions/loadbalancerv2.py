@@ -451,7 +451,6 @@ class Loadbalancerv2(extensions.ExtensionDescriptor):
         plural_mappings['members'] = 'member'
         plural_mappings['sni_container_refs'] = 'sni_container_ref'
         plural_mappings['sni_container_ids'] = 'sni_container_id'
-        attr.PLURALS.update(plural_mappings)
         resources = resource_helper.build_resource_info(
             plural_mappings,
             RESOURCE_ATTRIBUTE_MAP,
