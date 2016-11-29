@@ -15,6 +15,8 @@
 
 import abc
 
+from neutron_lib.api import extensions as api_extensions
+from neutron_lib import exceptions as nexception
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
@@ -24,7 +26,6 @@ from neutron.extensions import agent
 from neutron.plugins.common import constants as plugin_const
 from neutron import policy
 from neutron import wsgi
-from neutron_lib import exceptions as nexception
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.extensions import loadbalancerv2
@@ -64,7 +65,7 @@ class LbaasAgentHostingLoadBalancerController(wsgi.Controller):
             request.context, kwargs['loadbalancer_id'])
 
 
-class Lbaas_agentschedulerv2(extensions.ExtensionDescriptor):
+class Lbaas_agentschedulerv2(api_extensions.ExtensionDescriptor):
     """Extension class supporting LBaaS agent scheduler.
     """
 

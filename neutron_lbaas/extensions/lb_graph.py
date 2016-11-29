@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from neutron_lib.api import extensions
 from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as nexception
 
-from neutron.api import extensions
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants
 

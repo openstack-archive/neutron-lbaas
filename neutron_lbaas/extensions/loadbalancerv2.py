@@ -16,6 +16,11 @@
 
 import abc
 
+from neutron_lib.api import converters
+from neutron_lib.api import extensions as api_extensions
+from neutron_lib.api import validators
+from neutron_lib import constants as n_constants
+from neutron_lib import exceptions as nexception
 from neutron_lib.plugins import directory
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -27,10 +32,6 @@ from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants
 from neutron.services import service_base
-from neutron_lib.api import converters
-from neutron_lib.api import validators
-from neutron_lib import constants as n_constants
-from neutron_lib import exceptions as nexception
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -421,7 +422,7 @@ lbaasv2_quota_opts = [
 cfg.CONF.register_opts(lbaasv2_quota_opts, 'QUOTAS')
 
 
-class Loadbalancerv2(extensions.ExtensionDescriptor):
+class Loadbalancerv2(api_extensions.ExtensionDescriptor):
 
     @classmethod
     def get_name(cls):
