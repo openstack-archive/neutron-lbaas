@@ -69,7 +69,6 @@ class ListenersTestJSON(base.BaseAdminTestCase):
             load_balancer_id=self.load_balancer_id,
             listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
     def test_create_listener_invalid_tenant_id(self):
         """Test create listener with an invalid tenant id"""
         create_new_listener_kwargs = self.create_listener_kwargs

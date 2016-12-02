@@ -64,7 +64,6 @@ class MemberTestJSON(base.BaseTestCase):
     def resource_cleanup(cls):
         super(MemberTestJSON, cls).resource_cleanup()
 
-    @test.attr(type='smoke')
     def test_list_empty_members(self):
         """Test that pool members are empty."""
         members = self.members_client.list_members(self.pool_id)
@@ -120,7 +119,6 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertEqual(member_opts["protocol_port"], member["protocol_port"])
         self.assertEqual(member_opts["subnet_id"], member["subnet_id"])
 
-    @test.attr(type='smoke')
     def test_create_member_missing_required_field_tenant_id(self):
         """Test if a non_admin user can create a member with tenant_id
         missing
@@ -334,7 +332,6 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertFalse(member["admin_state_up"])
         self.assertEqual(10, member["weight"])
 
-    @test.attr(type='smoke')
     def test_update_member_missing_admin_state_up(self):
         """Test that we can update a member with missing admin_state_up."""
         member_opts = self.build_member_opts()
@@ -350,7 +347,6 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertTrue(member["admin_state_up"])
         self.assertEqual(10, member["weight"])
 
-    @test.attr(type='smoke')
     def test_update_member_missing_weight(self):
         """Test that we can update a member with missing weight."""
         member_opts = self.build_member_opts()

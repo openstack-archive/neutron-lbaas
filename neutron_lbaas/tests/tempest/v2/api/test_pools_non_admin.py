@@ -79,13 +79,11 @@ class TestPools(base.BaseTestCase):
             self.addCleanup(self._delete_pool, response['id'])
         return response
 
-    @test.attr(type='smoke')
     def test_list_pools_empty(self):
         """Test get pools when empty"""
         pools = self.pools_client.list_pools()
         self.assertEqual([], pools)
 
-    @test.attr(type='smoke')
     def test_list_pools_one(self):
         """Test get pools with one pool"""
         new_pool = self._prepare_and_create_pool()
@@ -126,7 +124,6 @@ class TestPools(base.BaseTestCase):
                           tenant_id=tenant_id,
                           lb_algorithm='ROUND_ROBIN')
 
-    @test.attr(type='smoke')
     def test_create_pool_missing_tenant_field(self):
         """Test create pool with a missing required tenant field"""
         tenant_id = self.subnet.get('tenant_id')
@@ -178,7 +175,6 @@ class TestPools(base.BaseTestCase):
                           lb_algorithm='ROUND_ROBIN',
                           protocol='HTTP')
 
-    @test.attr(type='smoke')
     def test_create_pool_missing_description_field(self):
         """Test create pool with missing description field"""
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
@@ -187,7 +183,6 @@ class TestPools(base.BaseTestCase):
         desc = pool_initial.get('description')
         self.assertEqual(desc, "")
 
-    @test.attr(type='smoke')
     def test_create_pool_missing_name_field(self):
         """Test create pool with a missing name field"""
         new_pool = self._prepare_and_create_pool()
@@ -195,7 +190,6 @@ class TestPools(base.BaseTestCase):
         name = pool_initial.get('name')
         self.assertEqual(name, "")
 
-    @test.attr(type='smoke')
     def test_create_pool_missing_admin_state_up_field(self):
         """Test create pool with a missing admin_state_up field"""
         new_pool = self._prepare_and_create_pool()
@@ -203,7 +197,6 @@ class TestPools(base.BaseTestCase):
         state = pool_initial.get('admin_state_up')
         self.assertEqual(state, True)
 
-    @test.attr(type='smoke')
     def test_create_pool_missing_session_pers_field(self):
         """Test create pool with a missing session_pers field"""
         new_pool = self._prepare_and_create_pool()
@@ -290,7 +283,6 @@ class TestPools(base.BaseTestCase):
                           protocol='HTTP',
                           listener_id="")
 
-    @test.attr(type='smoke')
     def test_create_pool_empty_description_field(self):
         """Test create pool with empty description field"""
         new_pool = self._prepare_and_create_pool(description="")
@@ -298,7 +290,6 @@ class TestPools(base.BaseTestCase):
         pool_desc = pool.get('description')
         self.assertEqual(pool_desc, '')
 
-    @test.attr(type='smoke')
     def test_create_pool_empty_name_field(self):
         """Test create pool with empty name field"""
         new_pool = self._prepare_and_create_pool(name="")
@@ -401,7 +392,6 @@ class TestPools(base.BaseTestCase):
         pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(new_pool, pool)
 
-    @test.attr(type='smoke')
     def test_create_pool_with_session_persistence_app_cookie(self):
         """Test create a pool with session_persistence type=APP_COOKIE"""
         new_pool = self._prepare_and_create_pool(
@@ -443,7 +433,6 @@ class TestPools(base.BaseTestCase):
                                  wait=True)
         self.assertEqual(desc, pool.get('description'))
 
-    @test.attr(type='smoke')
     def test_update_pool_missing_name(self):
         """Test update pool with missing name"""
         new_pool = self._prepare_and_create_pool()
@@ -453,7 +442,6 @@ class TestPools(base.BaseTestCase):
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertEqual(name, pool.get('name'))
 
-    @test.attr(type='smoke')
     def test_update_pool_missing_description(self):
         """Test update pool with missing description"""
         new_pool = self._prepare_and_create_pool()
@@ -463,7 +451,6 @@ class TestPools(base.BaseTestCase):
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertEqual(desc, pool.get('description'))
 
-    @test.attr(type='smoke')
     def test_update_pool_missing_admin_state_up(self):
         """Test update pool with missing admin state up field"""
         new_pool = self._prepare_and_create_pool()
@@ -473,7 +460,6 @@ class TestPools(base.BaseTestCase):
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertEqual(admin, pool.get('admin_state_up'))
 
-    @test.attr(type='smoke')
     def test_update_pool_missing_session_persistence(self):
         """Test update pool with missing session persistence"""
         new_pool = self._prepare_and_create_pool()
@@ -512,7 +498,6 @@ class TestPools(base.BaseTestCase):
                           new_pool.get('id'),
                           session_persistence={'type': 'Hello'})
 
-    @test.attr(type='smoke')
     def test_update_pool_empty_name(self):
         """Test update pool with empty name"""
         new_pool = self._prepare_and_create_pool()
@@ -520,7 +505,6 @@ class TestPools(base.BaseTestCase):
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.assertEqual(pool.get('name'), "")
 
-    @test.attr(type='smoke')
     def test_update_pool_empty_description(self):
         """Test update pool with empty description"""
         new_pool = self._prepare_and_create_pool()
@@ -568,7 +552,6 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.NotFound, self.pools_client.get_pool,
                           new_pool.get('id'))
 
-    @test.attr(type='smoke')
     def test_delete_invalid_pool(self):
         """Test delete pool that doesn't exist"""
         new_pool = self._prepare_and_create_pool(cleanup=False)

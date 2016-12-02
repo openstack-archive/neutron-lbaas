@@ -84,7 +84,6 @@ class TestPools(base.BaseAdminTestCase):
                           lb_algorithm='ROUND_ROBIN')
 
     @decorators.skip_because(bug="1468457")
-    @test.attr(type='smoke')
     def test_create_pool_missing_tenant_id_for_other_tenant(self):
         """
         Test create pool with a missing tenant id field. Verify
@@ -99,7 +98,6 @@ class TestPools(base.BaseAdminTestCase):
         self.assertNotEqual(pool_tenant, self.subnet['tenant_id'])
 
     @decorators.skip_because(bug="1468457")
-    @test.attr(type='smoke')
     def test_create_pool_missing_tenant_id_for_admin(self):
         """
         Test create pool with a missing tenant id field. Verify
@@ -133,7 +131,6 @@ class TestPools(base.BaseAdminTestCase):
                                  session_persistence=session_persistence)
         self.assertEqual(session_persistence, pool.get('session_persistence'))
 
-    @test.attr(type='smoke')
     def test_update_pool_sesssion_persistence_app_to_http(self):
         """
         Test update admin pool's session persistence type from

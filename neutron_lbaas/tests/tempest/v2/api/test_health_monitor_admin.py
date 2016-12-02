@@ -59,7 +59,6 @@ class TestHealthMonitors(base.BaseAdminTestCase):
     def resource_cleanup(cls):
         super(TestHealthMonitors, cls).resource_cleanup()
 
-    @test.attr(type='smoke')
     def test_create_health_monitor_missing_tenant_id_field(self):
         """
         Test if admin user can create health monitor with a missing tenant id

@@ -49,7 +49,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             cls._create_active_load_balancer(**cls.create_lb_kwargs)
         cls.load_balancer_id = cls.load_balancer['id']
 
-    @test.attr(type='smoke')
     def test_list_load_balancers(self):
         """Test list load balancers with one load balancer"""
         load_balancers = self.load_balancers_client.list_load_balancers()
@@ -107,7 +106,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           provider="")
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_empty_description_field(self):
         """Test create load balancer with an empty description field"""
         load_balancer = self._create_active_load_balancer(
@@ -124,7 +122,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           vip_address="")
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_admin_state_up(self):
         """Test create load balancer with a missing admin_state_up field"""
         load_balancer = self._create_active_load_balancer(
@@ -141,7 +138,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           admin_state_up="")
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_name(self):
         """Test create load balancer with a missing name field"""
         load_balancer = self.load_balancers_client.create_load_balancer(
@@ -150,7 +146,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(load_balancer.get('name'), '')
         self._wait_for_load_balancer_status(load_balancer['id'])
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_empty_name(self):
         """Test create load balancer with an empty name field"""
         load_balancer = self.load_balancers_client.create_load_balancer(
@@ -159,7 +154,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(load_balancer.get('name'), "")
         self._wait_for_load_balancer_status(load_balancer['id'])
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_description(self):
         """Test create load balancer with a missing description field"""
         load_balancer = self.load_balancers_client.create_load_balancer(
@@ -168,7 +162,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(load_balancer.get('description'), '')
         self._wait_for_load_balancer_status(load_balancer['id'])
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_vip_address(self):
         """
         Test create load balancer with a missing vip_address field,checks for
@@ -185,7 +178,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         load_balancer_final = load_balancer['vip_address']
         self.assertEqual(load_balancer_ip_initial, load_balancer_final)
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_provider_field(self):
         """Test create load balancer with a missing provider field"""
         load_balancer = self._create_active_load_balancer(
@@ -251,7 +243,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           protocol_port=80)
 
-    @test.attr(type='smoke')
     def test_create_load_balancer_missing_tenant_id_field(self):
         """Test create load balancer with a missing tenant id field"""
         load_balancer = self.load_balancers_client.create_load_balancer(
@@ -306,7 +297,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             self.load_balancer_id)
         self.assertEqual(load_balancer.get('name'), 'new_name')
 
-    @test.attr(type='smoke')
     def test_update_load_balancer_empty_name(self):
         """Test update load balancer with empty name"""
         self._update_load_balancer(self.load_balancer_id,
@@ -324,7 +314,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           name='a' * 256)
 
-    @test.attr(type='smoke')
     def test_update_load_balancer_missing_name(self):
         """Test update load balancer with missing name"""
         loadbalancer = self.load_balancers_client.get_load_balancer(
@@ -345,7 +334,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           description='a' * 256)
 
-    @test.attr(type='smoke')
     def test_update_load_balancer_empty_description(self):
         """Test update load balancer with empty description"""
         self._update_load_balancer(self.load_balancer_id,
@@ -354,7 +342,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             self.load_balancer_id)
         self.assertEqual(load_balancer.get('description'), "")
 
-    @test.attr(type='smoke')
     def test_update_load_balancer_missing_description(self):
         """Test update load balancer with missing description"""
         loadbalancer = self.load_balancers_client.get_load_balancer(
@@ -384,7 +371,6 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           admin_state_up="")
 
-    @test.attr(type='smoke')
     def test_update_load_balancer_missing_admin_state_up(self):
         """Test update load balancer with missing admin state field"""
         loadbalancer = self.load_balancers_client.get_load_balancer(
