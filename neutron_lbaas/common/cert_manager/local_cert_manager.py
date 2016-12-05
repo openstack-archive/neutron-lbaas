@@ -13,10 +13,10 @@
 #    under the License.
 
 import os
-import uuid
 
 from oslo_config import cfg
 from oslo_log import log as logging
+from oslo_utils import uuidutils
 
 from neutron_lbaas._i18n import _LI, _LE
 from neutron_lbaas.common.cert_manager import cert_manager
@@ -82,7 +82,7 @@ class CertManager(cert_manager.CertManager):
         :returns: the UUID of the stored cert
         :raises CertificateStorageException: if certificate storage fails
         """
-        cert_ref = str(uuid.uuid4())
+        cert_ref = uuidutils.generate_uuid()
         filename_base = os.path.join(CONF.certificates.storage_path, cert_ref)
 
         LOG.info(_LI(
