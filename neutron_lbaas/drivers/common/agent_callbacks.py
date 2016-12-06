@@ -76,6 +76,11 @@ class LoadBalancerCallbacks(object):
             device_driver = self.plugin.drivers[
                 lb_model.provider.provider_name].device_driver
             setattr(lb_model.provider, 'device_driver', device_driver)
+        if lb_model.vip_port:
+            network_dict = self.plugin.db._core_plugin.get_network(
+                context, lb_model.vip_port.network_id)
+            setattr(lb_model.vip_port, 'network',
+                    data_models.Network.from_dict(network_dict))
         lb_dict = lb_model.to_dict(stats=False)
 
         return lb_dict
