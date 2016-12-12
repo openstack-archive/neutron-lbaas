@@ -7,6 +7,9 @@ AGENT_LBAASV2_BINARY="$NEUTRON_BIN_DIR/neutron-lbaasv2-agent"
 LBAAS_V2="q-lbaasv2"
 LBAAS_ANY="$LBAAS_V2"
 
+# turn on lbaasv2 service by default
+enable_service $LBAAS_ANY
+
 BARBICAN="barbican-svc"
 
 AUTH_URL=${AUTH_URL:-"http://127.0.0.1:5000/v2.0"}

@@ -36,6 +36,8 @@ For example
     enable_plugin neutron-lbaas https://git.openstack.org/openstack/neutron-lbaas stable/liberty
     enable_plugin octavia https://git.openstack.org/openstack/octavia stable/liberty
 
+"q-lbaasv2" is the default service enabled with neutron-lbaas plugin.
+
 2) Enable the LBaaS services
 
 To enable the LBaaS services, add lines in the form:
