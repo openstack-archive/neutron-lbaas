@@ -97,6 +97,21 @@ class LbaasAgentSchedulerDbMixin(agentschedulers_db.AgentSchedulerDbMixin,
                 candidates.append(agent)
         return candidates
 
+    def get_down_loadbalancer_bindings(self, context, agent_dead_limit):
+            cutoff = self.get_cutoff_time(agent_dead_limit)
+            return (context.session.query(LoadbalancerAgentBinding).join(
+                agents_db.Agent).filter(
+                    agents_db.Agent.heartbeat_timestamp < cutoff,
+                    agents_db.Agent.admin_state_up))
+
+    def _unschedule_loadbalancer(self, context, loadbalancer_id, agent_id):
+        with context.session.begin(subtransactions=True):
+            query = context.session.query(LoadbalancerAgentBinding)
+            query = query.filter(
+                LoadbalancerAgentBinding.loadbalancer_id == loadbalancer_id,
+                LoadbalancerAgentBinding.agent_id == agent_id)
+            query.delete()
+
 
 class ChanceScheduler(object):
     """Allocate a loadbalancer agent for a vip in a random way."""
