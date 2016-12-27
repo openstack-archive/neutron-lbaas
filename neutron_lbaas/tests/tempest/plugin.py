@@ -17,6 +17,8 @@ import neutron_lbaas
 import os
 from tempest.test_discover import plugins
 
+from neutron_lbaas.tests.tempest import config as lbaas_config
+
 
 class NeutronLbaasTempestPlugin(plugins.TempestPlugin):
     def load_tests(self):
@@ -27,7 +29,11 @@ class NeutronLbaasTempestPlugin(plugins.TempestPlugin):
         return full_test_dir, base_path
 
     def register_opts(self, conf):
-        pass
+        conf.register_group(lbaas_config.lbaas_group)
+        conf.register_opts(lbaas_config.lbaas_opts,
+                           group=lbaas_config.lbaas_group)
 
     def get_opt_lists(self):
-        pass
+        return [
+            (lbaas_config.lbaas_group.name, lbaas_config.lbaas_opts),
+        ]

@@ -57,9 +57,6 @@ def _setup_client_args(auth_provider):
 
 class BaseTestCase(base.BaseNetworkTest):
 
-    listener_protocol = 'HTTP'
-    pool_protocol = 'HTTP'
-
     # This class picks non-admin credentials and run the tempest tests
 
     _lbs_to_delete = []
@@ -67,6 +64,9 @@ class BaseTestCase(base.BaseNetworkTest):
     @classmethod
     def resource_setup(cls):
         super(BaseTestCase, cls).resource_setup()
+
+        cls.listener_protocol = CONF.lbaas.default_listener_protocol
+        cls.pool_protocol = CONF.lbaas.default_pool_protocol
 
         mgr = cls.get_client_manager()
         auth_provider = mgr.auth_provider
