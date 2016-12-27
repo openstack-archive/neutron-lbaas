@@ -52,9 +52,9 @@ class MemberTestJSON(base.BaseTestCase):
         cls.load_balancer_id = cls.load_balancer.get("id")
         cls.listener = cls._create_listener(
             loadbalancer_id=cls.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=80)
+            protocol=cls.listener_protocol, protocol_port=80)
         cls.listener_id = cls.listener.get('id')
-        cls.pool = cls._create_pool(protocol='HTTP',
+        cls.pool = cls._create_pool(protocol=cls.pool_protocol,
                                     tenant_id=cls.tenant_id,
                                     lb_algorithm='ROUND_ROBIN',
                                     listener_id=cls.listener_id)

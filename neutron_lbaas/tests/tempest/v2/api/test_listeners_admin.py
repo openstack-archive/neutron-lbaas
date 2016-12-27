@@ -42,11 +42,10 @@ class ListenersTestJSON(base.BaseAdminTestCase):
                                 'vip_subnet_id': cls.subnet['id']}
         cls.load_balancer = cls._create_active_load_balancer(
             **cls.create_lb_kwargs)
-        cls.protocol = 'HTTP'
         cls.port = 80
         cls.load_balancer_id = cls.load_balancer['id']
         cls.create_listener_kwargs = {'loadbalancer_id': cls.load_balancer_id,
-                                      'protocol': cls.protocol,
+                                      'protocol': cls.listener_protocol,
                                       'protocol_port': cls.port}
         cls.listener = cls._create_listener(
             **cls.create_listener_kwargs)

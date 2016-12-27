@@ -50,7 +50,7 @@ class TestPools(base.BaseTestCase):
             wait=True)
         cls.listener = cls._create_listener(
             loadbalancer_id=cls.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=80)
+            protocol=cls.listener_protocol, protocol_port=80)
 
     def increment_protocol_port(self):
         global PROTOCOL_PORT
@@ -61,13 +61,13 @@ class TestPools(base.BaseTestCase):
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         self.increment_protocol_port()
         if not protocol:
-            protocol = 'HTTP'
+            protocol = self.pool_protocol
         if not lb_algorithm:
             lb_algorithm = 'ROUND_ROBIN'
         if not listener_id:
             listener = self._create_listener(
                 loadbalancer_id=self.load_balancer.get('id'),
-                protocol='HTTP', protocol_port=PROTOCOL_PORT,
+                protocol=self.listener_protocol, protocol_port=PROTOCOL_PORT,
                 wait=True)
             listener_id = listener.get('id')
         response = self._create_pool(protocol=protocol,
@@ -127,9 +127,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_missing_tenant_field(self):
         """Test create pool with a missing required tenant field"""
         tenant_id = self.subnet.get('tenant_id')
-        new_pool = self._prepare_and_create_pool(
-            protocol='HTTP',
-            lb_algorithm='ROUND_ROBIN')
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool['tenant_id']
         self.assertEqual(tenant_id, pool_tenant)
@@ -140,7 +138,7 @@ class TestPools(base.BaseTestCase):
         self.increment_protocol_port()
         listener = self.listeners_client.create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=PROTOCOL_PORT)
+            protocol=self.listener_protocol, protocol_port=PROTOCOL_PORT)
         self.addCleanup(self._delete_listener, listener['id'])
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         listener_id = listener.get('id')
@@ -156,7 +154,7 @@ class TestPools(base.BaseTestCase):
         self.increment_protocol_port()
         listener = self.listeners_client.create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=PROTOCOL_PORT)
+            protocol=self.listener_protocol, protocol_port=PROTOCOL_PORT)
         self.addCleanup(self._delete_listener, listener['id'])
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         listener_id = listener.get('id')
@@ -164,7 +162,7 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_pool,
                           tenant_id=tenant_id,
                           listener_id=listener_id,
-                          protocol='HTTP')
+                          protocol=self.pool_protocol)
 
     @test.attr(type='negative')
     def test_create_pool_missing_listener_id_field(self):
@@ -173,7 +171,7 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_pool,
                           tenant_id=tenant_id,
                           lb_algorithm='ROUND_ROBIN',
-                          protocol='HTTP')
+                          protocol=self.pool_protocol)
 
     def test_create_pool_missing_description_field(self):
         """Test create pool with missing description field"""
@@ -216,7 +214,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_invalid_session_persistence_field(self):
         """Test create pool with invalid session persistence field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           session_persistence={'type': 'HTTP'},
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
@@ -225,7 +223,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_invalid_algorithm(self):
         """Test create pool with an invalid algorithm"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='LEAST_CON',
                           listener_id=self.listener['id'])
 
@@ -233,7 +231,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_invalid_admin_state_up(self):
         """Test create pool with an invalid admin state up field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           admin_state_up="$!1%9823",
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
@@ -245,7 +243,7 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_pool,
                           tenant_id=tenant_id,
                           lb_algorithm='ROUND_ROBIN',
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           listener_id="$@5$%$7863")
 
     @test.attr(type='negative')
@@ -254,21 +252,21 @@ class TestPools(base.BaseTestCase):
         self.increment_protocol_port()
         listener = self.listeners_client.create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=PROTOCOL_PORT)
+            protocol=self.listener_protocol, protocol_port=PROTOCOL_PORT)
         self.addCleanup(self._delete_listener, listener['id'])
         self._wait_for_load_balancer_status(self.load_balancer.get('id'))
         listener_id = listener.get('id')
         self.assertRaises(ex.BadRequest, self._create_pool,
                           tenant_id="*&7653^%&",
                           lb_algorithm='ROUND_ROBIN',
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           listener_id=listener_id)
 
     @test.attr(type='negative')
     def test_create_pool_incorrect_attribute(self):
         """Test create a pool with an extra, incorrect field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           protocol_port=80,
                           listener_id=self.listener['id'])
@@ -280,7 +278,7 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_pool,
                           tenant_id=tenant_id,
                           lb_algorithm='ROUND_ROBIN',
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           listener_id="")
 
     def test_create_pool_empty_description_field(self):
@@ -310,7 +308,7 @@ class TestPools(base.BaseTestCase):
         """Test create pool with empty session persistence field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence="",
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 
@@ -318,7 +316,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_empty_algorithm(self):
         """Test create pool with an empty algorithm"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm="",
                           listener_id=self.listener['id'])
 
@@ -326,7 +324,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_empty_admin_state_up(self):
         """Test create pool with an invalid admin state up field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           admin_state_up="",
                           lb_algorithm='ROUND_ROBIN')
 
@@ -334,7 +332,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_empty_tenant_field(self):
         """Test create pool with empty tenant field"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           tenant_id="",
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
@@ -344,7 +342,7 @@ class TestPools(base.BaseTestCase):
         """Test create pool for other tenant field"""
         tenant = 'deffb4d7c0584e89a8ec99551565713c'
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           tenant_id=tenant,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
@@ -356,7 +354,7 @@ class TestPools(base.BaseTestCase):
         Test create pool with invalid name field
         """
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'],
                           name='n' * 256)
@@ -368,7 +366,7 @@ class TestPools(base.BaseTestCase):
         Test create pool with invalid desc field
         """
         self.assertRaises(ex.BadRequest, self._prepare_and_create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'],
                           description='d' * 256)
@@ -380,7 +378,7 @@ class TestPools(base.BaseTestCase):
         """
         self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence={'type': 'UNSUPPORTED'},
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 
@@ -408,7 +406,7 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence={'type': 'HTTP_COOKIE',
                                                'cookie_name': 'sessionId'},
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 
@@ -419,7 +417,7 @@ class TestPools(base.BaseTestCase):
         """
         self.assertRaises(ex.BadRequest, self._create_pool,
                           session_persistence={'type': 'APP_COOKIE'},
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 

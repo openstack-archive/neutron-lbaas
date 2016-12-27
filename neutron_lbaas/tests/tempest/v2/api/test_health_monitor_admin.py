@@ -50,9 +50,9 @@ class TestHealthMonitors(base.BaseAdminTestCase):
             vip_subnet_id=cls.subnet.get('id'))
         cls.listener = cls._create_listener(
             loadbalancer_id=cls.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=80)
+            protocol=cls.listener_protocol, protocol_port=80)
         cls.pool = cls._create_pool(
-            protocol='HTTP', lb_algorithm='ROUND_ROBIN',
+            protocol=cls.pool_protocol, lb_algorithm='ROUND_ROBIN',
             listener_id=cls.listener.get('id'))
 
     @classmethod
