@@ -38,7 +38,7 @@ class MemberTestJSON(base.BaseTestCase):
     @classmethod
     def resource_setup(cls):
         super(MemberTestJSON, cls).resource_setup()
-        if not test.is_extension_enabled("lbaas", "network"):
+        if not test.is_extension_enabled("lbaasv2", "network"):
             msg = "lbaas extension not enabled."
             raise cls.skipException(msg)
         network_name = data_utils.rand_name('network-')
