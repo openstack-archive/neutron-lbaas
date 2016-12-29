@@ -38,6 +38,7 @@ from neutron_lbaas._i18n import _
 from neutron_lbaas import agent_scheduler
 from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.extensions import l7
+from neutron_lbaas.extensions import lb_network_vip
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -196,6 +197,17 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         except n_exc.SubnetNotFound:
             raise loadbalancerv2.EntityNotFound(name="Subnet", id=subnet_id)
 
+    def _validate_and_return_vip_net(self, ctxt, lb):
+        network_id = lb.pop('vip_network_id', None)
+
+        if network_id != n_const.ATTR_NOT_SPECIFIED and network_id:
+            subnets = self._core_plugin.get_subnets_by_network(ctxt,
+                                                               network_id)
+            if not subnets:
+                raise lb_network_vip.VipNetworkInvalid(network=network_id)
+            return network_id
+        return
+
     def assert_modification_allowed(self, obj):
         status = getattr(obj, 'provisioning_status', None)
         if status in [n_const.PENDING_DELETE, n_const.PENDING_UPDATE,
@@ -315,7 +327,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
     def create_loadbalancer(self, context, loadbalancer, allocate_vip=True):
         self._load_id(context, loadbalancer)
-        vip_network_id = loadbalancer.pop('vip_network_id', None)
+        vip_network_id = self._validate_and_return_vip_net(context,
+                                                           loadbalancer)
         vip_subnet_id = loadbalancer.pop('vip_subnet_id', None)
         vip_address = loadbalancer.pop('vip_address')
         if vip_subnet_id and vip_subnet_id != n_const.ATTR_NOT_SPECIFIED:
