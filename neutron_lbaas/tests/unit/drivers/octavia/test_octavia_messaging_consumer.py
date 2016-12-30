@@ -14,6 +14,7 @@
 
 import mock
 from oslo_config import cfg
+from oslo_messaging.rpc import dispatcher
 
 from neutron_lbaas.common import exceptions
 from neutron_lbaas.db.loadbalancer import models
@@ -83,9 +84,10 @@ class TestOctaviaMessagingConsumer(test_octavia_driver.BaseOctaviaDriverTest):
                               group='oslo_messaging')
         consumer = octavia_messaging_consumer.OctaviaConsumer(self.driver)
         consumer.start()
+        access_policy = dispatcher.DefaultRPCAccessPolicy
         mock_get_rpc_server.assert_called_once_with(
             consumer.transport, consumer.target, consumer.endpoints,
-            executor='eventlet'
+            executor='eventlet', access_policy=access_policy
         )
         mock_server.start.assert_called_once_with()
 
