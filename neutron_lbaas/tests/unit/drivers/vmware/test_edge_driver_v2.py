@@ -116,3 +116,13 @@ class TestVMWareEdgeLoadBalancerDriverV2(
         mock_nsxv_driver = self._patch_manager(self.driver.health_monitor)
         ManagerTest(self, self.driver.health_monitor, FakeModel("hm"),
                     mock_nsxv_driver.healthmonitor)
+
+    def test_l7policy_ops(self):
+        mock_nsxv_driver = self._patch_manager(self.driver.l7policy)
+        ManagerTest(self, self.driver.l7policy, FakeModel("pol"),
+                    mock_nsxv_driver.l7policy)
+
+    def test_l7rule_ops(self):
+        mock_nsxv_driver = self._patch_manager(self.driver.l7rule)
+        ManagerTest(self, self.driver.l7rule, FakeModel("rule"),
+                    mock_nsxv_driver.l7rule)
