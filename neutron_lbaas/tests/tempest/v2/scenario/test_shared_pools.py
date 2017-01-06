@@ -36,15 +36,19 @@ class TestSharedPools(base.BaseTestCase):
         7. Send NUM requests to the other listener's floating ip and check that
            they are shared between the two members.
         """
+        second_listener_port = 8080
+
         self._create_server('server1')
         self._start_servers()
         # automatically creates first listener on port 80
         self._create_load_balancer()
-        # create second listener on port 8080
+        # create second listener
         self._create_listener(load_balancer_id=self.load_balancer['id'],
-                              port=8080, default_pool_id=self.pool['id'])
+                              port=second_listener_port,
+                              default_pool_id=self.pool['id'])
+        self._create_security_group_rules_for_port(second_listener_port)
         self._wait_for_load_balancer_status(self.load_balancer['id'])
         # check via first listener's default port 80
         self._check_load_balancing()
-        # check via second listener's port 8080
-        self._check_load_balancing(port=8080)
+        # check via second listener's port
+        self._check_load_balancing(port=second_listener_port)
