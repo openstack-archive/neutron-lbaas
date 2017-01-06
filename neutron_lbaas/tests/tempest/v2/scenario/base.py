@@ -80,6 +80,10 @@ class BaseTestCase(manager.NetworkScenarioTest):
         self.num = 50
         self.server_fixed_ips = {}
 
+        self.listener_protocol = config.lbaas.default_listener_protocol
+        self.pool_protocol = config.lbaas.default_pool_protocol
+        self.hm_protocol = config.lbaas.default_health_monitor_protocol
+
         self._create_security_group_for_test()
         self._set_net_and_subnet()
 
@@ -284,12 +288,11 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                       'script': 'script2'}
                 ssh_client.exec_command(cmd)
 
-    def _create_listener(self, load_balancer_id, port=80, protocol='HTTP',
-                         **kwargs):
+    def _create_listener(self, load_balancer_id, port=80, **kwargs):
         """Create a listener with HTTP protocol listening on port 80."""
         self.listener = self.listeners_client.create_listener(
-            loadbalancer_id=load_balancer_id,
-            protocol=protocol, protocol_port=port, **kwargs)
+            loadbalancer_id=load_balancer_id, protocol=self.listener_protocol,
+            protocol_port=port, **kwargs)
         self.assertTrue(self.listener)
         self.addCleanup(self._cleanup_listener, self.listener.get('id'),
                         load_balancer_id=load_balancer_id)
@@ -298,7 +301,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
     def _create_health_monitor(self):
         """Create a pool with ROUND_ROBIN algorithm."""
         self.hm = self.health_monitors_client.create_health_monitor(
-            type='HTTP', max_retries=5, delay=3, timeout=5,
+            type=self.hm_protocol, max_retries=5, delay=3, timeout=5,
             pool_id=self.pool['id'])
         self.assertTrue(self.hm)
         self.addCleanup(self._cleanup_health_monitor,
@@ -311,7 +314,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         pool = {
             "listener_id": listener_id,
             "lb_algorithm": "ROUND_ROBIN",
-            "protocol": "HTTP"
+            "protocol": self.pool_protocol
         }
         if persistence_type:
             pool.update({'session_persistence': {'type': persistence_type}})
