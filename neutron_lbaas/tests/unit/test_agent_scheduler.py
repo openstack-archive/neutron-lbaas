@@ -38,6 +38,7 @@ from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.tests import base
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
+from neutron_lbaas.tests.unit.db.loadbalancer import util
 
 LBAAS_HOSTA = 'hosta'
 extensions_path = ':'.join(neutron.tests.unit.extensions.__path__)
@@ -65,7 +66,7 @@ class AgentSchedulerTestMixIn(test_agentschedulers_db.AgentSchedulerTestMixIn):
 
 class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
                                   AgentSchedulerTestMixIn,
-                                  test_db_loadbalancerv2.LbaasTestMixin,
+                                  util.LbaasTestMixin,
                                   base.NeutronDbPluginV2TestCase):
     fmt = 'json'
     plugin_str = 'neutron.plugins.ml2.plugin.Ml2Plugin'
