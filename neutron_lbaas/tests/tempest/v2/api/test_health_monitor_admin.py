@@ -64,8 +64,8 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         Test if admin user can create health monitor with a missing tenant id
         field.
         """
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
+        hm = self._create_health_monitor(type=self.hm_protocol, delay=3,
+                                         max_retries=10, timeout=5,
                                          pool_id=self.pool.get('id'))
 
         admin_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
@@ -80,10 +80,8 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         field should fail.
         """
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
-                          type='HTTP', delay=3, max_retries=10,
-                          timeout=5,
-                          pool_id=self.pool.get('id'),
-                          tenant_id="")
+                          type=self.hm_protocol, delay=3, max_retries=10,
+                          timeout=5, pool_id=self.pool.get('id'), tenant_id="")
 
     @test.attr(type='smoke')
     def test_create_health_monitor_for_another_tenant_id_field(self):
@@ -91,8 +89,8 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         """
 
         tenantid = uuidutils.generate_uuid()
-        hm = self._create_health_monitor(type='HTTP', delay=3, max_retries=10,
-                                         timeout=5,
+        hm = self._create_health_monitor(type=self.hm_protocol, delay=3,
+                                         max_retries=10, timeout=5,
                                          pool_id=self.pool.get('id'),
                                          tenant_id=tenantid)
 

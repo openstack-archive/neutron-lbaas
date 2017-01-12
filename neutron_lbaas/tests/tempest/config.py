@@ -25,4 +25,6 @@ lbaas_opts = [
                help='Default protocol for Neutron LBaaS Listeners'),
     cfg.StrOpt('default_pool_protocol', default='HTTP',
                help='Default protocol for Neutron LBaaS Pools'),
+    cfg.StrOpt('default_health_monitor_protocol', default='HTTP',
+               help='Default protocol for Neutron LBaaS Health Monitors'),
 ]
