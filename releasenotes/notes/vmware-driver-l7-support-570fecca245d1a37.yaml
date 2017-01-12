@@ -1,0 +1,5 @@
+---
+features:
+  - |
+    Adds support for the VMWare driver to use the L7 rules
+    and policies.

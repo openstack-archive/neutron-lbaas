@@ -35,6 +35,8 @@ class EdgeLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
         self.pool = EdgePoolManager(self)
         self.member = EdgeMemberManager(self)
         self.health_monitor = EdgeHealthMonitorManager(self)
+        self.l7policy = L7PolicyManager(self)
+        self.l7rule = L7RuleManager(self)
 
 
 class EdgeLoadBalancerManager(driver_base.BaseLoadBalancerManager,
@@ -133,3 +135,33 @@ class EdgeHealthMonitorManager(driver_base.BaseHealthMonitorManager,
     @call_log
     def delete(self, context, hm):
         self.nsxv_driver.healthmonitor.delete(context, hm)
+
+
+class L7PolicyManager(driver_base.BaseL7PolicyManager,
+                      EdgeDriverBaseManager):
+    @call_log
+    def create(self, context, pol):
+        self.nsxv_driver.l7policy.create(context, pol)
+
+    @call_log
+    def update(self, context, old_pol, new_pol):
+        self.nsxv_driver.l7policy.update(context, old_pol, new_pol)
+
+    @call_log
+    def delete(self, context, pol):
+        self.nsxv_driver.l7policy.delete(context, pol)
+
+
+class L7RuleManager(driver_base.BaseL7RuleManager,
+                    EdgeDriverBaseManager):
+    @call_log
+    def create(self, context, rule):
+        self.nsxv_driver.l7rule.create(context, rule)
+
+    @call_log
+    def update(self, context, old_rule, new_rule):
+        self.nsxv_driver.l7rule.update(context, old_rule, new_rule)
+
+    @call_log
+    def delete(self, context, rule):
+        self.nsxv_driver.l7rule.delete(context, rule)
