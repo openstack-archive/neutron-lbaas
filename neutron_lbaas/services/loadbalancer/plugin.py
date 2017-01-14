@@ -677,10 +677,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         # blank out the listeners at this point.
         del pool['listener_id']
         pool['listeners'] = []
-        db_pool = self.db.create_pool(context, pool)
         self.db.test_and_set_status(context, models.LoadBalancer,
-                                    db_pool.loadbalancer_id,
-                                    constants.PENDING_UPDATE)
+                                    lb_id, constants.PENDING_UPDATE)
+        db_pool = self.db.create_pool(context, pool)
         for db_l in db_listeners:
             try:
                 self.db.update_listener(context, db_l.id,
