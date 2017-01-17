@@ -90,7 +90,7 @@ function neutron_lbaas_start {
     fi
 
     if [[ "$is_run_process" == "True" ]] ; then
-        run_process $LBAAS_VERSION "python $AGENT_LBAAS_BINARY --config-file $NEUTRON_CONF --config-file $NEUTRON_LBAAS_CONF --config-file=$LBAAS_AGENT_CONF_FILENAME"
+        run_process $LBAAS_VERSION "$AGENT_LBAAS_BINARY --config-file $NEUTRON_CONF --config-file $NEUTRON_LBAAS_CONF --config-file=$LBAAS_AGENT_CONF_FILENAME"
     fi
 }
 
