@@ -16,9 +16,9 @@
 import mock
 
 from neutron import context
-from neutron.extensions import portbindings
 from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
+from neutron_lib.api.definitions import portbindings
 from oslo_utils import uuidutils
 import six
 from six import moves
