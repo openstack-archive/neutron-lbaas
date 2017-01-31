@@ -67,17 +67,16 @@ class BaseHealthMonitorAdminStateTest(base_ddt.AdminStateTests):
         """
         super(BaseHealthMonitorAdminStateTest, self).setUp()
         self.resource_setup_load_balancer(self.lb_flag)
-        self.resource_setup_listener(self.listener_flag)
-        self.resource_setup_pool(self.pool_flag)
-        self.resource_set_health_monitor(self.healthmonitor_flag)
+        self.addCleanup(self._delete_load_balancer, self.load_balancer_id)
 
-    def tearDown(self):
-        """Clean up health monitor, pools, listener and lb."""
-        self._delete_health_monitor(self.health_monitor.get('id'))
-        self._delete_pool(self.pool.get('id'))
-        self._delete_listener(self.listener.get('id'))
-        self._delete_load_balancer(self.load_balancer.get('id'))
-        super(BaseHealthMonitorAdminStateTest, self).tearDown()
+        self.resource_setup_listener(self.listener_flag)
+        self.addCleanup(self._delete_listener, self.listener_id)
+
+        self.resource_setup_pool(self.pool_flag)
+        self.addCleanup(self._delete_pool, self.pool_id)
+
+        self.resource_set_health_monitor(self.healthmonitor_flag)
+        self.addCleanup(self._delete_health_monitor, self.health_monitor_id)
 
     @classmethod
     def resource_setup_listener(cls, admin_state_up_flag):
