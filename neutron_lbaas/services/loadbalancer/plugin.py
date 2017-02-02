@@ -14,7 +14,6 @@
 #    under the License.
 
 import copy
-import six
 
 from neutron_lib.plugins import directory
 
@@ -1045,7 +1044,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             status["provisioning_status"] = obj.provisioning_status
         if "operating_status" not in exclude:
             status["operating_status"] = obj.operating_status
-        for key, value in six.iteritems(kw):
+        for key, value in kw.items():
             status[key] = value
         try:
             status['name'] = getattr(obj, 'name')

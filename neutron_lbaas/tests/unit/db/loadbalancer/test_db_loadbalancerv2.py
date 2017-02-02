@@ -4119,7 +4119,7 @@ class LbaasStatusesTest(MemberTestBase):
 
     def _countDisabledChildren(self, obj, count):
         if isinstance(obj, dict):
-            for key, value in six.iteritems(obj):
+            for key, value in obj.items():
                 if key == "operating_status":
                     count += 1
                     continue

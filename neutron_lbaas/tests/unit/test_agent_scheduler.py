@@ -32,7 +32,6 @@ from neutron.tests.unit.db import test_agentschedulers_db
 import neutron.tests.unit.extensions
 from neutron.tests.unit.extensions import test_agent
 from neutron_lib import constants as n_constants
-import six
 from webob import exc
 
 from neutron_lbaas.drivers.haproxy import plugin_driver
@@ -98,7 +97,7 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
     def setUp(self):
         # Save the global RESOURCE_ATTRIBUTE_MAP
         self.saved_attr_map = {}
-        for res, attrs in six.iteritems(attributes.RESOURCE_ATTRIBUTE_MAP):
+        for res, attrs in attributes.RESOURCE_ATTRIBUTE_MAP.items():
             self.saved_attr_map[res] = attrs.copy()
         service_plugins = {
             'lb_plugin_name': test_db_loadbalancerv2.DB_LB_PLUGIN_CLASS}
