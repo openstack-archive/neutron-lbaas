@@ -444,7 +444,8 @@ class ListenerManager(agent_device_driver.BaseListenerManager):
         else:
             # undeploy instance because haproxy will throw error if port is
             # missing in frontend
-            self.driver.undeploy_instance(loadbalancer.id)
+            self.driver.undeploy_instance(loadbalancer.id,
+                                          delete_namespace=True)
 
 
 class PoolManager(agent_device_driver.BasePoolManager):
