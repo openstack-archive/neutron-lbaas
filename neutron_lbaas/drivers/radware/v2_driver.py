@@ -17,9 +17,9 @@ import netaddr
 import threading
 import time
 
-from neutron import context
 from neutron.plugins.common import constants
 from neutron_lib import constants as n_constants
+from neutron_lib import context
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging

@@ -15,10 +15,10 @@
 
 import mock
 
-from neutron import context
 from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
 from neutron_lib.api.definitions import portbindings
+from neutron_lib import context
 from oslo_utils import uuidutils
 from six import moves
 

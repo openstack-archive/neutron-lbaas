@@ -13,10 +13,10 @@
 #    under the License.
 
 import mock
+from neutron_lib import context
 from neutron_lib.plugins import directory
 from oslo_utils import importutils
 
-from neutron import context
 from neutron.db import servicetype_db as st_db
 from neutron.plugins.common import constants
 from neutron.tests.common import helpers

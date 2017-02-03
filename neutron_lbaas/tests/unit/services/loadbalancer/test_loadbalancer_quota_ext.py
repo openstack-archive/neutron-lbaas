@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron import context
 from neutron.tests.unit.api.v2 import test_base
 from oslo_config import cfg
 
 from neutron_lbaas.tests import base
+from neutron_lib import context
 
 _get_path = test_base._get_path
 

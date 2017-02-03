@@ -14,7 +14,7 @@
 
 from functools import wraps
 
-from neutron import context as ncontext
+from neutron_lib import context as ncontext
 from oslo_utils import excutils
 
 from neutron_lbaas.common import exceptions

@@ -15,7 +15,7 @@
 
 import mock
 
-from neutron import context as ncontext
+from neutron_lib import context as ncontext
 
 from neutron_lbaas.drivers.vmware import edge_driver_v2
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2

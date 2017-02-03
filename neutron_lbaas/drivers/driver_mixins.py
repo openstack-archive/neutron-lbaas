@@ -94,7 +94,7 @@ class BaseManagerMixin(object):
         ACTIVE.  Should be called last in the implementor's BaseManagerMixin
         methods for successful runs.
 
-        :param context: neutron context
+        :param context: neutron_lib context
         :param obj: instance of a
                     neutron_lbaas.services.loadbalancer.data_model
         :param delete: set True if being called from a delete method.  Will
@@ -178,7 +178,7 @@ class BaseManagerMixin(object):
         be called whenever something goes wrong (raised exception) in an
         implementor's BaseManagerMixin methods.
 
-        :param context: neutron context
+        :param context: neutron_lib context
         :param obj: instance of a
                     neutron_lbaas.services.loadbalancer.data_model
         """

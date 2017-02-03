@@ -18,7 +18,7 @@
 import sys
 
 import mock
-from neutron import context
+from neutron_lib import context
 
 with mock.patch.dict(sys.modules, {'brocade_neutron_lbaas': mock.Mock()}):
     from neutron_lbaas.drivers.brocade import driver_v2 as driver

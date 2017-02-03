@@ -13,7 +13,7 @@
 #    under the License.
 
 import mock
-from neutron import context
+from neutron_lib import context
 
 from neutron_lbaas.drivers.logging_noop import driver
 from neutron_lbaas.services.loadbalancer import data_models

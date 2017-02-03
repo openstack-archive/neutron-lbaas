@@ -15,11 +15,11 @@
 
 import copy
 
+from neutron_lib import context as ncontext
 from neutron_lib.plugins import directory
 
 from neutron.api.v2 import attributes as attrs
 from neutron.api.v2 import base as napi_base
-from neutron import context as ncontext
 from neutron.db import agentschedulers_db
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import flavors

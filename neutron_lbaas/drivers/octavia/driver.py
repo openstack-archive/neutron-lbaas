@@ -16,7 +16,7 @@ from functools import wraps
 import threading
 import time
 
-from neutron import context as ncontext
+from neutron_lib import context as ncontext
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_serialization import jsonutils

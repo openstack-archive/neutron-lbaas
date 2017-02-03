@@ -16,11 +16,11 @@ import copy
 import mock
 from oslo_config import cfg
 
-from neutron import context
 from neutron_lbaas.drivers.octavia import driver
 from neutron_lbaas.services.loadbalancer import constants
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
+from neutron_lib import context
 
 
 class ManagerTest(object):
@@ -562,7 +562,7 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
             self.succ_completion = mock.MagicMock()
             self.fail_completion = mock.MagicMock()
             self.context = mock.MagicMock()
-            ctx_patcher = mock.patch('neutron.context.get_admin_context',
+            ctx_patcher = mock.patch('neutron_lib.context.get_admin_context',
                                      return_value=self.context)
             ctx_patcher.start()
             self.addCleanup(ctx_patcher.stop)

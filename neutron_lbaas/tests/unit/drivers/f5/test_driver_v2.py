@@ -16,7 +16,7 @@
 import sys
 
 import mock
-from neutron import context
+from neutron_lib import context
 
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 

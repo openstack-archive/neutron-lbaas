@@ -18,11 +18,11 @@ import copy
 from datetime import datetime
 
 import mock
+from neutron_lib import context
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
 from neutron.api.v2 import attributes
-from neutron import context
 from neutron.db import agents_db
 from neutron.extensions import agent
 from neutron.plugins.common import constants as plugin_const

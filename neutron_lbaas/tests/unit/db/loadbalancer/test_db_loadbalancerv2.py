@@ -19,11 +19,11 @@ import copy
 import mock
 from neutron.api import extensions
 from neutron.common import config
-from neutron import context
 import neutron.db.l3_db  # noqa
 from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron_lib import constants as n_constants
+from neutron_lib import context
 from neutron_lib import exceptions as n_exc
 from neutron_lib.plugins import directory
 from oslo_config import cfg
