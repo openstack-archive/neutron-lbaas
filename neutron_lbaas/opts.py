@@ -21,6 +21,7 @@ import neutron_lbaas.common.cert_manager
 import neutron_lbaas.common.cert_manager.local_cert_manager
 import neutron_lbaas.common.keystone
 import neutron_lbaas.drivers.common.agent_driver_base
+import neutron_lbaas.drivers.haproxy.namespace_driver
 import neutron_lbaas.drivers.octavia.driver
 import neutron_lbaas.drivers.radware.base_v2_driver
 import neutron_lbaas.extensions.loadbalancerv2
@@ -46,7 +47,9 @@ def list_agent_opts():
              neutron_lbaas.agent.agent.OPTS,
              neutron.agent.linux.interface.OPTS,
              _INTERFACE_DRIVER_OPTS)
-         )
+         ),
+        ('haproxy',
+         neutron_lbaas.drivers.haproxy.namespace_driver.OPTS)
     ]
 
 
