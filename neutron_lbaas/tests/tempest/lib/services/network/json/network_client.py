@@ -18,7 +18,7 @@ import time
 
 from six.moves.urllib import parse
 from tempest.lib.common import rest_client
-from tempest.lib.common.utils import misc
+from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import exceptions
 
@@ -292,7 +292,7 @@ class NetworkClientJSON(rest_client.RestClient):
         message += ' failed to reach status %s' % status
         message += ' (current: %s)' % resource['status']
         message += ' within the required time %s' % timeout
-        caller = misc.find_test_caller()
+        caller = test_utils.find_test_caller()
         if caller:
             message = '(%s) %s' % (caller, message)
         raise exceptions.TimeoutException(message)
