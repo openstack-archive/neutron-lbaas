@@ -1425,16 +1425,13 @@ class ListenerTestBase(LbaasPluginDbTestCase):
         self.test_subnet_id = self.test_subnet['subnet']['id']
         lb_res = self._create_loadbalancer(
             self.fmt, subnet_id=self.test_subnet_id)
+        self.lb = self.deserialize(self.fmt, lb_res)
+        self.lb_id = self.lb['loadbalancer']['id']
+        self.addCleanup(self._delete_loadbalancer_api, self.lb_id)
         lb_res2 = self._create_loadbalancer(
             self.fmt, subnet_id=self.test_subnet_id)
-        self.lb = self.deserialize(self.fmt, lb_res)
         self.lb2 = self.deserialize(self.fmt, lb_res2)
-        self.lb_id = self.lb['loadbalancer']['id']
         self.lb_id2 = self.lb2['loadbalancer']['id']
-
-    def tearDown(self):
-        self._delete_loadbalancer_api(self.lb_id)
-        super(ListenerTestBase, self).tearDown()
 
     def _create_listener_api(self, data):
         req = self.new_create_request("listeners", data, self.fmt)
@@ -2830,18 +2827,15 @@ class PoolTestBase(ListenerTestBase):
         super(PoolTestBase, self).setUp()
         listener_res = self._create_listener(self.fmt, lb_const.PROTOCOL_HTTP,
                                              80, self.lb_id)
+        self.def_listener = self.deserialize(self.fmt, listener_res)
+        self.listener_id = self.def_listener['listener']['id']
+        self.addCleanup(self._delete_listener_api, self.listener_id)
         listener_res2 = self._create_listener(self.fmt, lb_const.PROTOCOL_HTTP,
                                               80, self.lb_id2)
-        self.def_listener = self.deserialize(self.fmt, listener_res)
         self.def_listener2 = self.deserialize(self.fmt, listener_res2)
-        self.listener_id = self.def_listener['listener']['id']
         self.listener_id2 = self.def_listener2['listener']['id']
         self.loadbalancer_id = self.lb_id
         self.loadbalancer_id2 = self.lb_id2
-
-    def tearDown(self):
-        self._delete_listener_api(self.listener_id)
-        super(PoolTestBase, self).tearDown()
 
     def _create_pool_api(self, data):
         req = self.new_create_request("pools", data, self.fmt)
@@ -3288,6 +3282,7 @@ class MemberTestBase(PoolTestBase):
                                  lb_const.SESSION_PERSISTENCE_HTTP_COOKIE})
         self.pool = self.deserialize(self.fmt, pool_res)
         self.pool_id = self.pool['pool']['id']
+
         alt_listener_res = self._create_listener(
             self.fmt, lb_const.PROTOCOL_HTTP,
             self.def_listener['listener']['protocol_port'] + 1,
@@ -4101,11 +4096,11 @@ class LbaasStatusesTest(MemberTestBase):
     def setUp(self):
         super(LbaasStatusesTest, self).setUp()
         self.lbs_to_clean = []
+        self.addCleanup(self.cleanup_lbs)
 
-    def tearDown(self):
+    def cleanup_lbs(self):
         for lb_dict in self.lbs_to_clean:
             self._delete_populated_lb(lb_dict)
-        super(LbaasStatusesTest, self).tearDown()
 
     def test_disable_lb(self):
         ctx = context.get_admin_context()

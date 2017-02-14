@@ -75,17 +75,16 @@ class CreateMemberAdminStateTests(base_ddt.AdminStateTests):
         """Set up load balancer, listener,  pool and member."""
         super(CreateMemberAdminStateTests, self).setUp()
         self.resource_setup_load_balancer(self.lb_flag)
-        self.resource_setup_listener(self.listener_flag)
-        self.resource_setup_pool(self.pool_flag)
-        self.resource_setup_member(self.member_flag)
+        self.addCleanup(self._delete_load_balancer, self.load_balancer_id)
 
-    def tearDown(self):
-        """Tearing down pools, listener and lb resources"""
-        self._delete_member(self.pool_id, self.member_id)
-        self._delete_pool(self.pool_id)
-        self._delete_listener(self.listener_id)
-        self._delete_load_balancer(self.load_balancer_id)
-        super(CreateMemberAdminStateTests, self).tearDown()
+        self.resource_setup_listener(self.listener_flag)
+        self.addCleanup(self._delete_listener, self.listener_id)
+
+        self.resource_setup_pool(self.pool_flag)
+        self.addCleanup(self._delete_pool, self.pool_id)
+
+        self.resource_setup_member(self.member_flag)
+        self.addCleanup(self._delete_member, self.pool_id, self.member_id)
 
     @classmethod
     def resource_setup_load_balancer(cls, admin_state_up_flag):
@@ -128,17 +127,16 @@ class UpdateMemberAdminStateTests(base_ddt.AdminStateTests):
         """Set up load balancer, listener,  pool and member resources."""
         super(UpdateMemberAdminStateTests, self).setUp()
         self.resource_setup_load_balancer(self.lb_flag)
-        self.resource_setup_listener(self.listener_flag)
-        self.resource_setup_pool(self.pool_flag)
-        self.resource_setup_member(self.member_flag)
+        self.addCleanup(self._delete_load_balancer, self.load_balancer_id)
 
-    def tearDown(self):
-        """Tearing down member, pool, listener and lb resources."""
-        self._delete_member(self.pool_id, self.member_id)
-        self._delete_pool(self.pool_id)
-        self._delete_listener(self.listener_id)
-        self._delete_load_balancer(self.load_balancer_id)
-        super(UpdateMemberAdminStateTests, self).tearDown()
+        self.resource_setup_listener(self.listener_flag)
+        self.addCleanup(self._delete_listener, self.listener_id)
+
+        self.resource_setup_pool(self.pool_flag)
+        self.addCleanup(self._delete_pool, self.pool_id)
+
+        self.resource_setup_member(self.member_flag)
+        self.addCleanup(self._delete_member, self.pool_id, self.member_id)
 
     @classmethod
     def resource_setup_load_balancer(cls, admin_state_up_flag):
