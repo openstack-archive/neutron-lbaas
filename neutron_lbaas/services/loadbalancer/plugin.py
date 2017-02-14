@@ -378,7 +378,12 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         create_method = (driver.load_balancer.create_and_allocate_vip
                          if driver.load_balancer.allocates_vip
                          else driver.load_balancer.create)
-        self._call_driver_operation(context, create_method, lb_db)
+        try:
+            self._call_driver_operation(context, create_method, lb_db)
+        except (lbaas_agentschedulerv2.NoEligibleLbaasAgent,
+                lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
+            self.db.delete_loadbalancer(context, lb_db.id)
+            raise no_agent
         return self.db.get_loadbalancer(context, lb_db.id).to_api_dict()
 
     def create_graph(self, context, graph):
