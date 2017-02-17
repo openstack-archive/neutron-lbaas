@@ -18,7 +18,6 @@ from neutron.db import common_db_mixin
 from neutron.services import provider_configuration as provconf
 from neutron_lib import exceptions as n_exc
 from oslo_config import cfg
-from oslo_log import log as logging
 import oslo_messaging as messaging
 from oslo_utils import importutils
 
@@ -31,8 +30,6 @@ from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
-
-LOG = logging.getLogger(__name__)
 
 LB_SCHEDULERS = 'loadbalancer_schedulers'
 
