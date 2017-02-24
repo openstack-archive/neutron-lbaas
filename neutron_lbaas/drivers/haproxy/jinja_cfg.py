@@ -15,11 +15,11 @@
 import os
 
 import jinja2
+from neutron_lib.utils import file as file_utils
+from oslo_config import cfg
 import six
 
-from neutron.common import utils as n_utils
 from neutron.plugins.common import constants as plugin_constants
-from oslo_config import cfg
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.common import cert_manager
@@ -88,7 +88,7 @@ def save_config(conf_path, loadbalancer, socket_path, user_group,
                                          user_group,
                                          socket_path,
                                          haproxy_base_dir)
-    n_utils.replace_file(conf_path, config_str)
+    file_utils.replace_file(conf_path, config_str)
 
 
 def _get_template():
@@ -118,7 +118,7 @@ def _store_listener_crt(haproxy_base_dir, listener, cert):
                                    cert.primary_cn)
     # build a string that represents the pem file to be saved
     pem = _build_pem(cert)
-    n_utils.replace_file(cert_path, pem)
+    file_utils.replace_file(cert_path, pem)
     return cert_path
 
 
