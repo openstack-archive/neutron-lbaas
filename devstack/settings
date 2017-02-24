@@ -4,11 +4,14 @@
 
 AGENT_LBAASV2_BINARY="$NEUTRON_BIN_DIR/neutron-lbaasv2-agent"
 
-LBAAS_V2="q-lbaasv2"
-LBAAS_ANY="$LBAAS_V2"
+LBAAS_ANY="q-lbaasv2 neutron-lbaasv2"
 
 # turn on lbaasv2 service by default
-enable_service $LBAAS_ANY
+if is_neutron_legacy_enabled; then
+    enable_service q-lbaasv2
+else
+    enable_service neutron-lbaasv2
+fi
 
 BARBICAN="barbican-svc"
 
@@ -30,9 +33,6 @@ SERVICES_LBAAS_CONF_FILE=services_lbaas.conf
 
 NEUTRON_LBAAS_CONF=$NEUTRON_CONF_DIR/$NEUTRON_LBAAS_CONF_FILE
 SERVICES_LBAAS_CONF=$NEUTRON_CONF_DIR/$SERVICES_LBAAS_CONF_FILE
-
-Q_PLUGIN_EXTRA_CONF_PATH=$NEUTRON_CONF_DIR
-Q_PLUGIN_EXTRA_CONF_FILES+=($NEUTRON_LBAAS_CONF_FILE $SERVICES_LBAAS_CONF_FILE)
 
 NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA=${NEUTRON_LBAAS_SERVICE_PROVIDERV2_OCTAVIA:-"LOADBALANCERV2:Octavia:neutron_lbaas.drivers.octavia.driver.OctaviaDriver:default"}
 
