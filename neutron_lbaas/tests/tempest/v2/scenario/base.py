@@ -119,12 +119,14 @@ class BaseTestCase(manager.NetworkScenarioTest):
         """
         tenant_id = self.networks_client.tenant_id
         try:
-            tenant_net = self._list_networks(tenant_id=tenant_id)[0]
+            tenant_net = self.admin_manager.networks_client.list_networks(
+                tenant_id=tenant_id)['networks'][0]
         except IndexError:
             tenant_net = None
 
         if tenant_net:
-            self.subnet = self._list_subnets(tenant_id=tenant_id)[0]
+            self.subnet = self.admin_manager.subnets_client.list_subnets(
+                tenant_id=tenant_id)['subnets'][0]
             self.addCleanup(test_utils.call_and_ignore_notfound_exc,
                             self.networks_client.delete_network,
                             self.subnet['id'])
@@ -136,7 +138,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
             # with the fixed network is the one we want.  In the future, we
             # should instead pull a subnet id from config, which is set by
             # devstack/admin/etc.
-            subnet = self._list_subnets(network_id=self.network['id'])[0]
+            subnet = self.admin_manager.subnets_client.list_subnets(
+                network_id=self.network['id'])['subnets'][0]
             self.subnet = subnet
 
     def _create_security_group_for_test(self):
