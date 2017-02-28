@@ -194,6 +194,7 @@ class L7(api_extensions.ExtensionDescriptor):
     def get_required_extensions(self):
         return ["lbaasv2"]
 
+    @classmethod
     def get_resources(cls):
         l7_plurals = {'l7policies': 'l7policy', 'rules': 'rule'}
 
