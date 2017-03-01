@@ -30,7 +30,6 @@ from tempest import config
 from tempest import exceptions
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
-from tempest.scenario import manager
 from tempest import test
 
 from neutron_lbaas._i18n import _
@@ -39,6 +38,7 @@ from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
 from neutron_lbaas.tests.tempest.v2.clients import members_client
 from neutron_lbaas.tests.tempest.v2.clients import pools_client
+from neutron_lbaas.tests.tempest.v2.scenario import manager
 
 config = config.CONF
 
