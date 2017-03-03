@@ -23,6 +23,7 @@ from neutron_lib import constants as n_constants
 from neutron_lib.db import constants as db_const
 from neutron_lib import exceptions as nexception
 from neutron_lib.plugins import directory
+from neutron_lib.services import base as service_base
 from oslo_config import cfg
 from oslo_log import log as logging
 import six
@@ -32,7 +33,6 @@ from neutron.api.v2 import base
 from neutron.api.v2 import resource_helper
 from neutron.plugins.common import constants
 from neutron.quota import resource_registry
-from neutron.services import service_base
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.services.loadbalancer import constants as lb_const
