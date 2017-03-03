@@ -20,7 +20,6 @@ from six.moves.urllib import parse
 from tempest.lib.common import rest_client
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
-from tempest import exceptions
 
 
 class NetworkClientJSON(rest_client.RestClient):
@@ -247,7 +246,7 @@ class NetworkClientJSON(rest_client.RestClient):
             if self.is_resource_deleted(resource_type, id):
                 return
             if int(time.time()) - start_time >= self.build_timeout:
-                raise exceptions.TimeoutException
+                raise lib_exc.TimeoutException
             time.sleep(self.build_interval)
 
     def is_resource_deleted(self, resource_type, id):
@@ -295,7 +294,7 @@ class NetworkClientJSON(rest_client.RestClient):
         caller = test_utils.find_test_caller()
         if caller:
             message = '(%s) %s' % (caller, message)
-        raise exceptions.TimeoutException(message)
+        raise lib_exc.TimeoutException(message)
 
     def deserialize_single(self, body):
         return json.loads(body)
