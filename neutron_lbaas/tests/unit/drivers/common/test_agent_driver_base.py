@@ -26,6 +26,7 @@ from neutron_lbaas.db.loadbalancer import models
 from neutron_lbaas.drivers.common import agent_driver_base
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
+from neutron_lbaas.services.loadbalancer.data_models import LoadBalancer
 from neutron_lbaas.tests import base
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 from neutron_lbaas.tests.unit import test_agent_scheduler
@@ -725,3 +726,14 @@ class TestLoadBalancerManager(test_agent_scheduler.
                 mock_get_lb.assert_called_once_with(self.adminContext,
                                                     loadbalancer_data['id'])
                 self.assertTrue(mock_create.called)
+
+    def test__schedule_loadbalancer_already_hosted(self):
+        with mock.patch('neutron_lbaas.agent_scheduler.'
+                        'LbaasAgentSchedulerDbMixin.'
+                        'get_agent_hosting_loadbalancer') as mock_get_agent:
+            mock_get_agent.return_value = {'agent': {'id': 'agent-1'}}
+            lb = LoadBalancer(id='lb-test')
+            agent = self.loadbalancer_scheduler.schedule(
+                self.plugin, self.adminContext, lb, self.device_driver)
+            self.assertTrue(mock_get_agent.called)
+            self.assertIsNone(agent)

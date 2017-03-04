@@ -127,7 +127,7 @@ class ChanceScheduler(object):
                           'has already been hosted'
                           ' by lbaas agent %(agent_id)s',
                           {'loadbalancer_id': loadbalancer.id,
-                           'agent_id': lbaas_agent['id']})
+                           'agent_id': lbaas_agent['agent']['id']})
                 return
 
             active_agents = plugin.db.get_lbaas_agents(context, active=True)
