@@ -634,6 +634,7 @@ class LoadBalancerPluginBaseV2(service_base.ServicePluginBase):
     def statuses(self, context, loadbalancer_id):
         pass
 
+    @abc.abstractmethod
     def get_l7policies(self, context, filters=None, fields=None):
         pass
 
