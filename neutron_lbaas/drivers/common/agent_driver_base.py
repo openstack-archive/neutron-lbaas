@@ -159,7 +159,7 @@ class LoadBalancerManager(driver_base.BaseLoadBalancerManager,
                           agent_scheduler_v2.LbaasAgentSchedulerDbMixin,
                           common_db_mixin.CommonDbMixin):
     def __init__(self, driver):
-        self.driver = driver
+        super(LoadBalancerManager, self).__init__(driver)
         self.db = ldbv2.LoadBalancerPluginDbv2()
 
     def reschedule_lbaas_from_down_agents(self):
