@@ -15,11 +15,11 @@
 
 import sys
 
-from neutron.agent.common import config
 from neutron.agent.linux import external_process
 from neutron.agent.linux import interface
 from neutron.common import config as common_config
 from neutron.common import rpc as n_rpc
+from neutron.conf.agent import common as config
 from oslo_config import cfg
 from oslo_service import service
 

@@ -34,7 +34,7 @@ class TestLbaasService(base.BaseTestCase):
             self.assertTrue(mock_start.called)
 
     def test_main(self):
-        logging_str = 'neutron.agent.common.config.setup_logging'
+        logging_str = 'neutron.conf.agent.common.setup_logging'
         with mock.patch(logging_str), \
                 mock.patch.object(agent.service, 'launch') as mock_launch, \
                 mock.patch('sys.argv'), \
