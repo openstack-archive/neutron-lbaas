@@ -2195,13 +2195,13 @@ class LbaasL7Tests(ListenerTestBase):
                 ctx, policy1['l7policy']['id'])
             self.assertEqual(l7policy1['action'],
                 lb_const.L7_POLICY_ACTION_REJECT)
-            self.assertEqual(l7policy1['redirect_pool_id'], None)
+            self.assertIsNone(l7policy1['redirect_pool_id'])
 
             l7policy3 = self.plugin.get_l7policy(
                 ctx, policy3['l7policy']['id'])
             self.assertEqual(l7policy3['action'],
                 lb_const.L7_POLICY_ACTION_REJECT)
-            self.assertEqual(l7policy3['redirect_pool_id'], None)
+            self.assertIsNone(l7policy3['redirect_pool_id'])
 
     def test_create_l7policies_ordering(self, **extras):
         with self.listener(loadbalancer_id=self.lb_id) as listener:
