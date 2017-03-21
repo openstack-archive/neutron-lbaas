@@ -13,7 +13,6 @@
 #    under the License.
 
 from neutron_lbaas._i18n import _
-from neutron_lbaas._i18n import _LI
 from oslo_config import cfg
 from oslo_log import log as logging
 import oslo_messaging as messaging
@@ -91,7 +90,7 @@ class OctaviaConsumer(service.Service):
 
     def start(self):
         super(OctaviaConsumer, self).start()
-        LOG.info(_LI("Starting octavia consumer..."))
+        LOG.info("Starting octavia consumer...")
         access_policy = dispatcher.DefaultRPCAccessPolicy
         self.server = messaging.get_rpc_server(self.transport, self.target,
                                                self.endpoints,
@@ -101,12 +100,12 @@ class OctaviaConsumer(service.Service):
 
     def stop(self, graceful=False):
         if self.server:
-            LOG.info(_LI('Stopping consumer...'))
+            LOG.info('Stopping consumer...')
             self.server.stop()
             if graceful:
                 LOG.info(
-                    _LI('Consumer successfully stopped.  Waiting for final '
-                        'messages to be processed...'))
+                    ('Consumer successfully stopped.  Waiting for final '
+                     'messages to be processed...'))
                 self.server.wait()
         super(OctaviaConsumer, self).stop(graceful=graceful)
 

@@ -33,7 +33,6 @@ from neutron_lib.plugins import constants
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 
-from neutron_lbaas._i18n import _LI, _LE
 from neutron_lbaas import agent_scheduler as agent_scheduler_v2
 import neutron_lbaas.common.cert_manager
 from neutron_lbaas.common.tls_utils import cert_parser
@@ -127,8 +126,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
              if lb.provider.provider_name not in provider_names])
         # resources are left without provider - stop the service
         if lost_providers:
-            msg = _LE("Delete associated load balancers before "
-                      "removing providers %s") % list(lost_providers)
+            msg = ("Delete associated load balancers before "
+                   "removing providers %s") % list(lost_providers)
             LOG.error(msg)
             raise SystemExit(1)
 
@@ -137,8 +136,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             return self.drivers[provider]
         except KeyError:
             # raise if not associated (should never be reached)
-            raise n_exc.Invalid(_LE("Error retrieving driver for provider "
-                                    "%s") % provider)
+            raise n_exc.Invalid(_("Error retrieving driver for provider %s") %
+                                provider)
 
     def _get_driver_for_loadbalancer(self, context, loadbalancer_id):
         lb = self.db.get_loadbalancer(context, loadbalancer_id)
@@ -146,8 +145,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             return self.drivers[lb.provider.provider_name]
         except KeyError:
             raise n_exc.Invalid(
-                _LE("Error retrieving provider for load balancer. Possible "
-                    "providers are %s.") % self.drivers.keys()
+                _("Error retrieving provider for load balancer. Possible "
+                 "providers are %s.") % self.drivers.keys()
             )
 
     def _get_provider_name(self, entity):
@@ -169,7 +168,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                old_db_entity=None, **kwargs):
         manager_method = "%s.%s" % (driver_method.__self__.__class__.__name__,
                                     driver_method.__name__)
-        LOG.info(_LI("Calling driver operation %s") % manager_method)
+        LOG.info("Calling driver operation %s" % manager_method)
         try:
             if old_db_entity:
                 driver_method(context, old_db_entity, db_entity, **kwargs)
@@ -180,7 +179,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
             raise no_agent
         except Exception as e:
-            LOG.exception(_LE("There was an error in the driver"))
+            LOG.exception("There was an error in the driver")
             self._handle_driver_error(context, db_entity)
             raise loadbalancerv2.DriverError(msg=e)
 

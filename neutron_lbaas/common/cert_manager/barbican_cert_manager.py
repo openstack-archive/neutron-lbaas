@@ -18,7 +18,7 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 from stevedore import driver as stevedore_driver
 
-from neutron_lbaas._i18n import _LI, _LW, _LE
+from neutron_lbaas._i18n import _
 from neutron_lbaas.common.cert_manager import cert_manager
 
 LOG = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class Cert(cert_manager.Cert):
     def __init__(self, cert_container):
         if not isinstance(cert_container,
                           barbican_client.containers.CertificateContainer):
-            raise TypeError(_LE(
+            raise TypeError(_(
                 "Retrieved Barbican Container is not of the correct type "
                 "(certificate)."))
         self._cert_container = cert_container
@@ -86,7 +86,7 @@ class CertManager(cert_manager.CertManager):
 
         connection = self.auth.get_barbican_client(project_id)
 
-        LOG.info(_LI(
+        LOG.info((
             "Storing certificate container '{0}' in Barbican."
         ).format(name))
 
@@ -139,16 +139,16 @@ class CertManager(cert_manager.CertManager):
                     old_ref = secret.secret_ref
                     try:
                         secret.delete()
-                        LOG.info(_LI(
+                        LOG.info((
                             "Deleted secret {0} ({1}) during rollback."
                         ).format(secret.name, old_ref))
                     except Exception:
-                        LOG.warning(_LW(
+                        LOG.warning((
                             "Failed to delete {0} ({1}) during rollback. This "
                             "is probably not a problem."
                         ).format(secret.name, old_ref))
             with excutils.save_and_reraise_exception():
-                LOG.exception(_LE("Error storing certificate data"))
+                LOG.exception("Error storing certificate data")
 
     def get_cert(self, project_id, cert_ref, resource_ref,
                  check_only=False, service_name='lbaas'):
@@ -165,7 +165,7 @@ class CertManager(cert_manager.CertManager):
         """
         connection = self.auth.get_barbican_client(project_id)
 
-        LOG.info(_LI(
+        LOG.info((
             "Loading certificate container {0} from Barbican."
         ).format(cert_ref))
         try:
@@ -182,7 +182,7 @@ class CertManager(cert_manager.CertManager):
             return Cert(cert_container)
         except Exception:
             with excutils.save_and_reraise_exception():
-                LOG.exception(_LE("Error getting {0}").format(cert_ref))
+                LOG.exception("Error getting {0}".format(cert_ref))
 
     def delete_cert(self, project_id, cert_ref, resource_ref,
                     service_name='lbaas'):
@@ -196,7 +196,7 @@ class CertManager(cert_manager.CertManager):
         """
         connection = self.auth.get_barbican_client(project_id)
 
-        LOG.info(_LI(
+        LOG.info((
             "Deregistering as a consumer of {0} in Barbican."
         ).format(cert_ref))
         try:
@@ -207,6 +207,6 @@ class CertManager(cert_manager.CertManager):
             )
         except Exception:
             with excutils.save_and_reraise_exception():
-                LOG.exception(_LE(
+                LOG.exception((
                     "Error deregistering as a consumer of {0}"
                 ).format(cert_ref))

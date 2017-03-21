@@ -21,7 +21,6 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron_lbaas._i18n import _LE
 from neutron_lbaas.common.cert_manager.barbican_auth import common
 from neutron_lbaas.common import keystone
 
@@ -44,5 +43,5 @@ class BarbicanACLAuth(common.BarbicanAuth):
                 )
             except Exception:
                 with excutils.save_and_reraise_exception():
-                    LOG.exception(_LE("Error creating Barbican client"))
+                    LOG.exception("Error creating Barbican client")
         return cls._barbican_client

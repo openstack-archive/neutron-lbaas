@@ -13,30 +13,30 @@
 #    under the License.
 
 
-from neutron_lbaas._i18n import _LE
+from neutron_lbaas._i18n import _
 from neutron_lbaas.common import exceptions
 
 
 class RadwareLBaasV2Exception(exceptions.LbaasException):
-    message = _LE('An unknown exception occurred in '
-                  'Radware LBaaS v2 provider.')
+    message = _('An unknown exception occurred in '
+               'Radware LBaaS v2 provider.')
 
 
 class AuthenticationMissing(RadwareLBaasV2Exception):
-    message = _LE('vDirect user/password missing. '
-                  'Specify in configuration file, under [radwarev2] section')
+    message = _('vDirect user/password missing. '
+               'Specify in configuration file, under [radwarev2] section')
 
 
 class WorkflowTemplateMissing(RadwareLBaasV2Exception):
-    message = _LE('Workflow template %(workflow_template)s is missing '
-                  'on vDirect server. Upload missing workflow')
+    message = _('Workflow template %(workflow_template)s is missing '
+               'on vDirect server. Upload missing workflow')
 
 
 class RESTRequestFailure(RadwareLBaasV2Exception):
-    message = _LE('REST request failed with status %(status)s. '
-                  'Reason: %(reason)s, Description: %(description)s. '
-                  'Success status codes are %(success_codes)s')
+    message = _('REST request failed with status %(status)s. '
+               'Reason: %(reason)s, Description: %(description)s. '
+               'Success status codes are %(success_codes)s')
 
 
 class UnsupportedEntityOperation(RadwareLBaasV2Exception):
-    message = _LE('%(operation)s operation is not supported for %(entity)s.')
+    message = _('%(operation)s operation is not supported for %(entity)s.')

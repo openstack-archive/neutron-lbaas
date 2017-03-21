@@ -23,7 +23,6 @@ import sqlalchemy as sa
 from sqlalchemy import orm
 from sqlalchemy.orm import joinedload
 
-from neutron_lbaas._i18n import _LW
 from neutron_lbaas.extensions import lbaas_agentschedulerv2
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 
@@ -133,14 +132,14 @@ class ChanceScheduler(object):
             active_agents = plugin.db.get_lbaas_agents(context, active=True)
             if not active_agents:
                 LOG.warning(
-                    _LW('No active lbaas agents for load balancer %s'),
+                    'No active lbaas agents for load balancer %s',
                     loadbalancer.id)
                 return
 
             candidates = plugin.db.get_lbaas_agent_candidates(device_driver,
                                                               active_agents)
             if not candidates:
-                LOG.warning(_LW('No lbaas agent supporting device driver %s'),
+                LOG.warning('No lbaas agent supporting device driver %s',
                             device_driver)
                 return
 

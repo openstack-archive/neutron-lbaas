@@ -19,11 +19,11 @@ Neutron Lbaas base exception handling.
 
 from neutron_lib import exceptions
 
-from neutron_lbaas._i18n import _LE
+from neutron_lbaas._i18n import _
 
 
 class ModelMapException(exceptions.NeutronException):
-    message = _LE("Unable to map model class %(target_name)s")
+    message = _("Unable to map model class %(target_name)s")
 
 
 class LbaasException(exceptions.NeutronException):
@@ -35,22 +35,22 @@ class TLSException(LbaasException):
 
 
 class NeedsPassphrase(TLSException):
-    message = _LE("Passphrase needed to decrypt key but client "
-                  "did not provide one.")
+    message = _("Passphrase needed to decrypt key but client "
+               "did not provide one.")
 
 
 class UnreadableCert(TLSException):
-    message = _LE("Could not read X509 from PEM")
+    message = _("Could not read X509 from PEM")
 
 
 class MisMatchedKey(TLSException):
-    message = _LE("Key and x509 certificate do not match")
+    message = _("Key and x509 certificate do not match")
 
 
 class CertificateStorageException(TLSException):
-    message = _LE('Could not store certificate: %(msg)s')
+    message = _('Could not store certificate: %(msg)s')
 
 
 class LoadbalancerReschedulingFailed(exceptions.Conflict):
-    message = _LE("Failed rescheduling loadbalancer %(loadbalancer_id)s: "
-                  "no eligible lbaas agent found.")
+    message = _("Failed rescheduling loadbalancer %(loadbalancer_id)s: "
+                "no eligible lbaas agent found.")

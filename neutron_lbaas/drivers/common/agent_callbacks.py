@@ -18,7 +18,7 @@ from neutron_lib import exceptions as n_exc
 from oslo_log import log as logging
 import oslo_messaging as messaging
 
-from neutron_lbaas._i18n import _, _LW
+from neutron_lbaas._i18n import _
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2
 from neutron_lbaas.db.loadbalancer import models as db_models
 from neutron_lbaas.services.loadbalancer import data_models
@@ -43,8 +43,7 @@ class LoadBalancerCallbacks(object):
             if not agents:
                 return []
             elif len(agents) > 1:
-                LOG.warning(_LW('Multiple lbaas agents found on host %s'),
-                            host)
+                LOG.warning('Multiple lbaas agents found on host %s', host)
             loadbalancers = self.plugin.db.list_loadbalancers_on_lbaas_agent(
                 context, agents[0].id)
             loadbalancer_ids = [
@@ -120,10 +119,10 @@ class LoadBalancerCallbacks(object):
     def update_status(self, context, obj_type, obj_id,
                       provisioning_status=None, operating_status=None):
         if not provisioning_status and not operating_status:
-            LOG.warning(_LW('update_status for %(obj_type)s %(obj_id)s called '
-                            'without specifying provisioning_status or '
-                            'operating_status') % {'obj_type': obj_type,
-                                                   'obj_id': obj_id})
+            LOG.warning('update_status for %(obj_type)s %(obj_id)s called '
+                        'without specifying provisioning_status or '
+                        'operating_status' % {'obj_type': obj_type,
+                                              'obj_id': obj_id})
             return
         model_mapping = {
             'loadbalancer': db_models.LoadBalancer,
@@ -142,9 +141,9 @@ class LoadBalancerCallbacks(object):
         except n_exc.NotFound:
             # update_status may come from agent on an object which was
             # already deleted from db with other request
-            LOG.warning(_LW('Cannot update status: %(obj_type)s %(obj_id)s '
-                            'not found in the DB, it was probably deleted '
-                            'concurrently'),
+            LOG.warning('Cannot update status: %(obj_type)s %(obj_id)s '
+                        'not found in the DB, it was probably deleted '
+                        'concurrently',
                         {'obj_type': obj_type, 'obj_id': obj_id})
 
     def loadbalancer_destroyed(self, context, loadbalancer_id=None):

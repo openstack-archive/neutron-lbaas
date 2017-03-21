@@ -26,7 +26,6 @@ from oslo_log import log as logging
 from oslo_utils import excutils
 from six.moves import queue as Queue
 
-from neutron_lbaas._i18n import _LE, _LW, _LI
 import neutron_lbaas.common.cert_manager
 from neutron_lbaas.drivers.radware import base_v2_driver
 from neutron_lbaas.drivers.radware import exceptions as r_exc
@@ -147,7 +146,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
 
     def _start_completion_handling_thread(self):
         if not self.completion_handler_started:
-            LOG.info(_LI('Starting operation completion handling thread'))
+            LOG.info('Starting operation completion handling thread')
             self.completion_handler.start()
             self.completion_handler_started = True
 
@@ -308,8 +307,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 LOG.debug('Proxy port for LB %s was deleted', lb.id)
             except Exception:
                 with excutils.save_and_reraise_exception():
-                    LOG.error(_LE('Proxy port deletion for LB %s '
-                                'failed'), lb.id)
+                    LOG.error('Proxy port deletion for LB %s failed', lb.id)
             manager.successful_completion(ctx, lb, delete=True)
         else:
             oper = OperationAttributes(
@@ -481,8 +479,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         """
         proxy_port = self._get_proxy_port(ctx, lb)
         if proxy_port:
-            LOG.info(_LI('LB %(lb_id)s proxy port exists on subnet \
-                     %(subnet_id)s with ip address %(ip_address)s') %
+            LOG.info('LB %(lb_id)s proxy port exists on subnet '
+                     '%(subnet_id)s with ip address %(ip_address)s' %
                      {'lb_id': lb.id, 'subnet_id': proxy_port['subnet_id'],
                       'ip_address': proxy_port['ip_address']})
             return proxy_port
@@ -504,8 +502,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             ctx, {'port': proxy_port_data})
         proxy_port_ip_data = proxy_port['fixed_ips'][0]
 
-        LOG.info(_LI('LB %(lb_id)s proxy port created on subnet %(subnet_id)s \
-                 with ip address %(ip_address)s') %
+        LOG.info('LB %(lb_id)s proxy port created on subnet %(subnet_id)s '
+                 'with ip address %(ip_address)s' %
                  {'lb_id': lb.id, 'subnet_id': proxy_port_ip_data['subnet_id'],
                   'ip_address': proxy_port_ip_data['ip_address']})
 
@@ -530,8 +528,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             proxy_port = ports[0]
             proxy_port_ip_data = proxy_port['fixed_ips'][0]
             try:
-                LOG.info(_LI('Deleting LB %(lb_id)s proxy port on subnet  \
-                             %(subnet_id)s with ip address %(ip_address)s') %
+                LOG.info('Deleting LB %(lb_id)s proxy port on subnet  '
+                         '%(subnet_id)s with ip address %(ip_address)s' %
                          {'lb_id': lb.id,
                           'subnet_id': proxy_port_ip_data['subnet_id'],
                           'ip_address': proxy_port_ip_data['ip_address']})
@@ -541,7 +539,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             except Exception as exception:
                 # stop exception propagation, nport may have
                 # been deleted by other means
-                LOG.warning(_LW('Proxy port deletion failed: %r'),
+                LOG.warning('Proxy port deletion failed: %r',
                             exception)
 
     def _accomplish_member_static_route_data(self,
@@ -611,8 +609,8 @@ class OperationCompletionHandler(threading.Thread):
                 else:
                     msg = "unknown"
                 error_params = {"operation": oper, "msg": msg}
-                LOG.error(_LE(
-                    'Operation %(operation)s failed. Reason: %(msg)s'),
+                LOG.error(
+                    'Operation %(operation)s failed. Reason: %(msg)s',
                     error_params)
                 oper.status = n_constants.ERROR
                 OperationCompletionHandler._run_post_failure_function(oper)
@@ -653,8 +651,8 @@ class OperationCompletionHandler(threading.Thread):
             except Queue.Empty:
                 continue
             except Exception:
-                LOG.error(_LE(
-                    "Exception was thrown inside OperationCompletionHandler"))
+                LOG.error(
+                    "Exception was thrown inside OperationCompletionHandler")
 
     @staticmethod
     def _run_post_success_function(oper):
@@ -669,8 +667,8 @@ class OperationCompletionHandler(threading.Thread):
                       repr(oper))
         except Exception:
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE('Post-operation success function failed '
-                             'for operation %s'),
+                LOG.error('Post-operation success function failed '
+                          'for operation %s',
                           repr(oper))
 
     @staticmethod
@@ -683,8 +681,8 @@ class OperationCompletionHandler(threading.Thread):
                       repr(oper))
         except Exception:
             with excutils.save_and_reraise_exception():
-                LOG.error(_LE('Post-operation failure function failed '
-                              'for operation %s'),
+                LOG.error('Post-operation failure function failed '
+                          'for operation %s',
                           repr(oper))
 
 

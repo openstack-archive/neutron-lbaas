@@ -23,7 +23,7 @@ from neutron_lib import constants
 from neutron_lib import context as ncontext
 from oslo_service import service
 
-from neutron_lbaas._i18n import _, _LE
+from neutron_lbaas._i18n import _
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.drivers import driver_mixins
 from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
@@ -201,7 +201,7 @@ class NetScalerLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
                 self.load_balancer.successful_completion(
                     self.admin_ctx, db_lb, delete=True)
             except Exception:
-                LOG.error(_LE("error with successful completion"))
+                LOG.error("error with successful completion")
             PROVISIONING_STATUS_TRACKER.remove(lb_id)
             return
         else:
@@ -296,7 +296,7 @@ class NetScalerLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
                     entity_manager.failed_completion(
                         self.admin_ctx, db_entity)
                 except Exception:
-                    LOG.error(_LE("error with failed completion"))
+                    LOG.error("error with failed completion")
                 return
 
         if db_entity.provisioning_status == constants.PENDING_DELETE:
@@ -312,7 +312,7 @@ class NetScalerLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
                 entity_manager.successful_completion(
                     self.admin_ctx, db_entity, delete=True)
             except Exception:
-                LOG.error(_LE("error with successful completion"))
+                LOG.error("error with successful completion")
             return
 
         if entity_status[PROV] != constants.ACTIVE:
@@ -325,7 +325,7 @@ class NetScalerLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
             entity_manager.successful_completion(
                 self.admin_ctx, db_entity)
         except Exception:
-            LOG.error(_LE("error with successful completion"))
+            LOG.error("error with successful completion")
 
         return
 

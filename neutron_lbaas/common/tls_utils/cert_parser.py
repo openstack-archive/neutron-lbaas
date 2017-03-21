@@ -16,7 +16,6 @@
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives import serialization
 from cryptography import x509
-from neutron_lbaas._i18n import _LE
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 
@@ -158,7 +157,7 @@ def get_host_names(certificate):
 
         return host_names
     except Exception:
-        LOG.exception(_LE("Unreadable certificate."))
+        LOG.exception("Unreadable certificate.")
         raise exceptions.UnreadableCert
 
 

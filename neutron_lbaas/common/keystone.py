@@ -19,7 +19,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron_lbaas._i18n import _, _LE
+from neutron_lbaas._i18n import _
 
 
 LOG = logging.getLogger(__name__)
@@ -119,6 +119,6 @@ def get_session():
             _SESSION = session.Session(auth=kc, verify=not insecure)
         except Exception:
             with excutils.save_and_reraise_exception():
-                LOG.exception(_LE("Error creating Keystone session."))
+                LOG.exception("Error creating Keystone session.")
 
     return _SESSION

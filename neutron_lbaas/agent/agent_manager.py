@@ -26,7 +26,7 @@ from oslo_service import loopingcall
 from oslo_service import periodic_task
 from oslo_utils import importutils
 
-from neutron_lbaas._i18n import _, _LE, _LI
+from neutron_lbaas._i18n import _
 from neutron_lbaas.agent import agent_api
 from neutron_lbaas.drivers.common import agent_driver_base
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -123,7 +123,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self.state_rpc.report_state(self.context, self.agent_state)
             self.agent_state.pop('start_flag', None)
         except Exception:
-            LOG.exception(_LE("Failed reporting state!"))
+            LOG.exception("Failed reporting state!")
 
     def initialize_service_hook(self, started_by):
         self.sync_state()
@@ -144,8 +144,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                     self.plugin_rpc.update_loadbalancer_stats(
                         loadbalancer_id, stats)
             except Exception:
-                LOG.exception(_LE('Error updating statistics on loadbalancer'
-                                  ' %s'),
+                LOG.exception('Error updating statistics on loadbalancer %s',
                               loadbalancer_id)
                 self.needs_resync = True
 
@@ -161,7 +160,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                 self._reload_loadbalancer(loadbalancer_id)
 
         except Exception:
-            LOG.exception(_LE('Unable to retrieve ready devices'))
+            LOG.exception('Unable to retrieve ready devices')
             self.needs_resync = True
 
         self.remove_orphans()
@@ -181,7 +180,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                 loadbalancer_dict)
             driver_name = loadbalancer.provider.device_driver
             if driver_name not in self.device_drivers:
-                LOG.error(_LE('No device driver on agent: %s.'), driver_name)
+                LOG.error('No device driver on agent: %s.', driver_name)
                 self.plugin_rpc.update_status(
                     'loadbalancer', loadbalancer_id, constants.ERROR)
                 return
@@ -190,8 +189,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             self.instance_mapping[loadbalancer_id] = driver_name
             self.plugin_rpc.loadbalancer_deployed(loadbalancer_id)
         except Exception:
-            LOG.exception(_LE('Unable to deploy instance for '
-                              'loadbalancer: %s'),
+            LOG.exception('Unable to deploy instance for loadbalancer: %s',
                           loadbalancer_id)
             self.needs_resync = True
 
@@ -202,7 +200,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             del self.instance_mapping[lb_id]
             self.plugin_rpc.loadbalancer_destroyed(lb_id)
         except Exception:
-            LOG.exception(_LE('Unable to destroy device for loadbalancer: %s'),
+            LOG.exception('Unable to destroy device for loadbalancer: %s',
                           lb_id)
             self.needs_resync = True
 
@@ -217,8 +215,8 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
 
     def _handle_failed_driver_call(self, operation, obj, driver):
         obj_type = obj.__class__.__name__.lower()
-        LOG.exception(_LE('%(operation)s %(obj)s %(id)s failed on device '
-                          'driver %(driver)s'),
+        LOG.exception('%(operation)s %(obj)s %(id)s failed on device '
+                      'driver %(driver)s',
                       {'operation': operation.capitalize(), 'obj': obj_type,
                        'id': obj.id, 'driver': driver})
         self._update_statuses(obj, error=True)
@@ -232,10 +230,10 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             else:
                 # Copy keys since the dictionary is modified in the loop body
                 for loadbalancer_id in list(self.instance_mapping.keys()):
-                    LOG.info(_LI("Destroying loadbalancer %s due to agent "
-                                 "disabling"), loadbalancer_id)
+                    LOG.info("Destroying loadbalancer %s due to agent "
+                             "disabling", loadbalancer_id)
                     self._destroy_loadbalancer(loadbalancer_id)
-            LOG.info(_LI("Agent_updated by server side %s!"), payload)
+            LOG.info("Agent_updated by server side %s!", payload)
 
     def _update_statuses(self, obj, error=False):
         lb_p_status = constants.ACTIVE
@@ -266,7 +264,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
     def create_loadbalancer(self, context, loadbalancer, driver_name):
         loadbalancer = data_models.LoadBalancer.from_dict(loadbalancer)
         if driver_name not in self.device_drivers:
-            LOG.error(_LE('No device driver on agent: %s.'), driver_name)
+            LOG.error('No device driver on agent: %s.', driver_name)
             self.plugin_rpc.update_status('loadbalancer', loadbalancer.id,
                                           provisioning_status=constants.ERROR)
             return

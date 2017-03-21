@@ -21,7 +21,7 @@ from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions
 
-from neutron_lbaas._i18n import _, _LI
+from neutron_lbaas._i18n import _
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
 from neutron_lbaas.tests.tempest.v2.clients import listeners_client
 from neutron_lbaas.tests.tempest.v2.clients import load_balancers_client
@@ -132,12 +132,12 @@ class BaseTestCase(base.BaseNetworkTest):
         super(BaseTestCase, cls).setUpClass()
 
     def setUp(cls):
-        cls.LOG.info(_LI('Starting: {0}').format(cls._testMethodName))
+        cls.LOG.info('Starting: {0}'.format(cls._testMethodName))
         super(BaseTestCase, cls).setUp()
 
     def tearDown(cls):
         super(BaseTestCase, cls).tearDown()
-        cls.LOG.info(_LI('Finished: {0}\n').format(cls._testMethodName))
+        cls.LOG.info('Finished: {0}\n'.format(cls._testMethodName))
 
     @classmethod
     def _create_load_balancer(cls, wait=True, **lb_kwargs):

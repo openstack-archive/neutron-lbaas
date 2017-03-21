@@ -18,7 +18,6 @@ from oslo_serialization import base64
 from oslo_serialization import jsonutils
 from six.moves import http_client
 
-from neutron_lbaas._i18n import _LE, _LW
 from neutron_lbaas.drivers.radware import exceptions as r_exc
 
 LOG = logging.getLogger(__name__)
@@ -63,10 +62,9 @@ class vDirectRESTClient(object):
                   'ssl=%(ssl)r', debug_params)
 
     def _flip_servers(self):
-        LOG.warning(_LW('Flipping servers. Current is: %(server)s, '
-                 'switching to %(secondary)s'),
-                 {'server': self.server,
-                 'secondary': self.secondary_server})
+        LOG.warning('Flipping servers. Current is: %(server)s, switching to '
+                    '%(secondary)s', {'server': self.server,
+                                      'secondary': self.secondary_server})
         self.server, self.secondary_server = self.secondary_server, self.server
 
     def _recover(self, action, resource, data, headers, binary=False):
@@ -76,19 +74,19 @@ class vDirectRESTClient(object):
                               headers, binary)
             return resp
         else:
-            LOG.error(_LE('REST client is not able to recover '
-                          'since only one vDirect server is '
-                          'configured.'))
+            LOG.error('REST client is not able to recover '
+                      'since only one vDirect server is '
+                      'configured.')
             return -1, None, None, None
 
     def call(self, action, resource, data, headers, binary=False):
         resp = self._call(action, resource, data, headers, binary)
         if resp[RESP_STATUS] == -1:
-            LOG.warning(_LW('vDirect server is not responding (%s).'),
+            LOG.warning('vDirect server is not responding (%s).',
                         self.server)
             return self._recover(action, resource, data, headers, binary)
         elif resp[RESP_STATUS] in (301, 307):
-            LOG.warning(_LW('vDirect server is not active (%s).'),
+            LOG.warning('vDirect server is not active (%s).',
                         self.server)
             return self._recover(action, resource, data, headers, binary)
         else:
@@ -116,15 +114,15 @@ class vDirectRESTClient(object):
             conn = http_client.HTTPSConnection(
                 self.server, self.port, timeout=self.timeout)
             if conn is None:
-                LOG.error(_LE('vdirectRESTClient: Could not establish HTTPS '
-                          'connection'))
+                LOG.error('vdirectRESTClient: Could not establish HTTPS '
+                          'connection')
                 return 0, None, None, None
         else:
             conn = http_client.HTTPConnection(
                 self.server, self.port, timeout=self.timeout)
             if conn is None:
-                LOG.error(_LE('vdirectRESTClient: Could not establish HTTP '
-                          'connection'))
+                LOG.error('vdirectRESTClient: Could not establish HTTP '
+                          'connection')
                 return 0, None, None, None
 
         try:
@@ -140,7 +138,7 @@ class vDirectRESTClient(object):
             ret = (response.status, response.reason, respstr, respdata)
         except Exception as e:
             log_dict = {'action': action, 'e': e}
-            LOG.error(_LE('vdirectRESTClient: %(action)s failure, %(e)r'),
+            LOG.error('vdirectRESTClient: %(action)s failure, %(e)r',
                       log_dict)
             ret = -1, None, None, None
         conn.close()

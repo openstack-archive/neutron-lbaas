@@ -27,7 +27,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
 
-from neutron_lbaas._i18n import _, _LI, _LW
+from neutron_lbaas._i18n import _
 from neutron_lbaas.agent import agent_device_driver
 from neutron_lbaas.drivers.haproxy import jinja_cfg
 from neutron_lbaas.services.loadbalancer import constants as lb_const
@@ -187,7 +187,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             lb_config = self.plugin_rpc.get_loadbalancer(loadbalancer_id)
             loadbalancer = data_models.LoadBalancer.from_dict(lb_config)
             if self._is_active(loadbalancer):
-                LOG.warning(_LW('Stats socket not found for loadbalancer %s'),
+                LOG.warning('Stats socket not found for loadbalancer %s',
                             loadbalancer_id)
             else:
                 LOG.debug('Stats socket not found for loadbalancer %s,'
@@ -203,7 +203,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         :returns: True if loadbalancer was deployed, False otherwise
         """
         if not self.deployable(loadbalancer):
-            LOG.info(_LI("Loadbalancer %s is not deployable.") %
+            LOG.info("Loadbalancer %s is not deployable." %
                      loadbalancer.id)
             return False
 
@@ -266,7 +266,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
 
             return self._parse_stats(raw_stats)
         except socket.error as e:
-            LOG.warning(_LW('Error while connecting to stats socket: %s'), e)
+            LOG.warning('Error while connecting to stats socket: %s', e)
             return {}
 
     def _parse_stats(self, raw_stats):
