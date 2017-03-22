@@ -28,7 +28,7 @@ _SESSION = None
 OPTS = [
     cfg.StrOpt(
         'auth_url',
-        default='http://127.0.0.1:5000/v2.0',
+        default='http://127.0.0.1:5000/v3',
         help=_('Authentication endpoint'),
     ),
     cfg.StrOpt(
@@ -69,7 +69,7 @@ OPTS = [
     ),
     cfg.StrOpt(
         'auth_version',
-        default='2',
+        default='3',
         help=_('The auth version used to authenticate'),
     ),
     cfg.StrOpt(
