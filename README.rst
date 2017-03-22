@@ -17,9 +17,8 @@ requires Neutron to run.
 External Resources:
 ===================
 
-The homepage for Neutron is: http://launchpad.net/neutron.  Use this
-site for asking for help, and filing bugs. We use a single Launchpad
-page for all Neutron projects.
+The homepage for Octavia LBaaS is: https://launchpad.net/octavia.  Use this
+site for asking for help, and filing bugs.
 
 Code is available on git.openstack.org at:
 <http://git.openstack.org/cgit/openstack/neutron-lbaas>.
