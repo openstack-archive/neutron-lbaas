@@ -61,9 +61,12 @@ class LoadBalancerBaseDriver(object):
         self.plugin = plugin
 
     def handle_streamed_event(self, container):
-        # TODO(crc32): update_stats will be implemented here in the future
         if container.info_type not in LoadBalancerBaseDriver.model_map:
-            if container.info_type == constants.LISTENER_STATS_EVENT:
+            if container.info_type == constants.LOADBALANCER_STATS_EVENT:
+                context = ncontext.get_admin_context()
+                self.plugin.db.update_loadbalancer_stats(
+                    context, container.info_id, container.info_payload)
+            elif container.info_type == constants.LISTENER_STATS_EVENT:
                 return
             else:
                 exc = exceptions.ModelMapException(
