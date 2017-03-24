@@ -167,6 +167,7 @@ MIN_CONNECT_VALUE = -1
 LISTENER_EVENT = 'listener'
 LISTENER_STATS_EVENT = 'listener_stats'
 LOADBALANCER_EVENT = 'loadbalancer'
+LOADBALANCER_STATS_EVENT = 'loadbalancer_stats'
 MEMBER_EVENT = 'member'
 OPERATING_STATUS = 'operating_status'
 POOL_EVENT = 'pool'
