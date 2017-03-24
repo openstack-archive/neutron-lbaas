@@ -138,6 +138,21 @@ class TestOctaviaMessagingConsumer(test_octavia_driver.BaseOctaviaDriverTest):
         self.assertRaises(exceptions.ModelMapException,
                           self.consumer.endpoints[0].update_info, {}, cnt)
 
+    def test_update_loadbalancer_stats(self):
+        self.set_db_mocks()
+        stats = {
+            'bytes_in': 1,
+            'bytes_out': 2,
+            'active_connections': 3,
+            'total_connections': 4,
+            'request_errors': 5,
+        }
+        cnt = InfoContainer(constants.LOADBALANCER_STATS_EVENT, 'lb_id',
+                            stats).to_dict()
+        self.consumer.endpoints[0].update_info({}, cnt)
+        self.driver.plugin.db.update_loadbalancer_stats.assert_called_with(
+            mock.ANY, 'lb_id', stats)
+
     def test_updatedb_ignores_listener_stats(self):
         self.set_db_mocks()
         cnt = InfoContainer('listener_stats', 'id', self.payload).to_dict()
