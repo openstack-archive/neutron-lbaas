@@ -61,6 +61,9 @@ case "$testtype" in
         ;;
 
     "tempest")
+        # Make sure lbaasv2 is listed as enabled for tempest
+        load_conf_hook api_extensions
+
         # These are not needed with either v1 or v2
         ENABLED_SERVICES+="-c-api,-c-bak,-c-sch,-c-vol,-cinder,"
         ENABLED_SERVICES+="-s-account,-s-container,-s-object,-s-proxy,"
