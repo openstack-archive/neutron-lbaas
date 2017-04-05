@@ -37,7 +37,11 @@ default_backend {{ listener.default_pool.id }}
 
 {% macro frontend_macro(constants, listener, lb_vip_address) %}
 frontend {{ listener.id }}
+{% if listener.protocol_mode == constants.PROTOCOL_HTTP.lower() %}
+    option httplog
+{% else %}
     option tcplog
+{% endif %}
 {% if listener.protocol == constants.PROTOCOL_TERMINATED_HTTPS %}
     redirect scheme https if !{ ssl_fc }
 {% endif %}
