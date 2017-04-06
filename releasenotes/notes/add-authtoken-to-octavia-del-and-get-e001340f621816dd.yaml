@@ -1,0 +1,5 @@
+---
+fixes:
+  - |
+    Authentication tokens are now added to GET and DELETE Octavia requests if
+    missing.

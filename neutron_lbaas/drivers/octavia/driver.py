@@ -127,13 +127,14 @@ class OctaviaRequest(object):
 
     def request(self, method, url, args=None, headers=None):
         if args:
-            if not headers:
-                token = self.auth_session.get_token()
-                headers = {
-                    'Content-type': 'application/json',
-                    'X-Auth-Token': token
-                }
             args = jsonutils.dumps(args)
+
+        if not headers or not headers.get('X-Auth-Token'):
+            headers = headers or {
+                'Content-type': 'application/json',
+            }
+            headers['X-Auth-Token'] = self.auth_session.get_token()
+
         LOG.debug("url = %s", '%s%s' % (self.base_url, str(url)))
         LOG.debug("args = %s", args)
         r = requests.request(method,
