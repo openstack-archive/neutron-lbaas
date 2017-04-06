@@ -9,4 +9,4 @@ then
 fi
 
 exec 3>&1
-status=$(exec 4>&1 >&3; (python setup.py testr --slowest --testr-args="--subunit $TESTRARGS $CONCURRENCY"; echo $? >&4 ) | $(dirname $0)/subunit-trace.py -f) && exit $status
+status=$(exec 4>&1 >&3; (python setup.py testr --slowest --testr-args="--subunit $TESTRARGS $CONCURRENCY"; echo $? >&4 ) | subunit-trace -f) && exit $status
