@@ -38,7 +38,7 @@ class TestListenerBasic(base.BaseTestCase):
 
     @test.services('compute', 'network')
     def test_listener_basic(self):
-        self._create_server('server1')
+        self._create_server(b'server1')
         self._start_servers()
         self._create_load_balancer()
         self._check_load_balancing()

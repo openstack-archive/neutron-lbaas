@@ -207,7 +207,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
     def _create_servers(self):
         for count in range(2):
-            self.server = self._create_server(name=("server%s" % (count + 1)))
+            self.server = self._create_server(name=(b"server%s" % (count + 1)))
             if count == 0:
                 self.servers['primary'] = self.server['id']
             else:
