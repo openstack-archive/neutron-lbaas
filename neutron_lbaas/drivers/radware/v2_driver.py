@@ -17,9 +17,9 @@ import netaddr
 import threading
 import time
 
-from neutron.plugins.common import constants
 from neutron_lib import constants as n_constants
 from neutron_lib import context
+from neutron_lib.plugins import constants as pg_constants
 from oslo_config import cfg
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
@@ -335,10 +335,10 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         graph['listeners'] = []
         listeners = [
             listener for listener in lb.listeners
-            if listener.provisioning_status != constants.PENDING_DELETE and
+            if listener.provisioning_status != n_constants.PENDING_DELETE and
             (listener.default_pool and
              listener.default_pool.provisioning_status !=
-             constants.PENDING_DELETE and
+             n_constants.PENDING_DELETE and
              listener.default_pool.members)]
         for listener in listeners:
             listener_dict = {}
@@ -383,7 +383,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             listener_dict['l7_policies'] = []
             policies = [
                 policy for policy in listener.l7_policies
-                if policy.provisioning_status != constants.PENDING_DELETE]
+                if policy.provisioning_status != n_constants.PENDING_DELETE]
             for policy in policies:
                 policy_dict = {}
                 for prop in L7_POLICY_PROPERTIES:
@@ -392,7 +392,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 policy_dict['rules'] = []
                 rules = [
                     rule for rule in policy.rules
-                    if rule.provisioning_status != constants.PENDING_DELETE]
+                    if rule.provisioning_status != n_constants.PENDING_DELETE]
                 for rule in rules:
                     rule_dict = {}
                     for prop in L7_RULE_PROPERTIES:
@@ -404,7 +404,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
 
             if (listener.default_pool and
                 listener.default_pool.provisioning_status !=
-                    constants.PENDING_DELETE):
+                    n_constants.PENDING_DELETE):
                 def_pool_dict = {'id': listener.default_pool.id}
 
                 if listener.default_pool.session_persistence:
@@ -421,7 +421,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         graph['pools'] = []
         pools = [
             pool for pool in lb.pools
-            if pool.provisioning_status != constants.PENDING_DELETE]
+            if pool.provisioning_status != n_constants.PENDING_DELETE]
         for pool in pools:
             pool_dict = {}
             for prop in POOL_PROPERTIES:
@@ -431,7 +431,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
 
             if (pool.healthmonitor and
                 pool.healthmonitor.provisioning_status !=
-                constants.PENDING_DELETE):
+                n_constants.PENDING_DELETE):
                 hm_dict = {}
                 for prop in HEALTH_MONITOR_PROPERTIES:
                     hm_dict[prop] = getattr(
@@ -442,7 +442,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             pool_dict['members'] = []
             members = [
                 member for member in pool.members
-                if member.provisioning_status != constants.PENDING_DELETE]
+                if member.provisioning_status != n_constants.PENDING_DELETE]
             for member in members:
                 member_dict = {}
                 for prop in MEMBER_PROPERTIES:
@@ -497,7 +497,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             'mac_address': n_constants.ATTR_NOT_SPECIFIED,
             'admin_state_up': False,
             'device_id': '',
-            'device_owner': 'neutron:' + constants.LOADBALANCERV2,
+            'device_owner': 'neutron:' + pg_constants.LOADBALANCERV2,
             'fixed_ips': [{'subnet_id': proxy_port_subnet_id}]
         }
         proxy_port = self.plugin.db._core_plugin.create_port(
@@ -614,10 +614,10 @@ class OperationCompletionHandler(threading.Thread):
                 LOG.error(_LE(
                     'Operation %(operation)s failed. Reason: %(msg)s'),
                     error_params)
-                oper.status = constants.ERROR
+                oper.status = n_constants.ERROR
                 OperationCompletionHandler._run_post_failure_function(oper)
             else:
-                oper.status = constants.ACTIVE
+                oper.status = n_constants.ACTIVE
                 OperationCompletionHandler._run_post_success_function(oper)
 
         return completed

@@ -17,13 +17,13 @@ import abc
 
 from neutron_lib.api import extensions as api_extensions
 from neutron_lib import exceptions as nexception
+from neutron_lib.plugins import constants as plugin_const
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
 from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.extensions import agent
-from neutron.plugins.common import constants as plugin_const
 from neutron import policy
 from neutron import wsgi
 

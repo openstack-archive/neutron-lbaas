@@ -25,13 +25,13 @@ from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.db import agents_db
 from neutron.extensions import agent
-from neutron.plugins.common import constants as plugin_const
 from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
 from neutron.tests.unit.db import test_agentschedulers_db
 import neutron.tests.unit.extensions
 from neutron.tests.unit.extensions import test_agent
 from neutron_lib import constants as n_constants
+from neutron_lib.plugins import constants as plugin_const
 from webob import exc
 
 from neutron_lbaas.drivers.haproxy import plugin_driver

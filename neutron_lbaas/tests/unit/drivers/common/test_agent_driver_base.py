@@ -13,12 +13,13 @@
 #    under the License.
 
 import mock
+from neutron_lib import constants
 from neutron_lib import context
+from neutron_lib.plugins import constants as n_constants
 from neutron_lib.plugins import directory
 from oslo_utils import importutils
 
 from neutron.db import servicetype_db as st_db
-from neutron.plugins.common import constants
 from neutron.tests.common import helpers
 
 from neutron_lbaas.common import exceptions
@@ -51,7 +52,7 @@ class TestLoadBalancerPluginBase(test_db_loadbalancerv2.LbaasPluginDbTestCase):
                             'AgentDriverBase:default'))
 
         # we need access to loaded plugins to modify models
-        self.plugin_instance = directory.get_plugin(constants.LOADBALANCERV2)
+        self.plugin_instance = directory.get_plugin(n_constants.LOADBALANCERV2)
 
 
 class TestLoadBalancerAgentApi(base.BaseTestCase):

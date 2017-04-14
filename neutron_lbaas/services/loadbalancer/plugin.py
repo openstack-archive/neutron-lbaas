@@ -23,13 +23,13 @@ from neutron.api.v2 import base as napi_base
 from neutron.db import agentschedulers_db
 from neutron.db import servicetype_db as st_db
 from neutron.extensions import flavors
-from neutron.plugins.common import constants
 from neutron import service
 from neutron.services.flavors import flavors_plugin
 from neutron.services import provider_configuration as pconf
 from neutron.services import service_base
 from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as n_exc
+from neutron_lib.plugins import constants
 from oslo_log import log as logging
 from oslo_utils import encodeutils
 
@@ -187,7 +187,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def _handle_driver_error(self, context, db_entity):
         lb_id = db_entity.root_loadbalancer.id
         self.db.update_status(context, models.LoadBalancer, lb_id,
-                              constants.ERROR)
+                              n_constants.ERROR)
 
     def _validate_session_persistence_info(self, sp_info):
         """Performs sanity check on session persistence info.
@@ -414,7 +414,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         loadbalancer = loadbalancer.get('loadbalancer')
         old_lb = self.db.get_loadbalancer(context, id)
         self.db.test_and_set_status(context, models.LoadBalancer, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             updated_lb = self.db.update_loadbalancer(
                 context, id, loadbalancer)
@@ -441,7 +441,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 id=old_lb.pools[0].id,
                 entity_in_use=models.LoadBalancer.NAME)
         self.db.test_and_set_status(context, models.LoadBalancer, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         driver = self._get_driver_for_provider(old_lb.provider.provider_name)
         db_lb = self.db.get_loadbalancer(context, id)
         self._call_driver_operation(
@@ -507,7 +507,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             to_validate.extend([listener['default_tls_container_ref']])
             if 'sni_container_refs' in listener:
                 to_validate.extend(listener['sni_container_refs'])
-        elif curr_listener['provisioning_status'] == constants.ERROR:
+        elif curr_listener['provisioning_status'] == n_constants.ERROR:
             to_validate.extend(curr_listener['default_tls_container_id'])
             to_validate.extend([
                 container['tls_container_id'] for container in (
@@ -551,7 +551,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         elif not lb_id:
             raise sharedpools.ListenerMustHaveLoadbalancer()
         self.db.test_and_set_status(context, models.LoadBalancer, lb_id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
 
         try:
             if listener['protocol'] == lb_const.PROTOCOL_TERMINATED_HTTPS:
@@ -582,7 +582,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             self._check_listener_pool_lb_match(
                 context, id, default_pool_id)
         self.db.test_and_set_status(context, models.Listener, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             curr_listener = curr_listener_db.to_dict()
 
@@ -608,13 +608,13 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 context,
                 models.LoadBalancer,
                 curr_listener_db.loadbalancer.id,
-                provisioning_status=constants.ACTIVE
+                provisioning_status=n_constants.ACTIVE
             )
             self.db.update_status(
                 context,
                 models.Listener,
                 curr_listener_db.id,
-                provisioning_status=constants.ACTIVE
+                provisioning_status=n_constants.ACTIVE
             )
             raise exc
 
@@ -636,7 +636,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 id=old_listener.l7_policies[0].id,
                 entity_in_use=models.L7Policy.NAME)
         self.db.test_and_set_status(context, models.Listener, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         listener_db = self.db.get_listener(context, id)
 
         driver = self._get_driver_for_loadbalancer(
@@ -682,7 +682,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         del pool['listener_id']
         pool['listeners'] = []
         self.db.test_and_set_status(context, models.LoadBalancer,
-                                    lb_id, constants.PENDING_UPDATE)
+                                    lb_id, n_constants.PENDING_UPDATE)
         db_pool = self.db.create_pool(context, pool)
         for db_l in db_listeners:
             try:
@@ -706,7 +706,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             pool.get('session_persistence'))
         old_pool = self.db.get_pool(context, id)
         self.db.test_and_set_status(context, models.PoolV2, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             updated_pool = self.db.update_pool(context, id, pool)
         except Exception as exc:
@@ -731,7 +731,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 id=old_pool.healthmonitor.id,
                 entity_in_use=models.PoolV2.NAME)
         self.db.test_and_set_status(context, models.PoolV2, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         db_pool = self.db.get_pool(context, id)
 
         driver = self._get_driver_for_loadbalancer(
@@ -756,7 +756,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         db_pool = self.db.get_pool(context, pool_id)
         self.db.test_and_set_status(context, models.LoadBalancer,
                                     db_pool.root_loadbalancer.id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             member_db = self.db.create_pool_member(context, member, pool_id)
         except Exception as exc:
@@ -777,7 +777,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         member = member.get('member')
         old_member = self.db.get_pool_member(context, id)
         self.db.test_and_set_status(context, models.MemberV2, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             updated_member = self.db.update_pool_member(context, id, member)
         except Exception as exc:
@@ -797,7 +797,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def delete_pool_member(self, context, id, pool_id):
         self._check_pool_exists(context, pool_id)
         self.db.test_and_set_status(context, models.MemberV2, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         db_member = self.db.get_pool_member(context, id)
 
         driver = self._get_driver_for_loadbalancer(
@@ -832,7 +832,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         db_pool = self.db.get_pool(context, pool_id)
         self.db.test_and_set_status(context, models.LoadBalancer,
                                     db_pool.root_loadbalancer.id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             db_hm = self.db.create_healthmonitor_on_pool(context, pool_id,
                                                          healthmonitor)
@@ -851,7 +851,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         healthmonitor = healthmonitor.get('healthmonitor')
         old_hm = self.db.get_healthmonitor(context, id)
         self.db.test_and_set_status(context, models.HealthMonitorV2, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             updated_hm = self.db.update_healthmonitor(context, id,
                                                       healthmonitor)
@@ -871,7 +871,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
     def delete_healthmonitor(self, context, id):
         self.db.test_and_set_status(context, models.HealthMonitorV2, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         db_hm = self.db.get_healthmonitor(context, id)
 
         driver = self._get_driver_for_loadbalancer(
@@ -916,7 +916,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         l7policy = l7policy.get('l7policy')
         old_l7policy = self.db.get_l7policy(context, id)
         self.db.test_and_set_status(context, models.L7Policy, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             updated_l7policy = self.db.update_l7policy(
                 context, id, l7policy)
@@ -942,7 +942,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
     def delete_l7policy(self, context, id):
         self.db.test_and_set_status(context, models.L7Policy, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         l7policy_db = self.db.get_l7policy(context, id)
 
         if l7policy_db.attached_to_loadbalancer():
@@ -985,7 +985,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         rule = rule.get('rule')
         old_rule_db = self.db.get_l7policy_rule(context, id, l7policy_id)
         self.db.test_and_set_status(context, models.L7Rule, id,
-                                    constants.PENDING_UPDATE)
+                                    n_constants.PENDING_UPDATE)
         try:
             upd_rule_db = self.db.update_l7policy_rule(
                 context, id, rule, l7policy_id)
@@ -1014,7 +1014,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
     def delete_l7policy_rule(self, context, id, l7policy_id):
         self.db.test_and_set_status(context, models.L7Rule, id,
-                                    constants.PENDING_DELETE)
+                                    n_constants.PENDING_DELETE)
         rule_db = self.db.get_l7policy_rule(context, id, l7policy_id)
 
         if rule_db.attached_to_loadbalancer():
@@ -1245,7 +1245,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def _is_degraded(self, obj, exclude=None):
         exclude = exclude or []
         if "provisioning_status" not in exclude:
-            if obj.provisioning_status == constants.ERROR:
+            if obj.provisioning_status == n_constants.ERROR:
                 return True
         if "operating_status" not in exclude:
             if ((obj.operating_status != lb_const.ONLINE) and

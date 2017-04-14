@@ -13,7 +13,7 @@
 #    under the License.
 
 import abc
-from neutron.plugins.common import constants
+from neutron_lib import constants
 from oslo_log import log as logging
 import six
 

@@ -19,7 +19,7 @@ from oslo_config import cfg
 from oslo_log import log as logging
 
 
-from neutron.plugins.common import constants
+from neutron_lib import constants
 from neutron_lib import context as ncontext
 from oslo_service import service
 

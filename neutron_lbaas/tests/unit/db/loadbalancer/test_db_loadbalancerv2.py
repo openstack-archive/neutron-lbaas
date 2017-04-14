@@ -20,11 +20,11 @@ import mock
 from neutron.api import extensions
 from neutron.common import config
 import neutron.db.l3_db  # noqa
-from neutron.plugins.common import constants
 from neutron.tests.unit.db import test_db_base_plugin_v2
 from neutron_lib import constants as n_constants
 from neutron_lib import context
 from neutron_lib import exceptions as n_exc
+from neutron_lib.plugins import constants
 from neutron_lib.plugins import directory
 from oslo_config import cfg
 from oslo_utils import uuidutils
@@ -482,7 +482,7 @@ class LbaasTestMixin(object):
             self.plugin.db.update_status(context.get_admin_context(),
                                          models.L7Policy,
                                          l7policy['l7policy']['id'],
-                                         constants.ACTIVE)
+                                         n_constants.ACTIVE)
             del_req = self.new_delete_request(
                 'l7policies',
                 fmt=fmt,
@@ -515,7 +515,7 @@ class LbaasTestMixin(object):
             self.plugin.db.update_status(context.get_admin_context(),
                                          models.L7Rule,
                                          rule['rule']['id'],
-                                         constants.ACTIVE)
+                                         n_constants.ACTIVE)
             del_req = self.new_delete_request(
                 'l7policies',
                 fmt=fmt,
@@ -655,7 +655,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                            loadbalancer_disabled=False):
         resp, body = self._get_loadbalancer_statuses_api(lb_id)
         lb_statuses = body['statuses']['loadbalancer']
-        self.assertEqual(constants.ACTIVE,
+        self.assertEqual(n_constants.ACTIVE,
                          lb_statuses['provisioning_status'])
         if loadbalancer_disabled:
             self.assertEqual(lb_const.DISABLED,
@@ -669,7 +669,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                 if listener['id'] == listener_id:
                     listener_statuses = listener
             self.assertIsNotNone(listener_statuses)
-            self.assertEqual(constants.ACTIVE,
+            self.assertEqual(n_constants.ACTIVE,
                              listener_statuses['provisioning_status'])
             if listener_disabled:
                 self.assertEqual(lb_const.DISABLED,
@@ -683,7 +683,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                     if policy['id'] == l7policy_id:
                         policy_statuses = policy
                 self.assertIsNotNone(policy_statuses)
-                self.assertEqual(constants.ACTIVE,
+                self.assertEqual(n_constants.ACTIVE,
                                  policy_statuses['provisioning_status'])
                 if l7rule_id:
                     rule_statuses = None
@@ -691,7 +691,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                         if rule['id'] == l7rule_id:
                             rule_statuses = rule
                     self.assertIsNotNone(rule_statuses)
-                    self.assertEqual(constants.ACTIVE,
+                    self.assertEqual(n_constants.ACTIVE,
                                      rule_statuses['provisioning_status'])
 
         if pool_id:
@@ -700,7 +700,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                 if pool['id'] == pool_id:
                     pool_statuses = pool
             self.assertIsNotNone(pool_statuses)
-            self.assertEqual(constants.ACTIVE,
+            self.assertEqual(n_constants.ACTIVE,
                              pool_statuses['provisioning_status'])
             self.assertEqual(lb_const.ONLINE,
                              pool_statuses['operating_status'])
@@ -710,7 +710,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                     if member['id'] == member_id:
                         member_statuses = member
                 self.assertIsNotNone(member_statuses)
-                self.assertEqual(constants.ACTIVE,
+                self.assertEqual(n_constants.ACTIVE,
                                  member_statuses['provisioning_status'])
                 if member_disabled:
                     self.assertEqual(lb_const.DISABLED,
@@ -720,12 +720,12 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
                                      member_statuses['operating_status'])
             if hm_id:
                 hm_status = pool_statuses['healthmonitor']
-                self.assertEqual(constants.ACTIVE,
+                self.assertEqual(n_constants.ACTIVE,
                                  hm_status['provisioning_status'])
 
     def test_assert_modification_allowed(self):
         mock_lb = mock.MagicMock()
-        mock_lb.provisioning_status = constants.PENDING_UPDATE
+        mock_lb.provisioning_status = n_constants.PENDING_UPDATE
         mock_lb.id = uuidutils.generate_uuid()
         LBPluginDBv2 = loadbalancer_dbv2.LoadBalancerPluginDbv2()
 
@@ -745,7 +745,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
             'name': 'vip1',
             'description': '',
             'admin_state_up': True,
-            'provisioning_status': constants.ACTIVE,
+            'provisioning_status': n_constants.ACTIVE,
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
             'listeners': [],
@@ -791,7 +791,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
             'name': 'vip1',
             'description': '',
             'admin_state_up': True,
-            'provisioning_status': constants.ACTIVE,
+            'provisioning_status': n_constants.ACTIVE,
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
             'listeners': [],
@@ -826,7 +826,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
         expected_values = {'name': name,
                            'description': description,
                            'admin_state_up': False,
-                           'provisioning_status': constants.ACTIVE,
+                           'provisioning_status': n_constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
                            'listeners': [],
                            'provider': 'lbaas'}
@@ -874,7 +874,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                            'description': description,
                            'vip_address': '10.0.0.10',
                            'admin_state_up': True,
-                           'provisioning_status': constants.ACTIVE,
+                           'provisioning_status': n_constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
                            'listeners': [],
                            'provider': 'lbaas'}
@@ -901,7 +901,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                            'description': description,
                            'vip_address': '10.0.0.10',
                            'admin_state_up': True,
-                           'provisioning_status': constants.ACTIVE,
+                           'provisioning_status': n_constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
                            'listeners': [],
                            'provider': 'lbaas'}
@@ -973,7 +973,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                            'description': description,
                            'vip_address': '10.0.0.10',
                            'admin_state_up': True,
-                           'provisioning_status': constants.ACTIVE,
+                           'provisioning_status': n_constants.ACTIVE,
                            'operating_status': lb_const.ONLINE,
                            'listeners': []}
         with self.subnet() as subnet:
@@ -1031,7 +1031,7 @@ class LoadBalancerDelegateVIPCreation(LbaasPluginDbTestCase):
             'name': 'vip1',
             'description': '',
             'admin_state_up': True,
-            'provisioning_status': constants.ACTIVE,
+            'provisioning_status': n_constants.ACTIVE,
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
             'listeners': [],
@@ -1158,7 +1158,7 @@ class TestLoadBalancerGraphCreation(LbaasPluginDbTestCase):
             'name': 'vip1',
             'description': '',
             'admin_state_up': True,
-            'provisioning_status': constants.ACTIVE,
+            'provisioning_status': n_constants.ACTIVE,
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
             'listeners': expected_listeners,
@@ -4080,12 +4080,12 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
         with self.healthmonitor(pool_id=self.pool_id) as healthmonitor:
             hm_id = healthmonitor['healthmonitor'].get('id')
             ctx = context.get_admin_context()
-            self.plugin.db.update_status(ctx,
-                                         models.HealthMonitorV2, hm_id,
-                                         provisioning_status=constants.ACTIVE,
-                                         operating_status=lb_const.DEGRADED)
+            self.plugin.db.update_status(
+                ctx, models.HealthMonitorV2, hm_id,
+                provisioning_status=n_constants.ACTIVE,
+                operating_status=lb_const.DEGRADED)
             db_hm = self.plugin.db.get_healthmonitor(ctx, hm_id)
-            self.assertEqual(constants.ACTIVE, db_hm.provisioning_status)
+            self.assertEqual(n_constants.ACTIVE, db_hm.provisioning_status)
             self.assertFalse(hasattr(db_hm, 'operating_status'))
 
     def test_create_healthmonitor_admin_state_down(self):
@@ -4190,7 +4190,7 @@ class LbaasStatusesTest(MemberTestBase):
 
     def test_that_failures_trickle_up_on_prov_errors(self):
         ctx = context.get_admin_context()
-        ERROR = constants.ERROR
+        ERROR = n_constants.ERROR
         lb_dict = self._create_new_populated_loadbalancer()
         lb_id = lb_dict['id']
         statuses = self._get_loadbalancer_statuses_api(lb_id)[1]
@@ -4239,7 +4239,7 @@ class LbaasStatusesTest(MemberTestBase):
 
     def test_degraded_with_pool_error(self):
         ctx = context.get_admin_context()
-        ERROR = constants.ERROR
+        ERROR = n_constants.ERROR
         lb_dict = self._create_new_populated_loadbalancer()
         lb_id = lb_dict['id']
         statuses = self._get_loadbalancer_statuses_api(lb_id)[1]

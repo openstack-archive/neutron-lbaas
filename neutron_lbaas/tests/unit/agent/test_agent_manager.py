@@ -15,7 +15,7 @@
 
 import collections
 import mock
-from neutron.plugins.common import constants
+from neutron_lib import constants
 
 from neutron_lbaas.agent import agent_manager as manager
 from neutron_lbaas.services.loadbalancer import constants as lb_const

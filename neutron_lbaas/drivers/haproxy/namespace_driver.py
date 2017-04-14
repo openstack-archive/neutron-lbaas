@@ -21,7 +21,7 @@ import netaddr
 from neutron.agent.linux import external_process
 from neutron.agent.linux import ip_lib
 from neutron.common import utils as n_utils
-from neutron.plugins.common import constants
+from neutron_lib import constants
 from neutron_lib import exceptions
 from oslo_config import cfg
 from oslo_log import log as logging

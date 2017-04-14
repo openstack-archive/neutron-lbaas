@@ -19,7 +19,7 @@ from neutron_lib.utils import file as file_utils
 from oslo_config import cfg
 import six
 
-from neutron.plugins.common import constants as plugin_constants
+from neutron_lib import constants as nl_constants
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.common import cert_manager
@@ -55,8 +55,8 @@ STATS_MAP = {
     constants.STATS_RESPONSE_ERRORS: 'eresp'
 }
 
-MEMBER_STATUSES = plugin_constants.ACTIVE_PENDING_STATUSES + (
-    plugin_constants.INACTIVE,)
+MEMBER_STATUSES = nl_constants.ACTIVE_PENDING_STATUSES + (
+    nl_constants.INACTIVE,)
 
 TEMPLATES_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), 'templates/'))

@@ -22,9 +22,9 @@ from neutron.callbacks import resources
 from neutron.common import ipv6_utils
 from neutron.db import api as db_api
 from neutron.db import common_db_mixin as base_db
-from neutron.plugins.common import constants
 from neutron_lib import constants as n_const
 from neutron_lib import exceptions as n_exc
+from neutron_lib.plugins import constants as pg_const
 from neutron_lib.plugins import directory
 from oslo_db import exception
 from oslo_log import log as logging
@@ -198,8 +198,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
     def assert_modification_allowed(self, obj):
         status = getattr(obj, 'provisioning_status', None)
-        if status in [constants.PENDING_DELETE, constants.PENDING_UPDATE,
-                      constants.PENDING_CREATE]:
+        if status in [n_const.PENDING_DELETE, n_const.PENDING_UPDATE,
+                      n_const.PENDING_CREATE]:
             id = getattr(obj, 'id', None)
             raise loadbalancerv2.StateInvalid(id=id, state=status)
 
@@ -222,13 +222,13 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             # Otherwise we are just setting the load balancer's provisioning
             # status to the status passed in
             if db_lb_child:
-                db_lb.provisioning_status = constants.PENDING_UPDATE
+                db_lb.provisioning_status = n_const.PENDING_UPDATE
                 db_lb_child.provisioning_status = status
             else:
                 db_lb.provisioning_status = status
 
     def update_loadbalancer_provisioning_status(self, context, lb_id,
-                                                status=constants.ACTIVE):
+                                                status=n_const.ACTIVE):
         self.update_status(context, models.LoadBalancer, lb_id,
                            provisioning_status=status)
 
@@ -320,7 +320,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         vip_address = loadbalancer.pop('vip_address')
         if vip_subnet_id and vip_subnet_id != n_const.ATTR_NOT_SPECIFIED:
             loadbalancer['vip_subnet_id'] = vip_subnet_id
-        loadbalancer['provisioning_status'] = constants.PENDING_CREATE
+        loadbalancer['provisioning_status'] = n_const.PENDING_CREATE
         loadbalancer['operating_status'] = lb_const.OFFLINE
         lb_db = models.LoadBalancer(**loadbalancer)
 
@@ -494,7 +494,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         try:
             with context.session.begin(subtransactions=True):
                 self._load_id(context, listener)
-                listener['provisioning_status'] = constants.PENDING_CREATE
+                listener['provisioning_status'] = n_const.PENDING_CREATE
                 listener['operating_status'] = lb_const.OFFLINE
                 # Check for unspecified loadbalancer_id and listener_id and
                 # set to None
@@ -600,7 +600,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
     def create_pool(self, context, pool):
         with context.session.begin(subtransactions=True):
             self._load_id(context, pool)
-            pool['provisioning_status'] = constants.PENDING_CREATE
+            pool['provisioning_status'] = n_const.PENDING_CREATE
             pool['operating_status'] = lb_const.OFFLINE
 
             session_info = pool.pop('session_persistence', None)
@@ -682,7 +682,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             with context.session.begin(subtransactions=True):
                 self._load_id(context, member)
                 member['pool_id'] = pool_id
-                member['provisioning_status'] = constants.PENDING_CREATE
+                member['provisioning_status'] = n_const.PENDING_CREATE
                 member['operating_status'] = lb_const.OFFLINE
                 member_db = models.MemberV2(**member)
                 context.session.add(member_db)
@@ -739,7 +739,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
     def create_healthmonitor(self, context, healthmonitor):
         with context.session.begin(subtransactions=True):
             self._load_id(context, healthmonitor)
-            healthmonitor['provisioning_status'] = constants.PENDING_CREATE
+            healthmonitor['provisioning_status'] = n_const.PENDING_CREATE
             hm_db_entry = models.HealthMonitorV2(**healthmonitor)
             context.session.add(hm_db_entry)
         return data_models.HealthMonitor.from_sqlalchemy_model(hm_db_entry)
@@ -800,7 +800,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
             self._load_id(context, l7policy)
 
-            l7policy['provisioning_status'] = constants.PENDING_CREATE
+            l7policy['provisioning_status'] = n_const.PENDING_CREATE
 
             l7policy_db = models.L7Policy(**l7policy)
             # MySQL int fields are by default 32-bit whereas handy system
@@ -872,7 +872,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             self._validate_l7rule_data(context, rule)
             self._load_id(context, rule)
             rule['l7policy_id'] = l7policy_id
-            rule['provisioning_status'] = constants.PENDING_CREATE
+            rule['provisioning_status'] = n_const.PENDING_CREATE
             rule_db = models.L7Rule(**rule)
             context.session.add(rule_db)
         return data_models.L7Rule.from_sqlalchemy_model(rule_db)
@@ -927,6 +927,6 @@ def _prevent_lbaasv2_port_delete_callback(resource, event, trigger, **kwargs):
     context = kwargs['context']
     port_id = kwargs['port_id']
     port_check = kwargs['port_check']
-    lbaasv2plugin = directory.get_plugin(constants.LOADBALANCERV2)
+    lbaasv2plugin = directory.get_plugin(pg_const.LOADBALANCERV2)
     if lbaasv2plugin and port_check:
         lbaasv2plugin.db.prevent_lbaasv2_port_deletion(context, port_id)

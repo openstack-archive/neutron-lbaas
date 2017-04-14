@@ -18,7 +18,7 @@ import socket
 
 import mock
 from neutron.agent.linux import external_process
-from neutron.plugins.common import constants
+from neutron_lib import constants
 from neutron_lib import exceptions
 
 from neutron_lbaas.drivers.haproxy import namespace_driver

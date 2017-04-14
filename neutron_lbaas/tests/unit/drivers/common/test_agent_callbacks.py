@@ -15,10 +15,11 @@
 
 import mock
 
-from neutron.plugins.common import constants
 from neutron.tests.unit import testlib_api
 from neutron_lib.api.definitions import portbindings
+from neutron_lib import constants
 from neutron_lib import context
+from neutron_lib.plugins import constants as n_constants
 from oslo_utils import uuidutils
 from six import moves
 
@@ -182,7 +183,7 @@ class TestLoadBalancerCallbacks(
 
     def test_plug_vip_port(self):
         exp = {
-            'device_owner': 'neutron:' + constants.LOADBALANCERV2,
+            'device_owner': 'neutron:' + n_constants.LOADBALANCERV2,
             'admin_state_up': True
         }
         self._update_port_test_helper(
@@ -193,7 +194,7 @@ class TestLoadBalancerCallbacks(
 
     def test_plug_vip_port_mock_with_host(self):
         exp = {
-            'device_owner': 'neutron:' + constants.LOADBALANCERV2,
+            'device_owner': 'neutron:' + n_constants.LOADBALANCERV2,
             'admin_state_up': True,
             portbindings.HOST_ID: 'host'
         }
