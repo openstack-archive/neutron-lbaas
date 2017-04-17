@@ -42,7 +42,7 @@ class TestSessionPersistence(base.BaseTestCase):
         10. Turn session persistence off and check that the requests
             are again distributed according to the ROUND_ROBIN algorithm.
         """
-        self._create_server(b'server1')
+        self._create_server('server1')
         self._start_servers()
         self._create_load_balancer(persistence_type="SOURCE_IP")
         self._check_source_ip_persistence()

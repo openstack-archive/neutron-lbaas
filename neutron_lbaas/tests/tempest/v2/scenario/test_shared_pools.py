@@ -38,7 +38,7 @@ class TestSharedPools(base.BaseTestCase):
         """
         second_listener_port = 8080
 
-        self._create_server(b'server1')
+        self._create_server('server1')
         self._start_servers()
         # automatically creates first listener on port 80
         self._create_load_balancer()

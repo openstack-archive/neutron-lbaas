@@ -207,7 +207,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
     def _create_servers(self):
         for count in range(2):
-            self.server = self._create_server(name=(b"server%s" % (count + 1)))
+            self.server = self._create_server(name=("server%s" % (count + 1)))
             if count == 0:
                 self.servers['primary'] = self.server['id']
             else:
@@ -249,11 +249,11 @@ class BaseTestCase(manager.NetworkScenarioTest):
                     'Content-Type: text/html; '
                     'charset=UTF-8\r\n\r\n%(server)s"; cat >/dev/null')
 
-            with tempfile.NamedTemporaryFile() as script:
+            with tempfile.NamedTemporaryFile(mode='w+') as script:
                 script.write(resp % {'s_id': server_name[-1],
                                      'server': server_name})
                 script.flush()
-                with tempfile.NamedTemporaryFile() as key:
+                with tempfile.NamedTemporaryFile(mode='w+') as key:
                     key.write(private_key)
                     key.flush()
                     self.copy_file_to_host(script.name,
@@ -270,11 +270,11 @@ class BaseTestCase(manager.NetworkScenarioTest):
             ssh_client.exec_command(cmd)
 
             if len(self.server_ips) == 1:
-                with tempfile.NamedTemporaryFile() as script:
+                with tempfile.NamedTemporaryFile(mode='w+') as script:
                     script.write(resp % {'s_id': 2,
                                          'server': 'server2'})
                     script.flush()
-                    with tempfile.NamedTemporaryFile() as key:
+                    with tempfile.NamedTemporaryFile(mode='w+') as key:
                         key.write(private_key)
                         key.flush()
                         self.copy_file_to_host(script.name,
@@ -527,7 +527,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
         for i in range(self.num):
             try:
                 server = urllib2.urlopen("http://{0}/".format(vip_ip),
-                                         None, 2).read()
+                                         None, 2).read().decode('utf8')
                 counters[server] += 1
             # HTTP exception means fail of server, so don't increase counter
             # of success and continue connection tries
@@ -615,7 +615,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
                "-i %(pkey)s %(file1)s %(dest)s" % {'pkey': pkey,
                                                    'file1': file_from,
                                                    'dest': dest})
-        args = shlex.split(cmd.encode('utf-8'))
+        args = shlex.split(cmd)
         subprocess_args = {'stdout': subprocess.PIPE,
                            'stderr': subprocess.STDOUT}
         proc = subprocess.Popen(args, **subprocess_args)
