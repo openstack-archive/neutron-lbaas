@@ -33,7 +33,7 @@ class TestLoadBalancerBasic(base.BaseTestCase):
         5. Send NUM requests to the floating ip and check that they are shared
            between the two servers.
         """
-        self._create_server('server1')
+        self._create_server(b'server1')
         self._start_servers()
         self._create_load_balancer()
         self._check_load_balancing()
