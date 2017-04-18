@@ -28,7 +28,6 @@ _SESSION = None
 OPTS = [
     cfg.StrOpt(
         'auth_url',
-        default='http://127.0.0.1:5000/v3',
         help=_('Authentication endpoint'),
     ),
     cfg.StrOpt(

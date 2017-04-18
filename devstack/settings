@@ -12,11 +12,11 @@ enable_service $LBAAS_ANY
 
 BARBICAN="barbican-svc"
 
-AUTH_URL=${AUTH_URL:-"http://127.0.0.1:5000/v2.0"}
 ADMIN_TENANT_NAME=${ADMIN_TENANT_NAME:-"admin"}
 ADMIN_USER=${ADMIN_USER:-"admin"}
 ADMIN_PASSWORD=${ADMIN_PASSWORD:-"password"}
 AUTH_VERSION=${AUTH_VERSION:-"2"}
+AUTH_ENDPOINT=${AUTH_ENDPOINT:-"/v2.0"}
 
 LBAAS_AGENT_CONF_PATH=/etc/neutron/services/loadbalancer/haproxy
 LBAAS_AGENT_CONF_FILENAME=$LBAAS_AGENT_CONF_PATH/lbaas_agent.ini
