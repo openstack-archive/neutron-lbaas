@@ -59,13 +59,14 @@ class TestPools(base.BaseAdminTestCase):
                                  listener_id=None, cleanup=True, **kwargs):
         self.increment_protocol_port()
         if not protocol:
-            protocol = 'HTTP'
+            protocol = self.pool_protocol
         if not lb_algorithm:
             lb_algorithm = 'ROUND_ROBIN'
         if not listener_id:
             listener = self._create_listener(
                 loadbalancer_id=self.load_balancer.get('id'),
-                protocol='HTTP', protocol_port=PROTOCOL_PORT, **kwargs)
+                protocol=self.listener_protocol,
+                protocol_port=PROTOCOL_PORT, **kwargs)
             listener_id = listener.get('id')
         response = self._create_pool(protocol=protocol,
                                      lb_algorithm=lb_algorithm,
@@ -79,7 +80,7 @@ class TestPools(base.BaseAdminTestCase):
     def test_create_pool_using_empty_tenant_field(self):
         """Test create pool with empty tenant field should fail"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='HTTP',
+                          protocol=self.pool_protocol,
                           tenant_id="",
                           lb_algorithm='ROUND_ROBIN')
 
@@ -90,9 +91,7 @@ class TestPools(base.BaseAdminTestCase):
         tenant_id does not match when creating pool vs.
         pool (admin client)
         """
-        new_pool = self._prepare_and_create_pool(
-            protocol='HTTP',
-            lb_algorithm='ROUND_ROBIN')
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool['tenant_id']
         self.assertNotEqual(pool_tenant, self.subnet['tenant_id'])
@@ -103,9 +102,7 @@ class TestPools(base.BaseAdminTestCase):
         Test create pool with a missing tenant id field. Verify
         tenant_id matches when creating pool vs. pool (admin client)
         """
-        new_pool = self._prepare_and_create_pool(
-            protocol='HTTP',
-            lb_algorithm='ROUND_ROBIN')
+        new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
         pool_tenant = pool['tenant_id']
         self.assertEqual(pool_tenant, pool.get('tenant_id'))

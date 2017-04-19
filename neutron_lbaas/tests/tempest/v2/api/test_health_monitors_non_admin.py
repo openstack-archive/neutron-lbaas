@@ -45,9 +45,9 @@ class TestHealthMonitors(base.BaseTestCase):
             vip_subnet_id=cls.subnet.get('id'))
         cls.listener = cls._create_listener(
             loadbalancer_id=cls.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=80)
+            protocol=cls.listener_protocol, protocol_port=80)
         cls.pool = cls._create_pool(
-            protocol='HTTP', lb_algorithm='ROUND_ROBIN',
+            protocol=cls.pool_protocol, lb_algorithm='ROUND_ROBIN',
             listener_id=cls.listener.get('id'))
         cls.create_basic_hm_kwargs = {'type': 'HTTP', 'delay': 3,
                                       'max_retries': 10, 'timeout': 5,
@@ -67,10 +67,10 @@ class TestHealthMonitors(base.BaseTestCase):
         hm1 = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_listener = self._create_listener(
             loadbalancer_id=self.load_balancer.get('id'),
-            protocol='HTTP', protocol_port=88)
+            protocol=self.listener_protocol, protocol_port=88)
         self.addCleanup(self._delete_listener, new_listener.get('id'))
         new_pool = self._create_pool(
-            protocol='HTTP', lb_algorithm='ROUND_ROBIN',
+            protocol=self.pool_protocol, lb_algorithm='ROUND_ROBIN',
             listener_id=new_listener.get('id'))
         self.addCleanup(self._delete_pool, new_pool.get('id'))
         hm2 = self._create_health_monitor(

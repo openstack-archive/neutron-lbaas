@@ -46,11 +46,10 @@ class ListenersTestJSON(base.BaseTestCase):
                                 'vip_subnet_id': cls.subnet['id']}
         cls.load_balancer = cls._create_active_load_balancer(
             **cls.create_lb_kwargs)
-        cls.protocol = 'HTTP'
         cls.port = 80
         cls.load_balancer_id = cls.load_balancer['id']
         cls.create_listener_kwargs = {'loadbalancer_id': cls.load_balancer_id,
-                                      'protocol': cls.protocol,
+                                      'protocol': cls.listener_protocol,
                                       'protocol_port': cls.port}
         cls.listener = cls._create_listener(**cls.create_listener_kwargs)
         cls.listener_id = cls.listener['id']
@@ -113,7 +112,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           protocol_port=self.port,
-                          protocol=self.protocol)
+                          protocol=self.listener_protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
@@ -133,7 +132,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
-                          protocol=self.protocol)
+                          protocol=self.listener_protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
@@ -160,7 +159,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id="234*",
                           protocol_port=self.port,
-                          protocol=self.protocol)
+                          protocol=self.listener_protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
@@ -182,7 +181,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port="9999999",
-                          protocol=self.protocol)
+                          protocol=self.listener_protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
@@ -192,7 +191,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           admin_state_up="abc123")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -204,7 +203,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           tenant_id="&^%123")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -216,7 +215,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           name='a' * 256)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -228,7 +227,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           description='a' * 256)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -242,7 +241,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           connection_limit="&^%123")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -254,7 +253,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id="",
                           protocol_port=self.port,
-                          protocol=self.protocol)
+                          protocol=self.listener_protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
@@ -276,7 +275,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port="",
-                          protocol=self.protocol)
+                          protocol=self.listener_protocol)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
@@ -286,7 +285,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest,
                           self._create_listener,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           admin_state_up="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -298,7 +297,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           tenant_id="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -344,7 +343,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol=self.protocol,
+                          protocol=self.listener_protocol,
                           connection_limit="")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
