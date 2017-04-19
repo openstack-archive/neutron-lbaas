@@ -67,6 +67,7 @@ class BaseTestCase(base.BaseNetworkTest):
 
         cls.listener_protocol = CONF.lbaas.default_listener_protocol
         cls.pool_protocol = CONF.lbaas.default_pool_protocol
+        cls.hm_protocol = CONF.lbaas.default_health_monitor_protocol
 
         mgr = cls.get_client_manager()
         auth_provider = mgr.auth_provider
