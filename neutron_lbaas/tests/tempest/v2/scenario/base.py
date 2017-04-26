@@ -27,7 +27,6 @@ from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
 from tempest.common import waiters
 from tempest import config
-from tempest import exceptions
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
 from tempest import test
@@ -521,7 +520,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
             if (time.time() - start) > timeout:
                 message = ("Timed out trying to connect to {0}:{1} after "
                            "{2} seconds".format(check_ip, port, timeout))
-                raise exceptions.TimeoutException(message)
+                raise lib_exc.TimeoutException(message)
 
     def _send_requests(self, vip_ip, servers):
         counters = dict.fromkeys(servers, 0)
