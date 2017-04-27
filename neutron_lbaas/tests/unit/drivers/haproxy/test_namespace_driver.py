@@ -483,7 +483,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             namespace=namespace_driver.get_ns_name(self.lb.id))
         mock_ns.netns.execute.assert_called_once_with(
             ['haproxy', '-f', conf_dir % 'haproxy.conf', '-p',
-             conf_dir % 'haproxy.pid'], addl_env=None, run_as_root=False)
+             conf_dir % 'haproxy.pid'], addl_env=None, run_as_root=True)
         self.assertIn(self.lb.id, self.driver.deployed_loadbalancers)
         self.assertEqual(self.lb,
                          self.driver.deployed_loadbalancers[self.lb.id])
