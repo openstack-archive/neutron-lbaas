@@ -45,10 +45,6 @@ class Lb_network_vip(extensions.ExtensionDescriptor):
         return "Create loadbalancer with network_id"
 
     @classmethod
-    def get_namespace(cls):
-        return "http://wiki.openstack.org/neutron/LBaaS/API_2.0"
-
-    @classmethod
     def get_updated(cls):
         return "2016-09-09T22:00:00-00:00"
 

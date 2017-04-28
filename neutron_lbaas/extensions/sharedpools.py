@@ -82,10 +82,6 @@ class Sharedpools(extensions.ExtensionDescriptor):
         return "Allow pools to be shared among listeners for LBaaSv2"
 
     @classmethod
-    def get_namespace(cls):
-        return "http://wiki.openstack.org/neutron/LBaaS/API_2.0"
-
-    @classmethod
     def get_updated(cls):
         return "2016-01-20T10:00:00-00:00"
 

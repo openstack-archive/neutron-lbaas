@@ -100,10 +100,6 @@ class Lb_graph(extensions.ExtensionDescriptor):
                " full graph in one API request."
 
     @classmethod
-    def get_namespace(cls):
-        return "http://wiki.openstack.org/neutron/LBaaS/API_2.0"
-
-    @classmethod
     def get_updated(cls):
         return "2016-02-09T10:00:00-00:00"
 

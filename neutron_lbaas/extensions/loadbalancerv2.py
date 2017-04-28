@@ -441,10 +441,6 @@ class Loadbalancerv2(api_extensions.ExtensionDescriptor):
         return "Extension for LoadBalancing service v2"
 
     @classmethod
-    def get_namespace(cls):
-        return "http://wiki.openstack.org/neutron/LBaaS/API_2.0"
-
-    @classmethod
     def get_updated(cls):
         return "2014-06-18T10:00:00-00:00"
 

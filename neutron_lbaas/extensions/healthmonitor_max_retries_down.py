@@ -42,10 +42,6 @@ class Healthmonitor_max_retries_down(extensions.ExtensionDescriptor):
         return "Add a fall threshold to health monitor"
 
     @classmethod
-    def get_namespace(cls):
-        return "http://wiki.openstack.org/neutron/LBaaS/API_2.0"
-
-    @classmethod
     def get_updated(cls):
         return "2016-04-19T16:00:00-00:00"
 
