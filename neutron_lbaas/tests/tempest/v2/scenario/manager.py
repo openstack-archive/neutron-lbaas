@@ -556,7 +556,7 @@ class ScenarioTest(tempest.test.BaseTestCase):
                       'should_succeed':
                       'reachable' if should_succeed else 'unreachable'
                   })
-        result = test_utils.call_until_true(ping, timeout, 1)
+        result = tempest.test.call_until_true(ping, timeout, 1)
         LOG.debug('%(caller)s finishes ping %(ip)s in %(timeout)s sec and the '
                   'ping result is %(result)s', {
                       'caller': caller, 'ip': ip_address, 'timeout': timeout,
@@ -887,9 +887,9 @@ class NetworkScenarioTest(ScenarioTest):
                       show_floatingip(floatingip_id)['floatingip'])
             return status == result['status']
 
-        test_utils.call_until_true(refresh,
-                                   CONF.network.build_timeout,
-                                   CONF.network.build_interval)
+        tempest.test.call_until_true(refresh,
+                                     CONF.network.build_timeout,
+                                     CONF.network.build_interval)
         floating_ip = self.floating_ips_client.show_floatingip(
             floatingip_id)['floatingip']
         self.assertEqual(status, floating_ip['status'],
@@ -944,9 +944,9 @@ class NetworkScenarioTest(ScenarioTest):
                 return not should_succeed
             return should_succeed
 
-        return test_utils.call_until_true(ping_remote,
-                                          CONF.validation.ping_timeout,
-                                          1)
+        return tempest.test.call_until_true(ping_remote,
+                                            CONF.validation.ping_timeout,
+                                            1)
 
     def _create_security_group(self, security_group_rules_client=None,
                                tenant_id=None,
