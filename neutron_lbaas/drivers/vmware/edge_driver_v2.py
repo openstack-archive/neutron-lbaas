@@ -21,8 +21,8 @@ from neutron_lbaas.drivers import driver_base
 
 class EdgeDriverBaseManager(object):
     @property
-    def nsxv_driver(self):
-        return self.driver.plugin.db._core_plugin.nsx_v
+    def lbv2_driver(self):
+        return self.driver.plugin.db._core_plugin.lbv2_driver
 
 
 class EdgeLoadBalancerDriverV2(driver_base.LoadBalancerBaseDriver):
@@ -43,23 +43,23 @@ class EdgeLoadBalancerManager(driver_base.BaseLoadBalancerManager,
                               EdgeDriverBaseManager):
     @call_log
     def create(self, context, lb):
-        self.nsxv_driver.loadbalancer.create(context, lb)
+        self.lbv2_driver.loadbalancer.create(context, lb)
 
     @call_log
     def update(self, context, old_lb, new_lb):
-        self.nsxv_driver.loadbalancer.update(context, old_lb, new_lb)
+        self.lbv2_driver.loadbalancer.update(context, old_lb, new_lb)
 
     @call_log
     def delete(self, context, lb):
-        self.nsxv_driver.loadbalancer.delete(context, lb)
+        self.lbv2_driver.loadbalancer.delete(context, lb)
 
     @call_log
     def refresh(self, context, lb):
-        return self.nsxv_driver.loadbalancer.refresh(context, lb)
+        return self.lbv2_driver.loadbalancer.refresh(context, lb)
 
     @call_log
     def stats(self, context, lb):
-        return self.nsxv_driver.loadbalancer.stats(context, lb)
+        return self.lbv2_driver.loadbalancer.stats(context, lb)
 
 
 class EdgeListenerManager(driver_base.BaseListenerManager,
@@ -78,90 +78,90 @@ class EdgeListenerManager(driver_base.BaseListenerManager,
 
     @call_log
     def create(self, context, listener):
-        self.nsxv_driver.listener.create(
+        self.lbv2_driver.listener.create(
             context, listener, certificate=self._get_default_cert(listener))
 
     @call_log
     def update(self, context, old_listener, new_listener):
-        self.nsxv_driver.listener.update(
+        self.lbv2_driver.listener.update(
             context, old_listener, new_listener,
             certificate=self._get_default_cert(new_listener))
 
     @call_log
     def delete(self, context, listener):
-        self.nsxv_driver.listener.delete(context, listener)
+        self.lbv2_driver.listener.delete(context, listener)
 
 
 class EdgePoolManager(driver_base.BasePoolManager,
                       EdgeDriverBaseManager):
     @call_log
     def create(self, context, pool):
-        self.nsxv_driver.pool.create(context, pool)
+        self.lbv2_driver.pool.create(context, pool)
 
     @call_log
     def update(self, context, old_pool, new_pool):
-        self.nsxv_driver.pool.update(context, old_pool, new_pool)
+        self.lbv2_driver.pool.update(context, old_pool, new_pool)
 
     @call_log
     def delete(self, context, pool):
-        self.nsxv_driver.pool.delete(context, pool)
+        self.lbv2_driver.pool.delete(context, pool)
 
 
 class EdgeMemberManager(driver_base.BaseMemberManager,
                         EdgeDriverBaseManager):
     @call_log
     def create(self, context, member):
-        self.nsxv_driver.member.create(context, member)
+        self.lbv2_driver.member.create(context, member)
 
     @call_log
     def update(self, context, old_member, new_member):
-        self.nsxv_driver.member.update(context, old_member, new_member)
+        self.lbv2_driver.member.update(context, old_member, new_member)
 
     @call_log
     def delete(self, context, member):
-        self.nsxv_driver.member.delete(context, member)
+        self.lbv2_driver.member.delete(context, member)
 
 
 class EdgeHealthMonitorManager(driver_base.BaseHealthMonitorManager,
                                EdgeDriverBaseManager):
     @call_log
     def create(self, context, hm):
-        self.nsxv_driver.healthmonitor.create(context, hm)
+        self.lbv2_driver.healthmonitor.create(context, hm)
 
     @call_log
     def update(self, context, old_hm, new_hm):
-        self.nsxv_driver.healthmonitor.update(context, old_hm, new_hm)
+        self.lbv2_driver.healthmonitor.update(context, old_hm, new_hm)
 
     @call_log
     def delete(self, context, hm):
-        self.nsxv_driver.healthmonitor.delete(context, hm)
+        self.lbv2_driver.healthmonitor.delete(context, hm)
 
 
 class L7PolicyManager(driver_base.BaseL7PolicyManager,
                       EdgeDriverBaseManager):
     @call_log
     def create(self, context, pol):
-        self.nsxv_driver.l7policy.create(context, pol)
+        self.lbv2_driver.l7policy.create(context, pol)
 
     @call_log
     def update(self, context, old_pol, new_pol):
-        self.nsxv_driver.l7policy.update(context, old_pol, new_pol)
+        self.lbv2_driver.l7policy.update(context, old_pol, new_pol)
 
     @call_log
     def delete(self, context, pol):
-        self.nsxv_driver.l7policy.delete(context, pol)
+        self.lbv2_driver.l7policy.delete(context, pol)
 
 
 class L7RuleManager(driver_base.BaseL7RuleManager,
                     EdgeDriverBaseManager):
     @call_log
     def create(self, context, rule):
-        self.nsxv_driver.l7rule.create(context, rule)
+        self.lbv2_driver.l7rule.create(context, rule)
 
     @call_log
     def update(self, context, old_rule, new_rule):
-        self.nsxv_driver.l7rule.update(context, old_rule, new_rule)
+        self.lbv2_driver.l7rule.update(context, old_rule, new_rule)
 
     @call_log
     def delete(self, context, rule):
-        self.nsxv_driver.l7rule.delete(context, rule)
+        self.lbv2_driver.l7rule.delete(context, rule)

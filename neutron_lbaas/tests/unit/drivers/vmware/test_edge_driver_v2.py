@@ -83,7 +83,7 @@ class TestVMWareEdgeLoadBalancerDriverV2(
         mgr.driver.plugin.db = mock.Mock()
         mgr.driver.plugin.db._core_plugin = mock.Mock()
         mgr.driver.plugin.db._core_plugin.nsx_v = mock.Mock()
-        return mgr.driver.plugin.db._core_plugin.nsx_v
+        return mgr.driver.plugin.db._core_plugin.lbv2_driver
 
     def test_load_balancer_ops(self):
         mock_nsxv_driver = self._patch_manager(self.driver.load_balancer)
