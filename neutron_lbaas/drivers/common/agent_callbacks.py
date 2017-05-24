@@ -169,6 +169,7 @@ class LoadBalancerCallbacks(object):
 
         port['admin_state_up'] = True
         port[portbindings.HOST_ID] = host
+        port['device_owner'] = constants.DEVICE_OWNER_LOADBALANCERV2
         self.plugin.db._core_plugin.update_port(
             context,
             port_id,
