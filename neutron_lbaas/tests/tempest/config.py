@@ -27,4 +27,7 @@ lbaas_opts = [
                help='Default protocol for Neutron LBaaS Pools'),
     cfg.StrOpt('default_health_monitor_protocol', default='HTTP',
                help='Default protocol for Neutron LBaaS Health Monitors'),
+    cfg.ListOpt('session_persistence_types',
+                default=['SOURCE_IP', 'HTTP_COOKIE', 'APP_COOKIE'],
+                help='Supported session persistence types for Neutron LBaaS'),
 ]

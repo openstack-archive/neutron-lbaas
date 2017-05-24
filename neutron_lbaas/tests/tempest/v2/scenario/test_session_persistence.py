@@ -13,9 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from tempest import config
 from tempest import test
 
 from neutron_lbaas.tests.tempest.v2.scenario import base
+
+
+CONF = config.CONF
 
 
 class TestSessionPersistence(base.BaseTestCase):
@@ -44,12 +48,16 @@ class TestSessionPersistence(base.BaseTestCase):
         """
         self._create_server('server1')
         self._start_servers()
-        self._create_load_balancer(persistence_type="SOURCE_IP")
-        self._check_source_ip_persistence()
-        self._update_pool_session_persistence("HTTP_COOKIE")
-        self._check_cookie_session_persistence()
-        self._update_pool_session_persistence("APP_COOKIE",
-                                              cookie_name="JSESSIONID")
-        self._check_cookie_session_persistence()
+        session_persistence_types = CONF.lbaas.session_persistence_types
+        if "SOURCE_IP" in session_persistence_types:
+            self._create_load_balancer(persistence_type="SOURCE_IP")
+            self._check_source_ip_persistence()
+        if "HTTP_COOKIE" in session_persistence_types:
+            self._update_pool_session_persistence("HTTP_COOKIE")
+            self._check_cookie_session_persistence()
+        if "APP_COOKIE" in session_persistence_types:
+            self._update_pool_session_persistence("APP_COOKIE",
+                                                  cookie_name="JSESSIONID")
+            self._check_cookie_session_persistence()
         self._update_pool_session_persistence()
         self._check_load_balancing()
