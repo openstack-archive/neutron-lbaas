@@ -14,6 +14,7 @@
 
 from neutron.plugins.common import constants
 from neutron_lib.api.definitions import portbindings
+from neutron_lib import constants as lib_constants
 from neutron_lib import exceptions as n_exc
 from oslo_log import log as logging
 import oslo_messaging as messaging
@@ -170,6 +171,7 @@ class LoadBalancerCallbacks(object):
 
         port['admin_state_up'] = True
         port[portbindings.HOST_ID] = host
+        port['device_owner'] = lib_constants.DEVICE_OWNER_LOADBALANCERV2
         self.plugin.db._core_plugin.update_port(
             context,
             port_id,
