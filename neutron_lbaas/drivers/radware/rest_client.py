@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ssl
+
 from oslo_log import helpers as log_helpers
 from oslo_log import log as logging
 from oslo_serialization import base64
@@ -39,12 +41,14 @@ class vDirectRESTClient(object):
                  password=None,
                  port=2189,
                  ssl=True,
+                 ssl_verify_context=True,
                  timeout=5000,
                  base_uri=''):
         self.server = server
         self.secondary_server = secondary_server
         self.port = port
         self.ssl = ssl
+        self.ssl_verify_context = ssl_verify_context
         self.base_uri = base_uri
         self.timeout = timeout
         if user and password:
@@ -56,11 +60,14 @@ class vDirectRESTClient(object):
         debug_params = {'server': self.server,
                         'sec_server': self.secondary_server,
                         'port': self.port,
-                        'ssl': self.ssl}
+                        'ssl': self.ssl,
+                        'ssl_verify_context': self.ssl_verify_context}
         LOG.debug('vDirectRESTClient:init server=%(server)s, '
                   'secondary server=%(sec_server)s, '
                   'port=%(port)d, '
-                  'ssl=%(ssl)r', debug_params)
+                  'ssl=%(ssl)r, '
+                  'ssl_verify_context=%(ssl_verify_context)r' %
+                  debug_params)
 
     def _flip_servers(self):
         LOG.warning(_LW('Flipping servers. Current is: %(server)s, '
@@ -113,6 +120,23 @@ class vDirectRESTClient(object):
             headers['Authorization'] = 'Basic %s' % self.auth
         conn = None
         if self.ssl:
+            if not self.ssl_verify_context:
+                # HTTPS certificate verification was cancelled in
+                # configuration. If python version has context attribute,
+                # switch the default context to unverified
+                try:
+                    _create_unverified_https_context =\
+                        ssl._create_unverified_context
+                except AttributeError:
+                    # Legacy Python that doesn't verify HTTPS
+                    # certificates by default
+                    pass
+                else:
+                    # Handle target environment that doesn't
+                    # support HTTPS verification
+                    ssl._create_default_https_context =\
+                        _create_unverified_https_context
+
             conn = http_client.HTTPSConnection(
                 self.server, self.port, timeout=self.timeout)
             if conn is None:
