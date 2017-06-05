@@ -33,6 +33,11 @@ driver_opts = [
                default='radware',
                secret=True,
                help=_('vDirect user password.')),
+    cfg.BoolOpt('ssl_verify_context',
+                default=True,
+                help=_('Enables or disables the SSL context verification '
+                       'for legacy python that verifies HTTPS '
+                       'certificates by default. Default: True.')),
     cfg.StrOpt('service_adc_type',
                default="VA",
                help=_('Service ADC type. Default: VA.')),

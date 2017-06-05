@@ -131,7 +131,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             server=vdirect_address,
             secondary_server=sec_server,
             user=rad.vdirect_user,
-            password=rad.vdirect_password)
+            password=rad.vdirect_password,
+            ssl_verify_context=rad.ssl_verify_context)
         self.workflow_params['provision_service'] = rad_debug.provision_service
         self.workflow_params['configure_l3'] = rad_debug.configure_l3
         self.workflow_params['configure_l4'] = rad_debug.configure_l4
