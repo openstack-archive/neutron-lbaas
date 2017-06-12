@@ -399,7 +399,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         load_balancer = statuses['loadbalancer']
         self.assertEqual("ONLINE", load_balancer['operating_status'])
         self.assertEqual("ACTIVE", load_balancer['provisioning_status'])
-        self.assertEqual([], load_balancer['listeners'])
+        self.assertEmpty(load_balancer['listeners'])
 
     @test.attr(type='smoke')
     def test_get_load_balancer_stats(self):
