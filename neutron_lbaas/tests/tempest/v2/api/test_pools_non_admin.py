@@ -82,7 +82,7 @@ class TestPools(base.BaseTestCase):
     def test_list_pools_empty(self):
         """Test get pools when empty"""
         pools = self.pools_client.list_pools()
-        self.assertEqual([], pools)
+        self.assertEmpty(pools)
 
     def test_list_pools_one(self):
         """Test get pools with one pool"""
