@@ -14,27 +14,21 @@
 
 import mock
 
-from neutron_lbaas.drivers.netscaler \
-    import netscaler_driver_v2
+from neutron_lbaas.drivers.netscaler import ncc_client
+from neutron_lbaas.drivers.netscaler import netscaler_driver_v2
 from neutron_lbaas.services.loadbalancer import data_models
-from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
-from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancer
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 
-
-LBAAS_DRIVER_CLASS = ('neutron_lbaas.services.loadbalancer.drivers'
-                      '.netscaler.netscaler_driver_v2'
+LBAAS_DRIVER_CLASS = ('neutron_lbaas.drivers.netscaler.netscaler_driver_v2'
                       '.NetScalerLoadBalancerDriverV2')
 
-NCC_CLIENT_CLASS = ('neutron_lbaas.services.loadbalancer.drivers'
-                    '.netscaler.ncc_client'
-                    '.NSClient')
+NCC_CLIENT_CLASS = ('neutron_lbaas.drivers.netscaler.ncc_client.NSClient')
 
 LBAAS_PROVIDER_NAME = 'NetScaler'
 LBAAS_PROVIDER = ('LOADBALANCERV2:%s:%s:default' %
                   (LBAAS_PROVIDER_NAME, LBAAS_DRIVER_CLASS))
 
-log_path = ('neutron_lbaas.services.loadbalancer.drivers.'
-            'logging_noop.driver.LOG')
+log_path = ('neutron_lbaas.drivers.logging_noop.driver.LOG')
 
 
 class FakeModel(object):
@@ -250,7 +244,7 @@ class MonitorManagerTest(ManagerTest):
 
 
 class TestNetScalerLoadBalancerDriverV2(
-        test_db_loadbalancer.LoadBalancerPluginDbTestCase):
+        test_db_loadbalancerv2.LbaasPluginDbTestCase):
 
     def _create_fake_models(self):
         id = 'name-001'
