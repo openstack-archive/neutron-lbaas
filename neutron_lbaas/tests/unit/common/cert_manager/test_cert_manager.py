@@ -31,12 +31,10 @@ class TestCertManager(base.BaseTestCase):
         # Format: <servicename>://<region>/<resource>/<object_id>
         cfg.CONF.set_override('service_name',
                               'lbaas',
-                              'service_auth',
-                              enforce_type=True)
+                              'service_auth')
         cfg.CONF.set_override('region',
                               'RegionOne',
-                              'service_auth',
-                              enforce_type=True)
+                              'service_auth')
         self.assertEqual(
             'lbaas://RegionOne/loadbalancer/LB-ID',
             cmi.CertManager.get_service_url('LB-ID'))
