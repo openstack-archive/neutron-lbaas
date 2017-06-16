@@ -181,7 +181,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             gsp.side_effect = lambda x, y, z: '/pool/' + y
             path_exists.return_value = True
             mocket.return_value = mocket
-            mocket.recv.return_value = raw_stats
+            mocket.recv.return_value = raw_stats.encode('utf-8')
             is_active.return_value = True
 
             exp_stats = {'connection_errors': '0',
@@ -210,7 +210,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
             stats = self.driver.get_stats(self.lb.id)
             self.assertEqual(exp_stats, stats)
 
-            mocket.recv.return_value = raw_stats_empty
+            mocket.recv.return_value = raw_stats_empty.encode('utf-8')
             self.assertEqual({'members': {}},
                              self.driver.get_stats(self.lb.id))
 
