@@ -31,7 +31,9 @@ from neutron_lbaas.agent import agent_api
 from neutron_lbaas.drivers.common import agent_driver_base
 from neutron_lbaas.services.loadbalancer import constants as lb_const
 from neutron_lbaas.services.loadbalancer import data_models
-
+import sys
+reload(sys)
+sys.setdefaultencoding( "utf-8" )
 LOG = logging.getLogger(__name__)
 
 DEVICE_DRIVERS = 'device_drivers'
