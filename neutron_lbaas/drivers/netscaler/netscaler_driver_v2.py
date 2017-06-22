@@ -26,7 +26,7 @@ from oslo_service import service
 from neutron_lbaas._i18n import _
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.drivers import driver_mixins
-from neutron_lbaas.services.loadbalancer.drivers.netscaler import ncc_client
+from neutron_lbaas.drivers.netscaler import ncc_client
 
 DEFAULT_PERIODIC_TASK_INTERVAL = "2"
 DEFAULT_STATUS_COLLECTION = "True"
