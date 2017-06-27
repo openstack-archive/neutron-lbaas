@@ -1007,7 +1007,7 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
         port['device_owner'] = n_constants.DEVICE_OWNER_LOADBALANCERV2
         myloadbalancers = [{'name': 'lb1'}]
         plugin = mock.Mock()
-        directory.add_plugin(n_constants.CORE, plugin)
+        directory.add_plugin(constants.CORE, plugin)
         self.plugin.db.get_loadbalancers = (
             mock.Mock(return_value=myloadbalancers))
         plugin._get_port.return_value = port
