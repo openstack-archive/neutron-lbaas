@@ -19,7 +19,7 @@ from neutron_lbaas._i18n import _
 from neutron_lbaas.drivers import driver_base
 
 
-VERSION = "K1.0.0"
+VERSION = "P1.0.0"
 
 driver_opts = [
     cfg.StrOpt('vdirect_address',
@@ -33,11 +33,23 @@ driver_opts = [
                default='radware',
                secret=True,
                help=_('vDirect user password.')),
+    cfg.IntOpt('port',
+               default=2189,
+               help=_('vDirect port. Default:2189')),
+    cfg.BoolOpt('ssl',
+               default=True,
+               help=_('Use SSL. Default: True')),
     cfg.BoolOpt('ssl_verify_context',
                 default=True,
                 help=_('Enables or disables the SSL context verification '
                        'for legacy python that verifies HTTPS '
                        'certificates by default. Default: True.')),
+    cfg.IntOpt('timeout',
+               default=5000,
+               help=_('vDirect connection timeout. Default:5000')),
+    cfg.StrOpt('base_uri',
+               default='',
+               help=_('Base vDirect URI. Default:\'\'')),
     cfg.StrOpt('service_adc_type',
                default="VA",
                help=_('Service ADC type. Default: VA.')),
@@ -47,6 +59,11 @@ driver_opts = [
     cfg.BoolOpt('service_ha_pair',
                 default=False,
                 help=_('Enables or disables the Service HA pair. '
+                       'Default: False.')),
+    cfg.BoolOpt('configure_allowed_address_pairs',
+                default=False,
+                help=_('Enables or disables allowed address pairs '
+                       'configuration for VIP addresses. '
                        'Default: False.')),
     cfg.IntOpt('service_throughput',
                default=1000,

@@ -128,6 +128,7 @@ WF_CREATE_PARAMS = {'parameters':
 
 WF_APPLY_PARAMS = {
     'parameters': {'listeners': [], 'pools': [], 'admin_state_up': True,
+    'configure_allowed_address_pairs': False,
     'pip_address': u'10.0.0.2', 'vip_address': u'10.0.0.2'}}
 
 LISTENER = {

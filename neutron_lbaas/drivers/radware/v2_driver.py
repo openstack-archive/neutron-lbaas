@@ -132,10 +132,16 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             secondary_server=sec_server,
             user=rad.vdirect_user,
             password=rad.vdirect_password,
-            ssl_verify_context=rad.ssl_verify_context)
+            port=rad.port,
+            ssl=rad.ssl,
+            ssl_verify_context=rad.ssl_verify_context,
+            timeout=rad.timeout,
+            base_uri=rad.base_uri)
         self.workflow_params['provision_service'] = rad_debug.provision_service
         self.workflow_params['configure_l3'] = rad_debug.configure_l3
         self.workflow_params['configure_l4'] = rad_debug.configure_l4
+        self.configure_allowed_address_pairs =\
+            rad.configure_allowed_address_pairs
 
         self.queue = Queue.Queue()
         self.completion_handler = OperationCompletionHandler(self.queue,
@@ -276,7 +282,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
         # Build objects graph
         objects_graph = self._build_objects_graph(ctx, lb, data_model,
                                                   proxy_port_address,
-                                                  proxy_subnet)
+                                                  proxy_subnet,
+                                                  delete)
         LOG.debug("Radware vDirect LB object graph is " + str(objects_graph))
 
         wf_name = self._get_wf_name(lb)
@@ -321,15 +328,22 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             self.queue.put_nowait(oper)
 
     def _build_objects_graph(self, ctx, lb, data_model,
-                             proxy_port_address, proxy_subnet):
+                             proxy_port_address, proxy_subnet,
+                             deleted):
         """Iterate over the LB model starting from root lb entity
         and build its JSON representtaion for vDirect
         """
+        deleted_ids = []
+        if deleted:
+            deleted_ids.append(data_model.id)
+
         graph = {}
         for prop in LOADBALANCER_PROPERTIES:
             graph[prop] = getattr(lb, prop, PROPERTY_DEFAULTS.get(prop))
 
         graph['pip_address'] = proxy_port_address
+        graph['configure_allowed_address_pairs'] =\
+            self.configure_allowed_address_pairs
 
         graph['listeners'] = []
         listeners = [
@@ -338,6 +352,7 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             (listener.default_pool and
              listener.default_pool.provisioning_status !=
              n_constants.PENDING_DELETE and
+             listener.default_pool.id not in deleted_ids and
              listener.default_pool.members)]
         for listener in listeners:
             listener_dict = {}
@@ -382,7 +397,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             listener_dict['l7_policies'] = []
             policies = [
                 policy for policy in listener.l7_policies
-                if policy.provisioning_status != n_constants.PENDING_DELETE]
+                if policy.provisioning_status != n_constants.PENDING_DELETE and
+                policy.id not in deleted_ids]
             for policy in policies:
                 policy_dict = {}
                 for prop in L7_POLICY_PROPERTIES:
@@ -391,7 +407,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 policy_dict['rules'] = []
                 rules = [
                     rule for rule in policy.rules
-                    if rule.provisioning_status != n_constants.PENDING_DELETE]
+                    if rule.provisioning_status != n_constants.PENDING_DELETE
+                    and rule.id not in deleted_ids]
                 for rule in rules:
                     rule_dict = {}
                     for prop in L7_RULE_PROPERTIES:
@@ -401,26 +418,24 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 if policy_dict['rules']:
                     listener_dict['l7_policies'].append(policy_dict)
 
-            if (listener.default_pool and
-                listener.default_pool.provisioning_status !=
-                    n_constants.PENDING_DELETE):
-                def_pool_dict = {'id': listener.default_pool.id}
+            def_pool_dict = {'id': listener.default_pool.id}
 
-                if listener.default_pool.session_persistence:
-                    sess_pers_dict = {}
-                    for prop in SESSION_PERSISTENCY_PROPERTIES:
-                        sess_pers_dict[prop] = getattr(
-                            listener.default_pool.session_persistence, prop,
-                            PROPERTY_DEFAULTS.get(prop))
-                    def_pool_dict['sessionpersistence'] = sess_pers_dict
-                listener_dict['default_pool'] = def_pool_dict
+            if listener.default_pool.session_persistence:
+                sess_pers_dict = {}
+                for prop in SESSION_PERSISTENCY_PROPERTIES:
+                    sess_pers_dict[prop] = getattr(
+                        listener.default_pool.session_persistence, prop,
+                        PROPERTY_DEFAULTS.get(prop))
+                def_pool_dict['sessionpersistence'] = sess_pers_dict
+            listener_dict['default_pool'] = def_pool_dict
 
             graph['listeners'].append(listener_dict)
 
         graph['pools'] = []
         pools = [
             pool for pool in lb.pools
-            if pool.provisioning_status != n_constants.PENDING_DELETE]
+            if pool.provisioning_status != n_constants.PENDING_DELETE and
+            pool.id not in deleted_ids]
         for pool in pools:
             pool_dict = {}
             for prop in POOL_PROPERTIES:
@@ -430,7 +445,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
 
             if (pool.healthmonitor and
                 pool.healthmonitor.provisioning_status !=
-                n_constants.PENDING_DELETE):
+                n_constants.PENDING_DELETE and
+                pool.healthmonitor.id not in deleted_ids):
                 hm_dict = {}
                 for prop in HEALTH_MONITOR_PROPERTIES:
                     hm_dict[prop] = getattr(
@@ -441,7 +457,8 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
             pool_dict['members'] = []
             members = [
                 member for member in pool.members
-                if member.provisioning_status != n_constants.PENDING_DELETE]
+                if member.provisioning_status != n_constants.PENDING_DELETE and
+                member.id not in deleted_ids]
             for member in members:
                 member_dict = {}
                 for prop in MEMBER_PROPERTIES:
