@@ -13,8 +13,9 @@
 # limitations under the License.
 #
 
-import mock
 import sys
+
+import mock
 
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 from neutron_lib import context

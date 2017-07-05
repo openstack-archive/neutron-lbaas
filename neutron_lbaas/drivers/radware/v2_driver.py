@@ -13,10 +13,10 @@
 #    under the License.
 
 import copy
-import netaddr
 import threading
 import time
 
+import netaddr
 from neutron_lib import constants as n_constants
 from neutron_lib import context
 from neutron_lib.plugins import constants as pg_constants

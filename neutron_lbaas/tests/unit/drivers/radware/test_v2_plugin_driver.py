@@ -14,12 +14,12 @@
 
 import contextlib
 import copy
+import re
+
 import mock
 from neutron_lib import context
 from neutron_lib.plugins import constants
 from neutron_lib.plugins import directory
-import re
-
 from oslo_config import cfg
 from oslo_serialization import jsonutils
 from six.moves import queue as Queue

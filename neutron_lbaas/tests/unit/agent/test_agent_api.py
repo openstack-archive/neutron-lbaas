@@ -14,6 +14,7 @@
 #    under the License.
 
 import copy
+
 import mock
 
 from neutron_lbaas.agent import agent_api as api
