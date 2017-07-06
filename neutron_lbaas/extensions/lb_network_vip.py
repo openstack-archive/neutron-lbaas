@@ -15,6 +15,9 @@
 
 from neutron_lib.api import extensions
 from neutron_lib import constants as n_constants
+from neutron_lib import exceptions as nexception
+
+from neutron_lbaas._i18n import _
 
 EXTENDED_ATTRIBUTES_2_0 = {
     'loadbalancers': {
@@ -28,6 +31,11 @@ EXTENDED_ATTRIBUTES_2_0 = {
                            'default': n_constants.ATTR_NOT_SPECIFIED}
     }
 }
+
+
+class VipNetworkInvalid(nexception.BadRequest):
+    message = _("VIP network %(network)s is invalid. "
+                "There is no subnet in VIP network specified.")
 
 
 class Lb_network_vip(extensions.ExtensionDescriptor):

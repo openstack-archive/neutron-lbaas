@@ -820,6 +820,14 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
                 self._validate_statuses(lb_id)
             return lb
 
+    def test_create_loadbalancer_with_vip_network_id_no_subnets(self):
+        with self.network() as net:
+            with testtools.ExpectedException(webob.exc.HTTPClientError):
+                self.test_create_loadbalancer(
+                    vip_network_id=net['network']['id'],
+                    vip_subnet_id=None,
+                    expected_res_status=400)
+
     def test_update_loadbalancer(self):
         name = 'new_loadbalancer'
         description = 'a crazy loadbalancer'
