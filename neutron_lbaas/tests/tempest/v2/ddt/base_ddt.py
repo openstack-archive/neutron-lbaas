@@ -100,15 +100,14 @@ class AdminStateTests(testscenarios.TestWithScenarios,
         cls.member_id = cls.member['id']
 
     @classmethod
-    def resource_set_health_monitor(cls, admin_state_up_flag):
+    def resource_set_health_monitor(cls, admin_state_up_flag, creator):
         cls.create_hm_kwargs = {'type': cls.protocol,
                                 'delay': 3,
                                 'max_retries': 10,
                                 'timeout': 5,
                                 'pool_id': cls.pool_id,
                                 'admin_state_up': admin_state_up_flag}
-        cls.health_monitor = cls._create_health_monitor(
-            **cls.create_hm_kwargs)
+        cls.health_monitor = creator(**cls.create_hm_kwargs)
         cls.health_monitor_id = cls.health_monitor['id']
 
     @classmethod
