@@ -69,7 +69,8 @@ class BaseHealthMonitorAdminStateTest(base_ddt.AdminStateTests):
         self.resource_setup_load_balancer(self.lb_flag)
         self.resource_setup_listener(self.listener_flag)
         self.resource_setup_pool(self.pool_flag)
-        self.resource_set_health_monitor(self.healthmonitor_flag)
+        self.resource_set_health_monitor(self.healthmonitor_flag,
+                     self._create_health_monitor)
 
     def tearDown(self):
         """Clean up health monitor, pools, listener and lb."""
