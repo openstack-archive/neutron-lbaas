@@ -1,4 +1,4 @@
-# Copyright 2016 F5 Networks Inc.
+# Copyright 2016-2017 F5 Networks Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,17 @@
 # limitations under the License.
 #
 
+import mock
 import sys
 
-import mock
+from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
 from neutron_lib import context
 
-from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
-
 with mock.patch.dict(
-        sys.modules, {'f5lbaasdriver': mock.Mock(__version__="0.1.1")}):
+        sys.modules, {'f5lbaasdriver': mock.Mock(__version__="1.0.0"),
+                      'f5lbaasdriver.v2': mock.Mock(),
+                      'f5lbaasdriver.v2.bigip': mock.Mock(),
+                      'f5lbaasdriver.v2.bigip.driver_v2': mock.Mock()}):
     from neutron_lbaas.drivers.f5 import driver_v2
 
 
@@ -117,3 +119,15 @@ class TestF5DriverV2(test_db_loadbalancerv2.LbaasPluginDbTestCase):
                    self.driver.health_monitor,
                    FakeModel("hm-01"),
                    self.driver.f5.healthmonitor)
+
+    def test_l7policy(self):
+        DriverTest(self,
+                   self.driver.l7policy,
+                   FakeModel("l7policy-01"),
+                   self.driver.f5.l7policy)
+
+    def test_l7rule(self):
+        DriverTest(self,
+                   self.driver.l7rule,
+                   FakeModel("l7rule-01"),
+                   self.driver.f5.l7rule)
