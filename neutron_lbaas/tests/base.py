@@ -61,7 +61,7 @@ class NeutronDbPluginV2TestCase(
         return self._req('GET', resource, None, fmt, id=id,
                          params=params, subresource=subresource, sub_id=sub_id)
 
-    def new_update_request(self, resource, data, id, fmt=None,
+    def new_update_request_lbaas(self, resource, data, id, fmt=None,
                            subresource=None, context=None, sub_id=None):
         return self._req(
             'PUT', resource, data, fmt, id=id, subresource=subresource,

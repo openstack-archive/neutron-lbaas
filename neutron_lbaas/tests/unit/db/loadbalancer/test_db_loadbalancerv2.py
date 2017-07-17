@@ -611,7 +611,7 @@ class LbaasPluginDbTestCase(LbaasTestMixin, base.NeutronDbPluginV2TestCase):
         self._subnet_id = _subnet_id
 
     def _update_loadbalancer_api(self, lb_id, data):
-        req = self.new_update_request('loadbalancers', data, lb_id)
+        req = self.new_update_request_lbaas('loadbalancers', data, lb_id)
         resp = req.get_response(self.ext_api)
         body = self.deserialize(self.fmt, req.get_response(self.ext_api))
         return resp, body
@@ -1448,7 +1448,7 @@ class ListenerTestBase(LbaasPluginDbTestCase):
         return resp, body
 
     def _update_listener_api(self, listener_id, data):
-        req = self.new_update_request('listeners', data, listener_id)
+        req = self.new_update_request_lbaas('listeners', data, listener_id)
         resp = req.get_response(self.ext_api)
         body = self.deserialize(self.fmt, req.get_response(self.ext_api))
         return resp, body
@@ -2721,7 +2721,7 @@ class LbaasL7Tests(ListenerTestBase):
                     expected['invert'] = True
                     expected['admin_state_up'] = False
 
-                    req = self.new_update_request(
+                    req = self.new_update_request_lbaas(
                         'l7policies', {'rule': expected},
                         policy_id, subresource='rules',
                         sub_id=r['rule']['id'])
@@ -2852,7 +2852,7 @@ class PoolTestBase(ListenerTestBase):
         return resp, body
 
     def _update_pool_api(self, pool_id, data):
-        req = self.new_update_request('pools', data, pool_id)
+        req = self.new_update_request_lbaas('pools', data, pool_id)
         resp = req.get_response(self.ext_api)
         body = self.deserialize(self.fmt, resp)
         return resp, body
@@ -3320,8 +3320,8 @@ class MemberTestBase(PoolTestBase):
         return resp, body
 
     def _update_member_api(self, pool_id, member_id, data):
-        req = self.new_update_request('pools', data, pool_id,
-                                      subresource='members', sub_id=member_id)
+        req = self.new_update_request_lbaas(
+            'pools', data, pool_id, subresource='members', sub_id=member_id)
         resp = req.get_response(self.ext_api)
         body = self.deserialize(self.fmt, resp)
         return resp, body
@@ -3580,7 +3580,7 @@ class HealthMonitorTestBase(MemberTestBase):
         return resp, body
 
     def _update_healthmonitor_api(self, hm_id, data):
-        req = self.new_update_request('healthmonitors', data, hm_id)
+        req = self.new_update_request_lbaas('healthmonitors', data, hm_id)
         resp = req.get_response(self.ext_api)
         body = self.deserialize(self.fmt, resp)
         return resp, body
