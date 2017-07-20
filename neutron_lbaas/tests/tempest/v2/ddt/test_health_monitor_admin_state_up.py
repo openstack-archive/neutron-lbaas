@@ -74,8 +74,8 @@ class BaseHealthMonitorAdminStateTest(base_ddt.AdminStateTests):
 
         self.resource_setup_pool(self.pool_flag)
         self.addCleanup(self._delete_pool, self.pool_id)
-
-        self.resource_set_health_monitor(self.healthmonitor_flag)
+        self.resource_set_health_monitor(self.healthmonitor_flag,
+                self._create_health_monitor)
         self.addCleanup(self._delete_health_monitor, self.health_monitor_id)
 
     @classmethod
