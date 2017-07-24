@@ -26,10 +26,6 @@ file, tempest.conf, already set up to work with your devstack installation.
 
 Tests can be run in the following way but you need to have devstack running
 
-for apiv1 tests ::
-
-    $> tox -e apiv1
-
 for apiv2 tests ::
 
     $> tox -e apiv2

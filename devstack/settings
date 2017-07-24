@@ -1,7 +1,5 @@
 # settings for LBaaS devstack pluginlib/neutron_plugins/services/loadbalancer
 
-# In the future, the q-lbaas may default to q-lbaasv2
-
 AGENT_LBAASV2_BINARY="$NEUTRON_BIN_DIR/neutron-lbaasv2-agent"
 
 LBAAS_V2="q-lbaasv2"
