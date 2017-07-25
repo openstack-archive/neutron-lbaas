@@ -15,6 +15,7 @@
 
 from tempest import config
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -70,7 +71,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertEmpty(members,
                          msg='Initial pool was supposed to be empty')
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_list_3_members(self):
         """Test that we can list members. """
         member_ips_exp = set([u"127.0.0.0", u"127.0.0.1", u"127.0.0.2"])
@@ -88,7 +89,7 @@ class MemberTestJSON(base.BaseTestCase):
         found_member_ips = set([m["address"] for m in members])
         self.assertEqual(found_member_ips, member_ips_exp)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_add_member(self):
         """Test that we can add a single member."""
         expect_empty_members = self.members_client.list_members(self.pool_id)
@@ -105,7 +106,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_get_member(self):
         """Test that we can fetch a member by id."""
         member_opts = self.build_member_opts()
@@ -130,7 +131,7 @@ class MemberTestJSON(base.BaseTestCase):
         member = self._create_member(self.pool_id, **member_opts)
         self.addCleanup(self._delete_member, self.pool_id, member['id'])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_missing_required_field_address(self):
         """Test create a member with missing field address"""
         member_opts = {}
@@ -139,7 +140,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_missing_required_field_protocol_port(self):
         """Test create a member with missing field protocol_port"""
         member_opts = {}
@@ -148,7 +149,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_missing_required_field_subnet_id(self):
         """Test create a member with missing field subnet_id """
         member_opts = {}
@@ -157,14 +158,14 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_raises_BadRequest_when_missing_attrs_during_member_create(self):
         """Test failure on missing attributes on member create."""
         member_opts = {}
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_invalid_tenant_id(self):
         """Test create member with invalid tenant_id"""
         member_opts = {}
@@ -175,7 +176,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_invalid_address(self):
         """Test create member with invalid address"""
         member_opts = {}
@@ -185,7 +186,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_invalid_protocol_port(self):
         """Test create member with invalid protocol_port"""
         member_opts = {}
@@ -195,7 +196,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_invalid_subnet_id(self):
         """Test create member with invalid subnet_id"""
         member_opts = {}
@@ -205,7 +206,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_invalid_admin_state_up(self):
         """Test create member with invalid admin_state_up"""
         member_opts = {}
@@ -216,7 +217,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_invalid_weight(self):
         """Test create member with invalid weight"""
         member_opts = {}
@@ -227,7 +228,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_nonint_weight(self):
         """Test create member with nonint weight"""
         member_opts = {}
@@ -238,7 +239,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_tenant_id(self):
         """Test create member with an empty tenant_id"""
         member_opts = {}
@@ -249,7 +250,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_address(self):
         """Test create member with an empty address"""
         member_opts = {}
@@ -259,7 +260,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_protocol_port(self):
         """Test create member with an empty protocol_port"""
         member_opts = {}
@@ -269,7 +270,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_subnet_id(self):
         """Test create member with empty subnet_id"""
         member_opts = {}
@@ -279,7 +280,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_admin_state_up(self):
         """Test create member with an empty admin_state_up"""
         member_opts = {}
@@ -290,7 +291,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_weight(self):
         """Test create member with an empty weight"""
         member_opts = {}
@@ -301,7 +302,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_delete_member(self):
         """Test that we can delete a member by id."""
         member_opts = self.build_member_opts()
@@ -313,7 +314,7 @@ class MemberTestJSON(base.BaseTestCase):
         members = self.members_client.list_members(self.pool_id)
         self.assertEmpty(members)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_update_member(self):
         """Test that we can update a member."""
         member_opts = self.build_member_opts()
@@ -362,7 +363,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertFalse(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_member_invalid_admin_state_up(self):
         """Test that we can update a member with empty admin_state_up."""
         member_opts = self.build_member_opts()
@@ -376,7 +377,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_member_invalid_weight(self):
         """Test that we can update a member with an empty weight."""
         member_opts = self.build_member_opts()
@@ -390,7 +391,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_member_empty_admin_state_up(self):
         """Test that we can update a member with empty admin_state_up."""
         member_opts = self.build_member_opts()
@@ -404,7 +405,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_member_empty_weight(self):
         """Test that we can update a member with an empty weight."""
         member_opts = self.build_member_opts()
@@ -418,7 +419,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_raises_immutable_when_updating_immutable_attrs_on_member(self):
         """Test failure on immutable attribute on member create."""
         member_opts = self.build_member_opts()
@@ -431,7 +432,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._update_member,
                           self.pool_id, member_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_raises_exception_on_invalid_attr_on_create(self):
         """Test failure on invalid attribute on member create."""
         member_opts = self.build_member_opts()
@@ -439,7 +440,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_raises_exception_on_invalid_attr_on_update(self):
         """Test failure on invalid attribute on member update."""
         member_opts = self.build_member_opts()
