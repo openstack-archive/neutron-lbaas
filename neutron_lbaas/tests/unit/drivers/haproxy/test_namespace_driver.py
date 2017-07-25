@@ -42,7 +42,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.ensure_dir = mock.patch.object(fileutils, 'ensure_tree').start()
         self._process_monitor = mock.Mock()
         with mock.patch(
-                'neutron.common.utils.load_class_by_alias_or_classname'):
+                'neutron_lib.utils.runtime.load_class_by_alias_or_classname'):
             self.driver = namespace_driver.HaproxyNSDriver(
                 conf,
                 self.rpc_mock,
