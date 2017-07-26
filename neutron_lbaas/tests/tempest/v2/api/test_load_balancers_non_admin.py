@@ -15,6 +15,7 @@
 
 import netaddr
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -55,7 +56,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(len(load_balancers), 1)
         self.assertIn(self.load_balancer, load_balancers)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_list_load_balancers_two(self):
         """Test list load balancers with two load balancers"""
         new_load_balancer = self._create_active_load_balancer(
@@ -68,14 +69,14 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertIn(new_load_balancer, load_balancers)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_get_load_balancer(self):
         """Test get load balancer"""
         load_balancer = self.load_balancers_client.get_load_balancer(
             self.load_balancer_id)
         self.assertEqual(self.load_balancer, load_balancer)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_load_balancer(self):
         """Test create load balancer"""
         new_load_balancer = self._create_active_load_balancer(
@@ -87,7 +88,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(new_load_balancer, load_balancer)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_missing_vip_subnet_id_field(self):
         """
         Test create load balancer with a missing
@@ -98,7 +99,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           tenant_id=self.subnet['tenant_id'])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_empty_provider_field(self):
         """Test create load balancer with an empty provider field"""
         self.assertRaises(ex.BadRequest,
@@ -113,7 +114,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         self.assertEqual(load_balancer.get('description'), "")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_empty_vip_address_field(self):
         """Test create load balancer with empty vip_address field"""
         self.assertRaises(ex.BadRequest,
@@ -129,7 +130,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.addCleanup(self._delete_load_balancer, load_balancer['id'])
         self.assertEqual(load_balancer.get('admin_state_up'), True)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_empty_admin_state_up_field(self):
         """Test create load balancer with empty admin_state_up field"""
         self.assertRaises(ex.BadRequest,
@@ -189,7 +190,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         load_balancer_final = load_balancer['provider']
         self.assertEqual(load_balancer_initial, load_balancer_final)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_invalid_vip_subnet_id(self):
         """Test create load balancer with an invalid vip subnet id"""
         self.assertRaises(ex.BadRequest,
@@ -197,7 +198,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           vip_subnet_id="abc123")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_empty_vip_subnet_id(self):
         """Test create load balancer with an empty vip subnet id"""
         self.assertRaises(ex.BadRequest,
@@ -205,7 +206,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           vip_subnet_id="")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_invalid_tenant_id(self):
         """Test create load balancer with an invalid tenant id"""
         self.assertRaises(ex.BadRequest,
@@ -213,7 +214,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           tenant_id="&^%123")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_invalid_name(self):
         """Test create load balancer with an invalid name"""
         self.assertRaises(ex.BadRequest,
@@ -223,7 +224,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           name='n' * 256)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_invalid_description(self):
         """Test create load balancer with an invalid description"""
         self.assertRaises(ex.BadRequest,
@@ -233,7 +234,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           description='d' * 256)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_incorrect_attribute(self):
         """Test create a load balancer with an extra, incorrect field"""
         self.assertRaises(ex.BadRequest,
@@ -252,7 +253,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                          self.subnet['tenant_id'])
         self._wait_for_load_balancer_status(load_balancer['id'])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_empty_tenant_id_field(self):
         """Test create load balancer with empty tenant_id field"""
         self.assertRaises(ex.BadRequest,
@@ -261,7 +262,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           tenant_id="")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_other_tenant_id_field(self):
         """Test create load balancer for other tenant"""
         tenant = 'deffb4d7c0584e89a8ec99551565713c'
@@ -271,7 +272,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           tenant_id=tenant)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_invalid_flavor_field(self):
         """Test create load balancer with an invalid flavor field"""
         self.assertRaises(ex.NotFound,
@@ -279,7 +280,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           vip_subnet_id=self.subnet['id'],
                           flavor_id="NO_SUCH_FLAVOR")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_provider_flavor_conflict(self):
         """Test create load balancer with both a provider and a flavor"""
         self.assertRaises(ex.Conflict,
@@ -288,7 +289,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           flavor_id="NO_SUCH_FLAVOR",
                           provider="NO_SUCH_PROVIDER")
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_update_load_balancer(self):
         """Test update load balancer"""
         self._update_load_balancer(self.load_balancer_id,
@@ -305,7 +306,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
             self.load_balancer_id)
         self.assertEqual(load_balancer.get('name'), "")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_load_balancer_invalid_name(self):
         """Test update load balancer with invalid name"""
         self.assertRaises(ex.BadRequest,
@@ -325,7 +326,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         load_balancer_new = load_balancer['name']
         self.assertEqual(load_balancer_initial, load_balancer_new)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_load_balancer_invalid_description(self):
         """Test update load balancer with invalid description"""
         self.assertRaises(ex.BadRequest,
@@ -353,7 +354,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         load_balancer_new = load_balancer['description']
         self.assertEqual(load_balancer_initial, load_balancer_new)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_load_balancer_invalid_admin_state_up_field(self):
         """Test update load balancer with an invalid admin_state_up"""
         self.assertRaises(ex.BadRequest,
@@ -362,7 +363,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           wait=False,
                           admin_state_up="a&^%$jbc123")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_load_balancer_empty_admin_state_up_field(self):
         """Test update load balancer with an empty admin_state_up"""
         self.assertRaises(ex.BadRequest,
@@ -379,7 +380,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self._update_load_balancer(self.load_balancer_id)
         self.assertEqual(load_balancer_initial, True)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_load_balancer_incorrect_attribute(self):
         """Test update a load balancer with an extra, invalid attribute"""
         self.assertRaises(ex.BadRequest,
@@ -391,7 +392,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           admin_state_up=True,
                           port=80)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_get_load_balancer_status_tree(self):
         """Test get load balancer status tree"""
         statuses = self.load_balancers_client.get_load_balancer_status_tree(
@@ -401,7 +402,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual("ACTIVE", load_balancer['provisioning_status'])
         self.assertEmpty(load_balancer['listeners'])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_get_load_balancer_stats(self):
         """Test get load balancer stats"""
         stats = self.load_balancers_client.get_load_balancer_stats(
@@ -411,7 +412,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.assertEqual(0, stats['total_connections'])
         self.assertEqual(0, stats['active_connections'])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_delete_load_balancer(self):
         """Test delete load balancer"""
         new_load_balancer = self._create_active_load_balancer(

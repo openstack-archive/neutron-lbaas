@@ -16,6 +16,7 @@
 
 from tempest.lib.common.utils import data_utils
 from tempest.lib.common.utils import test_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -88,7 +89,7 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
         self.assertNotEqual(self.load_balancer.get('tenant_id'),
                             self.subnet['tenant_id'])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_load_balancer_empty_tenant_id_field(self):
         """Test create load balancer with empty tenant_id field should fail"""
         self.assertRaises(ex.BadRequest,
@@ -97,7 +98,7 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
                           wait=False,
                           tenant_id="")
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_load_balancer_for_another_tenant(self):
         """Test create load balancer for other tenant"""
         self.assertEqual(self.tenant,
@@ -112,7 +113,7 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
             self.load_balancer['id'])
         self.assertEqual(new_description, load_balancer.get('description'))
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_delete_load_balancer_for_tenant(self):
         """Test delete another tenant's load balancer as admin"""
         self.assertEqual(self.tenant,

@@ -16,6 +16,7 @@
 
 from tempest import config
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -60,7 +61,7 @@ class MemberTestJSON(base.BaseAdminTestCase):
     def resource_cleanup(cls):
         super(MemberTestJSON, cls).resource_cleanup()
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_member_invalid_tenant_id(self):
         """Test create member with invalid tenant_id"""
         member_opts = {}
@@ -73,7 +74,7 @@ class MemberTestJSON(base.BaseAdminTestCase):
         self.assertEqual(member['subnet_id'], self.subnet_id)
         self.assertEqual(member['tenant_id'], "$232!$pw")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_member_empty_tenant_id(self):
         """Test create member with an empty tenant_id should fail"""
         member_opts = {}

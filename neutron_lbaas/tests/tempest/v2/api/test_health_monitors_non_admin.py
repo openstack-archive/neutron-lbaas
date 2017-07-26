@@ -13,6 +13,7 @@
 #    under the License.
 
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -62,7 +63,7 @@ class TestHealthMonitors(base.BaseTestCase):
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertIn(hm, hm_list)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_list_health_monitors_two(self):
         hm1 = self._create_health_monitor(**self.create_basic_hm_kwargs)
         new_listener = self._create_listener(
@@ -84,13 +85,13 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertIn(hm1, hm_list)
         self.assertIn(hm2, hm_list)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_get_health_monitor(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm, hm_test)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_health_monitor(self):
         new_hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm = self.health_monitors_client.get_health_monitor(new_hm.get('id'))
@@ -188,7 +189,7 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertEqual(hm, hm_test)
         self.assertEqual('200', hm_test.get('expected_codes'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_tenant_id(self):
         """Test create health monitor with invalid tenant_id"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
@@ -196,42 +197,42 @@ class TestHealthMonitors(base.BaseTestCase):
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout=5, pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_type(self):
         """Test create health monitor with invalid type"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='blah', delay=3, max_retries=10, timeout=5,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_delay(self):
         """Test create health monitor with invalid delay"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay='blah', max_retries=10,
                           timeout=5, pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_max_retries(self):
         """Test create health monitor with invalid max_retries"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries='blah',
                           timeout=5, pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_timeout(self):
         """Test create health monitor with invalid timeout"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout='blah', pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_pool_id(self):
         """Test create health monitor with invalid pool id"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout=5, pool_id='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_admin_state_up(self):
         """Test if a non_admin user can create a health monitor with invalid
         admin_state_up
@@ -241,7 +242,7 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           admin_state_up='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_expected_codes(self):
         """Test if a non_admin user can create a health monitor with invalid
         expected_codes
@@ -251,7 +252,7 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           expected_codes='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_url_path(self):
         """Test if a non_admin user can create a health monitor with invalid
         url_path
@@ -261,7 +262,7 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           url_path='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_http_method(self):
         """Test if a non_admin user can create a health monitor with invalid
         http_method
@@ -271,42 +272,42 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           http_method='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_type(self):
         """Test create health monitor with empty type"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type='', delay=3, max_retries=10, timeout=5,
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_delay(self):
         """Test create health monitor with empty delay"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay='', max_retries=10,
                           timeout=5, pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_timeout(self):
         """Test create health monitor with empty timeout"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout='', pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_max_retries(self):
         """Test create health monitor with empty max_retries"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries='',
                           timeout=5, pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_max_pool_id(self):
         """Test create health monitor with empty pool_id"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout=5, pool_id='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_max_admin_state_up(self):
         """Test create health monitor with empty admin_state_up"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
@@ -314,7 +315,7 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           admin_state_up='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_max_http_method(self):
         """Test create health monitor with empty http_method"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
@@ -322,14 +323,14 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           http_method='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_max_url_path(self):
         """Test create health monitor with empty url_path"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout=5, pool_id=self.pool.get('id'), url_path='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_empty_expected_codes(self):
         """Test create health monitor with empty expected_codes"""
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
@@ -337,20 +338,20 @@ class TestHealthMonitors(base.BaseTestCase):
                           timeout=5, pool_id=self.pool.get('id'),
                           expected_codes='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_attribute(self):
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3,
                           max_retries='twenty one',
                           pool_id=self.pool.get('id'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_health_monitor_extra_attribute(self):
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
                           type=self.hm_protocol, delay=3, max_retries=10,
                           pool_id=self.pool.get('id'), subnet_id=10)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_update_health_monitor(self):
         hm = self._create_health_monitor(type=self.hm_protocol, delay=3,
                                          max_retries=10, timeout=5,
@@ -403,105 +404,105 @@ class TestHealthMonitors(base.BaseTestCase):
         self.assertEqual(hm.get('expected_codes'),
                          new_hm.get('expected_codes'))
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_attribute(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), max_retries='blue')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_admin_state_up(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), admin_state_up='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_delay(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), delay='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_timeout(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), timeout='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_max_retries(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), max_retries='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_http_method(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), http_method='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_url_path(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), url_path='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_invalid_expected_codes(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), expected_codes='blah')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_admin_state_up(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), admin_state_up='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_delay(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), empty_delay='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_timeout(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), timeout='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_max_retries(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), max_retries='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_empty_http_method(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), http_method='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_url_path(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
                           self._update_health_monitor,
                           hm.get('id'), http_method='')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_health_monitor_empty_expected_codes(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         self.assertRaises(ex.BadRequest,
@@ -514,7 +515,7 @@ class TestHealthMonitors(base.BaseTestCase):
                           self._update_health_monitor,
                           hm.get('id'), protocol='UDP')
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_delete_health_monitor(self):
         hm = self._create_health_monitor(cleanup=False, type=self.hm_protocol,
                                          delay=3, max_retries=10, timeout=5,

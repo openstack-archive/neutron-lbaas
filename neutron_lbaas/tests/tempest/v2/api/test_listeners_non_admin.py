@@ -14,6 +14,7 @@
 #    under the License.
 
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -54,7 +55,7 @@ class ListenersTestJSON(base.BaseTestCase):
         cls.listener = cls._create_listener(**cls.create_listener_kwargs)
         cls.listener_id = cls.listener['id']
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_get_listener(self):
         """Test get listener"""
         listener = self.listeners_client.get_listener(
@@ -71,7 +72,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_list_listeners_two(self):
         """Test get listeners with two listeners"""
         create_new_listener_kwargs = self.create_listener_kwargs
@@ -89,7 +90,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertIn(new_listener, listeners)
         self.assertNotEqual(self.listener, new_listener)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_listener(self):
         """Test create listener"""
         create_new_listener_kwargs = self.create_listener_kwargs
@@ -106,7 +107,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertEqual(new_listener, listener)
         self.assertNotEqual(self.listener, new_listener)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_missing_field_loadbalancer(self):
         """Test create listener with a missing required field loadbalancer"""
         self.assertRaises(ex.BadRequest,
@@ -116,7 +117,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_missing_field_protocol(self):
         """Test create listener with a missing required field protocol"""
         self.assertRaises(ex.BadRequest,
@@ -126,7 +127,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_missing_field_protocol_port(self):
         """Test create listener with a missing required field protocol_port"""
         self.assertRaises(ex.BadRequest,
@@ -152,7 +153,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertEqual(new_listener, listener)
         self.assertTrue(new_listener['admin_state_up'])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_load_balancer_id(self):
         """Test create listener with an invalid load_balancer_id"""
         self.assertRaises(ex.BadRequest,
@@ -163,7 +164,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_protocol(self):
         """Test create listener with an invalid protocol"""
         self.assertRaises(ex.BadRequest,
@@ -174,7 +175,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_protocol_port(self):
         """Test create listener with an invalid protocol_port"""
         self.assertRaises(ex.BadRequest,
@@ -185,7 +186,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_admin_state_up(self):
         """Test update listener with an invalid admin_state_up"""
         self.assertRaises(ex.BadRequest,
@@ -196,7 +197,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_tenant_id(self):
         """Test create listener with an invalid tenant id"""
         self.assertRaises(ex.BadRequest,
@@ -208,7 +209,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_name(self):
         """Test create listener with an invalid name"""
         self.assertRaises(ex.BadRequest,
@@ -220,7 +221,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_description(self):
         """Test create listener with an invalid description"""
         self.assertRaises(ex.BadRequest,
@@ -232,7 +233,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_invalid_connection_limit(self):
         """Test create listener with an invalid value for connection
         _limit field
@@ -246,7 +247,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_load_balancer_id(self):
         """Test create listener with an empty load_balancer_id"""
         self.assertRaises(ex.BadRequest,
@@ -257,7 +258,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_protocol(self):
         """Test create listener with an empty protocol"""
         self.assertRaises(ex.BadRequest,
@@ -268,7 +269,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_protocol_port(self):
         """Test create listener with an empty protocol_port"""
         self.assertRaises(ex.BadRequest,
@@ -279,7 +280,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_admin_state_up(self):
         """Test update listener with an empty  admin_state_up"""
         self.assertRaises(ex.BadRequest,
@@ -290,7 +291,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_tenant_id(self):
         """Test create listener with an empty tenant id"""
         self.assertRaises(ex.BadRequest,
@@ -334,7 +335,7 @@ class ListenersTestJSON(base.BaseTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_connection_limit(self):
         """Test create listener with an empty connection
         _limit field
@@ -348,7 +349,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_incorrect_attribute(self):
         """Test create a listener with an extra, incorrect field"""
         self.assertRaises(ex.BadRequest,
@@ -358,7 +359,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_update_listener(self):
         """Test update listener"""
         self._update_listener(self.listener_id,
@@ -369,7 +370,7 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('name'), 'new_name')
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_invalid_tenant_id(self):
         """Test update listener with an invalid tenant id"""
         self.assertRaises(ex.BadRequest,
@@ -379,7 +380,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_invalid_admin_state_up(self):
         """Test update a listener with an invalid admin_state_up"""
         self.assertRaises(ex.BadRequest,
@@ -389,7 +390,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_invalid_name(self):
         """Test update a listener with an invalid name"""
         self.assertRaises(ex.BadRequest,
@@ -399,7 +400,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_invalid_description(self):
         """Test update a listener with an invalid description"""
         self.assertRaises(ex.BadRequest,
@@ -409,7 +410,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_invalid_connection_limit(self):
         """Test update a listener with an invalid connection_limit"""
         self.assertRaises(ex.BadRequest,
@@ -419,7 +420,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_incorrect_attribute(self):
         """Test update a listener with an extra, incorrect field"""
         self.assertRaises(ex.BadRequest,
@@ -486,7 +487,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertEqual(listener.get('connection_limit'),
                          old_connection_limit)
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_empty_tenant_id(self):
         """Test update listener with an empty tenant id"""
         self.assertRaises(ex.BadRequest,
@@ -496,7 +497,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_empty_admin_state_up(self):
         """Test update a listener with an empty admin_state_up"""
         self.assertRaises(ex.BadRequest,
@@ -526,7 +527,7 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('description'), "")
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_update_listener_empty_connection_limit(self):
         """Test update a listener with an empty connection_limit"""
         self.assertRaises(ex.BadRequest,
@@ -536,7 +537,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_delete_listener(self):
         """Test delete listener"""
         create_new_listener_kwargs = self.create_listener_kwargs

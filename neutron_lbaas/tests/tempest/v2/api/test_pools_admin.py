@@ -76,7 +76,7 @@ class TestPools(base.BaseAdminTestCase):
             self.addCleanup(self._delete_pool, response['id'])
         return response
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_pool_using_empty_tenant_field(self):
         """Test create pool with empty tenant field should fail"""
         self.assertRaises(ex.BadRequest, self._create_pool,
@@ -108,7 +108,7 @@ class TestPools(base.BaseAdminTestCase):
         self.assertEqual(pool_tenant, pool.get('tenant_id'))
 
     @decorators.skip_because(bug="1468457")
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_pool_for_another_tenant(self):
         """Test create pool for other tenant field"""
         tenant = 'deffb4d7c0584e89a8ec99551565713c'
@@ -118,7 +118,7 @@ class TestPools(base.BaseAdminTestCase):
         pool_tenant = pool.get('tenant_id')
         self.assertEqual(pool_tenant, tenant)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_update_pool_sesssion_persistence_app_cookie(self):
         """Test update admin pool's session persistence"""
         new_pool = self._prepare_and_create_pool()
@@ -145,7 +145,7 @@ class TestPools(base.BaseAdminTestCase):
                                "cookie_name": None}
         self.assertEqual(session_persistence, pool.get('session_persistence'))
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_delete_pool(self):
         """Test delete admin pool"""
         new_pool = self._prepare_and_create_pool(cleanup=False)

@@ -15,6 +15,7 @@
 #    under the License.
 
 from tempest.lib.common.utils import data_utils
+from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 from tempest import test
 
@@ -55,7 +56,7 @@ class ListenersTestJSON(base.BaseAdminTestCase):
     def resource_cleanup(cls):
         super(ListenersTestJSON, cls).resource_cleanup()
 
-    @test.attr(type='negative')
+    @decorators.attr(type='negative')
     def test_create_listener_empty_tenant_id(self):
         """Test create listener with an empty tenant id should fail"""
         create_new_listener_kwargs = self.create_listener_kwargs
@@ -84,7 +85,7 @@ class ListenersTestJSON(base.BaseAdminTestCase):
             new_listener_id)
         self.assertEqual(new_listener, listener)
 
-    @test.attr(type='smoke')
+    @decorators.attr(type='smoke')
     def test_create_listener_missing_tenant_id(self):
         """Test create listener with an missing tenant id.
 
