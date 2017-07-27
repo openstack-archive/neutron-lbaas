@@ -43,9 +43,7 @@ function _setup_octavia {
         "
     fi
 
-    if [ "$testenv" != "apiv1" ]; then
-        ENABLED_SERVICES+="octavia,o-cw,o-hk,o-hm,o-api,"
-    fi
+    ENABLED_SERVICES+="octavia,o-cw,o-hk,o-hm,o-api,"
     if [ "$testenv" = "apiv2" ]; then
         load_conf_hook apiv2
     fi
@@ -76,7 +74,7 @@ case "$testtype" in
         # Make sure lbaasv2 is listed as enabled for tempest
         load_conf_hook api_extensions
 
-        # These are not needed with either v1 or v2
+        # These are not needed
         ENABLED_SERVICES+="-c-api,-c-bak,-c-sch,-c-vol,-cinder,"
         ENABLED_SERVICES+="-s-account,-s-container,-s-object,-s-proxy,"
 
@@ -91,18 +89,14 @@ case "$testtype" in
             ENABLED_SERVICES+="-ceilometer-collector,"
         fi
 
-        if [ "$testenv" == "apiv1" ]; then
-            ENABLED_SERVICES+="q-lbaas,"
-        else
-            # Override enabled services, so we can turn on lbaasv2.
-            # While we're at it, disable cinder and swift, since we don't need them.
-            ENABLED_SERVICES+="q-lbaasv2,-q-lbaas,"
+        # Override enabled services, so we can turn on lbaasv2.
+        # While we're at it, disable cinder and swift, since we don't need them.
+        ENABLED_SERVICES+="q-lbaasv2,"
 
-            if [ "$lbaasdriver" = "namespace" ]; then
-                export DEVSTACK_LOCAL_CONFIG+="
+        if [ "$lbaasdriver" = "namespace" ]; then
+            export DEVSTACK_LOCAL_CONFIG+="
         NEUTRON_LBAAS_SERVICE_PROVIDERV2=LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
         "
-             fi
         fi
 
         if [ "$lbaasdriver" = "octavia" ]; then

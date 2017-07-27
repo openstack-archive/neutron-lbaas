@@ -4,7 +4,7 @@
 
 # Legacy values for $1, $2 and $3:
 # $1 - dsvm-functional, tempest (testtype)
-# $2 - lbaasv2, lbaasv1 (lbaasversion)
+# $2 - lbaasv2 (lbaasversion)
 # $3 - scenario, minimal, api, healthmonitor, listener, loadbalancer, member, pool (lbaastest)
 
 # Args being phased in:
@@ -45,9 +45,7 @@ case $testtype in
 
         testenv=${lbaastest:-"apiv2"}
 
-        if [ "$lbaasversion" = "lbaasv1" ]; then
-            testenv="apiv1"
-        elif [ "$lbaasversion" = "lbaasv2" ]; then
+        if [ "$lbaasversion" = "lbaasv2" ]; then
             case "$lbaasenv" in
                 "api"|"healthmonitor"|"listener"|"loadbalancer"|"member"|"minimal"|"pool")
                     testenv="apiv2"

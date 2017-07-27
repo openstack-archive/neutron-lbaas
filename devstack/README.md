@@ -48,8 +48,7 @@ To enable the LBaaS services, add lines in the form:
 
 where
 
-    <LBAAS-FLAG> is "q-lbaas" for LBaaS Version 1, or "q-lbaasv2"
-                 for LBaaS Version 2.
+    <LBAAS-FLAG> is "q-lbaasv2" for LBaaS Version 2.
     <OCTAVIA-FLAGS> are "octavia" the Octavia driver,
                     "o-cw" the Octavia Controller Worker,
                     "o-hk" the Octavia housekeeping manager,
