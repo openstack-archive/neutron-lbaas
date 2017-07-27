@@ -125,7 +125,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
     def get_name(self):
         return DRIVER_NAME
 
-    @n_utils.synchronized('haproxy-driver')
+    @runtime.synchronized('haproxy-driver')
     def undeploy_instance(self, loadbalancer_id, **kwargs):
         cleanup_namespace = kwargs.get('cleanup_namespace', False)
         delete_namespace = kwargs.get('delete_namespace', False)
@@ -197,7 +197,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                           loadbalancer_id)
             return {}
 
-    @n_utils.synchronized('haproxy-driver')
+    @runtime.synchronized('haproxy-driver')
     def deploy_instance(self, loadbalancer):
         """Deploys loadbalancer if necessary
 
