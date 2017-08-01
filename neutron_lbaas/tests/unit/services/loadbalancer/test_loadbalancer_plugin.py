@@ -629,6 +629,26 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         self.assertIn('healthmonitor', res)
         self.assertEqual(return_value, res['healthmonitor'])
 
+    def test_health_monitor_create_with_db_limit_more_than_max_value(self):
+        project_id = _uuid()
+        data = {'healthmonitor': {'type': 'HTTP',
+                                  'delay': 3000000000000,
+                                  'timeout': 1,
+                                  'max_retries': 3,
+                                  'http_method': 'GET',
+                                  'url_path': '/path',
+                                  'expected_codes': '200-300',
+                                  'admin_state_up': True,
+                                  'tenant_id': project_id,
+                                  'project_id': project_id,
+                                  'pool_id': _uuid(),
+                                  'name': 'monitor1'}}
+        res = self.api.post(_get_path('lbaas/healthmonitors', fmt=self.fmt),
+                            self.serialize(data),
+                            content_type='application/%s' % self.fmt,
+                            expect_errors=True)
+        self.assertEqual(exc.HTTPBadRequest.code, res.status_int)
+
     def test_health_monitor_create_with_timeout_negative(self):
         project_id = _uuid()
         data = {'healthmonitor': {'type': 'HTTP',
@@ -690,6 +710,16 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
         res = self.deserialize(res)
         self.assertIn('healthmonitor', res)
         self.assertEqual(return_value, res['healthmonitor'])
+
+    def test_health_monitor_update_with_db_limit_more_than_max_value(self):
+        health_monitor_id = _uuid()
+        update_data = {'healthmonitor': {'delay': 3000000000000}}
+        res = self.api.put(_get_path('lbaas/healthmonitors',
+                                     id=health_monitor_id,
+                                     fmt=self.fmt),
+                           self.serialize(update_data),
+                           expect_errors=True)
+        self.assertEqual(exc.HTTPBadRequest.code, res.status_int)
 
     def test_health_monitor_get(self):
         health_monitor_id = _uuid()

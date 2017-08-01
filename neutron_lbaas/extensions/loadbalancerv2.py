@@ -146,6 +146,17 @@ def _validate_connection_limit(data, min_value=lb_const.MIN_CONNECT_VALUE):
 
 validators.validators['type:connection_limit'] = _validate_connection_limit
 
+
+def _validate_db_limit(data, max_value=db_const.DB_INTEGER_MAX_VALUE):
+    if int(data) > max_value:
+        msg = (_("'%(data)s' is not a valid value, "
+                 "because it is more than %(max_value)s") %
+               {'data': data, 'max_value': max_value})
+        LOG.debug(msg)
+        return msg
+
+validators.validators['type:db_out_of_bounds'] = _validate_db_limit
+
 RESOURCE_ATTRIBUTE_MAP = {
     'loadbalancers': {
         'id': {'allow_post': False, 'allow_put': False,
@@ -318,7 +329,10 @@ RESOURCE_ATTRIBUTE_MAP = {
                      'type:values': lb_const.SUPPORTED_HEALTH_MONITOR_TYPES},
                  'is_visible': True},
         'delay': {'allow_post': True, 'allow_put': True,
-                  'validate': {'type:non_negative': None},
+                  'validate': {
+                      'type:db_out_of_bounds':
+                          db_const.DB_INTEGER_MAX_VALUE,
+                      'type:non_negative': None},
                   'convert_to': converters.convert_to_int,
                   'is_visible': True},
         'timeout': {'allow_post': True, 'allow_put': True,
