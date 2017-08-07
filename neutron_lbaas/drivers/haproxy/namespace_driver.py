@@ -256,11 +256,11 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.connect(socket_path)
-            s.send('show stat -1 %s -1\n' % entity_type)
+            s.send(('show stat -1 %s -1\n' % entity_type).encode('utf-8'))
             raw_stats = ''
             chunk_size = 1024
             while True:
-                chunk = s.recv(chunk_size)
+                chunk = s.recv(chunk_size).decode('utf-8')
                 raw_stats += chunk
                 if len(chunk) < chunk_size:
                     break
