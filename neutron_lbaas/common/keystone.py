@@ -80,6 +80,18 @@ OPTS = [
         'insecure',
         default=False,
         help=_('Disable server certificate verification')
+    ),
+    cfg.StrOpt(
+        'cafile',
+        help=_('CA certificate file path')
+    ),
+    cfg.StrOpt(
+        'certfile',
+        help=_('Client certificate cert file path')
+    ),
+    cfg.StrOpt(
+        'keyfile',
+        help=_('Client certificate key file path')
     )
 ]
 
@@ -97,6 +109,18 @@ def get_session():
 
         auth_url = cfg.CONF.service_auth.auth_url
         insecure = cfg.CONF.service_auth.insecure
+        cacert = cfg.CONF.service_auth.cafile
+        cert = cfg.CONF.service_auth.certfile
+        key = cfg.CONF.service_auth.keyfile
+
+        if insecure:
+            verify = False
+        else:
+            verify = cacert or True
+
+        if cert and key:
+            cert = (cert, key)
+
         kwargs = {'auth_url': auth_url,
                   'username': cfg.CONF.service_auth.admin_user,
                   'password': cfg.CONF.service_auth.admin_password}
@@ -116,7 +140,7 @@ def get_session():
 
         try:
             kc = client.Password(**kwargs)
-            _SESSION = session.Session(auth=kc, verify=not insecure)
+            _SESSION = session.Session(auth=kc, verify=verify, cert=cert)
         except Exception:
             with excutils.save_and_reraise_exception():
                 LOG.exception("Error creating Keystone session.")
