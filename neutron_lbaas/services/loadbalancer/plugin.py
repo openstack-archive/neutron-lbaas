@@ -1225,7 +1225,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             if healthmonitor:
                 if not healthmonitor.admin_state_up:
                     dhm = self._disable_entity_and_children(healthmonitor)
-                    pool_status["healthmonitor"] = dhm
+                    hm_status = dhm
                 else:
                     hm_status = self._default_status(healthmonitor,
                                 exclude=[OS], type=healthmonitor.type)
