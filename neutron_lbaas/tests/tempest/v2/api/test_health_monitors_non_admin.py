@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from tempest.common import utils
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as ex
-from tempest import test
 
 from neutron_lbaas.tests.tempest.v2.api import base
 
@@ -35,7 +35,7 @@ class TestHealthMonitors(base.BaseTestCase):
     @classmethod
     def resource_setup(cls):
         super(TestHealthMonitors, cls).resource_setup()
-        if not test.is_extension_enabled('lbaasv2', 'network'):
+        if not utils.is_extension_enabled('lbaasv2', 'network'):
             msg = "lbaas extension not enabled."
             raise cls.skipException(msg)
         network_name = data_utils.rand_name('network-')

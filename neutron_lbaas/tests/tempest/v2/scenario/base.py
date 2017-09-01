@@ -24,11 +24,11 @@ from oslo_log import log as logging
 from six.moves import http_cookiejar
 from six.moves.urllib import error
 from six.moves.urllib import request as urllib2
+from tempest.common import utils
 from tempest.common import waiters
 from tempest import config
 from tempest.lib.common.utils import test_utils
 from tempest.lib import exceptions as lib_exc
-from tempest import test
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.tests.tempest.v2.clients import health_monitors_client
@@ -105,7 +105,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
     def skip_checks(cls):
         super(BaseTestCase, cls).skip_checks()
         cfg = config.network
-        if not test.is_extension_enabled('lbaasv2', 'network'):
+        if not utils.is_extension_enabled('lbaasv2', 'network'):
             msg = 'LBaaS Extension is not enabled'
             raise cls.skipException(msg)
         if not (cfg.project_networks_reachable or cfg.public_network_id):
