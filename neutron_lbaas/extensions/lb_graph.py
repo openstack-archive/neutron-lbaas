@@ -114,7 +114,7 @@ class Lb_graph(extensions.ExtensionDescriptor):
             plural_mappings,
             RESOURCE_ATTRIBUTE_MAP,
             constants.LOADBALANCERV2,
-            register_quota=True)
+            register_quota=False)
         return resources
 
     @classmethod
