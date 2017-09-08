@@ -32,8 +32,8 @@ function neutron_lbaas_configure_common {
     inicomment $NEUTRON_LBAAS_CONF service_providers service_provider
     iniadd $NEUTRON_LBAAS_CONF service_providers service_provider $NEUTRON_LBAAS_SERVICE_PROVIDERV2
 
-    _neutron_service_plugin_class_add $LBAASV2_PLUGIN
-    iniset $NEUTRON_CONF DEFAULT service_plugins $Q_SERVICE_PLUGIN_CLASSES
+    neutron_server_config_add $NEUTRON_LBAAS_CONF
+    neutron_service_plugin_class_add $LBAASV2_PLUGIN
 
     # Ensure config is set up properly for authentication neutron-lbaas
     iniset $NEUTRON_LBAAS_CONF service_auth auth_url $OS_AUTH_URL$AUTH_ENDPOINT
@@ -49,7 +49,7 @@ function neutron_lbaas_configure_common {
     iniset $NEUTRON_CONF service_auth admin_password $ADMIN_PASSWORD
     iniset $NEUTRON_CONF service_auth auth_version $AUTH_VERSION
 
-    _neutron_deploy_rootwrap_filters $NEUTRON_LBAAS_DIR
+    neutron_deploy_rootwrap_filters $NEUTRON_LBAAS_DIR
 
     $NEUTRON_BIN_DIR/neutron-db-manage --subproject neutron-lbaas --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
 }
@@ -61,9 +61,11 @@ function neutron_lbaas_configure_agent {
     conf=${1:-$LBAAS_AGENT_CONF_FILENAME}
     cp $NEUTRON_LBAAS_DIR/etc/lbaas_agent.ini.sample $conf
 
-    # ovs_use_veth needs to be set before the plugin configuration
-    # occurs to allow plugins to override the setting.
-    iniset $conf DEFAULT ovs_use_veth $Q_OVS_USE_VETH
+    if is_neutron_legacy_enabled; then
+        # ovs_use_veth needs to be set before the plugin configuration
+        # occurs to allow plugins to override the setting.
+        iniset $conf DEFAULT ovs_use_veth $Q_OVS_USE_VETH
+    fi
 
     neutron_plugin_setup_interface_driver $conf
 
@@ -81,7 +83,11 @@ function neutron_lbaas_generate_config_files {
 function neutron_lbaas_start {
     local is_run_process=True
 
-    LBAAS_VERSION="q-lbaasv2"
+    if is_neutron_legacy_enabled; then
+        LBAAS_VERSION="q-lbaasv2"
+    else
+        LBAAS_VERSION="neutron-lbaasv2"
+    fi
     AGENT_LBAAS_BINARY=${AGENT_LBAASV2_BINARY}
     # Octavia doesn't need the LBaaS V2 service running.  If Octavia is the
     # only provider then don't run the process.
@@ -111,8 +117,8 @@ function neutron_lbaas_cleanup {
 # check for service enabled
 if is_service_enabled $LBAAS_ANY; then
 
-    if ! is_service_enabled q-svc; then
-        die "The neutron q-svc service must be enabled to use $LBAAS_ANY"
+    if ! is_service_enabled q-svc neutron-api; then
+        die "The neutron-api/q-svc service must be enabled to use $LBAAS_ANY"
     fi
 
     if [[ "$1" == "stack" && "$2" == "install" ]]; then
