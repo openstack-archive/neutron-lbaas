@@ -39,7 +39,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         conf.haproxy.send_gratuitous_arp = 3
         self.conf = conf
         self.rpc_mock = mock.Mock()
-        self.ensure_dir = mock.patch.object(fileutils, 'ensure_tree').start()
+        self.ensure_tree = mock.patch.object(fileutils, 'ensure_tree').start()
         self._process_monitor = mock.Mock()
         with mock.patch(
                 'neutron_lib.utils.runtime.load_class_by_alias_or_classname'):
@@ -411,15 +411,15 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         ret_val = self.driver.deployable(self.lb)
         self.assertTrue(ret_val)
 
-    @mock.patch('neutron.common.utils.ensure_dir')
-    def test_get_state_file_path(self, ensure_dir):
+    @mock.patch('oslo_utils.fileutils.ensure_tree')
+    def test_get_state_file_path(self, ensure_tree):
         path = self.driver._get_state_file_path(self.lb.id, 'conf',
                                                 ensure_state_dir=False)
         self.assertEqual('/the/path/v2/lb1/conf', path)
-        self.assertFalse(ensure_dir.called)
+        self.assertFalse(ensure_tree.called)
         path = self.driver._get_state_file_path(self.lb.id, 'conf')
         self.assertEqual('/the/path/v2/lb1/conf', path)
-        self.assertTrue(ensure_dir.called)
+        self.assertTrue(ensure_tree.called)
 
     @mock.patch('neutron.agent.linux.ip_lib.device_exists')
     @mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
@@ -466,10 +466,10 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.vif_driver.unplug.assert_called_once_with(interface_name,
                                                        namespace='ns1')
 
-    @mock.patch('neutron.common.utils.ensure_dir')
+    @mock.patch('oslo_utils.fileutils.ensure_tree')
     @mock.patch('neutron_lbaas.drivers.haproxy.jinja_cfg.save_config')
     @mock.patch('neutron.agent.linux.ip_lib.IPWrapper')
-    def test_spawn(self, ip_wrap, jinja_save, ensure_dir):
+    def test_spawn(self, ip_wrap, jinja_save, ensure_tree):
         mock_ns = ip_wrap.return_value
         self.driver._spawn(self.lb)
         conf_dir = self.driver.state_path + '/' + self.lb.id + '/%s'
@@ -488,17 +488,17 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         self.assertEqual(self.lb,
                          self.driver.deployed_loadbalancers[self.lb.id])
 
-    @mock.patch('neutron.common.utils.ensure_dir')
+    @mock.patch('oslo_utils.fileutils.ensure_tree')
     @mock.patch('neutron_lbaas.drivers.haproxy.jinja_cfg.save_config')
-    def test_spawn_enable_usage(self, jinja_save, ensure_dir):
+    def test_spawn_enable_usage(self, jinja_save, ensure_tree):
         with mock.patch.object(external_process.ProcessManager,
                                'enable') as mock_enable:
             self.driver._spawn(self.lb)
             mock_enable.assert_called_once_with()
 
-    @mock.patch('neutron.common.utils.ensure_dir')
+    @mock.patch('oslo_utils.fileutils.ensure_tree')
     @mock.patch('neutron_lbaas.drivers.haproxy.jinja_cfg.save_config')
-    def test_spawn_reload_cfg_usage(self, jinja_save, ensure_dir):
+    def test_spawn_reload_cfg_usage(self, jinja_save, ensure_tree):
         with mock.patch.object(external_process.ProcessManager, 'active',
                                return_value=True):
             with mock.patch.object(external_process.ProcessManager,
