@@ -89,7 +89,7 @@ def thread_op(manager, entity, delete=False, lb_create=False):
             manager.failed_completion(context, entity)
             return
         time.sleep(poll_interval)
-    LOG.debug("Timeout has expired for load balancer {0} to complete an "
+    LOG.warning("Timeout has expired for load balancer {0} to complete an "
               "operation.  The last reported status was "
               "{1}".format(entity.root_loadbalancer.id, prov_status))
     manager.failed_completion(context, entity)
