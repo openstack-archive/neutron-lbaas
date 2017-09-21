@@ -10,11 +10,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import eventlet
-eventlet.monkey_patch()
-
 import logging as sys_logging
 
+import eventlet
+eventlet.monkey_patch()
 from oslo_reports import guru_meditation_report as gmr
 
 from neutron_lbaas import version

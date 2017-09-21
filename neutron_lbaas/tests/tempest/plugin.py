@@ -13,10 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import neutron_lbaas
 import os
+
 from tempest.test_discover import plugins
 
+import neutron_lbaas
 from neutron_lbaas.tests.tempest import config as lbaas_config
 
 

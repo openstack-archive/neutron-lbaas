@@ -13,14 +13,15 @@
 #    under the License.
 
 import copy
+
 import mock
+from neutron_lib import context
 from oslo_config import cfg
 
 from neutron_lbaas.drivers.octavia import driver
 from neutron_lbaas.services.loadbalancer import constants
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
-from neutron_lib import context
 
 
 class ManagerTest(object):
