@@ -48,12 +48,12 @@ OPTS = [
     ),
     cfg.StrOpt(
         'admin_user_domain',
-        default='admin',
+        default='Default',
         help=_('The admin user domain name'),
     ),
     cfg.StrOpt(
         'admin_project_domain',
-        default='admin',
+        default='Default',
         help=_('The admin project domain name'),
     ),
     cfg.StrOpt(
