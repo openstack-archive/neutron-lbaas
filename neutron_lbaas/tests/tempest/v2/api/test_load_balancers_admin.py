@@ -68,6 +68,7 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
             cls.tenant_load_balancer['id'])
         cls._wait_for_load_balancer_status(
             load_balancer_id=cls.tenant_load_balancer['id'], delete=True)
+        super(LoadBalancersTestAdmin, cls).resource_cleanup()
 
     def test_create_load_balancer_missing_tenant_id_field_for_admin(self):
         """
