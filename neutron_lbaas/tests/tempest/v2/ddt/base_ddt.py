@@ -106,7 +106,8 @@ class AdminStateTests(testscenarios.TestWithScenarios,
                                 'max_retries': 10,
                                 'timeout': 5,
                                 'pool_id': cls.pool_id,
-                                'admin_state_up': admin_state_up_flag}
+                                'admin_state_up': admin_state_up_flag,
+                                'cleanup': False}
         cls.health_monitor = creator(**cls.create_hm_kwargs)
         cls.health_monitor_id = cls.health_monitor['id']
 
