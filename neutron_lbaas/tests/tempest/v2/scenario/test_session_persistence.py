@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from tempest.common import utils
 from tempest import config
-from tempest import test
 
 from neutron_lbaas.tests.tempest.v2.scenario import base
 
@@ -24,7 +24,7 @@ CONF = config.CONF
 
 class TestSessionPersistence(base.BaseTestCase):
 
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_session_persistence(self):
         """This test checks checks load balancing with session persistence.
 

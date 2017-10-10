@@ -13,14 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from tempest import test
+from tempest.common import utils
 
 from neutron_lbaas.tests.tempest.v2.scenario import base
 
 
 class TestLoadBalancerBasic(base.BaseTestCase):
 
-    @test.services('compute', 'network')
+    @utils.services('compute', 'network')
     def test_load_balancer_basic(self):
         """This test checks basic load balancing.
 
