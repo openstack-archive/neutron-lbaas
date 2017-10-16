@@ -35,7 +35,9 @@ class TestLbaasService(base.BaseTestCase):
 
     def test_main(self):
         logging_str = 'neutron.conf.agent.common.setup_logging'
+        privsep_str = 'neutron.conf.agent.common.setup_privsep'
         with mock.patch(logging_str), \
+                mock.patch(privsep_str), \
                 mock.patch.object(agent.service, 'launch') as mock_launch, \
                 mock.patch('sys.argv'), \
                 mock.patch.object(agent.manager, 'LbaasAgentManager'), \

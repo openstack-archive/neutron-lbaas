@@ -57,6 +57,7 @@ def main():
 
     common_config.init(sys.argv[1:])
     config.setup_logging()
+    config.setup_privsep()
 
     mgr = manager.LbaasAgentManager(cfg.CONF)
     svc = LbaasAgentService(
