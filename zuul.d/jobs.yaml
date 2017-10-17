@@ -1,0 +1,223 @@
+- job:
+    name: neutron-lbaasv2-dsvm-api
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-api/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-py3x-api
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-api-namespace
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-py3x-api-namespace
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-minimal
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-minimal/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-minimal/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-loadbalancer
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-loadbalancer/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-loadbalancer/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-listener
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-listener/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-listener/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-pool
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-pool/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-pool/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-member
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-member/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-member/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-healthmonitor
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-healthmonitor/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-healthmonitor/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-scenario
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-py3x-scenario
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-scenario-namespace
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
+
+- job:
+    name: neutron-lbaasv2-dsvm-py3x-scenario-namespace
+    parent: legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/run
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/post
+    timeout: 7800
+    required-projects:
+      - openstack-infra/devstack-gate
+      - openstack/barbican
+      - openstack/diskimage-builder
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/octavia
+      - openstack/python-barbicanclient
+      - openstack/tripleo-image-elements
