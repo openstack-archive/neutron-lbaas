@@ -16,12 +16,12 @@
 import abc
 
 from neutron_lib.api import extensions as api_extensions
+from neutron_lib.api import faults
 from neutron_lib import exceptions as nexception
 from neutron_lib.plugins import constants as plugin_const
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
-from neutron.api.v2 import base
 from neutron.api.v2 import resource
 from neutron.extensions import agent
 from neutron import policy
@@ -93,7 +93,7 @@ class Lbaas_agentschedulerv2(api_extensions.ExtensionDescriptor):
                       collection_name="agents")
 
         controller = resource.Resource(LoadBalancerSchedulerController(),
-                                       base.FAULT_MAP)
+                                       faults.FAULT_MAP)
         exts.append(extensions.ResourceExtension(
             LOADBALANCERS, controller, parent))
 
@@ -101,7 +101,7 @@ class Lbaas_agentschedulerv2(api_extensions.ExtensionDescriptor):
                       collection_name="loadbalancers")
 
         controller = resource.Resource(
-            LbaasAgentHostingLoadBalancerController(), base.FAULT_MAP)
+            LbaasAgentHostingLoadBalancerController(), faults.FAULT_MAP)
         exts.append(extensions.ResourceExtension(
             LOADBALANCER_AGENT, controller, parent,
             path_prefix=loadbalancerv2.LOADBALANCERV2_PREFIX))
