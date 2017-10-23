@@ -17,6 +17,7 @@ import mock
 from oslo_config import cfg
 
 from neutron import context
+from neutron_lbaas.common import exceptions
 from neutron_lbaas.drivers.octavia import driver
 from neutron_lbaas.services.loadbalancer import constants
 from neutron_lbaas.services.loadbalancer import data_models
@@ -624,3 +625,65 @@ class TestThreadedDriver(BaseOctaviaDriverTest):
                                                          delete=False,
                                                          lb_create=True)
             self.assertEqual(expected_vip, self.lb.vip_address)
+
+
+class TestOctaviaRequest(test_db_loadbalancerv2.LbaasPluginDbTestCase):
+
+    def setUp(self):
+        super(TestOctaviaRequest, self).setUp()
+        self.OctaviaRequestObj = driver.OctaviaRequest("TEST_URL",
+                                                       "TEST_SESSION")
+
+    @mock.patch('requests.request')
+    def test_request(self, mock_requests):
+        mock_response = mock.MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = "TEST"
+        mock_response.headers = "TEST headers"
+        mock_response.json.return_value = "TEST json"
+
+        mock_requests.return_value = mock_response
+
+        fake_header = {'X-Auth-Token': "TEST_TOKEN"}
+        result = self.OctaviaRequestObj.request("TEST_METHOD", "TEST_URL",
+                                                headers=fake_header)
+
+        self.assertEqual("TEST json", result)
+
+    @mock.patch('requests.request')
+    def _test_request_Octavia(self, status_code, exception, mock_requests):
+        mock_response = mock.MagicMock()
+        mock_response.status_code = status_code
+        mock_response.content = '{"faultstring": "FAILED"}'
+        mock_response.headers = "TEST headers"
+
+        mock_requests.return_value = mock_response
+
+        fake_header = {'X-Auth-Token': "TEST_TOKEN"}
+        self.assertRaisesRegex(exception,
+                               "FAILED",
+                               self.OctaviaRequestObj.request,
+                               "TEST_METHOD", "TEST_URL", headers=fake_header)
+
+        mock_response.json.assert_not_called()
+
+    def test_request_Octavia_400(self):
+        self._test_request_Octavia(400, exceptions.BadRequestException)
+
+    def test_request_Octavia_401(self):
+        self._test_request_Octavia(401, exceptions.NotAuthorizedException)
+
+    def test_request_Octavia_403(self):
+        self._test_request_Octavia(403, exceptions.NotAuthorizedException)
+
+    def test_request_Octavia_404(self):
+        self._test_request_Octavia(404, exceptions.NotFoundException)
+
+    def test_request_Octavia_409(self):
+        self._test_request_Octavia(409, exceptions.ConflictException)
+
+    def test_request_Octavia_500(self):
+        self._test_request_Octavia(500, exceptions.UnknownException)
+
+    def test_request_Octavia_503(self):
+        self._test_request_Octavia(503, exceptions.ServiceUnavailableException)
