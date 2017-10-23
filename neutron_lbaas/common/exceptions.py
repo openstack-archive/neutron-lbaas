@@ -54,3 +54,27 @@ class CertificateStorageException(TLSException):
 class LoadbalancerReschedulingFailed(exceptions.Conflict):
     message = _("Failed rescheduling loadbalancer %(loadbalancer_id)s: "
                 "no eligible lbaas agent found.")
+
+
+class BadRequestException(exceptions.BadRequest):
+    message = "%(fault_string)s"
+
+
+class ConflictException(exceptions.Conflict):
+    message = "%(fault_string)s"
+
+
+class NotAuthorizedException(exceptions.NotAuthorized):
+    message = "%(fault_string)s"
+
+
+class NotFoundException(exceptions.NotFound):
+    message = "%(fault_string)s"
+
+
+class ServiceUnavailableException(exceptions.ServiceUnavailable):
+    message = "%(fault_string)s"
+
+
+class UnknownException(exceptions.NeutronException):
+    message = "%(fault_string)s"
