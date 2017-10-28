@@ -1,8 +1,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-api
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-api/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-api/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -17,8 +17,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-py3x-api
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -33,8 +33,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-api-namespace
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -49,8 +49,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-py3x-api-namespace
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -65,8 +65,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-minimal
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-minimal/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-minimal/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-minimal/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-minimal/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -81,8 +81,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-loadbalancer
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-loadbalancer/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-loadbalancer/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-loadbalancer/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-loadbalancer/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -97,8 +97,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-listener
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-listener/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-listener/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-listener/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-listener/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -113,8 +113,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-pool
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-pool/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-pool/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-pool/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-pool/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -129,8 +129,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-member
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-member/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-member/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-member/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-member/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -145,8 +145,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-healthmonitor
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-healthmonitor/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-healthmonitor/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-healthmonitor/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-healthmonitor/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -161,8 +161,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-scenario
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -177,8 +177,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-py3x-scenario
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -193,8 +193,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-scenario-namespace
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
@@ -209,8 +209,8 @@
 - job:
     name: neutron-lbaasv2-dsvm-py3x-scenario-namespace
     parent: legacy-dsvm-base
-    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/run
-    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/post
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/post.yaml
     timeout: 7800
     required-projects:
       - openstack-infra/devstack-gate
