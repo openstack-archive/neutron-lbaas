@@ -1,0 +1,31 @@
+- project:
+    name: openstack/neutron-lbaas
+    check:
+      jobs:
+        - neutron-lbaasv2-dsvm-api
+        - neutron-lbaasv2-dsvm-py3x-api:
+            branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-api-namespace
+        - neutron-lbaasv2-dsvm-py3x-api-namespace:
+            branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-scenario
+        - neutron-lbaasv2-dsvm-py3x-scenario:
+            branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-scenario-namespace
+        - neutron-lbaasv2-dsvm-py3x-scenario-namespace:
+            branches: ^(?!stable/ocata).*$
+    gate:
+      queue: neutron-lbaas
+      jobs:
+        - neutron-lbaasv2-dsvm-api
+        - neutron-lbaasv2-dsvm-py3x-api:
+            branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-api-namespace
+        - neutron-lbaasv2-dsvm-py3x-api-namespace:
+            branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-scenario
+        - neutron-lbaasv2-dsvm-py3x-scenario:
+            branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-scenario-namespace
+        - neutron-lbaasv2-dsvm-py3x-scenario-namespace:
+            branches: ^(?!stable/ocata).*$
