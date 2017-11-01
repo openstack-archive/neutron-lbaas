@@ -1,0 +1,15 @@
+- project:
+    name: openstack/neutron-lbaas
+    check:
+      jobs:
+        - neutron-lbaasv2-dsvm-api
+        - neutron-lbaasv2-dsvm-api-namespace
+        - neutron-lbaasv2-dsvm-scenario
+        - neutron-lbaasv2-dsvm-scenario-namespace
+    gate:
+      queue: neutron-lbaas
+      jobs:
+        - neutron-lbaasv2-dsvm-api
+        - neutron-lbaasv2-dsvm-api-namespace
+        - neutron-lbaasv2-dsvm-scenario
+        - neutron-lbaasv2-dsvm-scenario-namespace
