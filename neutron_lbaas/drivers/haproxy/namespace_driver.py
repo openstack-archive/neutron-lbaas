@@ -20,13 +20,13 @@ import socket
 import netaddr
 from neutron.agent.linux import external_process
 from neutron.agent.linux import ip_lib
-from neutron.common import utils as n_utils
 from neutron_lib import constants
 from neutron_lib import exceptions
 from neutron_lib.utils import runtime
 from oslo_config import cfg
 from oslo_log import log as logging
 from oslo_utils import excutils
+from oslo_utils import fileutils
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.agent import agent_device_driver
@@ -312,7 +312,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         confs_dir = os.path.abspath(os.path.normpath(self.state_path))
         conf_dir = os.path.join(confs_dir, loadbalancer_id)
         if ensure_state_dir:
-            n_utils.ensure_dir(conf_dir)
+            fileutils.ensure_tree(conf_dir, 0o755)
         return os.path.join(conf_dir, kind)
 
     def _plug(self, namespace, port, vip_address, reuse_existing=True):
