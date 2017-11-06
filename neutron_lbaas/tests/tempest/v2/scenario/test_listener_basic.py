@@ -33,8 +33,8 @@ class TestListenerBasic(base.BaseTestCase):
 
     def _delete_listener(self):
         """Delete a listener to test listener scenario."""
-        self._cleanup_pool(self.pool['id'], self.load_balancer['id'])
-        self._cleanup_listener(self.listener['id'], self.load_balancer['id'])
+        self._cleanup_pool(self.pool['id'])
+        self._cleanup_listener(self.listener['id'])
 
     @test.services('compute', 'network')
     def test_listener_basic(self):
