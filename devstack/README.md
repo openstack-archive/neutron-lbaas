@@ -84,5 +84,5 @@ Once you enable the neutron-lbaas-dashboard plugin in your local.conf, ensure ``
 ``q-lbaasv2`` services are enabled. If both of them are enabled,
 neutron-lbaas-dashboard will be enabled automatically
 
-For more information, see the "Externally Hosted Plugins" section of
-http://docs.openstack.org/developer/devstack/plugins.html.
+For more information, see the "Plugin Interface" section of
+https://docs.openstack.org/devstack/latest/plugins.html
