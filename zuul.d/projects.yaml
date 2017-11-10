@@ -2,56 +2,30 @@
     name: openstack/neutron-lbaas
     check:
       jobs:
-        - neutron-lbaasv2-dsvm-api:
-            branches: ^(?!stable/newton).*$
+        - neutron-lbaasv2-dsvm-api
         - neutron-lbaasv2-dsvm-py3x-api:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
         - neutron-lbaasv2-dsvm-api-namespace
         - neutron-lbaasv2-dsvm-py3x-api-namespace:
-            branches: ^(?!stable)
-        - neutron-lbaasv2-dsvm-minimal:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-loadbalancer:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-listener:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-pool:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-member:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-healthmonitor:
-            branches: ^stable/newton
+            branches: ^(?!stable/ocata).*$
         - neutron-lbaasv2-dsvm-scenario
         - neutron-lbaasv2-dsvm-py3x-scenario:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
         - neutron-lbaasv2-dsvm-scenario-namespace
         - neutron-lbaasv2-dsvm-py3x-scenario-namespace:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
     gate:
       queue: neutron-lbaas
       jobs:
-        - neutron-lbaasv2-dsvm-api:
-            branches: ^(?!stable/newton).*$
-        - neutron-lbaasv2-dsvm-minimal:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-loadbalancer:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-listener:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-pool:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-member:
-            branches: ^stable/newton
-        - neutron-lbaasv2-dsvm-healthmonitor:
-            branches: ^stable/newton
+        - neutron-lbaasv2-dsvm-api
         - neutron-lbaasv2-dsvm-py3x-api:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
         - neutron-lbaasv2-dsvm-api-namespace
         - neutron-lbaasv2-dsvm-py3x-api-namespace:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
         - neutron-lbaasv2-dsvm-scenario
         - neutron-lbaasv2-dsvm-py3x-scenario:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
         - neutron-lbaasv2-dsvm-scenario-namespace
         - neutron-lbaasv2-dsvm-py3x-scenario-namespace:
-            branches: ^(?!stable)
+            branches: ^(?!stable/ocata).*$
