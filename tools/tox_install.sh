@@ -17,6 +17,7 @@ ZUUL_CLONER=/usr/zuul-env/bin/zuul-cloner
 BRANCH_NAME=stable/ocata
 neutron_installed=$(echo "import neutron" | python 2>/dev/null ; echo $?)
 NEUTRON_DIR=$HOME/neutron
+local ZUULV3_PROJECT_DIR=$HOME/src/git.openstack.org/openstack/$project
 
 set -e
 set -x
@@ -31,7 +32,10 @@ shift
 # Note that the functional tests use sudo to run tox and thus
 # variables used for zuul-cloner to check out the correct version are
 # lost.
-if [ -d "$NEUTRON_DIR" ]; then
+if [ -d "$ZUULV3_PROJECT_DIR" ]; then
+    echo "FOUND Neutron code at $ZUULV3_PROJECT_DIR - using"
+    $install_cmd -U -e $ZUULV3_PROJECT_DIR
+elif [ -d "$NEUTRON_DIR" ]; then
     echo "FOUND Neutron code at $NEUTRON_DIR - using"
     $install_cmd -U -e $NEUTRON_DIR
 elif [ $neutron_installed -eq 0 ]; then
