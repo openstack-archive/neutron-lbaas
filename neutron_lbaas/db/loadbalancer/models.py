@@ -27,6 +27,8 @@ from neutron_lbaas.services.loadbalancer import constants as lb_const
 
 class SessionPersistenceV2(model_base.BASEV2):
 
+    NAME = 'session_persistence'
+
     __tablename__ = "lbaas_sessionpersistences"
 
     pool_id = sa.Column(sa.String(36),
