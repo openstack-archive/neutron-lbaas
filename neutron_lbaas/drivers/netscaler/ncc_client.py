@@ -88,7 +88,7 @@ class NSClient(object):
         """Get session based login"""
         login_obj = {"username": self.username, "password": self.password}
 
-        msg = "NetScaler driver login:" + repr(login_obj)
+        msg = "NetScaler driver login:" + repr(self.username)
         LOG.info(msg)
         resp_status, result = self.create_resource("login", NITRO_LOGIN_URI,
                                                    "login", login_obj)
