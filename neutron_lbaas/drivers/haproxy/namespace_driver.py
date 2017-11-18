@@ -298,9 +298,9 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         for stats in parsed_stats:
             if stats.get('type') == STATS_TYPE_SERVER_RESPONSE:
                 res[stats['svname']] = {
-                    lb_const.STATS_STATUS: (constants.INACTIVE
+                    lb_const.OPERATING_STATUS: (lb_const.OFFLINE
                                             if stats['status'] == 'DOWN'
-                                            else constants.ACTIVE),
+                                            else lb_const.ONLINE),
                     lb_const.STATS_HEALTH: stats['check_status'],
                     lb_const.STATS_FAILED_CHECKS: stats['chkfail']
                 }
@@ -458,7 +458,20 @@ class LoadBalancerManager(agent_device_driver.BaseLoadBalancerManager):
         self.refresh(loadbalancer)
 
     def get_stats(self, loadbalancer_id):
-        return self.driver.get_stats(loadbalancer_id)
+        stats = self.driver.get_stats(loadbalancer_id)
+
+        # NOTE(cgoncalves): haproxy stats include member status which maps to
+        # MemberV2.operating_status. Take the opportunty to update member
+        # operating status.
+        members = stats.get('members')
+        if members:
+            for member_id, value in members.items():
+                if lb_const.OPERATING_STATUS in value:
+                    self.driver.plugin_rpc.update_status(
+                        'member', member_id,
+                        operating_status=value[lb_const.OPERATING_STATUS])
+
+        return stats
 
     def update(self, old_loadbalancer, loadbalancer):
         self.refresh(loadbalancer)
