@@ -293,8 +293,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
             loadbalancer_id=load_balancer_id, protocol=self.listener_protocol,
             protocol_port=port, **kwargs)
         self.assertTrue(self.listener)
-        self.addCleanup(self._cleanup_listener, self.listener.get('id'),
-                        load_balancer_id=load_balancer_id)
+        self.addCleanup(self._cleanup_listener, self.listener.get('id'))
         return self.listener
 
     def _create_health_monitor(self):
@@ -303,9 +302,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
             type=self.hm_protocol, max_retries=5, delay=3, timeout=5,
             pool_id=self.pool['id'])
         self.assertTrue(self.hm)
-        self.addCleanup(self._cleanup_health_monitor,
-                        self.hm.get('id'),
-                        load_balancer_id=self.load_balancer['id'])
+        self.addCleanup(self._cleanup_health_monitor, self.hm.get('id'))
 
     def _create_pool(self, listener_id, persistence_type=None,
                      cookie_name=None):
@@ -321,32 +318,28 @@ class BaseTestCase(manager.NetworkScenarioTest):
             pool.update({'session_persistence': {"cookie_name": cookie_name}})
         self.pool = self.pools_client.create_pool(**pool)
         self.assertTrue(self.pool)
-        self.addCleanup(self._cleanup_pool, self.pool['id'],
-                        load_balancer_id=self.load_balancer['id'])
+        self.addCleanup(self._cleanup_pool, self.pool['id'])
         return self.pool
 
     def _cleanup_load_balancer(self, load_balancer_id):
         test_utils.call_and_ignore_notfound_exc(
             self.load_balancers_client.delete_load_balancer, load_balancer_id)
-        self._wait_for_load_balancer_status(load_balancer_id, delete=True)
+        self._wait_for_load_balancer_deletion(load_balancer_id)
 
-    def _cleanup_listener(self, listener_id, load_balancer_id=None):
+    def _cleanup_listener(self, listener_id):
         test_utils.call_and_ignore_notfound_exc(
             self.listeners_client.delete_listener, listener_id)
-        if load_balancer_id:
-            self._wait_for_load_balancer_status(load_balancer_id)
+        self._wait_for_listener_deletion(listener_id)
 
-    def _cleanup_pool(self, pool_id, load_balancer_id=None):
+    def _cleanup_pool(self, pool_id):
         test_utils.call_and_ignore_notfound_exc(
             self.pools_client.delete_pool, pool_id)
-        if load_balancer_id:
-            self._wait_for_load_balancer_status(load_balancer_id)
+        self._wait_for_pool_deletion(pool_id)
 
-    def _cleanup_health_monitor(self, hm_id, load_balancer_id=None):
+    def _cleanup_health_monitor(self, hm_id):
         test_utils.call_and_ignore_notfound_exc(
             self.health_monitors_client.delete_health_monitor, hm_id)
-        if load_balancer_id:
-            self._wait_for_load_balancer_status(load_balancer_id)
+        self._wait_for_health_monitor_deletion(hm_id)
 
     def _create_members(self, load_balancer_id=None, pool_id=None,
                         subnet_id=None):
@@ -433,8 +426,7 @@ class BaseTestCase(manager.NetworkScenarioTest):
 
     def _wait_for_load_balancer_status(self, load_balancer_id,
                                        provisioning_status='ACTIVE',
-                                       operating_status='ONLINE',
-                                       delete=False):
+                                       operating_status='ONLINE'):
         interval_time = 1
         timeout = 600
         end_time = time.time() + timeout
@@ -443,9 +435,6 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 lb = self.load_balancers_client.get_load_balancer(
                     load_balancer_id)
             except lib_exc.NotFound:
-                if delete:
-                    return
-                else:
                     raise
             if (lb.get('provisioning_status') == provisioning_status and
                     lb.get('operating_status') == operating_status):
@@ -473,6 +462,50 @@ class BaseTestCase(manager.NetworkScenarioTest):
                       provisioning_status=provisioning_status,
                       operating_status=operating_status))
         return lb
+
+    def _wait_for_resource_deletion(self, resource_type_name,
+                                    resource_get_method,
+                                    resource_id):
+        interval_time = 1
+        timeout = 600
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            try:
+                resource_get_method(resource_id)
+            except lib_exc.NotFound:
+                return
+            time.sleep(interval_time)
+        else:
+            raise Exception(
+                _("Wait for {res_name} ran for {timeout} seconds and did "
+                  "not observe {res_id} deletion processes ended").format(
+                      res_name=resource_type_name,
+                      timeout=timeout,
+                      res_id=resource_id))
+
+    def _wait_for_load_balancer_deletion(self, load_balancer_id):
+        return self._wait_for_resource_deletion(
+            'load balancer',
+            self.load_balancers_client.get_load_balancer,
+            load_balancer_id)
+
+    def _wait_for_pool_deletion(self, pool_id):
+        return self._wait_for_resource_deletion(
+            'pool',
+            self.pools_client.get_pool,
+            pool_id)
+
+    def _wait_for_listener_deletion(self, listener_id):
+        return self._wait_for_resource_deletion(
+            'listener',
+            self.listeners_client.get_listener,
+            listener_id)
+
+    def _wait_for_health_monitor_deletion(self, health_monitor_id):
+        return self._wait_for_resource_deletion(
+            'health monitor',
+            self.health_monitors_client.get_health_monitor,
+            health_monitor_id)
 
     def _wait_for_pool_session_persistence(self, pool_id, sp_type=None):
         interval_time = 1
