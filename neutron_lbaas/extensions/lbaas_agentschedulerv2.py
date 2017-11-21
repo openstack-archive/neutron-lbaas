@@ -18,12 +18,12 @@ import abc
 from neutron_lib.api import extensions as api_extensions
 from neutron_lib.api import faults
 from neutron_lib import exceptions as nexception
+from neutron_lib.exceptions import agent as agent_exc
 from neutron_lib.plugins import constants as plugin_const
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
 from neutron.api.v2 import resource
-from neutron.extensions import agent
 from neutron import policy
 from neutron import wsgi
 
@@ -120,7 +120,7 @@ class NoEligibleLbaasAgent(NoEligibleBackend):
                 "for loadbalancer %(loadbalancer_id)s.")
 
 
-class NoActiveLbaasAgent(agent.AgentNotFound):
+class NoActiveLbaasAgent(agent_exc.AgentNotFound):
     message = _("No active agent found "
                 "for loadbalancer %(loadbalancer_id)s.")
 

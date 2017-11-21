@@ -24,7 +24,6 @@ from neutron_lib.plugins import directory
 from neutron.api import extensions
 from neutron.api.v2 import attributes
 from neutron.db import agents_db
-from neutron.extensions import agent
 from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
 from neutron.tests.unit.db import test_agentschedulers_db
@@ -112,12 +111,6 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
         ext_mgr = extensions.PluginAwareExtensionManager.get_instance()
         self.ext_api = test_extensions.setup_extensions_middleware(ext_mgr)
         self.adminContext = context.get_admin_context()
-        # Add the resources to the global attribute map
-        # This is done here as the setup process won't
-        # initialize the main API router which extends
-        # the global attribute map
-        attributes.RESOURCE_ATTRIBUTE_MAP.update(
-            agent.RESOURCE_ATTRIBUTE_MAP)
         self.lbaas_plugin = directory.get_plugin(plugin_const.LOADBALANCERV2)
         self.core_plugin = directory.get_plugin()
         self.addCleanup(self.restore_attribute_map)
