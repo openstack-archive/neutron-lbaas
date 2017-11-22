@@ -289,12 +289,14 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         stat_lines = raw_stats.splitlines()
         if len(stat_lines) < 2:
             return []
-        stat_names = [name.strip('# ') for name in stat_lines[0].split(',')]
+        formatted_stat_names = stat_lines[0].lstrip('# ').rstrip(',')
+        stat_names = formatted_stat_names.split(',')
         res_stats = []
         for raw_values in stat_lines[1:]:
             if not raw_values:
                 continue
-            stat_values = [value.strip() for value in raw_values.split(',')]
+            stat_values = [value.strip()
+                           for value in raw_values.rstrip(',').split(',')]
             res_stats.append(dict(zip(stat_names, stat_values)))
 
         return res_stats
