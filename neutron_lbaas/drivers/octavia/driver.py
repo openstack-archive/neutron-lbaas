@@ -25,6 +25,7 @@ from oslo_utils import excutils
 import requests
 
 from neutron_lbaas._i18n import _
+from neutron_lbaas.common import exceptions
 from neutron_lbaas.common import keystone
 from neutron_lbaas.drivers import driver_base
 from neutron_lbaas.drivers.octavia import octavia_messaging_consumer
@@ -144,6 +145,27 @@ class OctaviaRequest(object):
         LOG.debug("Octavia Response Code: {0}".format(r.status_code))
         LOG.debug("Octavia Response Body: {0}".format(r.content))
         LOG.debug("Octavia Response Headers: {0}".format(r.headers))
+        # We need to raise Octavia errors up to neutron API.
+        try:
+            fault_string = jsonutils.loads(r.content)['faultstring']
+        except Exception:
+            fault_string = "Unknown Octavia error."
+        if r.status_code == 400:
+            raise exceptions.BadRequestException(fault_string=fault_string)
+        elif r.status_code == 401:
+            raise exceptions.NotAuthorizedException(fault_string=fault_string)
+        elif r.status_code == 403:
+            raise exceptions.NotAuthorizedException(fault_string=fault_string)
+        elif r.status_code == 404:
+            raise exceptions.NotFoundException(fault_string=fault_string)
+        elif r.status_code == 409:
+            raise exceptions.ConflictException(fault_string=fault_string)
+        elif r.status_code == 500:
+            raise exceptions.UnknownException(fault_string=fault_string)
+        elif r.status_code == 503:
+            raise exceptions.ServiceUnavailableException(
+                fault_string=fault_string)
+
         if method != 'DELETE':
             return r.json()
 

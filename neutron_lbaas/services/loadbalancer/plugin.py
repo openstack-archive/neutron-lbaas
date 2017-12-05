@@ -36,6 +36,7 @@ from oslo_utils import encodeutils
 from neutron_lbaas._i18n import _LI, _LE
 from neutron_lbaas import agent_scheduler as agent_scheduler_v2
 import neutron_lbaas.common.cert_manager
+from neutron_lbaas.common import exceptions
 from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.db.loadbalancer import loadbalancer_dbv2 as ldbv2
 from neutron_lbaas.db.loadbalancer import models
@@ -179,6 +180,13 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         except (lbaas_agentschedulerv2.NoEligibleLbaasAgent,
                 lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
             raise no_agent
+        # Pass these exceptions through to neutron
+        except (exceptions.ConflictException,
+                exceptions.NotFoundException,
+                exceptions.NotAuthorizedException,
+                exceptions.BadRequestException,
+                exceptions.ServiceUnavailableException):
+            raise
         except Exception as e:
             LOG.exception(_LE("There was an error in the driver"))
             self._handle_driver_error(context, db_entity)
