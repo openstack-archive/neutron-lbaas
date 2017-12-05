@@ -82,7 +82,7 @@ class OctaviaConsumer(service.Service):
         topic = cfg.CONF.oslo_messaging.event_stream_topic
         server = cfg.CONF.host
         self.driver = driver
-        self.transport = messaging.get_transport(cfg.CONF)
+        self.transport = messaging.get_rpc_transport(cfg.CONF)
         self.target = messaging.Target(topic=topic, server=server,
                                        exchange="common", fanout=False)
         self.endpoints = [ConsumerEndPoint(self.driver)]
