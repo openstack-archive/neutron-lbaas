@@ -40,8 +40,9 @@ L7POLICY = 'l7policy'
 L7POLICY_RULE = 'rule'
 MEMBER = 'member'
 HEALTH_MONITOR = 'healthmonitor'
-STATUS = 'statuses'
+STATUS = 'status'
 GRAPH = 'graph'
+STATS = 'stats'
 
 OPTS = [
     cfg.StrOpt(
@@ -188,7 +189,8 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         return r[resource_]
 
     def _get_resources(self, resource, context, filters=None, fields=None,
-                       sub_resource=None, resource_id=None):
+                       sub_resource=None, resource_id=None,
+                       pass_through=False):
         # not sure how to test that or if we even support sorting/filtering?
         resource_ = resource if not sub_resource else sub_resource
         args = {}
@@ -200,7 +202,7 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             args['fields'] = fields
         res = self.get(self._path(resource, sub_resource, resource_id),
                        context.auth_token, args)
-        return res[self.pluralize(resource_)]
+        return res[self.pluralize(resource_)] if not pass_through else res
 
     def _get_resource(self, resource, context, id, fields=None,
                       sub_resource=None, resource_id=None):
@@ -276,9 +278,6 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def delete_pool(self, context, id):
         return self._delete_resource(POOL, context, id)
 
-    def stats(self, context, loadbalancer_id):
-        pass
-
     def get_pool_members(self, context, pool_id,
                          filters=None,
                          fields=None):
@@ -324,7 +323,8 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def statuses(self, context, loadbalancer_id):
         return self._get_resources(LOADBALANCER, context, sub_resource=STATUS,
-                                   resource_id=loadbalancer_id)
+                                   resource_id=loadbalancer_id,
+                                   pass_through=True)
 
     def get_l7policies(self, context, filters=None, fields=None):
         return self._get_resources(L7POLICY, context, filters, fields)
@@ -364,3 +364,8 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
 
     def create_graph(self, context, graph):
         return self._create_resource(GRAPH, context, graph)
+
+    def stats(self, context, loadbalancer_id):
+        return self._get_resources(LOADBALANCER, context, sub_resource=STATS,
+                                   resource_id=loadbalancer_id,
+                                   pass_through=True)

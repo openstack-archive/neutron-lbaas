@@ -1301,7 +1301,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
         self.assertEqual([expected], body['healthmonitors'])
 
 
-class LbaasStatusesTest(MemberTestBase):
+class LbaasStatusesTest(TestLbaasProxyPluginDbTestCase):
     lb_id = uuidutils.generate_uuid()
     url = '{}/{}'.format(base_url, 'loadbalancers')
 
@@ -1342,10 +1342,33 @@ class LbaasStatusesTest(MemberTestBase):
         }
         m.get('{}/{}'.format(self.url, self.lb_id),
               json={'loadbalancer': {'id': self.lb_id}})
-        m.get('{}/{}/statuses'.format(self.url, self.lb_id),
+        m.get('{}/{}/status'.format(self.url, self.lb_id),
               json={'statuses': expected})
         statuses = self._get_loadbalancer_statuses_api(self.lb_id)[1]
-        self.assertEqual(expected, statuses)
+        self.assertEqual(expected, statuses['statuses'])
+
+
+class LbaasStatsTest(MemberTestBase):
+    lb_id = uuidutils.generate_uuid()
+    url = '{}/{}'.format(base_url, 'loadbalancers')
+
+    @requests_mock.mock()
+    def test_stats(self, m):
+        expected = {
+            "stats": {
+                "bytes_in": "131342840",
+                "total_connections": "52378345",
+                "active_connections": "97258",
+                "bytes_out": "1549542372",
+                "request_errors": "0"
+            }
+        }
+        m.get('{}/{}'.format(self.url, self.lb_id),
+              json={'loadbalancer': {'id': self.lb_id}})
+        m.get('{}/{}/stats'.format(self.url, self.lb_id),
+              json={'stats': expected})
+        stats = self._get_loadbalancer_stats_api(self.lb_id)[1]
+        self.assertEqual(expected, stats['stats'])
 
 
 class LbaasGraphTest(MemberTestBase):

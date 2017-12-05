@@ -1,0 +1,17 @@
+---
+features:
+  - |
+    The proxy plugin sends all LBaaS V2 API requests sent to Neutron to Octavia
+    thus byapaasing the Neutron database. The proxy is specified instead of
+    the 'lbaasv2' service plugin and called 'lbaasv2-proxy'. Since the proxy
+    bypasses Neutron any existing LBaaS drivers will be bypassed as well.
+
+other:
+  - |
+    This finishes the proxy plugin piece which proxies all LBaaS requests to
+    Octavia V2 API. Quotas are enforced on both and so operators are advised to
+    set them on both ends accordingly.
+
+    If any driver other than the Octavia driver is currently used in ths system
+    operators need to perform the necessary migrations and/or wait until the
+    respective driver is availble dor Octavia prior to activating this plugin.
