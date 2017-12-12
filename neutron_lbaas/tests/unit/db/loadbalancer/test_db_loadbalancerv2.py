@@ -3241,6 +3241,26 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
                                     pool_id=self.pool_id, hm_id=hm_id)
         return healthmonitor
 
+    def test_create_healthmonitor_with_l7policy_redirect_pool(self):
+        with self.listener(loadbalancer_id=self.lb_id,
+                           protocol_port=84) as listener:
+            listener_id = listener['listener']['id']
+            pool = self._create_pool(
+                    self.fmt, lb_const.PROTOCOL_HTTP,
+                    lb_const.LB_METHOD_ROUND_ROBIN,
+                    loadbalancer_id=self.lb_id)
+            pool = self.deserialize(self.fmt, pool)
+            pool_id = pool['pool']['id']
+            with self.l7policy(
+                listener_id,
+                action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
+                redirect_pool_id=pool_id):
+                self._create_healthmonitor(
+                        None, pool_id=pool_id,
+                        type='TCP', delay=1,
+                        timeout=1, max_retries=1,
+                        expected_res_status=webob.exc.HTTPCreated.code)
+
     def test_show_healthmonitor_with_type_tcp(self, **extras):
         expected = {
             'type': 'TCP',
