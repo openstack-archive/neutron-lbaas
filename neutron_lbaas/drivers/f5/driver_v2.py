@@ -1,4 +1,4 @@
-# Copyright 2016 F5 Networks Inc.
+# Copyright 2016-2017 F5 Networks Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,11 +14,13 @@
 #
 
 import f5lbaasdriver
+from f5lbaasdriver.v2.bigip.driver_v2 import F5DriverV2
 
-from neutron_lbaas.drivers import driver_base
 from oslo_log import log as logging
 
-VERSION = "0.1.1"
+from neutron_lbaas.drivers import driver_base
+
+VERSION = "1.0.0"
 LOG = logging.getLogger(__name__)
 
 
@@ -36,11 +38,21 @@ class F5LBaaSV2Driver(driver_base.LoadBalancerBaseDriver):
         self.pool = PoolManager(self)
         self.member = MemberManager(self)
         self.health_monitor = HealthMonitorManager(self)
+        self.l7policy = L7PolicyManager(self)
+        self.l7rule = L7RuleManager(self)
+
+        if not env:
+            msg = "F5LBaaSV2Driver cannot be intialized because the "\
+                "environment is not defined. To set the environment, edit "\
+                "neutron_lbaas.conf and append the environment name to the "\
+                "service_provider class name."
+            LOG.debug(msg)
+            raise UndefinedEnvironment(msg)
 
         LOG.debug("F5LBaaSV2Driver: initializing, version=%s, impl=%s, env=%s"
                   % (VERSION, f5lbaasdriver.__version__, env))
 
-        self.f5 = f5lbaasdriver.v2.bigip.driver_v2.F5DriverV2(plugin, env)
+        self.f5 = F5DriverV2(plugin, env)
 
 
 class F5LBaaSV2DriverTest(F5LBaaSV2Driver):
@@ -128,3 +140,27 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
     def delete(self, context, health_monitor):
         self.driver.f5.healthmonitor.delete(context, health_monitor)
+
+
+class L7PolicyManager(driver_base.BaseL7PolicyManager):
+
+    def create(self, context, l7policy):
+        self.driver.f5.l7policy.create(context, l7policy)
+
+    def update(self, context, old_l7policy, l7policy):
+        self.driver.f5.l7policy.update(context, old_l7policy, l7policy)
+
+    def delete(self, context, l7policy):
+        self.driver.f5.l7policy.delete(context, l7policy)
+
+
+class L7RuleManager(driver_base.BaseL7RuleManager):
+
+    def create(self, context, l7rule):
+        self.driver.f5.l7rule.create(context, l7rule)
+
+    def update(self, context, old_l7rule, l7rule):
+        self.driver.f5.l7rule.update(context, old_l7rule, l7rule)
+
+    def delete(self, context, l7rule):
+        self.driver.f5.l7rule.delete(context, l7rule)
