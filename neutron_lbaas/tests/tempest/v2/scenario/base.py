@@ -247,7 +247,8 @@ class BaseTestCase(manager.NetworkScenarioTest):
                 private_key=private_key)
 
             # Write a backend's response into a file
-            resp = ('echo -ne "HTTP/1.1 200 OK\r\nContent-Length: 7\r\n'
+            resp = ('#!/bin/sh\n'
+                    'echo -ne "HTTP/1.1 200 OK\r\nContent-Length: 7\r\n'
                     'Set-Cookie:JSESSIONID=%(s_id)s\r\nConnection: close\r\n'
                     'Content-Type: text/html; '
                     'charset=UTF-8\r\n\r\n%(server)s"; cat >/dev/null')
@@ -265,8 +266,9 @@ class BaseTestCase(manager.NetworkScenarioTest):
                                            username, key.name)
 
             # Start netcat
-            start_server = ('while true; do '
-                            'sudo nc -ll -p %(port)s -e sh /tmp/%(script)s; '
+            start_server = ('chmod a+x /tmp/%(script)s; '
+                            'while true; do '
+                            'sudo nc -ll -p %(port)s -e /tmp/%(script)s; '
                             'done > /dev/null &')
             cmd = start_server % {'port': self.port1,
                                   'script': 'script1'}
