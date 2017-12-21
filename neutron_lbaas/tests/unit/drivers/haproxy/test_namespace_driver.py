@@ -196,12 +196,12 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                          'total_connections': '10',
                          'members': {
                              '32a6c2a3-420a-44c3-955d-86bd2fc6871e': {
-                                 'status': 'ACTIVE',
+                                 'operating_status': 'ONLINE',
                                  'health': 'L7OK',
                                  'failed_checks': '0'
                              },
                              'd9aea044-8867-4e80-9875-16fb808fa0f9': {
-                                 'status': 'INACTIVE',
+                                 'operating_status': 'OFFLINE',
                                  'health': 'L4CON',
                                  'failed_checks': '9'
                              }
@@ -594,6 +594,7 @@ class TestLoadBalancerManager(BaseTestLoadBalancerManager):
         self.lb_manager.refresh.assert_called_once_with(self.in_lb)
 
     def test_get_stats(self):
+        self.driver.get_stats.return_value = {'members': {}}
         self.lb_manager.get_stats(self.in_lb.id)
         self.driver.get_stats.assert_called_once_with(self.in_lb.id)
 

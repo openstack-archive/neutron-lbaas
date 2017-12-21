@@ -261,9 +261,13 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             if provisioning_status and (model_db.provisioning_status !=
                                         provisioning_status):
                 model_db.provisioning_status = provisioning_status
+                LOG.debug("Provisioning status of %s (id=%s) updated to: %s",
+                          model_db.NAME, model_db.id, provisioning_status)
             if (operating_status and hasattr(model_db, 'operating_status') and
                     model_db.operating_status != operating_status):
                 model_db.operating_status = operating_status
+                LOG.debug("Operating status of %s (id=%s) updated to: %s",
+                          model_db.NAME, model_db.id, operating_status)
 
     def create_loadbalancer_graph(self, context, loadbalancer,
                                   allocate_vip=True):
