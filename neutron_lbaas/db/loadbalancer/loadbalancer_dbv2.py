@@ -16,12 +16,12 @@
 import re
 
 import netaddr
-from neutron.callbacks import events
-from neutron.callbacks import registry
-from neutron.callbacks import resources
 from neutron.common import ipv6_utils
 from neutron.db import api as db_api
 from neutron.db import common_db_mixin as base_db
+from neutron_lib.callbacks import events
+from neutron_lib.callbacks import registry
+from neutron_lib.callbacks import resources
 from neutron_lib import constants as n_const
 from neutron_lib import exceptions as n_exc
 from neutron_lib.plugins import constants as pg_const
