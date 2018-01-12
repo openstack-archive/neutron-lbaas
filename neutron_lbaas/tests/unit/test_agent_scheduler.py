@@ -22,7 +22,6 @@ from neutron_lib import context
 from neutron_lib.plugins import directory
 
 from neutron.api import extensions
-from neutron.api.v2 import attributes
 from neutron.db import agents_db
 from neutron.tests.common import helpers
 from neutron.tests.unit.api import test_extensions
@@ -95,10 +94,6 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
         return res
 
     def setUp(self):
-        # Save the global RESOURCE_ATTRIBUTE_MAP
-        self.saved_attr_map = {}
-        for res, attrs in attributes.RESOURCE_ATTRIBUTE_MAP.items():
-            self.saved_attr_map[res] = attrs.copy()
         service_plugins = {
             'lb_plugin_name': test_db_loadbalancerv2.DB_LB_PLUGIN_CLASS}
 
@@ -114,11 +109,6 @@ class LBaaSAgentSchedulerTestCase(test_agent.AgentDBTestMixIn,
         self.adminContext = context.get_admin_context()
         self.lbaas_plugin = directory.get_plugin(plugin_const.LOADBALANCERV2)
         self.core_plugin = directory.get_plugin()
-        self.addCleanup(self.restore_attribute_map)
-
-    def restore_attribute_map(self):
-        # Restore the original RESOURCE_ATTRIBUTE_MAP
-        attributes.RESOURCE_ATTRIBUTE_MAP = self.saved_attr_map
 
     def test_report_states(self):
         self._register_agent_states(lbaas_agents=True)

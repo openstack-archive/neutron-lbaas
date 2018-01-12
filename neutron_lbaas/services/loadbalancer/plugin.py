@@ -15,12 +15,12 @@
 
 import copy
 
+from neutron_lib.api import attributes
 from neutron_lib import context as ncontext
 from neutron_lib import exceptions as lib_exc
 from neutron_lib.exceptions import flavors as flav_exc
 from neutron_lib.plugins import directory
 
-from neutron.api.v2 import attributes as attrs
 from neutron.api.v2 import base as napi_base
 from neutron.db import agentschedulers_db
 from neutron.db import servicetype_db as st_db
@@ -263,7 +263,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def _get_tweaked_resource_attribute_map(self):
         memo = {id(n_constants.ATTR_NOT_SPECIFIED):
                 n_constants.ATTR_NOT_SPECIFIED}
-        ram = copy.deepcopy(attrs.RESOURCE_ATTRIBUTE_MAP, memo=memo)
+        ram = copy.deepcopy(attributes.RESOURCES, memo=memo)
         del ram['listeners']['loadbalancer_id']
         del ram['pools']['listener_id']
         del ram['healthmonitors']['pool_id']
