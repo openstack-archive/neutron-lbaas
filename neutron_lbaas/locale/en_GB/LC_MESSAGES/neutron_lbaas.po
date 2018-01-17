@@ -1,0 +1,707 @@
+# Andreas Jaeger <jaegerandi@gmail.com>, 2016. #zanata
+# Andi Chandler <andi@gowling.com>, 2017. #zanata
+msgid ""
+msgstr ""
+"Project-Id-Version: neutron-lbaas VERSION\n"
+"Report-Msgid-Bugs-To: https://bugs.launchpad.net/openstack-i18n/\n"
+"POT-Creation-Date: 2018-01-17 00:38+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2017-12-12 09:15+0000\n"
+"Last-Translator: Andi Chandler <andi@gowling.com>\n"
+"Language-Team: English (United Kingdom)\n"
+"Language: en-GB\n"
+"X-Generator: Zanata 3.9.6\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+
+#, python-format
+msgid "%(entity_using)s %(id)s is using this %(entity_in_use)s"
+msgstr "%(entity_using)s %(id)s is using this %(entity_in_use)s"
+
+#, python-format
+msgid "%(name)s %(id)s could not be found"
+msgstr "%(name)s %(id)s could not be found"
+
+#, python-format
+msgid "%(operation)s operation is not supported for %(entity)s."
+msgstr "%(operation)s operation is not supported for %(entity)s."
+
+#, python-format
+msgid ""
+"'%(data)s' is not a valid value, because it cannot be less than %(min_value)s"
+msgstr ""
+"'%(data)s' is not a valid value, because it cannot be less than %(min_value)s"
+
+#, python-format
+msgid "'%(data)s' is not a valid value, because it is more than %(max_value)s"
+msgstr "'%(data)s' is not a valid value, because it is more than %(max_value)s"
+
+msgid "A required VLAN for the interswitch link to use."
+msgstr "A required VLAN for the interswitch link to use."
+
+msgid "An unknown exception occurred in Radware LBaaS v2 provider."
+msgstr "An unknown exception occurred in Radware LBaaS v2 provider."
+
+msgid "Authentication endpoint"
+msgstr "Authentication endpoint"
+
+msgid ""
+"Automatically reschedule loadbalancer from offline to online lbaas agents. "
+"This is only supported for drivers who use the neutron LBaaSv2 agent"
+msgstr ""
+"Automatically reschedule load balancer from offline to online LBaaS agents. "
+"This is only supported for drivers who use the neutron LBaaSv2 agent"
+
+msgid "Base vDirect URI. Default:''"
+msgstr "Base vDirect URI. Default:''"
+
+msgid "CA certificate file path"
+msgstr "CA certificate file path"
+
+#, python-format
+msgid "Cannot change %(attribute)s if one already exists"
+msgstr "Cannot change %(attribute)s if one already exists"
+
+msgid "Cannot specify both a flavor and a provider"
+msgstr "Cannot specify both a flavour and a provider"
+
+msgid "Client certificate cert file path"
+msgstr "Client certificate cert file path"
+
+msgid "Client certificate key file path"
+msgstr "Client certificate key file path"
+
+msgid "Configule ADC with L3 parameters?"
+msgstr "Configure ADC with L3 parameters?"
+
+msgid "Configule ADC with L4 parameters?"
+msgstr "Configure ADC with L4 parameters?"
+
+#, python-format
+msgid "Could not process TLS container %(ref)s, %(reason)s"
+msgstr "Could not process TLS container %(ref)s, %(reason)s"
+
+msgid "Could not read X509 from PEM"
+msgstr "Could not read X509 from PEM"
+
+#, python-format
+msgid "Could not store certificate: %(msg)s"
+msgstr "Could not store certificate: %(msg)s"
+
+msgid "Default TLS container was not specified"
+msgstr "Default TLS container was not specified"
+
+msgid "Delay must be greater than or equal to timeout"
+msgstr "Delay must be greater than or equal to timeout"
+
+msgid "Device driver for agent should be specified in plugin driver."
+msgstr "Device driver for agent should be specified in plugin driver."
+
+msgid "Disable server certificate verification"
+msgstr "Disable server certificate verification"
+
+#, python-format
+msgid "Driver error: %(msg)s"
+msgstr "Driver error: %(msg)s"
+
+msgid "Driver to use for scheduling to a default loadbalancer agent"
+msgstr "Driver to use for scheduling to a default load balancer agent"
+
+msgid "Drivers used to manage loadbalancing devices"
+msgstr "Drivers used to manage load balancing devices"
+
+msgid ""
+"Enable or disable Alteon interswitch link for stateful session failover. "
+"Default: False."
+msgstr ""
+"Enable or disable Alteon interswitch link for stateful session failover. "
+"Default: False."
+
+msgid ""
+"Enables or disables allowed address pairs configuration for VIP addresses. "
+"Default: False."
+msgstr ""
+"Enables or disables allowed address pairs configuration for VIP addresses. "
+"Default: False."
+
+msgid ""
+"Enables or disables the SSL context verification for legacy python that "
+"verifies HTTPS certificates by default. Default: True."
+msgstr ""
+"Enables or disables the SSL context verification for legacy python that "
+"verifies HTTPS certificates by default. Default: True."
+
+msgid "Enables or disables the Service HA pair. Default: False."
+msgstr "Enables or disables the Service HA pair. Default: False."
+
+#, python-format
+msgid "Error importing interface driver: %s"
+msgstr "Error importing interface driver: %s"
+
+#, python-format
+msgid "Error importing loadbalancer device driver: %s"
+msgstr "Error importing load balancer device driver: %s"
+
+#, python-format
+msgid "Error retrieving driver for provider %s"
+msgstr "Error retrieving driver for provider %s"
+
+#, python-format
+msgid "Error retrieving provider for load balancer. Possible providers are %s."
+msgstr ""
+"Error retrieving provider for load balancer. Possible providers are %s."
+
+#, python-format
+msgid ""
+"Failed rescheduling loadbalancer %(loadbalancer_id)s: no eligible lbaas "
+"agent found."
+msgstr ""
+"Failed rescheduling loadbalancer %(loadbalancer_id)s: no eligible lbaas "
+"agent found."
+
+msgid "Flavors plugin not found"
+msgstr "Flavours plugin not found"
+
+msgid "IP address of secondary vDirect server."
+msgstr "IP address of secondary vDirect server."
+
+msgid "IP address of vDirect server."
+msgstr "IP address of vDirect server."
+
+msgid ""
+"If a real server fails to respond to a health check request. The LoadMaster "
+"will retry the specified number of times."
+msgstr ""
+"If a real server fails to respond to a health check request. The LoadMaster "
+"will retry the specified number of times."
+
+msgid ""
+"Interval in seconds to poll octavia when an entity is created, updated, or "
+"deleted."
+msgstr ""
+"Interval in seconds to poll Octavia when an entity is created, updated, or "
+"deleted."
+
+msgid "Invalid characters in key. See RFCs 2616, 2965, 6265, 7230."
+msgstr "Invalid characters in key. See RFCs 2616, 2965, 6265, 7230."
+
+msgid "Invalid characters in value. See RFC 7230."
+msgstr "Invalid characters in value. See RFC 7230."
+
+msgid "Invalid characters in value. See RFCs 2616, 2965, 6265."
+msgstr "Invalid characters in value. See RFCs 2616, 2965, 6265."
+
+#, python-format
+msgid "Invalid state %(state)s of loadbalancer resource %(id)s"
+msgstr "Invalid state %(state)s of loadbalancer resource %(id)s"
+
+msgid "Jinja template file for haproxy configuration"
+msgstr "Jinja template file for HAProxy configuration"
+
+msgid "Key and x509 certificate do not match"
+msgstr "Key and x509 certificate do not match"
+
+#, python-format
+msgid "Listener %(listener_id)s is already using default pool %(pool_id)s."
+msgstr "Listener %(listener_id)s is already using default pool %(pool_id)s."
+
+msgid "Listener and pool must be on the same loadbalancer."
+msgstr "Listener and pool must be on the same loadbalancer."
+
+msgid "Listener must be created with a loadbalancer or pool."
+msgstr "Listener must be created with a loadbalancer or pool."
+
+#, python-format
+msgid ""
+"Listener protocol %(listener_proto)s and pool protocol %(pool_proto)s are "
+"not compatible."
+msgstr ""
+"Listener protocol %(listener_proto)s and pool protocol %(pool_proto)s are "
+"not compatible."
+
+#, python-format
+msgid ""
+"Load Balancer %(lb_id)s already has a listener with protocol_port of "
+"%(protocol_port)s"
+msgstr ""
+"Load Balancer %(lb_id)s already has a listener with protocol_port of "
+"%(protocol_port)s"
+
+msgid "Location to store config and state files"
+msgstr "Location to store config and state files"
+
+msgid "Management address of the LoadMaster appliance."
+msgstr "Management address of the LoadMaster appliance."
+
+#, python-format
+msgid "Member %(member_id)s could not be found in pool %(pool_id)s"
+msgstr "Member %(member_id)s could not be found in pool %(pool_id)s"
+
+#, python-format
+msgid ""
+"Member with address %(address)s and protocol_port %(port)s already present "
+"in pool %(pool)s"
+msgstr ""
+"Member with address %(address)s and protocol_port %(port)s already present "
+"in pool %(pool)s"
+
+#, python-format
+msgid ""
+"Member with address %(address)s and subnet %(subnet_id) have mismatched IP "
+"versions"
+msgstr ""
+"Member with address %(address)s and subnet %(subnet_id) have mismatched IP "
+"versions"
+
+#, python-format
+msgid "Multiple device drivers with the same name found: %s"
+msgstr "Multiple device drivers with the same name found: %s"
+
+#, python-format
+msgid "NCC Error %d"
+msgstr "NCC Error %d"
+
+msgid "Name of child workflow templates used.Default: manage_l3"
+msgstr "Name of child workflow templates used.Default: manage_l3"
+
+msgid "Name of the workflow action for statistics. Default: stats."
+msgstr "Name of the workflow action for statistics. Default: stats."
+
+msgid "Name of the workflow action. Default: apply."
+msgstr "Name of the workflow action. Default: apply."
+
+msgid "Name of the workflow template. Default: os_lb_v2."
+msgstr "Name of the workflow template. Default: os_lb_v2."
+
+#, python-format
+msgid ""
+"NetScaler driver healthmonitor %(healthmonitor_id)s update: "
+"%(healthmonitor_obj)s"
+msgstr ""
+"NetScaler driver healthmonitor %(healthmonitor_id)s update: "
+"%(healthmonitor_obj)s"
+
+#, python-format
+msgid "NetScaler driver healthmonitor creation: %s"
+msgstr "NetScaler driver healthmonitor creation: %s"
+
+#, python-format
+msgid "NetScaler driver healthmonitor removal: %s"
+msgstr "NetScaler driver healthmonitor removal: %s"
+
+#, python-format
+msgid "NetScaler driver lb creation: %s"
+msgstr "NetScaler driver lb creation: %s"
+
+#, python-format
+msgid "NetScaler driver lb_obj %(lb_obj_id)s update: %(lb_obj)s"
+msgstr "NetScaler driver lb_obj %(lb_obj_id)s update: %(lb_obj)s"
+
+#, python-format
+msgid "NetScaler driver lb_obj removal: %s"
+msgstr "NetScaler driver lb_obj removal: %s"
+
+#, python-format
+msgid "NetScaler driver listener %(listener_id)s update: %(listener_obj)s"
+msgstr "NetScaler driver listener %(listener_id)s update: %(listener_obj)s"
+
+#, python-format
+msgid "NetScaler driver listener creation: %s"
+msgstr "NetScaler driver listener creation: %s"
+
+#, python-format
+msgid "NetScaler driver listener removal: %s"
+msgstr "NetScaler driver listener removal: %s"
+
+#, python-format
+msgid "NetScaler driver member %(member_id)s update: %(member_obj)s"
+msgstr "NetScaler driver member %(member_id)s update: %(member_obj)s"
+
+#, python-format
+msgid "NetScaler driver member creation: %s"
+msgstr "NetScaler driver member creation: %s"
+
+#, python-format
+msgid "NetScaler driver member removal: %s"
+msgstr "NetScaler driver member removal: %s"
+
+#, python-format
+msgid "NetScaler driver pool %(pool_id)s update: %(pool_obj)s"
+msgstr "NetScaler driver pool %(pool_id)s update: %(pool_obj)s"
+
+#, python-format
+msgid "NetScaler driver pool creation: %s"
+msgstr "NetScaler driver pool creation: %s"
+
+#, python-format
+msgid "NetScaler driver pool removal: %s"
+msgstr "NetScaler driver pool removal: %s"
+
+#, python-format
+msgid "No active agent found for loadbalancer %(loadbalancer_id)s."
+msgstr "No active agent found for loadbalancer %(loadbalancer_id)s."
+
+#, python-format
+msgid "No eligible agent found for loadbalancer %(loadbalancer_id)s."
+msgstr "No eligible agent found for loadbalancer %(loadbalancer_id)s."
+
+#, python-format
+msgid "No eligible backend for pool %(pool_id)s"
+msgstr "No eligible backend for pool %(pool_id)s"
+
+msgid ""
+"Number of LoadBalancers allowed per tenant. A negative value means unlimited."
+msgstr ""
+"Number of Load Balancers allowed per tenant. A negative value means "
+"unlimited."
+
+msgid ""
+"Number of Loadbalancer Listeners allowed per tenant. A negative value means "
+"unlimited."
+msgstr ""
+"Number of Load Balancer Listeners allowed per tenant. A negative value means "
+"unlimited."
+
+msgid ""
+"Number of health monitors allowed per tenant. A negative value means "
+"unlimited."
+msgstr ""
+"Number of health monitors allowed per tenant. A negative value means "
+"unlimited."
+
+msgid ""
+"Number of pool members allowed per tenant. A negative value means unlimited."
+msgstr ""
+"Number of pool members allowed per tenant. A negative value means unlimited."
+
+msgid "Number of pools allowed per tenant. A negative value means unlimited."
+msgstr "Number of pools allowed per tenant. A negative value means unlimited."
+
+#, python-format
+msgid ""
+"Only one health monitor per pool allowed.  Pool %(pool_id)s is already using "
+"Health Monitor %(hm_id)s."
+msgstr ""
+"Only one health monitor per pool allowed.  Pool %(pool_id)s is already using "
+"Health Monitor %(hm_id)s."
+
+#, python-format
+msgid ""
+"Only one pool per listener allowed.  Listener %(listener_id)s is already "
+"using Pool %(pool_id)s."
+msgstr ""
+"Only one pool per listener allowed.  Listener %(listener_id)s is already "
+"using Pool %(pool_id)s."
+
+msgid "Parameter for l2_l3 workflow constructor."
+msgstr "Parameter for l2_l3 workflow constructor."
+
+msgid "Passphrase needed to decrypt key but client did not provide one."
+msgstr "Passphrase needed to decrypt key but client did not provide one."
+
+msgid "Password for management user. Default is 1fourall."
+msgstr "Password for management user. Default is 1fourall."
+
+msgid "Password to login to the NetScaler Control Center Server."
+msgstr "Password to login to the NetScaler Control Centre Server."
+
+#, python-format
+msgid "Pool %(pool_id)s is on loadbalancer %(lb_id)s."
+msgstr "Pool %(pool_id)s is on loadbalancer %(lb_id)s."
+
+msgid "Pool must be created with a loadbalancer or listener."
+msgstr "Pool must be created with a loadbalancer or listener."
+
+msgid "Provision ADC service?"
+msgstr "Provision ADC service?"
+
+#, python-format
+msgid ""
+"REST request failed with status %(status)s. Reason: %(reason)s, Description: "
+"%(description)s. Success status codes are %(success_codes)s"
+msgstr ""
+"REST request failed with status %(status)s. Reason: %(reason)s, Description: "
+"%(description)s. Success status codes are %(success_codes)s"
+
+msgid "Redirect URL is missing for L7 Policy with URL redirect action."
+msgstr "Redirect URL is missing for L7 Policy with URL redirect action."
+
+msgid "Redirect pool id is missing for L7 Policy with pool redirect action."
+msgstr "Redirect pool id is missing for L7 Policy with pool redirect action."
+
+#, python-format
+msgid "Required attribute %(attr_name)s not specified"
+msgstr "Required attribute %(attr_name)s not specified"
+
+msgid "Resource pool IDs."
+msgstr "Resource pool IDs."
+
+msgid "Retrieved Barbican Container is not of the correct type (certificate)."
+msgstr "Retrieved Barbican Container is not of the correct type (certificate)."
+
+#, python-format
+msgid "Rule %(rule_id)s could not be found in l7 policy %(l7policy_id)s."
+msgstr "Rule %(rule_id)s could not be found in l7 policy %(l7policy_id)s."
+
+msgid ""
+"Rule key is missing. Key should be specified for rules of HEADER and COOKIE "
+"types."
+msgstr ""
+"Rule key is missing. Key should be specified for rules of HEADER and COOKIE "
+"types."
+
+msgid "Seconds between periodic task runs"
+msgstr "Seconds between periodic task runs"
+
+msgid "Service ADC type. Default: VA."
+msgstr "Service ADC type. Default: VA."
+
+msgid "Service ADC version."
+msgstr "Service ADC version."
+
+msgid "Service SSL throughput. Default: 100."
+msgstr "Service SSL throughput. Default: 100."
+
+msgid "Service compression throughput. Default: 100."
+msgstr "Service compression throughput. Default: 100."
+
+msgid "Service throughput. Default: 1000."
+msgstr "Service throughput. Default: 1000."
+
+#, python-format
+msgid "Session Persistence Invalid: %(msg)s"
+msgstr "Session Persistence Invalid: %(msg)s"
+
+msgid ""
+"Setting for member status collection fromNetScaler Control Center Server."
+msgstr ""
+"Setting for member status collection from NetScaler Control Centre Server."
+
+msgid ""
+"Setting for option to enable synchronous operationsNetScaler Control Center "
+"Server."
+msgstr ""
+"Setting for option to enable synchronous operations NetScaler Control Centre "
+"Server."
+
+msgid ""
+"Setting for periodic task collection interval fromNetScaler Control Center "
+"Server.."
+msgstr ""
+"Setting for periodic task collection interval from NetScaler Control Centre "
+"Server.."
+
+msgid ""
+"Setting to enable/disable cleanup mode for NetScaler Control Center Server"
+msgstr ""
+"Setting to enable/disable cleanup mode for NetScaler Control Centre Server"
+
+msgid "Size of service cache. Default: 20."
+msgstr "Size of service cache. Default: 20."
+
+#, python-format
+msgid "TLS container %(container_id)s could not be found"
+msgstr "TLS container %(container_id)s could not be found"
+
+#, python-format
+msgid "TLS container %(container_id)s is invalid. %(reason)s"
+msgstr "TLS container %(container_id)s is invalid. %(reason)s"
+
+#, python-format
+msgid ""
+"The %(key)s field can not have negative value. Current value is %(value)d."
+msgstr ""
+"The %(key)s field can not have negative value. Current value is %(value)d."
+
+msgid "The URL to reach the NetScaler Control Center Server."
+msgstr "The URL to reach the NetScaler Control Centre Server."
+
+msgid "The admin project domain name"
+msgstr "The admin project domain name"
+
+msgid "The admin user domain name"
+msgstr "The admin user domain name"
+
+msgid "The auth version used to authenticate"
+msgstr "The auth version used to authenticate"
+
+msgid "The deployment region"
+msgstr "The deployment region"
+
+msgid "The endpoint_type to be used"
+msgstr "The endpoint_type to be used"
+
+msgid "The interval between real server health checks."
+msgstr "The interval between real server health checks."
+
+msgid "The management user. Default is bal."
+msgstr "The management user. Default is bal."
+
+msgid "The name of the service"
+msgstr "The name of the service"
+
+msgid "The provider does not have the ability to create a load balancer graph."
+msgstr ""
+"The provider does not have the ability to create a load balancer graph."
+
+msgid "The service admin password"
+msgstr "The service admin password"
+
+msgid "The service admin tenant name"
+msgstr "The service admin tenant name"
+
+msgid "The service admin user name"
+msgstr "The service admin user name"
+
+msgid ""
+"The time to wait for a real server to respond to a health check request."
+msgstr ""
+"The time to wait for a real server to respond to a health check request."
+
+msgid "The user group"
+msgstr "The user group"
+
+msgid ""
+"Time to stop polling octavia when a status of an entity does not change."
+msgstr ""
+"Time to stop polling Octavia when a status of an entity does not change."
+
+msgid ""
+"True if Octavia will be responsible for allocating the VIP. False if neutron-"
+"lbaas will allocate it and pass to Octavia."
+msgstr ""
+"True if Octavia will be responsible for allocating the VIP. False if neutron-"
+"lbaas will allocate it and pass to Octavia."
+
+msgid "URL of Octavia controller root"
+msgstr "URL of Octavia controller root"
+
+#, python-format
+msgid "Unable to map model class %(target_name)s"
+msgstr "Unable to map model class %(target_name)s"
+
+#, python-format
+msgid "Unable to parse regular expression: %(e)s."
+msgstr "Unable to parse regular expression: %(e)s."
+
+#, python-format
+msgid "Unexpected error code: %s"
+msgstr "Unexpected error code: %s"
+
+#, python-format
+msgid "Unknown device with loadbalancer_id %(loadbalancer_id)s"
+msgstr "Unknown device with loadbalancer_id %(loadbalancer_id)s"
+
+msgid "Unknown keystone version!"
+msgstr "Unknown keystone version!"
+
+#, python-format
+msgid "Unknown object type: %s"
+msgstr "Unknown object type: %s"
+
+#, python-format
+msgid "Unsupported compare type for rule of %(type)s type."
+msgstr "Unsupported compare type for rule of %(type)s type."
+
+msgid "Use SSL. Default: True"
+msgstr "Use SSL. Default: True"
+
+msgid "Username to login to the NetScaler Control Center Server."
+msgstr "Username to login to the NetScaler Control Centre Server."
+
+#, python-format
+msgid ""
+"VIP network %(network)s is invalid. There is no subnet in VIP network "
+"specified."
+msgstr ""
+"VIP network %(network)s is invalid. There is no subnet in VIP network "
+"specified."
+
+msgid ""
+"Wait for load balancer for load balancer: {lb_id} ran for {timeout} seconds "
+"and an ERROR was encountered with provisioning status: {provisioning_status} "
+"and operating status: {operating_status}"
+msgstr ""
+"Wait for load balancer for load balancer: {lb_id} ran for {timeout} seconds "
+"and an ERROR was encountered with provisioning status: {provisioning_status} "
+"and operating status: {operating_status}"
+
+msgid ""
+"Wait for load balancer ran for {timeout} seconds and did not observe {lb_id} "
+"reach {provisioning_status} provisioning status and {operating_status} "
+"operating status."
+msgstr ""
+"Wait for load balancer ran for {timeout} seconds and did not observe {lb_id} "
+"reach {provisioning_status} provisioning status and {operating_status} "
+"operating status."
+
+msgid ""
+"Wait for pool ran for {timeout} seconds and did not observe {pool_id} update "
+"session persistence type to {type}."
+msgstr ""
+"Wait for pool ran for {timeout} seconds and did not observe {pool_id} update "
+"session persistence type to {type}."
+
+msgid ""
+"Wait for {res_name} ran for {timeout} seconds and did not observe {res_id} "
+"deletion processes ended"
+msgstr ""
+"Wait for {res_name} ran for {timeout} seconds and did not observe {res_id} "
+"deletion processes ended"
+
+msgid ""
+"Waited for load balancer {lb_id} to be deleted for {timeout} seconds but can "
+"still observe that it exists."
+msgstr ""
+"Waited for load balancer {lb_id} to be deleted for {timeout} seconds but can "
+"still observe that it exists."
+
+msgid ""
+"When delete and re-add the same vip, send this many gratuitous ARPs to flush "
+"the ARP cache in the Router. Set it below or equal to 0 to disable this "
+"feature."
+msgstr ""
+"When delete and re-add the same VIP, send this many gratuitous ARPs to flush "
+"the ARP cache in the Router. Set it below or equal to 0 to disable this "
+"feature."
+
+#, python-format
+msgid ""
+"Workflow template %(workflow_template)s is missing on vDirect server. Upload "
+"missing workflow"
+msgstr ""
+"Workflow template %(workflow_template)s is missing on vDirect server. Upload "
+"missing workflow"
+
+#, python-format
+msgid "has device owner %s"
+msgstr "has device owner %s"
+
+msgid "loadbalancer {lb_id} not found"
+msgstr "loadbalancer {lb_id} not found"
+
+msgid "topic name for receiving events from a queue"
+msgstr "topic name for receiving events from a queue"
+
+msgid "vDirect connection timeout. Default:5000"
+msgstr "vDirect connection timeout. Default:5000"
+
+msgid "vDirect port. Default:2189"
+msgstr "vDirect port. Default:2189"
+
+msgid "vDirect user name."
+msgstr "vDirect user name."
+
+msgid "vDirect user password."
+msgstr "vDirect user password."
+
+msgid ""
+"vDirect user/password missing. Specify in configuration file, under "
+"[radwarev2] section"
+msgstr ""
+"vDirect user/password missing. Specify in configuration file, under "
+"[radwarev2] section"
+
+msgid "vip_subnet_id or vip_network_id"
+msgstr "vip_subnet_id or vip_network_id"
