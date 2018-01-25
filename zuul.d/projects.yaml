@@ -1,5 +1,4 @@
 - project:
-    name: openstack/neutron-lbaas
     check:
       jobs:
         - neutron-lbaasv2-dsvm-api
