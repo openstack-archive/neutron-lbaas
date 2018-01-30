@@ -46,6 +46,12 @@ function _setup_octavia {
             export OCTAVIA_USE_LEGACY_RBAC=True
             "
     fi
+    if [[ "$lbaasenv" == "lbaasv2_proxy" ]]; then
+        export DEVSTACK_LOCAL_CONFIG+="
+            export OCTAVIA_USE_LEGACY_RBAC=True
+            export LBAASV2_PLUGIN=lbaasv2-proxy
+            "
+    fi
     # Use infra's cached version of the file
     if [ -f /opt/stack/new/devstack/files/get-pip.py ]; then
             export DEVSTACK_LOCAL_CONFIG+="

@@ -24,6 +24,13 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api/post.yaml
 
 - job:
+    name: neutron-lbaasv2-dsvm-api-proxy
+    parent:  nlbaas-legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-api-proxy/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-proxy/post.yaml
+
+
+- job:
     name: neutron-lbaasv2-dsvm-py3x-api
     parent: nlbaas-legacy-dsvm-base
     run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/run.yaml
