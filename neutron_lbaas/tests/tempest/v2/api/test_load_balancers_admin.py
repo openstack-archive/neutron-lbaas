@@ -63,11 +63,14 @@ class LoadBalancersTestAdmin(base.BaseAdminTestCase):
             cls.load_balancer['id'])
         cls._wait_for_load_balancer_status(
             load_balancer_id=cls.load_balancer['id'], delete=True)
+        cls._wait_for_neutron_port_delete(cls.load_balancer['vip_port_id'])
         test_utils.call_and_ignore_notfound_exc(
             cls._delete_load_balancer,
             cls.tenant_load_balancer['id'])
         cls._wait_for_load_balancer_status(
             load_balancer_id=cls.tenant_load_balancer['id'], delete=True)
+        cls._wait_for_neutron_port_delete(
+            cls.tenant_load_balancer['vip_port_id'])
         super(LoadBalancersTestAdmin, cls).resource_cleanup()
 
     def test_create_load_balancer_missing_tenant_id_field_for_admin(self):
