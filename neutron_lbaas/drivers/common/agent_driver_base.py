@@ -36,10 +36,20 @@ LB_SCHEDULERS = 'loadbalancer_schedulers'
 AGENT_SCHEDULER_OPTS = [
     cfg.StrOpt('loadbalancer_scheduler_driver',
                default='neutron_lbaas.agent_scheduler.ChanceScheduler',
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('Driver to use for scheduling '
                       'to a default loadbalancer agent')),
     cfg.BoolOpt('allow_automatic_lbaas_agent_failover',
                 default=False,
+                deprecated_for_removal=True,
+                deprecated_since='Queens',
+                deprecated_reason='The neutron-lbaas project is now '
+                                  'deprecated. See: https://wiki.openstack.org'
+                                  '/wiki/Neutron/LBaaS/Deprecation',
                 help=_('Automatically reschedule loadbalancer from offline '
                        'to online lbaas agents. This is only supported for '
                        'drivers who use the neutron LBaaSv2 agent')),

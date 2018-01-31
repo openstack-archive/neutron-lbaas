@@ -80,6 +80,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
     def __init__(self):
         """Initialization for the loadbalancer service plugin."""
+        LOG.warning('neutron-lbaas is now deprecated. See: '
+                    'https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                    'Deprecation')
         self.db = ldbv2.LoadBalancerPluginDbv2()
         self.service_type_manager = st_db.ServiceTypeManager.get_instance()
         add_provider_configuration(

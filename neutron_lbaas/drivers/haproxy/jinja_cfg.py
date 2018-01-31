@@ -65,6 +65,11 @@ JINJA_ENV = None
 jinja_opts = [
     cfg.StrOpt(
         'jinja_config_template',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default=os.path.join(
             TEMPLATES_DIR,
             'haproxy.loadbalancer.j2'),

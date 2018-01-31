@@ -7,6 +7,9 @@ Team and repository tags
 
 .. Change things from this point on
 
+.. warning::
+   Neutron-lbaas is now deprecated. Please see the FAQ: https://wiki.openstack.org/wiki/Neutron/LBaaS/Deprecation
+
 Welcome!
 ========
 

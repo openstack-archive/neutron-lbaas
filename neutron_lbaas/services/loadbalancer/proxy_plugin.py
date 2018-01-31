@@ -48,6 +48,11 @@ OPTS = [
     cfg.StrOpt(
         'base_url',
         default='http://127.0.0.1:9876',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('URL of Octavia controller root'),
     ),
 ]
@@ -78,6 +83,9 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     path_prefix = loadbalancerv2.LOADBALANCERV2_PREFIX
 
     def __init__(self):
+        LOG.warning('neutron-lbaas is now deprecated. See: '
+                    'https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                    'Deprecation')
         self.service_type_manager = st_db.ServiceTypeManager.get_instance()
         add_provider_configuration(
             self.service_type_manager, constants.LOADBALANCERV2)

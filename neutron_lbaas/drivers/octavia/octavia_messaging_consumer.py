@@ -23,6 +23,11 @@ from oslo_service import service
 oslo_messaging_opts = [
     cfg.StrOpt('event_stream_topic',
                default='neutron_lbaas_event',
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('topic name for receiving events from a queue'))
 ]
 

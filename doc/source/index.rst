@@ -3,7 +3,9 @@
 Neutron LBaaS Documentation
 ===========================
 
-Under Construction
+.. warning::
+   Neutron-lbaas is now deprecated. Please see the FAQ: https://wiki.openstack.org/wiki/Neutron/LBaaS/Deprecation
+
 
 Dashboards
 ==========

@@ -32,6 +32,11 @@ TLS_STORAGE_DEFAULT = os.environ.get(
 local_cert_manager_opts = [
     cfg.StrOpt('storage_path',
                default=TLS_STORAGE_DEFAULT,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help='Absolute path to the certificate storage directory. '
                     'Defaults to env[OS_LBAAS_TLS_STORAGE].')
 ]

@@ -38,23 +38,43 @@ OPTS = [
     cfg.StrOpt(
         'base_url',
         default='http://127.0.0.1:9876',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('URL of Octavia controller root'),
     ),
     cfg.IntOpt(
         'request_poll_interval',
         default=3,
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Interval in seconds to poll octavia when an entity is created,'
                ' updated, or deleted.')
     ),
     cfg.IntOpt(
         'request_poll_timeout',
         default=100,
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Time to stop polling octavia when a status of an entity does '
                'not change.')
     ),
     cfg.BoolOpt(
         'allocates_vip',
         default=False,
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('True if Octavia will be responsible for allocating the VIP.'
                ' False if neutron-lbaas will allocate it and pass to Octavia.')
     )

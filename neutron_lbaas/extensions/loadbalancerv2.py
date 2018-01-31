@@ -418,22 +418,47 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
 lbaasv2_quota_opts = [
     cfg.IntOpt('quota_loadbalancer',
                default=10,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('Number of LoadBalancers allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_listener',
                default=-1,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('Number of Loadbalancer Listeners allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_pool',
                default=10,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('Number of pools allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_member',
                default=-1,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('Number of pool members allowed per tenant. '
                       'A negative value means unlimited.')),
     cfg.IntOpt('quota_healthmonitor',
                default=-1,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help=_('Number of health monitors allowed per tenant. '
                       'A negative value means unlimited.'))
 ]
@@ -452,11 +477,11 @@ class Loadbalancerv2(api_extensions.ExtensionDescriptor):
 
     @classmethod
     def get_description(cls):
-        return "Extension for LoadBalancing service v2"
+        return "Extension for LoadBalancing service v2 (deprecated)"
 
     @classmethod
     def get_updated(cls):
-        return "2014-06-18T10:00:00-00:00"
+        return "2018-01-31T10:00:00-00:00"
 
     @classmethod
     def get_resources(cls):
@@ -523,7 +548,7 @@ class LoadBalancerPluginBaseV2(service_base.ServicePluginBase):
         return constants.LOADBALANCERV2
 
     def get_plugin_description(self):
-        return 'LoadBalancer service plugin v2'
+        return 'LoadBalancer service plugin v2 (deprecated)'
 
     @abc.abstractmethod
     def get_loadbalancers(self, context, filters=None, fields=None):

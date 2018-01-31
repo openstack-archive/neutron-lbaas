@@ -28,69 +28,139 @@ _SESSION = None
 OPTS = [
     cfg.StrOpt(
         'auth_url',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Authentication endpoint'),
     ),
     cfg.StrOpt(
         'admin_user',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='admin',
         help=_('The service admin user name'),
     ),
     cfg.StrOpt(
         'admin_tenant_name',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='admin',
         help=_('The service admin tenant name'),
     ),
     cfg.StrOpt(
         'admin_password',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         secret=True,
         default='password',
         help=_('The service admin password'),
     ),
     cfg.StrOpt(
         'admin_user_domain',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='Default',
         help=_('The admin user domain name'),
     ),
     cfg.StrOpt(
         'admin_project_domain',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='Default',
         help=_('The admin project domain name'),
     ),
     cfg.StrOpt(
         'region',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='RegionOne',
         help=_('The deployment region'),
     ),
     cfg.StrOpt(
         'service_name',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='lbaas',
         help=_('The name of the service'),
     ),
     cfg.StrOpt(
         'auth_version',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='3',
         help=_('The auth version used to authenticate'),
     ),
     cfg.StrOpt(
         'endpoint_type',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default='public',
         help=_('The endpoint_type to be used')
     ),
     cfg.BoolOpt(
         'insecure',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         default=False,
         help=_('Disable server certificate verification')
     ),
     cfg.StrOpt(
         'cafile',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('CA certificate file path')
     ),
     cfg.StrOpt(
         'certfile',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Client certificate cert file path')
     ),
     cfg.StrOpt(
         'keyfile',
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Client certificate key file path')
     )
 ]

@@ -51,6 +51,11 @@ OPTS = [
     cfg.StrOpt(
         'loadbalancer_state_path',
         default=STATE_PATH_DEFAULT,
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Location to store config and state files'),
         deprecated_opts=[cfg.DeprecatedOpt('loadbalancer_state_path',
                                            group='DEFAULT')],
@@ -59,11 +64,21 @@ OPTS = [
         'user_group',
         default=USER_GROUP_DEFAULT,
         help=_('The user group'),
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         deprecated_opts=[cfg.DeprecatedOpt('user_group', group='DEFAULT')],
     ),
     cfg.IntOpt(
         'send_gratuitous_arp',
         default=3,
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('When delete and re-add the same vip, send this many '
                'gratuitous ARPs to flush the ARP cache in the Router. '
                'Set it below or equal to 0 to disable this feature.'),

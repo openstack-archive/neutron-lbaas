@@ -1,0 +1,9 @@
+---
+prelude: >
+    As of the Queens release, neutron-lbaas is now deprecated and being
+    replaced by the octavia project. Please see the FAQ for more
+    information: https://wiki.openstack.org/wiki/Neutron/LBaaS/Deprecation
+deprecations:
+  - |
+    The neutron-lbaas project is now deprecated. Please see the FAQ for more
+    information: https://wiki.openstack.org/wiki/Neutron/LBaaS/Deprecation

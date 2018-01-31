@@ -19,16 +19,24 @@ from neutron.common import config as common_config
 from neutron.common import rpc as n_rpc
 from neutron.conf.agent import common as config
 from oslo_config import cfg
+from oslo_log import log as logging
 from oslo_service import service
 
 from neutron_lbaas._i18n import _
 from neutron_lbaas.agent import agent_manager as manager
 from neutron_lbaas.services.loadbalancer import constants
 
+LOG = logging.getLogger(__name__)
+
 OPTS = [
     cfg.IntOpt(
         'periodic_interval',
         default=10,
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Seconds between periodic task runs')
     )
 ]
@@ -58,6 +66,9 @@ def main():
     common_config.init(sys.argv[1:])
     config.setup_logging()
     config.setup_privsep()
+
+    LOG.warning('neutron-lbaas is now deprecated. See: '
+                'https://wiki.openstack.org/wiki/Neutron/LBaaS/Deprecation')
 
     mgr = manager.LbaasAgentManager(cfg.CONF)
     svc = LbaasAgentService(

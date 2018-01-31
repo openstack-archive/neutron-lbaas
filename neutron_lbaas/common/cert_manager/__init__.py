@@ -22,10 +22,20 @@ CERT_MANAGER_DEFAULT = 'barbican'
 cert_manager_opts = [
     cfg.StrOpt('cert_manager_type',
                default=CERT_MANAGER_DEFAULT,
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help='Certificate Manager plugin. '
                     'Defaults to {0}.'.format(CERT_MANAGER_DEFAULT)),
     cfg.StrOpt('barbican_auth',
                default='barbican_acl_auth',
+               deprecated_for_removal=True,
+               deprecated_since='Queens',
+               deprecated_reason='The neutron-lbaas project is now '
+                                 'deprecated. See: https://wiki.openstack.org/'
+                                 'wiki/Neutron/LBaaS/Deprecation',
                help='Name of the Barbican authentication method to use')
 ]
 

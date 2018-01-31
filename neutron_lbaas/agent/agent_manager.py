@@ -41,6 +41,11 @@ OPTS = [
         'device_driver',
         default=['neutron_lbaas.drivers.haproxy.'
                  'namespace_driver.HaproxyNSDriver'],
+        deprecated_for_removal=True,
+        deprecated_since='Queens',
+        deprecated_reason='The neutron-lbaas project is now deprecated. '
+                          'See: https://wiki.openstack.org/wiki/Neutron/LBaaS/'
+                          'Deprecation',
         help=_('Drivers used to manage loadbalancing devices'),
     ),
 ]
