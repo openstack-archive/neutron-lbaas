@@ -44,7 +44,7 @@ extensions = [
 
 # openstackdocstheme options
 repository_name = 'openstack/neutron-lbaas'
-bug_project = 'octavia'
+bug_project = '906'
 bug_tag = 'doc'
 
 # Add any paths that contain templates here, relative to this directory.
