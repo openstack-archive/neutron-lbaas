@@ -226,6 +226,27 @@ class BaseTestCase(base.BaseNetworkTest):
         return lb
 
     @classmethod
+    def _wait_for_neutron_port_delete(cls, port_id):
+        """
+        Neutron port deletion is asynchronous. This method waits, up to a
+        timeout for the port deletion to complete.
+        """
+        interval_time = 1
+        timeout = 600
+        end_time = time.time() + timeout
+        while time.time() < end_time:
+            try:
+                cls.ports_client.show_port(port_id)
+                time.sleep(interval_time)
+            except exceptions.NotFound:
+                break
+        else:
+            raise exceptions.TimeoutException(
+                    _("Waited for port {port_id} to be deleted for "
+                      "{timeout} seconds but can still observe that it "
+                      "exists.").format(port_id=port_id, timeout=timeout))
+
+    @classmethod
     def _create_listener(cls, wait=True, **listener_kwargs):
         listener = cls.listeners_client.create_listener(**listener_kwargs)
         if wait:
