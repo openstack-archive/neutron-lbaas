@@ -500,10 +500,13 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                         cert_container.get_private_key_passphrase()),
                     intermediates=cert_container.get_intermediates())
             except Exception as e:
-                cert_mgr.delete_cert(
-                    project_id=tenant_id,
-                    cert_ref=container_ref,
-                    resource_ref=cert_mgr.get_service_url(lb_id))
+                try:
+                    cert_mgr.delete_cert(
+                        project_id=tenant_id,
+                        cert_ref=container_ref,
+                        resource_ref=cert_mgr.get_service_url(lb_id))
+                except Exception:
+                    LOG.error('Unable to delete cert', exc_info=True)
                 raise loadbalancerv2.TLSContainerInvalid(
                     container_id=container_ref, reason=str(e))
 
