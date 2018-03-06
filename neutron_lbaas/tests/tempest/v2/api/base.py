@@ -124,6 +124,29 @@ class BaseTestCase(base.BaseNetworkTest):
             test_utils.call_and_ignore_notfound_exc(
                 cls._delete_load_balancer, lb_id)
 
+        # Wait for all LBs to be fully deleted
+        for lb_id in cls._lbs_to_delete:
+            cls._wait_for_load_balancer_status(
+                lb_id, provisioning_status='DELETED', operating_status=None,
+                delete=True)
+
+        # Wait for straggling port deletes to finish (neutron will sometimes
+        # claim they are deleted before they are totally finished deleting)
+        remaining_ports = cls.ports_client.list_ports(
+            network=cls.network['id']).get('ports')
+        tries = 1
+        while remaining_ports and tries <= 10:
+            LOG.warning("Ports still exist on network %s (try #%s): %s",
+                        cls.network['id'], tries, remaining_ports)
+            time.sleep(10)
+            remaining_ports = cls.ports_client.list_ports(
+                network=cls.network['id']).get('ports')
+            tries += 1
+
+        if remaining_ports:
+            LOG.error("Failed to remove all remaining ports on network %s. "
+                      "Subnet deletion will probably fail.", cls.network['id'])
+
         super(BaseTestCase, cls).resource_cleanup()
 
     @classmethod
@@ -194,9 +217,11 @@ class BaseTestCase(base.BaseNetworkTest):
                             _("loadbalancer {lb_id} not"
                               " found").format(
                                   lb_id=load_balancer_id))
-                if (lb.get('provisioning_status') == provisioning_status and
-                        lb.get('operating_status') == operating_status):
-                    break
+                if lb.get('provisioning_status') == provisioning_status:
+                    if operating_status is None:
+                        break
+                    elif lb.get('operating_status') == operating_status:
+                        break
                 time.sleep(interval_time)
             except exceptions.NotFound:
                 # if wait is for delete operation do break
