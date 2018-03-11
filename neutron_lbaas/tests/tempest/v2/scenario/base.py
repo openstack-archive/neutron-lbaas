@@ -588,7 +588,6 @@ class BaseTestCase(manager.NetworkScenarioTest):
         Check that the requests are not sent to any servers
         Assert that no traffic is sent to any servers
         """
-        time.sleep(10)  # Allow some time for the namespace service to restart
         counters = self._send_requests(self.vip_ip, ["server1", "server2"])
         for member, counter in counters.items():
             self.assertEqual(counter, 0, 'Member %s is balanced' % member)

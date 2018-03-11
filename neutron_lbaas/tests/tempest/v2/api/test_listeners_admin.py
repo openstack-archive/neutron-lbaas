@@ -93,11 +93,6 @@ class ListenersTestJSON(base.BaseAdminTestCase):
         a missing tenant_id creates the listener with admin
         tenant_id.
         """
-        # TODO(rm_work): Figure out why this test breaks intermittently with
-        # the namespace driver, sometimes on either of py27 or py35
-        self.skipTest(
-            "This is breaking intermittently, and should be fixed, but will "
-            "be skipped until other gate issues are resolved.")
         create_new_listener_kwargs = self.create_listener_kwargs
         create_new_listener_kwargs['protocol_port'] = 8081
         admin_listener = self._create_listener(
