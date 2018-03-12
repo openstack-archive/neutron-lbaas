@@ -143,19 +143,16 @@ class LoadBalancer(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         LoadBalancerStatistics,
         uselist=False,
         backref=orm.backref("loadbalancer", uselist=False),
-        cascade="all, delete-orphan",
-        lazy='joined')
+        cascade="all, delete-orphan")
     provider = orm.relationship(
         st_db.ProviderResourceAssociation,
         uselist=False,
-        lazy="joined",
         primaryjoin="LoadBalancer.id==ProviderResourceAssociation.resource_id",
         foreign_keys=[st_db.ProviderResourceAssociation.resource_id],
         # this is only for old API backwards compatibility because when a load
         # balancer is deleted the pool ID should be the same as the load
         # balancer ID and should not be cleared out in this table
-        viewonly=True
-    )
+        viewonly=True)
     flavor_id = sa.Column(sa.String(36), sa.ForeignKey(
         'flavors.id', name='fk_lbaas_loadbalancers_flavors_id'))
 
@@ -190,22 +187,18 @@ class PoolV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     operating_status = sa.Column(sa.String(16), nullable=False)
     members = orm.relationship(MemberV2,
                                backref=orm.backref("pool", uselist=False),
-                               cascade="all, delete-orphan",
-                               lazy='joined')
+                               cascade="all, delete-orphan")
     healthmonitor = orm.relationship(
         HealthMonitorV2,
-        backref=orm.backref("pool", uselist=False),
-        lazy='joined')
+        backref=orm.backref("pool", uselist=False))
     session_persistence = orm.relationship(
         SessionPersistenceV2,
         uselist=False,
         backref=orm.backref("pool", uselist=False),
-        cascade="all, delete-orphan",
-        lazy='joined')
+        cascade="all, delete-orphan")
     loadbalancer = orm.relationship(
         LoadBalancer, uselist=False,
-        backref=orm.backref("pools", uselist=True),
-        lazy='joined')
+        backref=orm.backref("pools", uselist=True))
 
     @property
     def root_loadbalancer(self):
@@ -305,8 +298,7 @@ class L7Policy(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         backref=orm.backref("policy")
     )
     redirect_pool = orm.relationship(
-        PoolV2, backref=orm.backref("l7_policies", uselist=True),
-        lazy='joined')
+        PoolV2, backref=orm.backref("l7_policies", uselist=True))
 
     @property
     def root_loadbalancer(self):
@@ -340,7 +332,6 @@ class Listener(model_base.BASEV2, model_base.HasId, model_base.HasProject):
             SNI,
             backref=orm.backref("listener", uselist=False),
             uselist=True,
-            lazy="joined",
             primaryjoin="Listener.id==SNI.listener_id",
             order_by='SNI.position',
             collection_class=orderinglist.ordering_list(
@@ -357,8 +348,7 @@ class Listener(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         PoolV2, backref=orm.backref("listeners"), lazy='joined')
     loadbalancer = orm.relationship(
         LoadBalancer,
-        backref=orm.backref("listeners", uselist=True),
-        lazy='joined')
+        backref=orm.backref("listeners", uselist=True))
     l7_policies = orm.relationship(
         L7Policy,
         uselist=True,
