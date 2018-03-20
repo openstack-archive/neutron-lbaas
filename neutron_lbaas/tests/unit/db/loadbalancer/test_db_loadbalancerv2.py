@@ -2553,6 +2553,22 @@ class LbaasPoolTests(PoolTestBase):
             resp, body = self._create_pool_api(data)
             self.assertEqual(webob.exc.HTTPConflict.code, resp.status_int)
 
+    def test_cannot_create_pool_with_listener_protocol_incompatible(self):
+        with self.listener(protocol=lb_const.PROTOCOL_TCP,
+                           loadbalancer_id=self.lb_id,
+                           protocol_port=8000) as listener:
+            listener_id = listener['listener']['id']
+            data = {'pool': {'listener_id': listener_id,
+                             'protocol': lb_const.PROTOCOL_HTTP,
+                             'lb_algorithm': lb_const.LB_METHOD_ROUND_ROBIN,
+                             'admin_state_up': True,
+                             'tenant_id': self._tenant_id}}
+            self.assertRaises(
+                loadbalancerv2.ListenerPoolProtocolMismatch,
+                self.plugin.create_pool,
+                context.get_admin_context(),
+                data)
+
     def test_create_pool_with_protocol_invalid(self):
         data = {'pool': {
             'name': '',
