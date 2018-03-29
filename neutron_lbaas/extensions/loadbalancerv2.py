@@ -541,9 +541,6 @@ class Loadbalancerv2(api_extensions.ExtensionDescriptor):
 @six.add_metaclass(abc.ABCMeta)
 class LoadBalancerPluginBaseV2(service_base.ServicePluginBase):
 
-    def get_plugin_name(self):
-        return constants.LOADBALANCERV2
-
     def get_plugin_type(self):
         return constants.LOADBALANCERV2
 
