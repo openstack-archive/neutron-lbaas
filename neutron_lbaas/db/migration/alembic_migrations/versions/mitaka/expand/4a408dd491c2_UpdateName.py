@@ -20,12 +20,12 @@ Create Date: 2015-11-16 11:47:43.061649
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '4a408dd491c2'
 down_revision = '3345facd0452'
-
-from alembic import op
-import sqlalchemy as sa
 
 LB_TAB_NAME = ['lbaas_members', 'lbaas_healthmonitors']
 

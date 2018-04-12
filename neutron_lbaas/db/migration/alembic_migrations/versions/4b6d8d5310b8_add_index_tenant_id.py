@@ -21,11 +21,11 @@ Create Date: 2015-02-10 18:28:26.362881
 
 """
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
 revision = '4b6d8d5310b8'
 down_revision = '4deef6d81931'
-
-from alembic import op
 
 TABLES = ['lbaas_members', 'lbaas_healthmonitors', 'lbaas_pools',
           'lbaas_loadbalancers', 'lbaas_listeners', 'vips', 'members',

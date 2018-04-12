@@ -21,14 +21,14 @@ Create Date: 2015-01-18 10:00:00
 
 """
 
-# revision identifiers, used by Alembic.
-revision = 'lbaasv2_tls'
-down_revision = '364f9b6064f0'
-
 from alembic import op
 import sqlalchemy as sa
 
 from neutron.db import migration
+
+# revision identifiers, used by Alembic.
+revision = 'lbaasv2_tls'
+down_revision = '364f9b6064f0'
 
 
 old_listener_protocols = sa.Enum("HTTP", "HTTPS", "TCP",

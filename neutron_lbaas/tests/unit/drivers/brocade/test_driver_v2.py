@@ -20,10 +20,10 @@ import sys
 import mock
 from neutron_lib import context
 
-with mock.patch.dict(sys.modules, {'brocade_neutron_lbaas': mock.Mock()}):
-    from neutron_lbaas.drivers.brocade import driver_v2 as driver
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.tests.unit.db.loadbalancer import test_db_loadbalancerv2
+with mock.patch.dict(sys.modules, {'brocade_neutron_lbaas': mock.Mock()}):
+    from neutron_lbaas.drivers.brocade import driver_v2 as driver
 
 
 class FakeModel(object):
