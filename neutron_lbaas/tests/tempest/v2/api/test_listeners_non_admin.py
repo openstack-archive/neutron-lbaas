@@ -60,14 +60,22 @@ class ListenersTestJSON(base.BaseTestCase):
         """Test get listener"""
         listener = self.listeners_client.get_listener(
             self.listener_id)
+        self._test_provisioning_status_if_exists(self.listener, listener)
         self.assertEqual(self.listener, listener)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
+
+    def _prep_list_comparison(self, single, obj_list):
+        for obj in obj_list:
+            if not single.get('updated_at') and obj.get('updated_at'):
+                obj['updated_at'] = None
+            self._test_provisioning_status_if_exists(single, obj)
 
     def test_list_listeners(self):
         """Test get listeners with one listener"""
         listeners = self.listeners_client.list_listeners()
         self.assertEqual(len(listeners), 1)
+        self._prep_list_comparison(self.listener, listeners)
         self.assertIn(self.listener, listeners)
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
@@ -86,6 +94,8 @@ class ListenersTestJSON(base.BaseTestCase):
             listener_ids=[self.listener_id, new_listener_id])
         listeners = self.listeners_client.list_listeners()
         self.assertEqual(len(listeners), 2)
+        self._prep_list_comparison(self.listener, listeners)
+        self._prep_list_comparison(new_listener, listeners)
         self.assertIn(self.listener, listeners)
         self.assertIn(new_listener, listeners)
         self.assertNotEqual(self.listener, new_listener)
@@ -104,7 +114,9 @@ class ListenersTestJSON(base.BaseTestCase):
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
+        self._test_provisioning_status_if_exists(new_listener, listener)
         self.assertEqual(new_listener, listener)
+        self._test_provisioning_status_if_exists(self.listener, new_listener)
         self.assertNotEqual(self.listener, new_listener)
 
     @decorators.attr(type='negative')
@@ -150,6 +162,7 @@ class ListenersTestJSON(base.BaseTestCase):
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
+        self._test_provisioning_status_if_exists(new_listener, listener)
         self.assertEqual(new_listener, listener)
         self.assertTrue(new_listener['admin_state_up'])
 
@@ -197,6 +210,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_listener_invalid_tenant_id(self):
         """Test create listener with an invalid tenant id"""
@@ -291,6 +305,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_listener_empty_tenant_id(self):
         """Test create listener with an empty tenant id"""
@@ -317,6 +332,7 @@ class ListenersTestJSON(base.BaseTestCase):
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
+        self._test_provisioning_status_if_exists(new_listener, listener)
         self.assertEqual(new_listener, listener)
 
     def test_create_listener_empty_description(self):
@@ -333,6 +349,7 @@ class ListenersTestJSON(base.BaseTestCase):
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
+        self._test_provisioning_status_if_exists(new_listener, listener)
         self.assertEqual(new_listener, listener)
 
     @decorators.attr(type='negative')
@@ -370,6 +387,7 @@ class ListenersTestJSON(base.BaseTestCase):
             self.listener_id)
         self.assertEqual(listener.get('name'), 'new_name')
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_update_listener_invalid_tenant_id(self):
         """Test update listener with an invalid tenant id"""
@@ -487,6 +505,7 @@ class ListenersTestJSON(base.BaseTestCase):
         self.assertEqual(listener.get('connection_limit'),
                          old_connection_limit)
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_update_listener_empty_tenant_id(self):
         """Test update listener with an empty tenant id"""
@@ -549,7 +568,9 @@ class ListenersTestJSON(base.BaseTestCase):
             listener_ids=[self.listener_id, new_listener_id])
         listener = self.listeners_client.get_listener(
             new_listener_id)
+        self._test_provisioning_status_if_exists(new_listener, listener)
         self.assertEqual(new_listener, listener)
+        self._test_provisioning_status_if_exists(self.listener, new_listener)
         self.assertNotEqual(self.listener, new_listener)
         self._delete_listener(new_listener_id)
         self.assertRaises(ex.NotFound,

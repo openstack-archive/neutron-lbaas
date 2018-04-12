@@ -149,6 +149,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_member_missing_required_field_subnet_id(self):
         """Test create a member with missing field subnet_id """
@@ -165,6 +166,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_member_invalid_tenant_id(self):
         """Test create member with invalid tenant_id"""
@@ -228,6 +230,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
+    @decorators.skip_because(bug="1468457")  # Octavia does a floor()
     @decorators.attr(type='negative')
     def test_create_member_nonint_weight(self):
         """Test create member with nonint weight"""
@@ -239,6 +242,7 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self._create_member,
                           self.pool_id, **member_opts)
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_member_empty_tenant_id(self):
         """Test create member with an empty tenant_id"""
@@ -327,8 +331,9 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertEqual(1, member["weight"])
         # Lets overwrite the defaults
         member_opts = {"weight": 10, "admin_state_up": False}
-        member = self._update_member(self.pool_id, member_id,
-                                     **member_opts)
+        self._update_member(self.pool_id, member_id,
+                            **member_opts)
+        member = self.members_client.get_member(self.pool_id, member_id)
         # And make sure they stick
         self.assertFalse(member["admin_state_up"])
         self.assertEqual(10, member["weight"])
@@ -336,15 +341,14 @@ class MemberTestJSON(base.BaseTestCase):
     def test_update_member_missing_admin_state_up(self):
         """Test that we can update a member with missing admin_state_up."""
         member_opts = self.build_member_opts()
-        member = self._create_member(self.pool_id,
-                                     **member_opts)
+        member = self._create_member(self.pool_id, **member_opts)
         member_id = member["id"]
         self.addCleanup(self._delete_member, self.pool_id, member_id)
         self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"weight": 10}
-        member = self._update_member(self.pool_id, member_id,
-                                     **member_opts)
+        self._update_member(self.pool_id, member_id, **member_opts)
+        member = self.members_client.get_member(self.pool_id, member_id)
         self.assertTrue(member["admin_state_up"])
         self.assertEqual(10, member["weight"])
 
@@ -358,8 +362,8 @@ class MemberTestJSON(base.BaseTestCase):
         self.assertTrue(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
         member_opts = {"admin_state_up": False}
-        member = self._update_member(self.pool_id, member_id,
-                                     **member_opts)
+        self._update_member(self.pool_id, member_id, **member_opts)
+        member = self.members_client.get_member(self.pool_id, member_id)
         self.assertFalse(member["admin_state_up"])
         self.assertEqual(1, member["weight"])
 

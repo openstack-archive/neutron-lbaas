@@ -61,6 +61,7 @@ class MemberTestJSON(base.BaseAdminTestCase):
     def resource_cleanup(cls):
         super(MemberTestJSON, cls).resource_cleanup()
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='smoke')
     def test_create_member_invalid_tenant_id(self):
         """Test create member with invalid tenant_id"""
@@ -74,6 +75,7 @@ class MemberTestJSON(base.BaseAdminTestCase):
         self.assertEqual(member['subnet_id'], self.subnet_id)
         self.assertEqual(member['tenant_id'], "$232!$pw")
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_member_empty_tenant_id(self):
         """Test create member with an empty tenant_id should fail"""

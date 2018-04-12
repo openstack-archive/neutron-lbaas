@@ -75,6 +75,25 @@ function neutron_lbaas_configure_agent {
     fi
 }
 
+function configure_neutron_api_haproxy {
+    echo "Configuring neutron API haproxy for l7"
+    install_package haproxy
+
+    cp ${NEUTRON_LBAAS_DIR}/devstack/etc/neutron/haproxy.cfg ${NEUTRON_CONF_DIR}/lbaas-haproxy.cfg
+
+    sed -i.bak "s/NEUTRON_ALTERNATE_API_PORT/${NEUTRON_ALTERNATE_API_PORT}/" ${NEUTRON_CONF_DIR}/lbaas-haproxy.cfg
+
+    NEUTRON_API_PORT=9696
+    echo "    server neutron-1 ${HOST_IP}:${NEUTRON_API_PORT} weight 1" >> ${NEUTRON_CONF_DIR}/lbaas-haproxy.cfg
+
+    /usr/sbin/haproxy -c -f ${NEUTRON_CONF_DIR}/lbaas-haproxy.cfg
+    run_process $NEUTRON_API_HAPROXY "/usr/sbin/haproxy -db -V -f ${NEUTRON_CONF_DIR}/lbaas-haproxy.cfg"
+
+    # Fix the endpoint
+    NEUTRON_ENDPOINT_ID=$(openstack endpoint list --service neutron -f value -c ID)
+    openstack endpoint set --url 'http://127.0.0.1:9695/' $NEUTRON_ENDPOINT_ID
+}
+
 function neutron_lbaas_generate_config_files {
     # Uses oslo config generator to generate LBaaS sample configuration files
     (cd $NEUTRON_LBAAS_DIR && exec ./tools/generate_config_file_samples.sh)
@@ -129,11 +148,15 @@ if is_service_enabled $LBAAS_ANY; then
     elif [[ "$1" == "stack" && "$2" == "post-config" ]]; then
         # Configure after the other layer 1 and 2 services have been configured
         echo_summary "Configuring neutron-lbaas"
-        neutron_lbaas_generate_config_files
-        neutron_lbaas_configure_common
-        neutron_lbaas_configure_agent
+        if [[ "$PROXY_OCTAVIA" == "True" ]]; then
+            configure_neutron_api_haproxy
+        else
+            neutron_lbaas_generate_config_files
+            neutron_lbaas_configure_common
+            neutron_lbaas_configure_agent
+        fi
 
-    elif [[ "$1" == "stack" && "$2" == "extra" ]]; then
+    elif [[ "$1" == "stack" && "$2" == "extra" && "$PROXY_OCTAVIA" != "True" ]]; then
         # Initialize and start the LBaaS service
         echo_summary "Initializing neutron-lbaas"
         neutron_lbaas_start

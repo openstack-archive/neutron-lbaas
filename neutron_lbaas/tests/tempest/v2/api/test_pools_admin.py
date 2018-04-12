@@ -76,6 +76,7 @@ class TestPools(base.BaseAdminTestCase):
             self.addCleanup(self._delete_pool, response['id'])
         return response
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_pool_using_empty_tenant_field(self):
         """Test create pool with empty tenant field should fail"""
@@ -124,8 +125,9 @@ class TestPools(base.BaseAdminTestCase):
         new_pool = self._prepare_and_create_pool()
         session_persistence = {"type": "APP_COOKIE",
                                "cookie_name": "my_cookie"}
-        pool = self._update_pool(new_pool.get('id'),
-                                 session_persistence=session_persistence)
+        self._update_pool(new_pool.get('id'),
+                          session_persistence=session_persistence)
+        pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(session_persistence, pool.get('session_persistence'))
 
     def test_update_pool_sesssion_persistence_app_to_http(self):
@@ -136,11 +138,13 @@ class TestPools(base.BaseAdminTestCase):
         new_pool = self._prepare_and_create_pool()
         session_persistence = {"type": "APP_COOKIE",
                                "cookie_name": "my_cookie"}
-        pool = self._update_pool(new_pool.get('id'),
-                                 session_persistence=session_persistence)
+        self._update_pool(new_pool.get('id'),
+                          session_persistence=session_persistence)
+        pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(session_persistence, pool.get('session_persistence'))
-        pool = self._update_pool(new_pool.get('id'),
-                                 session_persistence={"type": "HTTP_COOKIE"})
+        self._update_pool(new_pool.get('id'),
+                          session_persistence={"type": "HTTP_COOKIE"})
+        pool = self.pools_client.get_pool(new_pool.get('id'))
         session_persistence = {"type": "HTTP_COOKIE",
                                "cookie_name": None}
         self.assertEqual(session_persistence, pool.get('session_persistence'))
@@ -150,6 +154,7 @@ class TestPools(base.BaseAdminTestCase):
         """Test delete admin pool"""
         new_pool = self._prepare_and_create_pool(cleanup=False)
         pool = self.pools_client.get_pool(new_pool.get('id'))
+        self._test_provisioning_status_if_exists(new_pool, pool)
         self.assertEqual(new_pool, pool)
         self._delete_pool(new_pool.get('id'))
         self.assertRaises(ex.NotFound, self.pools_client.get_pool,

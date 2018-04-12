@@ -1,3 +1,7 @@
+[[test-config|$TEMPEST_CONFIG]]
+[lbaas]
+test_with_noop = True
+
 [[post-config|/etc/octavia/octavia.conf]]
 [DEFAULT]
 debug = True

@@ -15,11 +15,14 @@
 
 import netaddr
 from tempest.common import utils
+from tempest import config
 from tempest.lib.common.utils import data_utils
 from tempest.lib import decorators
 from tempest.lib import exceptions as ex
 
 from neutron_lbaas.tests.tempest.v2.api import base
+
+CONF = config.CONF
 
 
 class LoadBalancersTestJSON(base.BaseTestCase):
@@ -85,6 +88,8 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         self.addCleanup(self._delete_load_balancer, new_load_balancer_id)
         load_balancer = self.load_balancers_client.get_load_balancer(
             new_load_balancer_id)
+        # TODO(rm_work): This is a really dumb test. It's essentially comparing
+        # two back-to-back GETs to each other.
         self.assertEqual(new_load_balancer, load_balancer)
         self.assertNotEqual(self.load_balancer, new_load_balancer)
 
@@ -275,11 +280,12 @@ class LoadBalancersTestJSON(base.BaseTestCase):
     @decorators.attr(type='negative')
     def test_create_load_balancer_invalid_flavor_field(self):
         """Test create load balancer with an invalid flavor field"""
-        self.assertRaises(ex.NotFound,
+        self.assertRaises(ex.ClientRestClientException,
                           self.load_balancers_client.create_load_balancer,
                           vip_subnet_id=self.subnet['id'],
                           flavor_id="NO_SUCH_FLAVOR")
 
+    @decorators.skip_because(bug="1655768")
     @decorators.attr(type='negative')
     def test_create_load_balancer_provider_flavor_conflict(self):
         """Test create load balancer with both a provider and a flavor"""
@@ -287,7 +293,7 @@ class LoadBalancersTestJSON(base.BaseTestCase):
                           self.load_balancers_client.create_load_balancer,
                           vip_subnet_id=self.subnet['id'],
                           flavor_id="NO_SUCH_FLAVOR",
-                          provider="NO_SUCH_PROVIDER")
+                          provider="octavia")
 
     @decorators.attr(type='smoke')
     def test_update_load_balancer(self):
@@ -398,7 +404,14 @@ class LoadBalancersTestJSON(base.BaseTestCase):
         statuses = self.load_balancers_client.get_load_balancer_status_tree(
             self.load_balancer_id)
         load_balancer = statuses['loadbalancer']
-        self.assertEqual("ONLINE", load_balancer['operating_status'])
+        if CONF.lbaas.test_with_noop:
+            # Just make sure the status is valid, because operating_status is
+            # slightly unpredictable in NOOP mode.
+            self.assertIn(load_balancer['operating_status'],
+                          ['ONLINE', 'OFFLINE'])
+        else:
+            # With real drivers, we should definitely go to ONLINE
+            self.assertEqual("ONLINE", load_balancer['operating_status'])
         self.assertEqual("ACTIVE", load_balancer['provisioning_status'])
         self.assertEmpty(load_balancer['listeners'])
 

@@ -15,6 +15,7 @@
 
 import time
 
+from neutron_lib import constants as n_constants
 from oslo_log import log as logging
 from tempest.api.network import base
 from tempest import config
@@ -169,8 +170,6 @@ class BaseTestCase(base.BaseNetworkTest):
             cls._wait_for_load_balancer_status(lb.get('id'))
 
         cls._lbs_to_delete.append(lb.get('id'))
-        port = cls.ports_client.show_port(lb['vip_port_id'])
-        cls.ports.append(port['port'])
         return lb
 
     @classmethod
@@ -204,6 +203,10 @@ class BaseTestCase(base.BaseNetworkTest):
         timeout = 600
         end_time = time.time() + timeout
         lb = {}
+        # When running with no-op drivers there is no actual health to
+        # observe, so disable operating_status checks when running no-op.
+        if CONF.lbaas.test_with_noop:
+            operating_status = None
         while time.time() < end_time:
             try:
                 lb = cls.load_balancers_client.get_load_balancer(
@@ -368,7 +371,12 @@ class BaseTestCase(base.BaseNetworkTest):
         statuses = cls.load_balancers_client.get_load_balancer_status_tree(
             load_balancer_id=load_balancer_id)
         load_balancer = statuses['loadbalancer']
-        assert 'ONLINE' == load_balancer['operating_status']
+
+        # When running with no-op drivers there is no actual health to
+        # observe, so disable operating_status checks when running no-op.
+        if not CONF.lbaas.test_with_noop:
+            assert 'ONLINE' == load_balancer['operating_status']
+
         assert 'ACTIVE' == load_balancer['provisioning_status']
 
         if listener_ids:
@@ -390,13 +398,16 @@ class BaseTestCase(base.BaseNetworkTest):
     @classmethod
     def _check_status_tree_thing(cls, actual_thing_ids, status_tree_things):
         found_things = 0
-        status_tree_things = status_tree_things
         assert len(actual_thing_ids) == len(status_tree_things)
         for actual_thing_id in actual_thing_ids:
             for status_tree_thing in status_tree_things:
                 if status_tree_thing['id'] == actual_thing_id:
-                    assert 'ONLINE' == (
-                        status_tree_thing['operating_status'])
+                    # When running with no-op drivers there is no actual
+                    # health to observe, so disable operating_status checks
+                    # when running no-op.
+                    if not CONF.lbaas.test_with_noop:
+                        assert 'ONLINE' == (
+                            status_tree_thing['operating_status'])
                     assert 'ACTIVE' == (
                         status_tree_thing['provisioning_status'])
                     found_things += 1
@@ -409,6 +420,17 @@ class BaseTestCase(base.BaseNetworkTest):
             case_name=cls.__name__
         )
         return name
+
+    def _test_provisioning_status_if_exists(self, created_obj, get_obj):
+        prov_status_old = created_obj.pop('provisioning_status', None)
+        prov_status_new = get_obj.pop('provisioning_status', None)
+
+        if prov_status_old:
+            self.assertIn('PENDING_', prov_status_old)
+        if prov_status_new:
+            self.assertEqual(n_constants.ACTIVE, prov_status_new)
+        if not created_obj.get('updated_at') and get_obj.get('updated_at'):
+            get_obj['updated_at'] = None
 
 
 class BaseAdminTestCase(BaseTestCase):

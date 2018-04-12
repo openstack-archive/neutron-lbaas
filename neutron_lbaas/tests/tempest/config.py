@@ -30,4 +30,7 @@ lbaas_opts = [
     cfg.ListOpt('session_persistence_types',
                 default=['SOURCE_IP', 'HTTP_COOKIE', 'APP_COOKIE'],
                 help='Supported session persistence types for Neutron LBaaS'),
+    cfg.BoolOpt('test_with_noop', default=False,
+                help='Configures tempest to run with no-op drivers. Ignores '
+                     'the operating_status during tests.'),
 ]

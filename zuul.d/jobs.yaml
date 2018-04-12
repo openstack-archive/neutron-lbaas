@@ -64,3 +64,9 @@
     parent: nlbaas-legacy-dsvm-base
     run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/run.yaml
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/post.yaml
+
+- job:
+    name: neutron-lbaasv2-dsvm-api-l7octavia
+    parent: nlbaas-legacy-dsvm-base
+    run: playbooks/legacy/neutron-lbaasv2-dsvm-api-l7octavia/run.yaml
+    post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-l7octavia/post.yaml

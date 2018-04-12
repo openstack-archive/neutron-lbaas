@@ -47,7 +47,7 @@ case $testtype in
 
         if [ "$lbaasversion" = "lbaasv2" ]; then
             case "$lbaasenv" in
-                "api"|"healthmonitor"|"listener"|"loadbalancer"|"member"|"minimal"|"pool")
+                "api"|"healthmonitor"|"listener"|"loadbalancer"|"member"|"minimal"|"pool"|"proxy_octavia")
                     testenv="apiv2"
                     ;;
                 "scenario")

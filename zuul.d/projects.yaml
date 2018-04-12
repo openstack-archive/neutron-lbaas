@@ -14,6 +14,9 @@
         - neutron-lbaasv2-dsvm-scenario-namespace
         - neutron-lbaasv2-dsvm-py3x-scenario-namespace:
             branches: ^(?!stable/ocata).*$
+        - neutron-lbaasv2-dsvm-api-l7octavia:
+            voting: false
+
     gate:
       queue: neutron-lbaas
       jobs:

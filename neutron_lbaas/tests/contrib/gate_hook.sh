@@ -39,6 +39,13 @@ function _setup_octavia {
     export DEVSTACK_LOCAL_CONFIG+="
         enable_plugin octavia https://git.openstack.org/openstack/octavia
         "
+    if [[ "$lbaasenv" == "proxy_octavia" ]]; then
+        export DEVSTACK_LOCAL_CONFIG+="
+            enable_service q-api-ha
+            export PROXY_OCTAVIA=True
+            export OCTAVIA_USE_LEGACY_RBAC=True
+            "
+    fi
     # Use infra's cached version of the file
     if [ -f /opt/stack/new/devstack/files/get-pip.py ]; then
             export DEVSTACK_LOCAL_CONFIG+="

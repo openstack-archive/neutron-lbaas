@@ -54,6 +54,14 @@ class TestHealthMonitors(base.BaseTestCase):
                                       'max_retries': 10, 'timeout': 5,
                                       'pool_id': cls.pool.get('id')}
 
+    def _prep_list_comparison(self, single, obj_list):
+        single.pop('operating_status', None)
+        for obj in obj_list:
+            obj.pop('operating_status', None)
+            if not single.get('updated_at') and obj.get('updated_at'):
+                obj['updated_at'] = None
+            self._test_provisioning_status_if_exists(single, obj)
+
     def test_list_health_monitors_empty(self):
         hm_list = self.health_monitors_client.list_health_monitors()
         self.assertEmpty(hm_list)
@@ -61,6 +69,7 @@ class TestHealthMonitors(base.BaseTestCase):
     def test_list_health_monitors_one(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_list = self.health_monitors_client.list_health_monitors()
+        self._prep_list_comparison(hm, hm_list)
         self.assertIn(hm, hm_list)
 
     @decorators.attr(type='smoke')
@@ -81,21 +90,20 @@ class TestHealthMonitors(base.BaseTestCase):
             timeout=2,
             pool_id=new_pool.get('id'))
         hm_list = self.health_monitors_client.list_health_monitors()
+        self._prep_list_comparison(hm1, hm_list)
+        self._prep_list_comparison(hm2, hm_list)
         self.assertEqual(2, len(hm_list))
         self.assertIn(hm1, hm_list)
         self.assertIn(hm2, hm_list)
 
     @decorators.attr(type='smoke')
-    def test_get_health_monitor(self):
+    def test_create_and_get_health_monitor(self):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
+        self._test_provisioning_status_if_exists(hm, hm_test)
+        hm.pop('operating_status', None)
+        hm_test.pop('operating_status', None)
         self.assertEqual(hm, hm_test)
-
-    @decorators.attr(type='smoke')
-    def test_create_health_monitor(self):
-        new_hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        hm = self.health_monitors_client.get_health_monitor(new_hm.get('id'))
-        self.assertEqual(new_hm, hm)
 
     def test_create_health_monitor_missing_attribute(self):
         self.assertRaises(ex.BadRequest, self._create_health_monitor,
@@ -148,6 +156,9 @@ class TestHealthMonitors(base.BaseTestCase):
         """
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
+        self._test_provisioning_status_if_exists(hm, hm_test)
+        hm.pop('operating_status', None)
+        hm_test.pop('operating_status', None)
         self.assertEqual(hm, hm_test)
         self.assertTrue(hm_test.get('admin_state_up'))
 
@@ -161,6 +172,9 @@ class TestHealthMonitors(base.BaseTestCase):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
 
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
+        self._test_provisioning_status_if_exists(hm, hm_test)
+        hm.pop('operating_status', None)
+        hm_test.pop('operating_status', None)
         self.assertEqual(hm, hm_test)
         self.assertEqual('GET', hm_test.get('http_method'))
 
@@ -173,6 +187,9 @@ class TestHealthMonitors(base.BaseTestCase):
             raise self.skipException(msg)
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
+        self._test_provisioning_status_if_exists(hm, hm_test)
+        hm.pop('operating_status', None)
+        hm_test.pop('operating_status', None)
         self.assertEqual(hm, hm_test)
         self.assertEqual('/', hm_test.get('url_path'))
 
@@ -186,9 +203,13 @@ class TestHealthMonitors(base.BaseTestCase):
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
 
         hm_test = self.health_monitors_client.get_health_monitor(hm.get('id'))
+        self._test_provisioning_status_if_exists(hm, hm_test)
+        hm.pop('operating_status', None)
+        hm_test.pop('operating_status', None)
         self.assertEqual(hm, hm_test)
         self.assertEqual('200', hm_test.get('expected_codes'))
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_health_monitor_invalid_tenant_id(self):
         """Test create health monitor with invalid tenant_id"""
@@ -357,50 +378,57 @@ class TestHealthMonitors(base.BaseTestCase):
                                          max_retries=10, timeout=5,
                                          pool_id=self.pool.get('id'))
         max_retries = 1
-        new_hm = self._update_health_monitor(
-            hm.get('id'), max_retries=max_retries)
+        self._update_health_monitor(hm.get('id'), max_retries=max_retries)
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(max_retries, new_hm.get('max_retries'))
 
     def test_update_health_monitor_missing_admin_state_up(self):
         """Test update health monitor with missing admin state field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertTrue(new_hm.get('admin_state_up'))
 
     def test_update_health_monitor_missing_delay(self):
         """Test update health monitor with missing delay field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('delay'), new_hm.get('delay'))
 
     def test_update_health_monitor_missing_timeout(self):
         """Test update health monitor with missing timeout field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('timeout'), new_hm.get('timeout'))
 
     def test_update_health_monitor_missing_max_retries(self):
         """Test update health monitor with missing max retries field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('max_retries'), new_hm.get('max_retries'))
 
     def test_update_health_monitor_missing_http_method(self):
         """Test update health monitor with missing http_method field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('http_method'), new_hm.get('http_method'))
 
     def test_update_health_monitor_missing_url_path(self):
         """Test update health monitor with missing url_path field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('url_path'), new_hm.get('url_path'))
 
     def test_update_health_monitor_missing_expected_codes(self):
         """Test update health monitor with missing expected_codes field"""
         hm = self._create_health_monitor(**self.create_basic_hm_kwargs)
-        new_hm = self._update_health_monitor(hm.get('id'))
+        self._update_health_monitor(hm.get('id'))
+        new_hm = self.health_monitors_client.get_health_monitor(hm.get('id'))
         self.assertEqual(hm.get('expected_codes'),
                          new_hm.get('expected_codes'))
 

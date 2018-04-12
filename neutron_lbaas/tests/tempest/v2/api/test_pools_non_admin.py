@@ -80,6 +80,12 @@ class TestPools(base.BaseTestCase):
             self.addCleanup(self._delete_pool, response['id'])
         return response
 
+    def _prep_list_comparison(self, single, obj_list):
+        for obj in obj_list:
+            if not single.get('updated_at') and obj.get('updated_at'):
+                obj['updated_at'] = None
+            self._test_provisioning_status_if_exists(single, obj)
+
     def test_list_pools_empty(self):
         """Test get pools when empty"""
         pools = self.pools_client.list_pools()
@@ -88,9 +94,9 @@ class TestPools(base.BaseTestCase):
     def test_list_pools_one(self):
         """Test get pools with one pool"""
         new_pool = self._prepare_and_create_pool()
-        new_pool = self.pools_client.get_pool(new_pool['id'])
         pools = self.pools_client.list_pools()
         self.assertEqual(1, len(pools))
+        self._prep_list_comparison(new_pool, pools)
         self.assertIn(new_pool, pools)
 
     @decorators.attr(type='smoke')
@@ -100,21 +106,17 @@ class TestPools(base.BaseTestCase):
         new_pool2 = self._prepare_and_create_pool()
         pools = self.pools_client.list_pools()
         self.assertEqual(2, len(pools))
+        self._prep_list_comparison(new_pool1, pools)
+        self._prep_list_comparison(new_pool2, pools)
         self.assertIn(new_pool1, pools)
         self.assertIn(new_pool2, pools)
 
     @decorators.attr(type='smoke')
-    def test_get_pool(self):
-        """Test get pool"""
-        new_pool = self._prepare_and_create_pool()
-        pool = self.pools_client.get_pool(new_pool.get('id'))
-        self.assertEqual(new_pool, pool)
-
-    @decorators.attr(type='smoke')
-    def test_create_pool(self):
+    def test_create_and_get_pool(self):
         """Test create pool"""
         new_pool = self._prepare_and_create_pool()
         pool = self.pools_client.get_pool(new_pool.get('id'))
+        self._test_provisioning_status_if_exists(new_pool, pool)
         self.assertEqual(new_pool, pool)
 
     @decorators.attr(type='negative')
@@ -247,6 +249,7 @@ class TestPools(base.BaseTestCase):
                           protocol=self.pool_protocol,
                           listener_id="$@5$%$7863")
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_pool_invalid_tenant_id_field(self):
         """Test create pool with invalid tenant_id field"""
@@ -304,6 +307,7 @@ class TestPools(base.BaseTestCase):
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 
+    @decorators.skip_because(bug="1765796")
     @decorators.attr(type='negative')
     def test_create_pool_empty_session_persistence_field(self):
         """Test create pool with empty session persistence field"""
@@ -329,6 +333,7 @@ class TestPools(base.BaseTestCase):
                           admin_state_up="",
                           lb_algorithm='ROUND_ROBIN')
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_pool_empty_tenant_field(self):
         """Test create pool with empty tenant field"""
@@ -338,6 +343,7 @@ class TestPools(base.BaseTestCase):
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_pool_for_other_tenant_field(self):
         """Test create pool for other tenant field"""
@@ -389,6 +395,7 @@ class TestPools(base.BaseTestCase):
         new_pool = self._prepare_and_create_pool(
             session_persistence={'type': 'HTTP_COOKIE'})
         pool = self.pools_client.get_pool(new_pool.get('id'))
+        self._test_provisioning_status_if_exists(new_pool, pool)
         self.assertEqual(new_pool, pool)
 
     def test_create_pool_with_session_persistence_app_cookie(self):
@@ -397,6 +404,7 @@ class TestPools(base.BaseTestCase):
             session_persistence={'type': 'APP_COOKIE',
                                  'cookie_name': 'sessionId'})
         pool = self.pools_client.get_pool(new_pool.get('id'))
+        self._test_provisioning_status_if_exists(new_pool, pool)
         self.assertEqual(new_pool, pool)
 
     @decorators.attr(type='negative')
@@ -427,9 +435,8 @@ class TestPools(base.BaseTestCase):
         """Test update pool"""
         new_pool = self._prepare_and_create_pool()
         desc = 'testing update with new description'
-        pool = self._update_pool(new_pool.get('id'),
-                                 description=desc,
-                                 wait=True)
+        self._update_pool(new_pool.get('id'), description=desc, wait=True)
+        pool = self.pools_client.get_pool(new_pool.get('id'))
         self.assertEqual(desc, pool.get('description'))
 
     def test_update_pool_missing_name(self):
@@ -519,6 +526,7 @@ class TestPools(base.BaseTestCase):
         self.assertRaises(ex.BadRequest, self.pools_client.update_pool,
                           new_pool.get('id'), admin_state_up="")
 
+    @decorators.skip_because(bug="1765796")
     @decorators.attr(type='negative')
     def test_update_pool_empty_session_persistence(self):
         """Test update pool with empty session persistence field"""
@@ -546,6 +554,7 @@ class TestPools(base.BaseTestCase):
         """Test delete pool"""
         new_pool = self._prepare_and_create_pool(cleanup=False)
         pool = self.pools_client.get_pool(new_pool.get('id'))
+        self._test_provisioning_status_if_exists(new_pool, pool)
         self.assertEqual(new_pool, pool)
         self._delete_pool(new_pool.get('id'))
         self.assertRaises(ex.NotFound, self.pools_client.get_pool,
@@ -555,6 +564,7 @@ class TestPools(base.BaseTestCase):
         """Test delete pool that doesn't exist"""
         new_pool = self._prepare_and_create_pool(cleanup=False)
         pool = self.pools_client.get_pool(new_pool.get('id'))
+        self._test_provisioning_status_if_exists(new_pool, pool)
         self.assertEqual(new_pool, pool)
         self._delete_pool(new_pool.get('id'))
         self.assertRaises(ex.NotFound, self._delete_pool,

@@ -74,6 +74,7 @@ class TestHealthMonitors(base.BaseAdminTestCase):
         hm_tenant_id = hm.get('tenant_id')
         self.assertEqual(admin_tenant_id, hm_tenant_id)
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='negative')
     def test_create_health_monitor_empty_tenant_id_field(self):
         """
@@ -84,6 +85,7 @@ class TestHealthMonitors(base.BaseAdminTestCase):
                           type=self.hm_protocol, delay=3, max_retries=10,
                           timeout=5, pool_id=self.pool.get('id'), tenant_id="")
 
+    @decorators.skip_because(bug="1468457")
     @decorators.attr(type='smoke')
     def test_create_health_monitor_for_another_tenant_id_field(self):
         """Test with admin user create health monitor for another tenant id.
