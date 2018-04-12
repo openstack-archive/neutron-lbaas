@@ -1,6 +1,7 @@
 - project:
     check:
       jobs:
+        - openstack-tox-lower-constraints
         - neutron-lbaasv2-dsvm-api
         - neutron-lbaasv2-dsvm-py3x-api:
             branches: ^(?!stable/ocata).*$
@@ -16,6 +17,7 @@
     gate:
       queue: neutron-lbaas
       jobs:
+        - openstack-tox-lower-constraints
         - neutron-lbaasv2-dsvm-api
         - neutron-lbaasv2-dsvm-py3x-api:
             branches: ^(?!stable/ocata).*$
