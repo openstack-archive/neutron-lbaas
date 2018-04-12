@@ -403,7 +403,7 @@ class AgentDriverBase(driver_base.LoadBalancerBaseDriver):
         if hasattr(self.plugin, 'agent_callbacks'):
             return
 
-        self.conn = n_rpc.create_connection()
+        self.conn = n_rpc.Connection()
         self.conn.create_consumer(lb_const.LOADBALANCER_PLUGINV2,
                                   self.agent_endpoints,
                                   fanout=False)
