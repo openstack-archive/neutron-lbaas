@@ -20,13 +20,13 @@ Create Date: 2016-07-13 02:40:51.683659
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '4b4dc6d5d843'
 down_revision = '130ebfdef43'
 depends_on = ('62deca5010cd',)
-
-from alembic import op
-import sqlalchemy as sa
 
 
 _INSPECTOR = None

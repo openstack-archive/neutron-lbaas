@@ -21,12 +21,12 @@ Create Date: 2015-02-05 10:50:15.606420
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = '3543deab1547'
 down_revision = '6aee0434f911'
-
-from alembic import op
-import sqlalchemy as sa
 
 l7rule_type = sa.Enum("HOST_NAME", "PATH", "FILE_TYPE", "HEADER", "COOKIE",
                       name="l7rule_typesv2")

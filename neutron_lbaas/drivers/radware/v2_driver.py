@@ -407,8 +407,9 @@ class RadwareLBaaSV2Driver(base_v2_driver.RadwareLBaaSBaseV2Driver):
                 policy_dict['rules'] = []
                 rules = [
                     rule for rule in policy.rules
-                    if rule.provisioning_status != n_constants.PENDING_DELETE
-                    and rule.id not in deleted_ids]
+                    if rule.provisioning_status !=
+                    n_constants.PENDING_DELETE and
+                    rule.id not in deleted_ids]
                 for rule in rules:
                     rule_dict = {}
                     for prop in L7_RULE_PROPERTIES:

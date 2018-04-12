@@ -444,8 +444,8 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             if pool.loadbalancer_id != listener.loadbalancer_id:
                 raise sharedpools.ListenerAndPoolMustBeOnSameLoadbalancer()
 
-        if (l7policy['action'] == lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL
-            and 'redirect_url' not in l7policy):
+        if (l7policy['action'] == lb_const.L7_POLICY_ACTION_REDIRECT_TO_URL and
+            'redirect_url' not in l7policy):
             raise l7.L7PolicyRedirectUrlMissing()
 
     def _validate_l7rule_data(self, context, rule):
@@ -677,8 +677,9 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                                      {'default_pool_id': None})
             for l in pool_db.loadbalancer.listeners:
                 for p in l.l7_policies:
-                    if (p.action == lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL
-                        and p.redirect_pool_id == id):
+                    if (p.action ==
+                        lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL and
+                        p.redirect_pool_id == id):
                         self.update_l7policy(
                             context, p.id,
                             {'redirect_pool_id': None,

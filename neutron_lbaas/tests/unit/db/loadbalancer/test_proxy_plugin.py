@@ -782,8 +782,8 @@ class LbaasPoolTests(PoolTestBase):
         m.post(self.url, json={'pool': expected})
         m.get(self.url, json={'pools': [expected]})
 
-        with self.pool(listener_id=self.listener_id, no_delete=True, **extras) \
-                as pool:
+        with self.pool(listener_id=self.listener_id, no_delete=True,
+                       **extras) as pool:
             pool_id = pool['pool'].get('id')
             if ('session_persistence' in expected.keys() and
                     expected['session_persistence'] is not None and

@@ -21,12 +21,12 @@ Create Date: 2014-06-18 10:50:15.606420
 
 """
 
+from alembic import op
+import sqlalchemy as sa
+
 # revision identifiers, used by Alembic.
 revision = 'lbaasv2'
 down_revision = 'start_neutron_lbaas'
-
-from alembic import op
-import sqlalchemy as sa
 
 
 listener_protocols = sa.Enum("HTTP", "HTTPS", "TCP",

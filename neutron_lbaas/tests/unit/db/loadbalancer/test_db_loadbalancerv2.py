@@ -1680,8 +1680,10 @@ class LbaasL7Tests(ListenerTestBase):
         expected.update(extras)
 
         with self.listener(loadbalancer_id=self.lb_id) as listener1, \
-                self.listener(loadbalancer_id=self.lb_id, protocol_port=8080) as listener2, \
-                self.pool(loadbalancer_id=self.lb_id, no_delete=True) as pool1, \
+                self.listener(loadbalancer_id=self.lb_id,
+                              protocol_port=8080) as listener2, \
+                self.pool(loadbalancer_id=self.lb_id,
+                          no_delete=True) as pool1, \
                 self.pool(loadbalancer_id=self.lb_id) as pool2, \
                 self.l7policy(listener1['listener']['id'],
                     action=lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL,
@@ -1858,9 +1860,11 @@ class LbaasL7Tests(ListenerTestBase):
             with self.l7policy(listener_id, name="0"), \
                     self.l7policy(listener_id, name="1"), \
                     self.l7policy(listener_id, name="2"), \
-                    self.l7policy(listener_id, name="3", no_delete=True) as p3, \
+                    self.l7policy(listener_id, name="3",
+                                  no_delete=True) as p3, \
                     self.l7policy(listener_id, name="4"), \
-                    self.l7policy(listener_id, name="5", no_delete=True) as p5, \
+                    self.l7policy(listener_id, name="5",
+                                  no_delete=True) as p5, \
                     self.l7policy(listener_id, name="6"):
                 c = context.get_admin_context()
 

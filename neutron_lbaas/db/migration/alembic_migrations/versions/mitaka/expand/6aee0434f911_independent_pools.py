@@ -20,12 +20,13 @@ Revises: 3426acbc12de
 Create Date: 2015-08-28 03:15:42.533386
 
 """
-# revision identifiers, used by Alembic.
-revision = '6aee0434f911'
-down_revision = '3426acbc12de'
 
 from alembic import op
 import sqlalchemy as sa
+
+# revision identifiers, used by Alembic.
+revision = '6aee0434f911'
+down_revision = '3426acbc12de'
 
 
 def upgrade():

@@ -13,10 +13,12 @@
 import logging as sys_logging
 
 import eventlet
-eventlet.monkey_patch()
 from oslo_reports import guru_meditation_report as gmr
 
 from neutron_lbaas import version
+
+
+eventlet.monkey_patch()
 
 # During the call to gmr.TextGuruMeditation.setup_autorun(), Guru Meditation
 # Report tries to start logging. Set a handler here to accommodate this.

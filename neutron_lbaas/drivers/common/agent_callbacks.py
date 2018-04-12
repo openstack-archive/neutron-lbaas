@@ -100,8 +100,8 @@ class LoadBalancerCallbacks(object):
                     if (l.provisioning_status in
                             constants.ACTIVE_PENDING_STATUSES):
                         l.provisioning_status = constants.ACTIVE
-                    if (l.default_pool
-                        and l.default_pool.provisioning_status in
+                    if (l.default_pool and
+                        l.default_pool.provisioning_status in
                             constants.ACTIVE_PENDING_STATUSES):
                         l.default_pool.provisioning_status = constants.ACTIVE
                         if l.default_pool.members:
