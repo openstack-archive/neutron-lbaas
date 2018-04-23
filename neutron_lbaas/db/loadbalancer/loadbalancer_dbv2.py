@@ -854,7 +854,11 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                     context, models.Listener, listener_id)
                 l7policy_db = listener_db.l7_policies.pop(
                     l7policy_db.position - 1)
-
+                # NOTE(ihrachys) create a new policy model because the one just
+                # popped off the list became expired thanks to neutron db code
+                # that automatically expires relationships when foreign keys
+                # become obsolete
+                l7policy_db = models.L7Policy(**dict(l7policy_db))
                 l7policy_db.update(l7policy)
                 listener_db.l7_policies.insert(l7policy['position'] - 1,
                                                l7policy_db)

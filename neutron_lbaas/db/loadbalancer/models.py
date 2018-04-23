@@ -149,6 +149,14 @@ class LoadBalancer(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         uselist=False,
         primaryjoin="LoadBalancer.id==ProviderResourceAssociation.resource_id",
         foreign_keys=[st_db.ProviderResourceAssociation.resource_id],
+        # NOTE(ihrachys) it's not exactly clear why we would need to have the
+        # backref created (and not e.g. just back_populates= link) since we
+        # don't use the reverse property anywhere, but it helps with
+        # accommodating to the new neutron code that automatically detects
+        # obsolete foreign key state and expires affected relationships. The
+        # code is located in neutron/db/api.py and assumes all relationships
+        # should have backrefs.
+        backref='loadbalancer',
         # this is only for old API backwards compatibility because when a load
         # balancer is deleted the pool ID should be the same as the load
         # balancer ID and should not be cleared out in this table
