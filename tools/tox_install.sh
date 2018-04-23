@@ -68,5 +68,7 @@ else
     $install_cmd -U -e ${NEUTRON_PIP_LOCATION}
 fi
 
-$install_cmd -U $*
+if [ -n "$*" ]; then
+    $install_cmd -U $*
+fi
 exit $?
