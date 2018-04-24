@@ -18,8 +18,8 @@ global
     daemon
     user nobody
     group {{ usergroup }}
-    log /dev/log local0
-    log /dev/log local1 notice
+    log /dev/log local0 debug alert
+    log /dev/log local1 notice alert
     maxconn {{ connection_limit }}
     stats socket {{ sock_path }} mode 0666 level user
 
