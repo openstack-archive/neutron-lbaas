@@ -443,14 +443,14 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         old_lb = self.db.get_loadbalancer(context, id)
         if old_lb.listeners:
             raise loadbalancerv2.EntityInUse(
-                entity_using=models.Listener.NAME,
+                entity_using=models.LoadBalancer.NAME,
                 id=old_lb.listeners[0].id,
-                entity_in_use=models.LoadBalancer.NAME)
+                entity_in_use=models.Listener.NAME)
         if old_lb.pools:
             raise loadbalancerv2.EntityInUse(
-                entity_using=models.PoolV2.NAME,
+                entity_using=models.LoadBalancer.NAME,
                 id=old_lb.pools[0].id,
-                entity_in_use=models.LoadBalancer.NAME)
+                entity_in_use=models.PoolV2.NAME)
         self.db.test_and_set_status(context, models.LoadBalancer, id,
                                     n_constants.PENDING_DELETE)
         driver = self._get_driver_for_provider(old_lb.provider.provider_name)
@@ -746,9 +746,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         old_pool = self.db.get_pool(context, id)
         if old_pool.healthmonitor:
             raise loadbalancerv2.EntityInUse(
-                entity_using=models.HealthMonitorV2.NAME,
+                entity_using=models.PoolV2.NAME,
                 id=old_pool.healthmonitor.id,
-                entity_in_use=models.PoolV2.NAME)
+                entity_in_use=models.HealthMonitorV2.NAME)
         self.db.test_and_set_status(context, models.PoolV2, id,
                                     n_constants.PENDING_DELETE)
         db_pool = self.db.get_pool(context, id)

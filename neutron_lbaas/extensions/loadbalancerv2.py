@@ -58,7 +58,7 @@ class DelayOrTimeoutInvalid(nexception.BadRequest):
 
 
 class EntityInUse(nexception.InUse):
-    message = _("%(entity_using)s %(id)s is using this %(entity_in_use)s")
+    message = _("%(entity_using)s is using %(entity_in_use)s %(id)s")
 
 
 class OnePoolPerListener(nexception.InUse):
