@@ -397,6 +397,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         return [data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
                 for lb_db in lb_dbs]
 
+    def get_provider_names_used_in_loadbalancers(self, context):
+        lb_dbs = self._get_resources(context, models.LoadBalancer)
+        return [lb_db.provider.provider_name for lb_db in lb_dbs]
+
     def get_loadbalancer(self, context, id):
         lb_db = self._get_resource(context, models.LoadBalancer, id)
         return data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
