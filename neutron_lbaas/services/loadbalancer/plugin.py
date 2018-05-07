@@ -120,11 +120,11 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         from configuration, neutron service is stopped. Admin must delete
         resources prior to removing providers from configuration.
         """
-        loadbalancers = self.db.get_loadbalancers(context)
+        used_provider_names = (
+            self.db.get_provider_names_used_in_loadbalancers(context))
         lost_providers = set(
-            [lb.provider.provider_name
-             for lb in loadbalancers
-             if lb.provider.provider_name not in provider_names])
+            [name for name in used_provider_names
+                if name not in provider_names])
         # resources are left without provider - stop the service
         if lost_providers:
             msg = ("Delete associated load balancers before "
