@@ -509,11 +509,10 @@ class LbaasLoadBalancerTests(LbaasPluginDbTestCase):
         }
         ctx = context.get_admin_context()
         port['device_owner'] = n_constants.DEVICE_OWNER_LOADBALANCERV2
-        myloadbalancers = [{'name': 'lb1'}]
         plugin = mock.Mock()
         directory.add_plugin(constants.CORE, plugin)
-        self.plugin.db.get_loadbalancers = (
-            mock.Mock(return_value=myloadbalancers))
+        self.plugin.db.get_loadbalancer_ids = (
+            mock.Mock(return_value=['1']))
         plugin._get_port.return_value = port
         self.assertRaises(n_exc.ServicePortInUse,
                           self.plugin.db.prevent_lbaasv2_port_deletion,
@@ -1768,8 +1767,9 @@ class LbaasL7Tests(ListenerTestBase):
                     self.l7policy(listener_id, position=8, name="8"), \
                     self.l7policy(listener_id, position=1, name="9"), \
                     self.l7policy(listener_id, position=1, name="10"):
+                c = context.get_admin_context()
                 listener_db = self.plugin.db._get_resource(
-                    context.get_admin_context(),
+                    c,
                     models.Listener, listener['listener']['id'])
                 names = ['10', '9', '4', '5', '1', '6', '2', '3', '7', '8']
                 for pos in range(0, 10):
@@ -1881,8 +1881,10 @@ class LbaasL7Tests(ListenerTestBase):
                     lb_const.OFFLINE)
                 self.plugin.update_l7policy(c, p10['l7policy']['id'],
                                             {'l7policy': expected})
+
+                c2 = context.get_admin_context()
                 listener_db = self.plugin.db._get_resource(
-                    context.get_admin_context(),
+                    c2,
                     models.Listener, listener['listener']['id'])
                 names = ['1', '3', '10', '6', '4', '7', '8', '9', '5', '2']
                 for pos in range(0, 10):
@@ -1923,8 +1925,9 @@ class LbaasL7Tests(ListenerTestBase):
                     lb_const.OFFLINE)
                 self.plugin.delete_l7policy(c, p5['l7policy']['id'])
 
+                c2 = context.get_admin_context()
                 listener_db = self.plugin.db._get_resource(
-                    context.get_admin_context(),
+                    c2,
                     models.Listener, listener['listener']['id'])
                 names = ['0', '1', '2', '4', '6']
                 for pos in range(0, 4):
