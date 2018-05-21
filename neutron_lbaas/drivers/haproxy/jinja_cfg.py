@@ -255,7 +255,7 @@ def _transform_loadbalancer(loadbalancer, haproxy_base_dir):
     pools = [_transform_pool(x) for x in loadbalancer.pools]
     connection_limit = _compute_global_connection_limit(listeners)
     return {
-        'name': loadbalancer.name,
+        'id': loadbalancer.id,
         'vip_address': loadbalancer.vip_address,
         'connection_limit': connection_limit,
         'listeners': listeners,
