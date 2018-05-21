@@ -14,7 +14,7 @@
 #
 #}
 {% extends 'haproxy_proxies.j2' %}
-{% set loadbalancer_name = loadbalancer.name %}
+{% set loadbalancer_id = loadbalancer.id %}
 {% set usergroup = user_group %}
 {% set sock_path = stats_sock %}
 {% set connection_limit = loadbalancer.connection_limit %}
