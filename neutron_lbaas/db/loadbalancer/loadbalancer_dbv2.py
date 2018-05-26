@@ -747,11 +747,12 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         with context.session.begin(subtransactions=True):
             hm_db = self.create_healthmonitor(context, healthmonitor)
             pool = self.get_pool(context, pool_id)
-            # do not want listener, members, healthmonitor or loadbalancer
-            # in dict
+            # do not want listener, members, l7_policies, healthmonitor
+            # or loadbalancer in dict
             pool_dict = pool.to_dict(listeners=False, members=False,
-                                     healthmonitor=False, loadbalancer=False,
-                                     listener=False, loadbalancer_id=False)
+                                     l7_policies=False, healthmonitor=False,
+                                     loadbalancer=False, listener=False,
+                                     loadbalancer_id=False)
             pool_dict['healthmonitor_id'] = hm_db.id
             self.update_pool(context, pool_id, pool_dict)
             hm_db = self._get_resource(context, models.HealthMonitorV2,
