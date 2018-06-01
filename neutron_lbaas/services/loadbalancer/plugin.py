@@ -607,7 +607,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                     curr_listener['default_tls_container_id'])
             if 'sni_container_refs' not in listener:
                 listener['sni_container_ids'] = [
-                    container.tls_container_id for container in (
+                    container['tls_container_id'] for container in (
                         curr_listener['sni_containers'])]
 
             tls_containers_changed = False
