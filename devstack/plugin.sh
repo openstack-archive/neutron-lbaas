@@ -51,7 +51,12 @@ function neutron_lbaas_configure_common {
 
     neutron_deploy_rootwrap_filters $NEUTRON_LBAAS_DIR
 
-    $NEUTRON_BIN_DIR/neutron-db-manage --subproject neutron-lbaas --config-file $NEUTRON_CONF --config-file /$Q_PLUGIN_CONF_FILE upgrade head
+    # If user enable the Neutron service_name like "q-*",
+    # the "Q_PLUGIN_CONF_FILE" would be the ml2 config path
+    # But if user enable the Neutron service name like "neutron-*",
+    # the same value will be stored into "NEUTRON_CORE_PLUGIN_CONF"
+    COMPATIBLE_NEUTRON_CORE_PLUGIN_CONF=`[ -n "$Q_PLUGIN_CONF_FILE" ] && echo $Q_PLUGIN_CONF_FILE || echo $NEUTRON_CORE_PLUGIN_CONF`
+    $NEUTRON_BIN_DIR/neutron-db-manage --subproject neutron-lbaas --config-file $NEUTRON_CONF --config-file /$COMPATIBLE_NEUTRON_CORE_PLUGIN_CONF upgrade head
 }
 
 function neutron_lbaas_configure_agent {
