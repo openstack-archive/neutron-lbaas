@@ -98,8 +98,9 @@ class TestManager(base.BaseTestCase):
 
             reload.assert_has_calls([mock.call(i) for i in reloaded],
                                     any_order=True)
-            destroy.assert_has_calls([mock.call(i) for i in destroyed],
-                                     any_order=True)
+            destroy.assert_has_calls(
+                [mock.call(i, resync=True) for i in destroyed],
+                any_order=True)
             self.assertFalse(self.mgr.needs_resync)
 
     def test_sync_state_all_known(self):
@@ -180,7 +181,7 @@ class TestManager(base.BaseTestCase):
         self.mgr._destroy_loadbalancer(lb_id)
 
         self.driver_mock.undeploy_instance.assert_called_once_with(
-            lb_id, delete_namespace=True)
+            lb_id, delete_namespace=True, resync=False)
         self.assertNotIn(lb_id, self.mgr.instance_mapping)
         self.rpc_mock.loadbalancer_destroyed.assert_called_once_with(lb_id)
         self.assertFalse(self.mgr.needs_resync)
@@ -193,7 +194,7 @@ class TestManager(base.BaseTestCase):
         self.mgr._destroy_loadbalancer(lb_id)
 
         self.driver_mock.undeploy_instance.assert_called_once_with(
-            lb_id, delete_namespace=True)
+            lb_id, delete_namespace=True, resync=False)
         self.assertIn(lb_id, self.mgr.instance_mapping)
         self.assertFalse(self.rpc_mock.loadbalancer_destroyed.called)
         self.assertTrue(self.log.exception.called)
@@ -204,15 +205,16 @@ class TestManager(base.BaseTestCase):
                           self.mgr._get_driver, 'unknown')
 
     def test_remove_orphans(self):
-        self.mgr.remove_orphans()
-        self.driver_mock.remove_orphans.assert_called_once_with(['1', '2'])
+        self.mgr.remove_orphans(resync=False)
+        self.driver_mock.remove_orphans.assert_called_once_with(
+            ['1', '2'], resync=False)
 
     def test_agent_disabled(self):
         payload = {'admin_state_up': False}
         self.mgr.agent_updated(mock.Mock(), payload)
         self.driver_mock.undeploy_instance.assert_has_calls(
-            [mock.call('1', delete_namespace=True),
-             mock.call('2', delete_namespace=True)],
+            [mock.call('1', delete_namespace=True, resync=False),
+             mock.call('2', delete_namespace=True, resync=False)],
             any_order=True
         )
 

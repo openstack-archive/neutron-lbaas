@@ -159,7 +159,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             ready_instances = set(self.plugin_rpc.get_ready_devices())
 
             for deleted_id in known_instances - ready_instances:
-                self._destroy_loadbalancer(deleted_id)
+                self._destroy_loadbalancer(deleted_id, resync=True)
 
             for loadbalancer_id in ready_instances:
                 self._reload_loadbalancer(loadbalancer_id)
@@ -168,7 +168,7 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
             LOG.exception('Unable to retrieve ready devices')
             self.needs_resync = True
 
-        self.remove_orphans()
+        self.remove_orphans(resync=True)
 
     def _get_driver(self, loadbalancer_id):
         if loadbalancer_id not in self.instance_mapping:
@@ -198,10 +198,11 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                           loadbalancer_id)
             self.needs_resync = True
 
-    def _destroy_loadbalancer(self, lb_id):
+    def _destroy_loadbalancer(self, lb_id, resync=False):
         driver = self._get_driver(lb_id)
         try:
-            driver.undeploy_instance(lb_id, delete_namespace=True)
+            driver.undeploy_instance(lb_id, delete_namespace=True,
+                                     resync=resync)
             del self.instance_mapping[lb_id]
             self.plugin_rpc.loadbalancer_destroyed(lb_id)
         except Exception:
@@ -209,12 +210,13 @@ class LbaasAgentManager(periodic_task.PeriodicTasks):
                           lb_id)
             self.needs_resync = True
 
-    def remove_orphans(self):
+    def remove_orphans(self, resync=False):
         for driver_name in self.device_drivers:
             lb_ids = [lb_id for lb_id in self.instance_mapping
                       if self.instance_mapping[lb_id] == driver_name]
             try:
-                self.device_drivers[driver_name].remove_orphans(lb_ids)
+                self.device_drivers[driver_name].remove_orphans(lb_ids,
+                                                                resync=resync)
             except NotImplementedError:
                 pass  # Not all drivers will support this
 
