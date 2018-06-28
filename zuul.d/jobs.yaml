@@ -70,3 +70,94 @@
     parent: nlbaas-legacy-dsvm-base
     run: playbooks/legacy/neutron-lbaasv2-dsvm-api-l7octavia/run.yaml
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-l7octavia/post.yaml
+
+- job:
+    name: neutron-lbaas-to-octavia-migration
+    parent: devstack-minimal
+    timeout: 7800
+    nodeset: openstack-single-node
+    pre-run: playbooks/migration-test/pre.yaml
+    run: playbooks/migration-test/run.yaml
+    required-projects:
+      - openstack/diskimage-builder
+      - openstack/glance
+      - openstack/keystone
+      - openstack/neutron
+      - openstack/neutron-lbaas
+      - openstack/nova
+      - openstack/octavia
+      - openstack/python-neutronclient
+      - openstack/python-octaviaclient
+    vars:
+      devstack_localrc:
+        NEUTRON_LBAAS_SERVICE_PROVIDERV2: "\"LOADBALANCERV2:Octavia:neutron_lbaas.drivers.octavia.driver.OctaviaDriver:default LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:\""
+      devstack_local_conf:
+        post-config:
+          $NEUTRON_CONF:
+            DEFAULT:
+              global_physnet_mtu: "{{ external_bridge_mtu }}"
+      devstack_services:
+        # Core services enabled for this branch.
+        # This list replaces the test-matrix.
+        # Shared services
+        dstat: true
+        etcd3: true
+        mysql: true
+        peakmem_tracker: true
+        rabbit: true
+        tls-proxy: true
+        # Keystone services
+        key: true
+        # Glance services
+        g-api: true
+        g-reg: true
+        # Nova services
+        n-api: true
+        n-api-meta: true
+        n-cauth: true
+        n-cond: true
+        n-cpu: true
+        n-novnc: true
+        n-obj: true
+        n-sch: true
+        placement-api: true
+        # Neutron services
+        # We need to keep using the neutron-legacy based services for
+        # now until all issues with the new lib/neutron code are solved
+        q-agt: true
+        q-dhcp: true
+        q-l3: true
+        q-meta: true
+        q-metering: true
+        q-svc: true
+        q-lbaasv2: true
+        # neutron-api: true
+        # neutron-agent: true
+        # neutron-dhcp: true
+        # neutron-l3: true
+        # neutron-metadata-agent: true
+        # neutron-metering: true
+        # Octavia services
+        octavia: true
+        o-api: true
+        o-cw: true
+        o-hk: true
+        o-hm: true
+        # Services we don't need.
+        # Swift services
+        s-account: false
+        s-container: false
+        s-object: false
+        s-proxy: false
+        # Cinder services
+        c-api: false
+        c-bak: false
+        c-sch: false
+        c-vol: false
+        cinder: false
+        # This section is not really needed, it's for readability.
+        horizon: false
+        tempest: false
+      devstack_plugins:
+        octavia: https://github.com/openstack/octavia.git
+        neutron-lbaas: https://github.com/openstack/neutron-lbaas.git

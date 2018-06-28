@@ -1,0 +1,14 @@
+[DEFAULT]
+
+debug = True
+
+[migration]
+
+# Octavia service account ID
+octavia_account_id = {{ octavia_account_id.stdout }}
+
+# Connection string for the neutron database
+neutron_db_connection = {{ neutron_db_connection.stdout }}
+
+# Connection string for the octavia database
+octavia_db_connection = {{ octavia_db_connection.stdout }}
