@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import six
+
 from neutron.db.models import servicetype as st_db
 from neutron.db import models_v2
 from neutron_lib.db import constants as db_const
@@ -94,6 +96,24 @@ class MemberV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     def root_loadbalancer(self):
         return self.pool.loadbalancer
 
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'pool_id', 'address', 'protocol_port', 'weight',
+            'admin_state_up', 'subnet_id', 'name'])
+
+        return ret_dict
+
 
 class HealthMonitorV2(model_base.BASEV2, model_base.HasId,
                       model_base.HasProject):
@@ -120,6 +140,34 @@ class HealthMonitorV2(model_base.BASEV2, model_base.HasId,
     @property
     def root_loadbalancer(self):
         return self.pool.loadbalancer
+
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'type', 'delay', 'timeout', 'max_retries',
+            'http_method', 'url_path', 'expected_codes', 'admin_state_up',
+            'name', 'max_retries_down'])
+
+        ret_dict['pools'] = []
+        if self.pool:
+            ret_dict['pools'].append({'id': self.pool.id})
+        if self.type in [lb_const.HEALTH_MONITOR_TCP,
+                         lb_const.HEALTH_MONITOR_PING]:
+            ret_dict.pop('http_method')
+            ret_dict.pop('url_path')
+            ret_dict.pop('expected_codes')
+
+        return ret_dict
 
 
 class LoadBalancer(model_base.BASEV2, model_base.HasId, model_base.HasProject):
@@ -167,6 +215,34 @@ class LoadBalancer(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     @property
     def root_loadbalancer(self):
         return self
+
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'name', 'description',
+            'vip_subnet_id', 'vip_port_id', 'vip_address', 'operating_status',
+            'provisioning_status', 'admin_state_up', 'flavor_id'])
+        ret_dict['listeners'] = [{'id': listener.id}
+                                 for listener in self.listeners]
+        ret_dict['pools'] = [{'id': pool.id} for pool in self.pools]
+
+        if self.provider:
+            ret_dict['provider'] = self.provider.provider_name
+
+        if not self.flavor_id:
+            del ret_dict['flavor_id']
+
+        return ret_dict
 
 
 class PoolV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
@@ -221,6 +297,41 @@ class PoolV2(model_base.BASEV2, model_base.HasId, model_base.HasProject):
         else:
             return None
 
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'name', 'description',
+            'healthmonitor_id', 'protocol', 'lb_algorithm', 'admin_state_up'])
+
+        ret_dict['loadbalancers'] = []
+        if self.loadbalancer:
+            ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
+        ret_dict['session_persistence'] = None
+        if self.session_persistence:
+            ret_dict['session_persistence'] = (
+                to_dict(self.session_persistence, [
+                    'type', 'cookie_name']))
+        ret_dict['members'] = [{'id': member.id} for member in self.members]
+        ret_dict['listeners'] = [{'id': listener.id}
+                                 for listener in self.listeners]
+        if self.listener:
+            ret_dict['listener_id'] = self.listener.id
+        else:
+            ret_dict['listener_id'] = None
+        ret_dict['l7_policies'] = [{'id': l7_policy.id}
+            for l7_policy in self.l7_policies]
+        return ret_dict
+
 
 class SNI(model_base.BASEV2):
 
@@ -272,6 +383,27 @@ class L7Rule(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     def root_loadbalancer(self):
         return self.policy.listener.loadbalancer
 
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'type', 'compare_type', 'invert', 'key',
+            'value', 'admin_state_up'])
+
+        ret_dict['policies'] = []
+        if self.policy:
+            ret_dict['policies'].append({'id': self.policy.id})
+        return ret_dict
+
 
 class L7Policy(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     """Represents L7 Policy."""
@@ -299,7 +431,6 @@ class L7Policy(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     rules = orm.relationship(
         L7Rule,
         uselist=True,
-        lazy="joined",
         primaryjoin="L7Policy.id==L7Rule.l7policy_id",
         foreign_keys=[L7Rule.l7policy_id],
         cascade="all, delete-orphan",
@@ -311,6 +442,29 @@ class L7Policy(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     @property
     def root_loadbalancer(self):
         return self.listener.loadbalancer
+
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'name', 'description', 'listener_id', 'action',
+            'redirect_pool_id', 'redirect_url', 'position', 'admin_state_up'])
+
+        ret_dict['listeners'] = [{'id': self.listener_id}]
+        ret_dict['rules'] = [{'id': rule.id} for rule in self.rules]
+        if (ret_dict.get('action') ==
+                lb_const.L7_POLICY_ACTION_REDIRECT_TO_POOL):
+            del ret_dict['redirect_url']
+        return ret_dict
 
 
 class Listener(model_base.BASEV2, model_base.HasId, model_base.HasProject):
@@ -353,14 +507,13 @@ class Listener(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     provisioning_status = sa.Column(sa.String(16), nullable=False)
     operating_status = sa.Column(sa.String(16), nullable=False)
     default_pool = orm.relationship(
-        PoolV2, backref=orm.backref("listeners"), lazy='joined')
+        PoolV2, backref=orm.backref("listeners"))
     loadbalancer = orm.relationship(
         LoadBalancer,
         backref=orm.backref("listeners", uselist=True))
     l7_policies = orm.relationship(
         L7Policy,
         uselist=True,
-        lazy="joined",
         primaryjoin="Listener.id==L7Policy.listener_id",
         order_by="L7Policy.position",
         collection_class=orderinglist.ordering_list('position', count_from=1),
@@ -371,3 +524,32 @@ class Listener(model_base.BASEV2, model_base.HasId, model_base.HasProject):
     @property
     def root_loadbalancer(self):
         return self.loadbalancer
+
+    @property
+    def to_api_dict(self):
+        def to_dict(sa_model, attributes):
+            ret = {}
+            for attr in attributes:
+                value = getattr(sa_model, attr)
+                if six.PY2 and isinstance(value, six.text_type):
+                    ret[attr.encode('utf8')] = value.encode('utf8')
+                else:
+                    ret[attr] = value
+            return ret
+
+        ret_dict = to_dict(self, [
+            'id', 'tenant_id', 'name', 'description', 'default_pool_id',
+            'protocol', 'default_tls_container_id', 'protocol_port',
+            'connection_limit', 'admin_state_up'])
+
+        # NOTE(blogan): Returning a list to future proof for M:N objects
+        # that are not yet implemented.
+        ret_dict['loadbalancers'] = []
+        if self.loadbalancer:
+            ret_dict['loadbalancers'].append({'id': self.loadbalancer.id})
+        ret_dict['sni_container_refs'] = [container.tls_container_id
+                                          for container in self.sni_containers]
+        ret_dict['default_tls_container_ref'] = self.default_tls_container_id
+        ret_dict['l7policies'] = [{'id': l7_policy.id}
+            for l7_policy in self.l7_policies]
+        return ret_dict

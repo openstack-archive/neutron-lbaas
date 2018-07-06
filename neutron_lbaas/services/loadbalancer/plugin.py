@@ -462,8 +462,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         return self.db.get_loadbalancer(context, id).to_api_dict()
 
     def get_loadbalancers(self, context, filters=None, fields=None):
-        return [loadbalancer.to_api_dict() for loadbalancer in
-                self.db.get_loadbalancers(context, filters=filters)]
+        return self.db.get_loadbalancers_as_api_dict(context, filters=filters)
 
     def _validate_tls(self, listener, curr_listener=None):
         def validate_tls_container(container_ref):
@@ -662,8 +661,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         return self.db.get_listener(context, id).to_api_dict()
 
     def get_listeners(self, context, filters=None, fields=None):
-        return [listener.to_api_dict() for listener in self.db.get_listeners(
-            context, filters=filters)]
+        return self.db.get_listeners_as_api_dict(
+            context, filters=filters)
 
     def create_pool(self, context, pool):
         pool = pool.get('pool')
@@ -758,8 +757,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         self._call_driver_operation(context, driver.pool.delete, db_pool)
 
     def get_pools(self, context, filters=None, fields=None):
-        return [pool.to_api_dict() for pool in self.db.get_pools(
-            context, filters=filters)]
+        return self.db.get_pools_as_api_dict(
+            context, filters=filters)
 
     def get_pool(self, context, id, fields=None):
         return self.db.get_pool(context, id).to_api_dict()
@@ -830,8 +829,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         if not filters:
             filters = {}
         filters['pool_id'] = [pool_id]
-        return [mem.to_api_dict() for mem in self.db.get_pool_members(
-            context, filters=filters)]
+        return self.db.get_pool_members_as_api_dict(
+            context, filters=filters)
 
     def get_pool_member(self, context, id, pool_id, fields=None):
         self._check_pool_exists(context, pool_id)
@@ -902,8 +901,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         return self.db.get_healthmonitor(context, id).to_api_dict()
 
     def get_healthmonitors(self, context, filters=None, fields=None):
-        return [hm.to_api_dict() for hm in self.db.get_healthmonitors(
-            context, filters=filters)]
+        return self.db.get_healthmonitors_as_api_dict(
+            context, filters=filters)
 
     def stats(self, context, loadbalancer_id):
         lb = self.db.get_loadbalancer(context, loadbalancer_id)
@@ -973,8 +972,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             self.db.delete_l7policy(context, id)
 
     def get_l7policies(self, context, filters=None, fields=None):
-        return [policy.to_api_dict() for policy in self.db.get_l7policies(
-            context, filters=filters)]
+        return self.db.get_l7policies_as_api_dict(
+            context, filters=filters)
 
     def get_l7policy(self, context, id, fields=None):
         return self.db.get_l7policy(context, id).to_api_dict()
@@ -1047,8 +1046,8 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def get_l7policy_rules(self, context, l7policy_id,
                            filters=None, fields=None):
         self._check_l7policy_exists(context, l7policy_id)
-        return [rule.to_api_dict() for rule in self.db.get_l7policy_rules(
-            context, l7policy_id, filters=filters)]
+        return self.db.get_l7policy_rules_as_api_dict(
+            context, l7policy_id, filters=filters)
 
     def get_l7policy_rule(self, context, id, l7policy_id, fields=None):
         self._check_l7policy_exists(context, l7policy_id)
