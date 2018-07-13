@@ -69,7 +69,9 @@ backend {{ pool.id }}
 {% elif pool.session_persistence.type == constants.SESSION_PERSISTENCE_HTTP_COOKIE %}
     cookie SRV insert indirect nocache
 {% elif pool.session_persistence.type == constants.SESSION_PERSISTENCE_APP_COOKIE and pool.session_persistence.cookie_name %}
-    appsession {{ pool.session_persistence.cookie_name }} len 56 timeout 3h
+    stick-table type string len 64 size 10k
+    stick store-response res.cook({{ pool.session_persistence.cookie_name }})
+    stick match req.cook({{ pool.session_persistence.cookie_name }})
 {% endif %}
 {% endif %}
 {% if pool.health_monitor %}
