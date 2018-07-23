@@ -161,3 +161,9 @@
       devstack_plugins:
         octavia: https://github.com/openstack/octavia.git
         neutron-lbaas: https://github.com/openstack/neutron-lbaas.git
+
+- job:
+    name: lbaas-tox-lower-constraints
+    parent: openstack-tox-lower-constraints
+    required-projects:
+      - openstack/neutron
