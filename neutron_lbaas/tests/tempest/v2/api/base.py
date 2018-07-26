@@ -134,14 +134,14 @@ class BaseTestCase(base.BaseNetworkTest):
         # Wait for straggling port deletes to finish (neutron will sometimes
         # claim they are deleted before they are totally finished deleting)
         remaining_ports = cls.ports_client.list_ports(
-            network=cls.network['id']).get('ports')
+            network_id=cls.network['id']).get('ports')
         tries = 1
         while remaining_ports and tries <= 10:
             LOG.warning("Ports still exist on network %s (try #%s): %s",
                         cls.network['id'], tries, remaining_ports)
             time.sleep(10)
             remaining_ports = cls.ports_client.list_ports(
-                network=cls.network['id']).get('ports')
+                network_id=cls.network['id']).get('ports')
             tries += 1
 
         if remaining_ports:
