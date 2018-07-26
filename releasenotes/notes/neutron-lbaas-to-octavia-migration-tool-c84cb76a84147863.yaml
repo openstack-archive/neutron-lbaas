@@ -1,0 +1,16 @@
+---
+prelude: >
+    Neutron-LBaaS was deprecated in the Queens series and is being replaced
+    by the Octavia project. Please see the FAQ for more information:
+    https://wiki.openstack.org/wiki/Neutron/LBaaS/Deprecation
+features:
+  - |
+    None. Neutron-LBaaS was deprecated in the Queens series.
+other:
+  - |
+    A Neutron-LBaaS to Octavia migration tool is available in the
+    tools/nlbaas2octavia directory. Please see the README.rst included
+    with the tool for operating details. This tool will live migrate
+    existing loadbalancers from Neutron-LBaaS to Octavia assuming the
+    provider supports live migration. The Octavia provider supports
+    live migration.

@@ -1,0 +1,338 @@
+
+- hosts: all
+  environment:
+    OS_CLOUD: devstack-admin
+  tasks:
+
+    - name: Collect Octavia user ID
+      command: openstack user show admin --format value -c id
+      register: octavia_account_id
+
+    - name: Get the neutron DB connection string
+      command: sed -ne "/^\[database\]/,/^\[.*\]/ { /^connection[ \t]*=/ s/^connection[ \t]*=[ \t]*//p; }" /etc/neutron/neutron.conf
+      register: neutron_db_connection
+
+    - name: Get the octavia DB connection string
+      command: sed -ne "/^\[database\]/,/^\[.*\]/ { /^connection[ \t]*=/ s/^connection[ \t]*=[ \t]*//p; }" /etc/octavia/octavia.conf
+      register: octavia_db_connection
+
+    - name: Generate nlbaas2octavia.conf
+      template:
+        src: templates/nlbaas2octavia.conf.j2
+        dest: nlbaas2octavia.conf
+
+# Create web server
+    - name: Create webserver network
+      command: openstack network create --disable-port-security -c id -f value webserver-net
+      register: webserver_net_id
+
+    - name: Create webserver subnet
+      command: openstack subnet create -c id -f value --allocation-pool start=172.17.1.10,end=172.17.1.200 --network webserver-net --subnet-range 172.17.1.0/24 webserver-subnet
+      register: webserver_subnet_id
+
+    - name: Create network port for webserver
+      command: openstack port create -c id --network {{ webserver_net_id.stdout }} --disable-port-security -f value webserver-port
+      register: webserver_port_id
+
+    - name: Add the network to the router
+      command: openstack router add subnet router1 webserver-subnet
+
+    - name: Get cirros image ID
+      shell: openstack image list --sort name:desc | grep -m 1 cirros | awk '{print $2}'
+      register: cirros_id
+
+    - name: Add a keypair
+      command: openstack keypair create --public-key /etc/octavia/.ssh/octavia_ssh_key.pub webserver_ssh_key
+
+    - name: Boot webserver
+      command: openstack server create --key-name webserver_ssh_key --image {{ cirros_id.stdout }} --flavor 1 --nic port-id={{ webserver_port_id.stdout }} webserver1
+
+    - name: Wait for webserver ACTIVE
+      command: openstack server show -c status -f value webserver1
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 1800
+      delay: 1
+
+    - name: Get webserver IP
+      shell: openstack server show -c addresses -f value webserver1 | awk -F '=' '{print $2}'
+      register: webserver_ip
+
+    - name: Create floating IP for webserver
+      command: openstack floating ip create -c floating_ip_address -f value --port {{ webserver_port_id.stdout }} public
+      register: webserver_float_ip
+
+    - name: Copy webserver script to webserver instance
+      command: scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o ConnectionAttempts=360 -i /etc/octavia/.ssh/octavia_ssh_key {{ zuul.project.src_dir }}/devstack/samples/webserver.sh cirros@{{ webserver_float_ip.stdout }}:webserver.sh
+      become: true
+
+    - name: Set webserver script permisions
+      command: ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o ConnectionAttempts=360 -i /etc/octavia/.ssh/octavia_ssh_key cirros@{{ webserver_float_ip.stdout }} chmod 700 webserver.sh
+      become: true
+
+    - name: Launch webserver
+      command: ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -o ConnectTimeout=5 -o ConnectionAttempts=360 -i /etc/octavia/.ssh/octavia_ssh_key cirros@{{ webserver_float_ip.stdout }} "screen -d -m sh webserver.sh"
+      become: true
+
+    - name: Test webserver
+      uri:
+        url: http://{{ webserver_float_ip.stdout }}
+      register: result
+      until: result.status == 200
+      retries: 300
+      delay: 1
+
+# Create neutron "octavia" load balancer
+
+    - name: Create neutron "octavia" load balancer
+      shell: neutron lbaas-loadbalancer-create --name lb1 -c id -f value --description lb1-desc --provider octavia private-subnet 2> /dev/null
+      register: lb1_id
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb1
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 1800
+      delay: 1
+
+    - name: Get load balancer port ID
+      shell: neutron lbaas-loadbalancer-show -c vip_port_id -f value lb1 2> /dev/null
+      register: lb1_port_id
+
+    - name: Get load balancer VIP port security group ID
+      command: openstack port show -f value -c security_group_ids {{ lb1_port_id.stdout }}
+      register: lb_sg_id
+
+    - name: Create floating IP for load balancer VIP
+      command: openstack floating ip create -c floating_ip_address -f value --port {{ lb1_port_id.stdout }} public
+      register: lb1_float_ip
+
+    - name: Create neutron listener
+      command: neutron lbaas-listener-create --name listener1 --description listener1-desc --loadbalancer lb1 --protocol HTTP --protocol-port 80
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb1
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Create neutron pool
+      command: neutron lbaas-pool-create --name pool1 --description pool1-desc --lb-algorithm SOURCE_IP --listener listener1 --protocol HTTP --session-persistence type=APP_COOKIE,cookie_name=sugar
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb1
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Create neutron health monitor
+      command: neutron lbaas-healthmonitor-create --delay 5 --name hm1 --timeout 2 --http-method GET --url-path / --max-retries 2 --expected-codes 200 --type HTTP --pool pool1
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb1
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Create neutron memeber
+      command: neutron lbaas-member-create --name member1 --address {{ webserver_ip.stdout }} --protocol-port 80 --subnet {{ webserver_subnet_id.stdout }} pool1
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb1
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Test load balancer before migration
+      uri:
+        url: http://{{ lb1_float_ip.stdout }}
+      register: result
+      until: result.status == 200
+      retries: 300
+      delay: 1
+
+# Test the Octavia provider migration
+
+    - name: Run the migration
+      command: python {{ zuul.project.src_dir }}/tools/nlbaas2octavia/nlbaas2octavia.py --config-file nlbaas2octavia.conf --lb_id {{ lb1_id.stdout }}
+      register: nlbaas2octavia_output
+
+    - name: Dump the output
+      debug: msg={{ nlbaas2octavia_output.stdout }}
+
+    - name: Test load balancer after migration
+      uri:
+        url: http://{{ lb1_float_ip.stdout }}
+      register: result
+      until: result.status == 200
+      retries: 300
+      delay: 1
+
+    - name: Validate load balancer is no longer in neutron-lbaas
+      command: neutron lbaas-loadbalancer-show lb1
+      register: result
+      failed_when: result.rc != 1
+
+    - name: Validate Octavia load balancer is ACTIVE
+      command: openstack loadbalancer show -f value -c provisioning_status lb1
+      register: result
+      failed_when: result.stdout.find("ACTIVE") == -1
+
+    - name: Validate VIP port ownership
+      command: openstack port show -f value -c device_owner {{ lb1_port_id.stdout }}
+      register: result
+      failed_when: result.stdout.find("Octavia") == -1
+
+    - name: Validate VIP port security group ownership
+      command: openstack security group show -f value -c project_id {{ lb_sg_id.stdout }}
+      register: result
+      failed_when: result.stdout.find(octavia_account_id.stdout) == -1
+
+# Test the HAproxy provider migration
+# NOTE: At this time there is no HAProxy driver for Octavia. This tests
+#       just the data migration.
+
+    - name: Create neutron "haproxy" load balancer
+      shell: neutron lbaas-loadbalancer-create --name lb2 -c id -f value --description lb2-desc --provider haproxy private-subnet 2> /dev/null
+      register: lb2_id
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb2
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 1800
+      delay: 1
+
+    - name: Get load balancer port ID
+      shell: neutron lbaas-loadbalancer-show -c vip_port_id -f value lb2 2> /dev/null
+      register: lb2_port_id
+
+    - name: Get load balancer VIP port security group ID
+      command: openstack port show -f value -c security_group_ids {{ lb2_port_id.stdout }}
+      register: lb_sg_id
+
+    - name: Create floating IP for load balancer VIP
+      command: openstack floating ip create -c id -f value --port {{ lb2_port_id.stdout }} public
+      register: lb2_float_ip_id
+
+    - name: Get floating IP address
+      command: openstack floating ip show -c floating_ip_address -f value {{ lb2_float_ip_id.stdout }}
+      register: lb2_float_ip
+
+    - name: Create neutron listener
+      command: neutron lbaas-listener-create --name listener2 --description listener2-desc --loadbalancer lb2 --protocol HTTP --protocol-port 80
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb2
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Create neutron pool
+      command: neutron lbaas-pool-create --name pool2 --description pool2-desc --lb-algorithm SOURCE_IP --listener listener2 --protocol HTTP --session-persistence type=APP_COOKIE,cookie_name=sugar
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb2
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Create neutron health monitor
+      command: neutron lbaas-healthmonitor-create --delay 5 --name hm2 --timeout 2 --http-method GET --url-path / --max-retries 2 --expected-codes 200 --type HTTP --pool pool2
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb2
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+    - name: Create neutron memeber
+      command: neutron lbaas-member-create --name member2 --address {{ webserver_ip.stdout }} --protocol-port 80 --subnet {{ webserver_subnet_id.stdout }} pool2
+
+    - name: Wait for load balancer active
+      command: neutron lbaas-loadbalancer-show -c provisioning_status -f value lb2
+      register: result
+      until: result.stdout.find("ACTIVE") != -1
+      retries: 300
+      delay: 1
+
+# Evidently the namespace driver doesn't open the VIP port in the SG
+    - name: Open port 80 on the lb2 VIP
+      command: openstack security group rule create --dst-port 80 --protocol tcp {{ lb_sg_id.stdout }}
+      register: result
+
+    - name: Test load balancer before migration
+      uri:
+        url: http://{{ lb2_float_ip.stdout }}
+      register: result
+      until: result.status == 200
+      retries: 300
+      delay: 1
+
+# Test the HAProxy provider migration
+
+    - name: Run the migration
+      command: python {{ zuul.project.src_dir }}/tools/nlbaas2octavia/nlbaas2octavia.py --config-file nlbaas2octavia.conf --lb_id {{ lb2_id.stdout }}
+      register: nlbaas2octavia_output
+
+    - name: Test load balancer after migration
+      uri:
+        url: http://{{ lb2_float_ip.stdout }}
+      register: result
+      until: result.status == 200
+      retries: 300
+      delay: 1
+
+    - name: Validate load balancer is no longer in neutron-lbaas
+      command: neutron lbaas-loadbalancer-show lb2
+      register: result
+      failed_when: result.rc != 1
+
+    - name: Validate Octavia load balancer is ACTIVE
+      command: openstack loadbalancer show -f value -c provisioning_status lb2
+      register: result
+      failed_when: result.stdout.find("ACTIVE") == -1
+
+    - name: Validate VIP port ownership
+      command: openstack port show -f value -c device_owner {{ lb2_port_id.stdout }}
+      register: result
+      failed_when: result.stdout.find("Octavia") == -1
+
+    - name: Validate VIP port security group ownership
+      command: openstack security group show -f value -c project_id {{ lb_sg_id.stdout }}
+      register: result
+      failed_when: result.stdout.find(octavia_account_id.stdout) == -1
+
+# Validate select load balancer settings migrated
+
+    - name: Validate load balancer name and port_id
+      command: openstack loadbalancer show -f value -c vip_port_id lb2
+      register: result
+      failed_when: result.stdout.find(lb2_port_id.stdout) == -1
+
+    - name: Validate listener name and protocol port
+      command: openstack loadbalancer listener show -f value -c protocol_port listener2
+      register: result
+      failed_when: result.stdout.find("80") == -1
+
+    - name: Validate pool name and session persistence
+      command: openstack loadbalancer pool show -f value -c session_persistence pool2
+      register: result
+      failed_when: result.stdout.find("sugar") == -1
+
+    - name: Validate health monitor name and delay
+      command: openstack loadbalancer healthmonitor show -f value -c delay hm2
+      register: result
+      failed_when: result.stdout.find("5") == -1
+
+    - name: Validate member name and address
+      command: openstack loadbalancer member show -f value -c address pool2 member2
+      register: result
+      failed_when: result.stdout.find(webserver_ip.stdout) == -1
