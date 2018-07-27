@@ -28,3 +28,6 @@ Code is available on git.openstack.org at:
 
 Please refer to Neutron documentation for more information:
 `Neutron README.rst <http://git.openstack.org/cgit/openstack/neutron/tree/README.rst>`_
+
+Release notes for the project can be found at:
+<https://docs.openstack.org/releasenotes/neutron-lbaas/index.html>.
