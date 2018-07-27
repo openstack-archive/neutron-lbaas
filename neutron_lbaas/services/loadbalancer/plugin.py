@@ -686,6 +686,11 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             if db_l.default_pool_id:
                 raise sharedpools.ListenerDefaultPoolAlreadySet(
                     listener_id=db_l.id, pool_id=db_l.default_pool_id)
+            if ((pool['protocol'], db_l.protocol)
+                not in lb_const.LISTENER_POOL_COMPATIBLE_PROTOCOLS):
+                raise loadbalancerv2.ListenerPoolProtocolMismatch(
+                    listener_proto=db_l.protocol,
+                    pool_proto=pool['protocol'])
         if not lb_id:
             raise sharedpools.PoolMustHaveLoadbalancer()
         pool['loadbalancer_id'] = lb_id
