@@ -144,6 +144,10 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             e = lib_exc.NotAuthorized()
             e.msg = str(r.content)
             raise e
+        elif r.status_code == 403:
+            e = lib_exc.AdminRequired()
+            e.msg = str(r.content)
+            raise e
         elif r.status_code == 404:
             e = lib_exc.NotFound()
             e.msg = str(r.content)
@@ -167,7 +171,7 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         res = {}
         for k in map:
             if k not in keys:
-                if map[k]:
+                if map[k] or map[k] == '' or isinstance(map[k], bool):
                     res[k] = map[k]
         if 'tenant_id' in res:
             res['project_id'] = res.pop('tenant_id')
@@ -194,7 +198,13 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         r = self._filter(FILTER, res[resource_])
         r = self.post(self._path(resource, sub_resource, resource_id),
                       context.auth_token, {resource_: r})
-        return r[resource_]
+        response = r[resource_]
+        # neutron is looking for tenant_id in the response for RBAC
+        if 'project_id' in response:
+            response['tenant_id'] = response['project_id']
+        else:
+            response['tenant_id'] = context.tenant_id
+        return response
 
     def _get_resources(self, resource, context, filters=None, fields=None,
                        sub_resource=None, resource_id=None,
@@ -207,22 +217,54 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                 filters['project_id'] = filters.pop('tenant_id')
             args['filters'] = filters
         if fields:
+            if 'tenant_id' in fields:
+                fields.remove('tenant_id')
+                if 'project_id' not in fields:
+                    fields.append('project_id')
             args['fields'] = fields
+
+        LOG.debug("context-tenant-id %s" % context.tenant_id)
+
         res = self.get(self._path(resource, sub_resource, resource_id),
                        context.auth_token, args)
-        return res[self.pluralize(resource_)] if not pass_through else res
+        response = res[self.pluralize(resource_)] if not pass_through else res
+        # neutron is looking for tenant_id in the response for RBAC
+        if isinstance(response, (list,)):
+            for e in response:
+                e['tenant_id'] = e.get('project_id', context.tenant_id)
+        else:
+            if 'project_id' in response:
+                response['tenant_id'] = response.get(
+                    'project_id', context.tenant_id)
+        return response
 
     def _get_resource(self, resource, context, id, fields=None,
                       sub_resource=None, resource_id=None):
         # not sure how to test that or if we even support sorting/filtering?
         args = {}
         if fields:
+            if 'tenant_id' in fields:
+                fields.remove('tenant_id')
+                if 'project_id' not in fields:
+                    fields.append('project_id')
             args['fields'] = fields
         resource_ = resource if not sub_resource else sub_resource
+
+        LOG.debug("-get_resource context-tenant-id %s" % context.tenant_id)
+
         res = self.get('{}/{}'.format(
             self._path(resource, sub_resource, resource_id), id),
                        context.auth_token, args)
-        return res[resource_]
+        response = res[resource_]
+        if ('provisioning_status' in response) and (
+                    response['provisioning_status'] == 'DELETED'):
+            raise lib_exc.NotFound()
+        # neutron is looking for tenant_id in the response for RBAC
+        if 'project_id' in response:
+            response['tenant_id'] = response['project_id']
+        else:
+            response['tenant_id'] = context.tenant_id
+        return response
 
     def _update_resource(self, resource, context, id, res,
                          sub_resource=None, resource_id=None):
@@ -233,7 +275,13 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
             resource, sub_resource, resource_id), id),
                        context.auth_token,
                        {resource_: r})
-        return res[resource_]
+        response = res[resource_]
+        # neutron is looking for tenant_id in the response for RBAC
+        if 'project_id' in response:
+            response['tenant_id'] = response['project_id']
+        else:
+            response['tenant_id'] = context.tenant_id
+        return response
 
     def _delete_resource(self, resource, context, id,
                          sub_resource=None, resource_id=None):
@@ -330,6 +378,7 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         pass
 
     def statuses(self, context, loadbalancer_id):
+        LOG.debug("Statuses called!")
         return self._get_resources(LOADBALANCER, context, sub_resource=STATUS,
                                    resource_id=loadbalancer_id,
                                    pass_through=True)
