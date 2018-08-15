@@ -264,7 +264,7 @@ def process_L7policies(LOG, n_session, o_session, listener_id, project_id):
                             'database.'))
         # Handle L7 rules
         l7rules = n_session.execute(
-            "SELECT id, type, compare_type, invert, key, value, "
+            "SELECT id, type, compare_type, invert, `key`, value, "
             "provisioning_status, admin_state_up FROM lbaas_l7rules WHERE "
             "l7policy_id = :l7policy_id AND provisioning_status = 'ACTIVE';",
             {'l7policy_id': l7policy[0]}).fetchall()
@@ -281,7 +281,7 @@ def process_L7policies(LOG, n_session, o_session, listener_id, project_id):
 
             result = o_session.execute(
                 "INSERT INTO l7rule (id, l7policy_id, type, compare_type, "
-                "key, value, invert, provisioning_status, created_at, "
+                "`key`, value, invert, provisioning_status, created_at, "
                 "updated_at, project_id, enabled, operating_status) VALUES "
                 "(:id, :l7policy_id, :type, :compare_type, :key, :value, "
                 ":invert, :provisioning_status, :created_at, :updated_at, "
