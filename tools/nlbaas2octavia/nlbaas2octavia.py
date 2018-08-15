@@ -205,8 +205,9 @@ def process_members(LOG, n_session, o_session, project_id, pool_id):
              'updated_at': datetime.datetime.utcnow(),
              'provisioning_status': member[6], 'name': member[8],
              'backup': False})
-    if result.rowcount != 1:
-        raise Exception(_('Unable to create member in the Octavia database.'))
+        if result.rowcount != 1:
+            raise Exception(
+                _('Unable to create member in the Octavia database.'))
 
 
 def process_SNI(n_session, o_session, listener_id):
