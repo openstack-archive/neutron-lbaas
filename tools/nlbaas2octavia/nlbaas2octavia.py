@@ -343,13 +343,20 @@ def migrate_lb(LOG, n_session_maker, o_session_maker, lb_id):
             if result.rowcount != 1:
                 raise Exception(_('Unable to update VIP port in the neutron '
                                 'database.'))
-            result = n_session.execute(
-                "UPDATE securitygroups SET project_id = :proj_id WHERE "
-                "id = :id;", {'proj_id': CONF.migration.octavia_account_id,
-                              'id': vip_port[2]})
-            if result.rowcount != 1:
-                raise Exception(_('Unable to update VIP security group in the '
-                                'neutron database.'))
+            security_group = n_session.execute(
+                "SELECT project_id FROM securitygroups WHERE id = :id",
+                {'id': vip_port[2]}).fetchone()
+
+            # Update security group project, only when its owner is not the
+            # user project, which means that Octavia should own it
+            if security_group[0] != n_lb[1]:
+                result = n_session.execute(
+                    "UPDATE securitygroups SET project_id = :proj_id WHERE "
+                    "id = :id;", {'proj_id': CONF.migration.octavia_account_id,
+                                  'id': vip_port[2]})
+                if result.rowcount != 1:
+                    raise Exception(_('Unable to update VIP security group in '
+                                      'the neutron database.'))
 
         # Octavia driver load balancers are now done, next process the other
         # provider driver load balancers
