@@ -188,7 +188,10 @@ def process_members(LOG, n_session, o_session, project_id, pool_id):
         if member[6] == 'DELETED':
             continue
         elif member[6] != 'ACTIVE':
-            raise Exception(_('Member is invalid state of %s.'), member[6])
+            raise Exception(_('Member %s for pool %s is invalid state of %s.'),
+                            member[0],
+                            pool_id,
+                            member[6])
 
         result = o_session.execute(
             "INSERT INTO member (id, pool_id, project_id, subnet_id, "
