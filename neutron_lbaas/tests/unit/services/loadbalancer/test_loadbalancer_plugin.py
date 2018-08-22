@@ -45,10 +45,10 @@ class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
             resource_map[k].update(hm_down.EXTENDED_ATTRIBUTES_2_0[k])
         for k in lb_network_vip.EXTENDED_ATTRIBUTES_2_0.keys():
             resource_map[k].update(lb_network_vip.EXTENDED_ATTRIBUTES_2_0[k])
-        self._setUpExtension(
+        self.setup_extension(
             'neutron_lbaas.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
-            constants.LOADBALANCERV2, resource_map,
-            loadbalancerv2.Loadbalancerv2, 'lbaas', use_quota=True)
+            constants.LOADBALANCERV2, loadbalancerv2.Loadbalancerv2,
+            'lbaas', use_quota=True)
 
     def test_loadbalancer_create(self):
         lb_id = _uuid()
