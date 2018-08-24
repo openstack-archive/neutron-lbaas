@@ -15,6 +15,7 @@
       - ^api-ref/.*$
       - ^doc/.*$
       - ^etc/.*$
+      - ^neutron_lbaas/locale/.*$
       - ^releasenotes/.*$
 
 - job:
