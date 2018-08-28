@@ -16,6 +16,7 @@ import functools
 
 from neutron.db import servicetype_db as st_db
 from neutron.services import provider_configuration as pconf
+from neutron_lib import constants as n_constants
 from neutron_lib import exceptions as lib_exc
 from oslo_config import cfg
 from oslo_log import log as logging
@@ -30,8 +31,7 @@ VERSION = 'v2.0'
 OCTAVIA_PROXY_CLIENT = (
     "LBaaS V2 Octavia Proxy/{version} "
     "(https://wiki.openstack.org/wiki/Octavia)").format(version=VERSION)
-FILTER = ['vip_address', 'vip_network_id', 'flavor_id',
-          'provider', 'redirect_pool_id']
+FILTER = ['vip_address', 'vip_network_id', 'redirect_pool_id']
 
 LOADBALANCER = 'loadbalancer'
 LISTENER = 'listener'
@@ -171,7 +171,8 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         res = {}
         for k in map:
             if k not in keys:
-                if map[k] or map[k] == '' or isinstance(map[k], bool):
+                if (map[k] or map[k] == '' or isinstance(map[k], bool)
+                    ) and map[k] != n_constants.ATTR_NOT_SPECIFIED:
                     res[k] = map[k]
         if 'tenant_id' in res:
             res['project_id'] = res.pop('tenant_id')
@@ -270,6 +271,7 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
                          sub_resource=None, resource_id=None):
         # clean up the map
         resource_ = resource if not sub_resource else sub_resource
+        LOG.debug("Resource = %s", res)
         r = self._filter(FILTER, res[resource_])
         res = self.put('{}/{}'.format(self._path(
             resource, sub_resource, resource_id), id),
@@ -322,14 +324,31 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
     def get_pools(self, context, filters=None, fields=None):
         return self._get_resources(POOL, context, filters, fields)
 
+    def _clean_session_persistence(self, res):
+        session_persistence = res.get('session_persistence')
+        if session_persistence:
+            if 'persistence_granularity' in session_persistence:
+                del session_persistence['persistence_granularity']
+            if 'persistence_timeout' in session_persistence:
+                del session_persistence['persistence_timeout']
+
     def get_pool(self, context, id, fields=None):
-        return self._get_resource(POOL, context, id, fields)
+        res = self._get_resource(POOL, context, id, fields)
+        # force conformance with the old API (tests fail on additional fields)
+        self._clean_session_persistence(res)
+        return res
 
     def create_pool(self, context, pool):
-        return self._create_resource(POOL, context, pool)
+        res = self._create_resource(POOL, context, pool)
+        # force conformance with the old API (tests fail on additional fields)
+        self._clean_session_persistence(res)
+        return res
 
     def update_pool(self, context, id, pool):
-        return self._update_resource(POOL, context, id, pool)
+        res = self._update_resource(POOL, context, id, pool)
+        # force conformance with the old API (tests fail on additional fields)
+        self._clean_session_persistence(res)
+        return res
 
     def delete_pool(self, context, id):
         return self._delete_resource(POOL, context, id)
@@ -362,9 +381,43 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         return self._get_resource(HEALTH_MONITOR, context, id, fields)
 
     def create_healthmonitor(self, context, healthmonitor):
+        if healthmonitor[HEALTH_MONITOR].get(
+                'type') == constants.HEALTH_MONITOR_HTTPS:
+            # it defaults to GET which is not allowed with HTTPS
+            # so remove it for backwards compatibility with a lax
+            # validator
+            if healthmonitor[HEALTH_MONITOR].get('http_method') == 'GET':
+                healthmonitor[HEALTH_MONITOR].pop('http_method')
+            # it defaults to '/' which is not allowed with HTTPS
+            # so remove it for backwards compatibility with a lax
+            # validator
+            if healthmonitor[HEALTH_MONITOR].get('url_path') == '/':
+                healthmonitor[HEALTH_MONITOR].pop('url_path')
+            # it defaults to '200' which is not allowed with HTTPS
+            # so remove it for backwards compatibility with a lax
+            # validator
+            if healthmonitor[HEALTH_MONITOR].get('expected_codes') == '200':
+                healthmonitor[HEALTH_MONITOR].pop('expected_codes')
         return self._create_resource(HEALTH_MONITOR, context, healthmonitor)
 
     def update_healthmonitor(self, context, id, healthmonitor):
+        if healthmonitor[HEALTH_MONITOR].get(
+                'type') == constants.HEALTH_MONITOR_HTTPS:
+            # it defaults to GET which is not allowed with HTTPS
+            # so remove it for backwards compatibility with a lax
+            # validator
+            if healthmonitor[HEALTH_MONITOR].get('http_method') == 'GET':
+                healthmonitor[HEALTH_MONITOR].pop('http_method')
+            # it defaults to '/' which is not allowed with HTTPS
+            # so remove it for backwards compatibility with a lax
+            # validator
+            if healthmonitor[HEALTH_MONITOR].get('url_path') == '/':
+                healthmonitor[HEALTH_MONITOR].pop('url_path')
+            # it defaults to '200' which is not allowed with HTTPS
+            # so remove it for backwards compatibility with a lax
+            # validator
+            if healthmonitor[HEALTH_MONITOR].get('expected_codes') == '200':
+                healthmonitor[HEALTH_MONITOR].pop('expected_codes')
         return self._update_resource(HEALTH_MONITOR, context,
                                      id, healthmonitor)
 
@@ -378,7 +431,6 @@ class LoadBalancerProxyPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2):
         pass
 
     def statuses(self, context, loadbalancer_id):
-        LOG.debug("Statuses called!")
         return self._get_resources(LOADBALANCER, context, sub_resource=STATUS,
                                    resource_id=loadbalancer_id,
                                    pass_through=True)

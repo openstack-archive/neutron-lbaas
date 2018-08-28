@@ -339,6 +339,8 @@ class BaseTestCase(base.BaseNetworkTest):
         if wait:
             self._wait_for_load_balancer_status(
                 self.load_balancer.get('id'))
+            health_monitor = self.health_monitors_client.get_health_monitor(
+                health_monitor_id)
         return health_monitor
 
     @classmethod
