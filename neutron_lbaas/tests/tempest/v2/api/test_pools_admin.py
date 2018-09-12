@@ -128,7 +128,9 @@ class TestPools(base.BaseAdminTestCase):
         self._update_pool(new_pool.get('id'),
                           session_persistence=session_persistence)
         pool = self.pools_client.get_pool(new_pool.get('id'))
-        self.assertEqual(session_persistence, pool.get('session_persistence'))
+        result_sp = pool.get('session_persistence')
+        for key in session_persistence:
+            self.assertEqual(session_persistence[key], result_sp[key])
 
     def test_update_pool_sesssion_persistence_app_to_http(self):
         """
@@ -141,13 +143,18 @@ class TestPools(base.BaseAdminTestCase):
         self._update_pool(new_pool.get('id'),
                           session_persistence=session_persistence)
         pool = self.pools_client.get_pool(new_pool.get('id'))
-        self.assertEqual(session_persistence, pool.get('session_persistence'))
+        result_sp = pool.get('session_persistence')
+        for key in session_persistence:
+            self.assertEqual(session_persistence[key], result_sp[key])
+
         self._update_pool(new_pool.get('id'),
                           session_persistence={"type": "HTTP_COOKIE"})
         pool = self.pools_client.get_pool(new_pool.get('id'))
         session_persistence = {"type": "HTTP_COOKIE",
                                "cookie_name": None}
-        self.assertEqual(session_persistence, pool.get('session_persistence'))
+        result_sp = pool.get('session_persistence')
+        for key in session_persistence:
+            self.assertEqual(session_persistence[key], result_sp[key])
 
     @decorators.attr(type='smoke')
     def test_delete_pool(self):

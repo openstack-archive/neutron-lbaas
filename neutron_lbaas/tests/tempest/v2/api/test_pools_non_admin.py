@@ -209,7 +209,7 @@ class TestPools(base.BaseTestCase):
     def test_create_pool_invalid_protocol(self):
         """Test create pool with an invalid protocol"""
         self.assertRaises(ex.BadRequest, self._create_pool,
-                          protocol='UDP',
+                          protocol='PIGEON',
                           lb_algorithm='ROUND_ROBIN',
                           listener_id=self.listener['id'])
 

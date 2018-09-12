@@ -184,7 +184,7 @@ class ListenersTestJSON(base.BaseTestCase):
                           self._create_listener,
                           loadbalancer_id=self.load_balancer_id,
                           protocol_port=self.port,
-                          protocol="UDP")
+                          protocol="PIGEON")
         self._check_status_tree(load_balancer_id=self.load_balancer_id,
                                 listener_ids=[self.listener_id])
 
