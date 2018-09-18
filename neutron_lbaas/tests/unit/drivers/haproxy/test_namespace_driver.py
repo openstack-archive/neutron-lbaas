@@ -108,6 +108,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
                                                        namespace=ns)
         mock_shutil.assert_called_once_with('/path/' + self.lb.id)
         mock_ns.garbage_collect_namespace.assert_called_once_with()
+        self.assertDictEqual(self.driver.deployed_loadbalancers, {})
 
     @mock.patch('os.makedirs')
     @mock.patch('os.path.dirname')
