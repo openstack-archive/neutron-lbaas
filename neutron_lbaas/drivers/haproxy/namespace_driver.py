@@ -178,6 +178,9 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
             ns = ip_lib.IPWrapper(namespace=namespace)
             ns.garbage_collect_namespace()
 
+        if loadbalancer_id in self.deployed_loadbalancers:
+            del self.deployed_loadbalancers[loadbalancer_id]
+
     def remove_orphans(self, known_loadbalancer_ids):
         if not os.path.exists(self.state_path):
             return
