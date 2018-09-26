@@ -12,11 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from neutron.common import rpc as n_rpc
 from neutron.db import agents_db
 from neutron.db import common_db_mixin
 from neutron.services import provider_configuration as provconf
 from neutron_lib import exceptions as n_exc
+from neutron_lib import rpc as n_rpc
 from oslo_config import cfg
 import oslo_messaging as messaging
 from oslo_utils import importutils
