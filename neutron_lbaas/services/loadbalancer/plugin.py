@@ -710,9 +710,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 self.db.update_loadbalancer_provisioning_status(
                     context, db_pool.loadbalancer_id)
                 raise exc
-        # Reload the pool from the DB to re-populate pool.listeners
-        # before calling the driver
-        db_pool = self.db.get_pool(context, db_pool.id)
+
+        db_pool.listeners = self.db.get_listeners(
+            context, filters={'default_pool_id': [db_pool.id]})
         driver = self._get_driver_for_loadbalancer(
             context, db_pool.loadbalancer_id)
         self._call_driver_operation(context, driver.pool.create, db_pool)
