@@ -169,8 +169,6 @@ class BaseTestCase(base.BaseNetworkTest):
             cls._wait_for_load_balancer_status(lb.get('id'))
 
         cls._lbs_to_delete.append(lb.get('id'))
-        port = cls.ports_client.show_port(lb['vip_port_id'])
-        cls.ports.append(port['port'])
         return lb
 
     @classmethod
