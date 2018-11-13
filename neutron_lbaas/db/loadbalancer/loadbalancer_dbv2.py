@@ -23,6 +23,7 @@ from neutron_lib.callbacks import registry
 from neutron_lib.callbacks import resources
 from neutron_lib import constants as n_const
 from neutron_lib.db import api as db_api
+from neutron_lib.db import model_query
 from neutron_lib import exceptions as n_exc
 from neutron_lib.plugins import constants as pg_const
 from neutron_lib.plugins import directory
@@ -68,7 +69,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 # To lock the instance for update, return a single
                 # instance, instead of an instance with LEFT OUTER
                 # JOINs that do not work in PostgreSQL
-                query = self._model_query(context, model).options(
+                query = model_query.query_with_hooks(context, model).options(
                     lazyload('*')
                 ).filter(
                     model.id == id).with_lockmode('update')
@@ -252,7 +253,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         with context.session.begin(subtransactions=True):
             if issubclass(model, models.LoadBalancer):
                 try:
-                    model_db = (self._model_query(context, model).
+                    model_db = (model_query.query_with_hooks(context, model).
                                 filter(model.id == id).
                                 options(orm.noload('vip_port')).
                                 one())
