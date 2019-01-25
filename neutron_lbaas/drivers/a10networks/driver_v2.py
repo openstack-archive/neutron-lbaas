@@ -102,3 +102,27 @@ class HealthMonitorManager(driver_base.BaseHealthMonitorManager):
 
     def delete(self, context, hm):
         self.driver.a10.hm.delete(context, hm)
+
+
+class L7PolicyManager(driver_base.BaseL7PolicyManager):
+
+    def create(self, context, l7policy):
+        self.driver.a10.l7policy.create(context, l7policy)
+
+    def update(self, context, old_l7policy, l7policy):
+        self.driver.a10.l7policy.update(context, old_l7policy, l7policy)
+
+    def delete(self, context, l7policy):
+        self.driver.a10.l7policy.delete(context, l7policy)
+
+
+class L7RuleManager(driver_base.BaseL7RuleManager):
+
+    def create(self, context, l7rule):
+        self.driver.a10.l7rule.create(context, l7rule)
+
+    def update(self, context, old_l7rule, l7rule):
+        self.driver.a10.l7rule.update(context, old_l7rule, l7rule)
+
+    def delete(self, context, l7rule):
+        self.driver.a10.l7rule.delete(context, l7rule)
