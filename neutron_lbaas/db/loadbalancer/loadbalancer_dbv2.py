@@ -1035,10 +1035,9 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                 for rule_db in rule_dbs]
 
 
-def _prevent_lbaasv2_port_delete_callback(resource, event, trigger, **kwargs):
-    context = kwargs['context']
-    port_id = kwargs['port_id']
-    port_check = kwargs['port_check']
+def _prevent_lbaasv2_port_delete_callback(resource, event,
+                                          trigger, payload=None):
     lbaasv2plugin = directory.get_plugin(pg_const.LOADBALANCERV2)
-    if lbaasv2plugin and port_check:
-        lbaasv2plugin.db.prevent_lbaasv2_port_deletion(context, port_id)
+    if lbaasv2plugin and payload.metadata['port_check']:
+        lbaasv2plugin.db.prevent_lbaasv2_port_deletion(
+            payload.context, payload.resource_id)
