@@ -187,11 +187,6 @@
       register: result
       failed_when: result.stdout.find("Octavia") == -1
 
-    - name: Validate VIP port security group ownership
-      command: openstack security group show -f value -c project_id {{ lb_sg_id.stdout }}
-      register: result
-      failed_when: result.stdout.find(octavia_account_id.stdout) == -1
-
 # Test the HAproxy provider migration
 # NOTE: At this time there is no HAProxy driver for Octavia. This tests
 #       just the data migration.
@@ -304,11 +299,6 @@
       command: openstack port show -f value -c device_owner {{ lb2_port_id.stdout }}
       register: result
       failed_when: result.stdout.find("Octavia") == -1
-
-    - name: Validate VIP port security group ownership
-      command: openstack security group show -f value -c project_id {{ lb_sg_id.stdout }}
-      register: result
-      failed_when: result.stdout.find(octavia_account_id.stdout) == -1
 
 # Validate select load balancer settings migrated
 

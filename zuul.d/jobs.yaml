@@ -94,6 +94,7 @@
       - openstack/neutron-lbaas
       - openstack/nova
       - openstack/octavia
+      - openstack/placement
       - openstack/python-neutronclient
       - openstack/python-octaviaclient
     vars:
