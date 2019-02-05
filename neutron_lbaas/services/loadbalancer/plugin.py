@@ -145,9 +145,9 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                 provider)
 
     def _get_driver_for_loadbalancer(self, context, loadbalancer_id):
-        lb = self.db.get_loadbalancer(context, loadbalancer_id)
+        lb = self.db.get_loadbalancer_as_api_dict(context, loadbalancer_id)
         try:
-            return self.drivers[lb.provider.provider_name]
+            return self.drivers[lb['provider']]
         except KeyError:
             raise n_exc.Invalid(
                 _("Error retrieving provider for load balancer. Possible "
@@ -395,7 +395,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                 lbaas_agentschedulerv2.NoActiveLbaasAgent) as no_agent:
             self.db.delete_loadbalancer(context, lb_db.id)
             raise no_agent
-        return self.db.get_loadbalancer(context, lb_db.id).to_api_dict()
+        return self.db.get_loadbalancer_as_api_dict(context, lb_db.id)
 
     def create_graph(self, context, graph):
         loadbalancer = graph.get('graph', {}).get('loadbalancer')
@@ -437,7 +437,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         self._call_driver_operation(context,
                                     driver.load_balancer.update,
                                     updated_lb, old_db_entity=old_lb)
-        return self.db.get_loadbalancer(context, id).to_api_dict()
+        return self.db.get_loadbalancer_as_api_dict(context, id)
 
     def delete_loadbalancer(self, context, id):
         old_lb = self.db.get_loadbalancer(context, id)
@@ -459,7 +459,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             context, driver.load_balancer.delete, db_lb)
 
     def get_loadbalancer(self, context, id, fields=None):
-        return self.db.get_loadbalancer(context, id).to_api_dict()
+        return self.db.get_loadbalancer_as_api_dict(context, id)
 
     def get_loadbalancers(self, context, filters=None, fields=None):
         return self.db.get_loadbalancers_as_api_dict(context, filters=filters)
@@ -579,7 +579,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         self._call_driver_operation(
             context, driver.listener.create, listener_db)
 
-        return self.db.get_listener(context, listener_db.id).to_api_dict()
+        return self.db.get_listener_as_api_dict(context, listener_db.id)
 
     def _check_listener_pool_lb_match(self, context, listener_id, pool_id):
         listener = self.db.get_listener(context, listener_id)
@@ -639,7 +639,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             listener_db,
             old_db_entity=curr_listener_db)
 
-        return self.db.get_listener(context, id).to_api_dict()
+        return self.db.get_listener_as_api_dict(context, id)
 
     def delete_listener(self, context, id):
         old_listener = self.db.get_listener(context, id)
@@ -658,7 +658,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             context, driver.listener.delete, listener_db)
 
     def get_listener(self, context, id, fields=None):
-        return self.db.get_listener(context, id).to_api_dict()
+        return self.db.get_listener_as_api_dict(context, id)
 
     def get_listeners(self, context, filters=None, fields=None):
         return self.db.get_listeners_as_api_dict(
@@ -739,7 +739,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                     updated_pool,
                                     old_db_entity=old_pool)
 
-        return self.db.get_pool(context, id).to_api_dict()
+        return self.db.get_pool_as_api_dict(context, id)
 
     def delete_pool(self, context, id):
         old_pool = self.db.get_pool(context, id)
@@ -761,7 +761,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             context, filters=filters)
 
     def get_pool(self, context, id, fields=None):
-        return self.db.get_pool(context, id).to_api_dict()
+        return self.db.get_pool_as_api_dict(context, id)
 
     def _check_pool_exists(self, context, pool_id):
         if not self.db._resource_exists(context, models.PoolV2, pool_id):
@@ -771,15 +771,16 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
     def create_pool_member(self, context, pool_id, member):
         member = member.get('member')
         self.db.check_subnet_exists(context, member['subnet_id'])
-        db_pool = self.db.get_pool(context, pool_id)
+        db_pool = self.db.get_pool_as_api_dict(context, pool_id)
+        lb_id = db_pool['loadbalancers'][0]['id']
         self.db.test_and_set_status(context, models.LoadBalancer,
-                                    db_pool.root_loadbalancer.id,
-                                    n_constants.PENDING_UPDATE)
+                                    lb_id, n_constants.PENDING_UPDATE)
+
         try:
             member_db = self.db.create_pool_member(context, member, pool_id)
         except Exception as exc:
             self.db.update_loadbalancer_provisioning_status(
-                context, db_pool.root_loadbalancer.id)
+                context, lb_id)
             raise exc
 
         driver = self._get_driver_for_loadbalancer(
@@ -788,7 +789,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                     driver.member.create,
                                     member_db)
 
-        return self.db.get_pool_member(context, member_db.id).to_api_dict()
+        return self.db.get_pool_member_as_api_dict(context, member_db.id)
 
     def update_pool_member(self, context, id, pool_id, member):
         self._check_pool_exists(context, pool_id)
@@ -810,7 +811,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                     updated_member,
                                     old_db_entity=old_member)
 
-        return self.db.get_pool_member(context, id).to_api_dict()
+        return self.db.get_pool_member_as_api_dict(context, id)
 
     def delete_pool_member(self, context, id, pool_id):
         self._check_pool_exists(context, pool_id)
@@ -834,7 +835,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
     def get_pool_member(self, context, id, pool_id, fields=None):
         self._check_pool_exists(context, pool_id)
-        return self.db.get_pool_member(context, id).to_api_dict()
+        return self.db.get_pool_member_as_api_dict(context, id)
 
     def _check_pool_already_has_healthmonitor(self, context, pool_id):
         pool = self.db.get_pool(context, pool_id)
@@ -863,7 +864,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
         self._call_driver_operation(context,
                                     driver.health_monitor.create,
                                     db_hm)
-        return self.db.get_healthmonitor(context, db_hm.id).to_api_dict()
+        return self.db.get_healthmonitor_as_api_dict(context, db_hm.id)
 
     def update_healthmonitor(self, context, id, healthmonitor):
         healthmonitor = healthmonitor.get('healthmonitor')
@@ -885,7 +886,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                     updated_hm,
                                     old_db_entity=old_hm)
 
-        return self.db.get_healthmonitor(context, updated_hm.id).to_api_dict()
+        return self.db.get_healthmonitor_as_api_dict(context, updated_hm.id)
 
     def delete_healthmonitor(self, context, id):
         self.db.test_and_set_status(context, models.HealthMonitorV2, id,
@@ -898,7 +899,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             context, driver.health_monitor.delete, db_hm)
 
     def get_healthmonitor(self, context, id, fields=None):
-        return self.db.get_healthmonitor(context, id).to_api_dict()
+        return self.db.get_healthmonitor_as_api_dict(context, id)
 
     def get_healthmonitors(self, context, filters=None, fields=None):
         return self.db.get_healthmonitors_as_api_dict(
@@ -956,7 +957,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
                                         updated_l7policy,
                                         old_db_entity=old_l7policy)
 
-        return self.db.get_l7policy(context, updated_l7policy.id).to_api_dict()
+        return self.db.get_l7policy_as_api_dict(context, updated_l7policy.id)
 
     def delete_l7policy(self, context, id):
         self.db.test_and_set_status(context, models.L7Policy, id,
@@ -976,7 +977,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             context, filters=filters)
 
     def get_l7policy(self, context, id, fields=None):
-        return self.db.get_l7policy(context, id).to_api_dict()
+        return self.db.get_l7policy_as_api_dict(context, id)
 
     def _check_l7policy_exists(self, context, l7policy_id):
         if not self.db._resource_exists(context, models.L7Policy, l7policy_id):
@@ -1051,8 +1052,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
 
     def get_l7policy_rule(self, context, id, l7policy_id, fields=None):
         self._check_l7policy_exists(context, l7policy_id)
-        return self.db.get_l7policy_rule(
-            context, id, l7policy_id).to_api_dict()
+        return self.db.get_l7policy_rule_as_api_dict(context, id, l7policy_id)
 
     def validate_provider(self, provider):
         if provider not in self.drivers:

@@ -426,6 +426,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         lb_db = self._get_resource(context, models.LoadBalancer, id)
         return data_models.LoadBalancer.from_sqlalchemy_model(lb_db)
 
+    def get_loadbalancer_as_api_dict(self, context, id):
+        lb_db = self._get_resource(context, models.LoadBalancer, id)
+        return lb_db.to_api_dict
+
     def _validate_listener_data(self, context, listener):
         pool_id = listener.get('default_pool_id')
         lb_id = listener.get('loadbalancer_id')
@@ -614,6 +618,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         listener_db = self._get_resource(context, models.Listener, id)
         return data_models.Listener.from_sqlalchemy_model(listener_db)
 
+    def get_listener_as_api_dict(self, context, id):
+        listener_db = self._get_resource(context, models.Listener, id)
+        return listener_db.to_api_dict
+
     def _create_session_persistence_db(self, session_info, pool_id):
         session_info['pool_id'] = pool_id
         return models.SessionPersistenceV2(**session_info)
@@ -744,6 +752,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         pool_db = self._get_resource(context, models.PoolV2, id)
         return data_models.Pool.from_sqlalchemy_model(pool_db)
 
+    def get_pool_as_api_dict(self, context, id):
+        pool_db = self._get_resource(context, models.PoolV2, id)
+        return pool_db.to_api_dict
+
     def create_pool_member(self, context, member, pool_id):
         try:
             with context.session.begin(subtransactions=True):
@@ -789,6 +801,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
     def get_pool_member(self, context, id):
         member_db = self._get_resource(context, models.MemberV2, id)
         return data_models.Member.from_sqlalchemy_model(member_db)
+
+    def get_pool_member_as_api_dict(self, context, id):
+        member_db = self._get_resource(context, models.MemberV2, id)
+        return member_db.to_api_dict
 
     def delete_member(self, context, id):
         with context.session.begin(subtransactions=True):
@@ -837,6 +853,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
     def get_healthmonitor(self, context, id):
         hm_db = self._get_resource(context, models.HealthMonitorV2, id)
         return data_models.HealthMonitor.from_sqlalchemy_model(hm_db)
+
+    def get_healthmonitor_as_api_dict(self, context, id):
+        hm_db = self._get_resource(context, models.HealthMonitorV2, id)
+        return hm_db.to_api_dict
 
     def get_healthmonitors(self, context, filters=None):
         filters = filters or {}
@@ -946,6 +966,10 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
         l7policy_db = self._get_resource(context, models.L7Policy, id)
         return data_models.L7Policy.from_sqlalchemy_model(l7policy_db)
 
+    def get_l7policy_as_api_dict(self, context, id):
+        l7policy_db = self._get_resource(context, models.L7Policy, id)
+        return l7policy_db.to_api_dict
+
     def get_l7policies(self, context, filters=None):
         l7policy_dbs = self._get_resources(context, models.L7Policy,
                                            filters=filters)
@@ -1009,6 +1033,13 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
             raise l7.RuleNotFoundForL7Policy(
                 l7policy_id=l7policy_id, rule_id=id)
         return data_models.L7Rule.from_sqlalchemy_model(rule_db)
+
+    def get_l7policy_rule_as_api_dict(self, context, id, l7policy_id):
+        rule_db = self._get_resource(context, models.L7Rule, id)
+        if rule_db.l7policy_id != l7policy_id:
+            raise l7.RuleNotFoundForL7Policy(
+                l7policy_id=l7policy_id, rule_id=id)
+        return rule_db.to_api_dict
 
     def get_l7policy_rules(self, context, l7policy_id, filters=None):
         if filters:
