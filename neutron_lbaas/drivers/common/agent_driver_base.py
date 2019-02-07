@@ -13,7 +13,6 @@
 #    under the License.
 
 from neutron.db import agents_db
-from neutron.db import common_db_mixin
 from neutron.services import provider_configuration as provconf
 from neutron_lib import exceptions as n_exc
 from neutron_lib import rpc as n_rpc
@@ -163,8 +162,7 @@ class LoadBalancerAgentApi(object):
 
 
 class LoadBalancerManager(driver_base.BaseLoadBalancerManager,
-                          agent_scheduler_v2.LbaasAgentSchedulerDbMixin,
-                          common_db_mixin.CommonDbMixin):
+                          agent_scheduler_v2.LbaasAgentSchedulerDbMixin):
     def __init__(self, driver):
         super(LoadBalancerManager, self).__init__(driver)
         self.db = ldbv2.LoadBalancerPluginDbv2()
