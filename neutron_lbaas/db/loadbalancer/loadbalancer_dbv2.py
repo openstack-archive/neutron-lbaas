@@ -17,7 +17,6 @@ import re
 
 import netaddr
 from neutron.common import ipv6_utils
-from neutron.db import common_db_mixin as base_db
 from neutron_lib.callbacks import events
 from neutron_lib.callbacks import registry
 from neutron_lib.callbacks import resources
@@ -50,8 +49,7 @@ from neutron_lbaas.services.loadbalancer import data_models
 LOG = logging.getLogger(__name__)
 
 
-class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
-                             agent_scheduler.LbaasAgentSchedulerDbMixin):
+class LoadBalancerPluginDbv2(agent_scheduler.LbaasAgentSchedulerDbMixin):
     """Wraps loadbalancer with SQLAlchemy models.
 
     A class that wraps the implementation of the Neutron loadbalancer
@@ -75,7 +73,7 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
                     model.id == id).with_lockmode('update')
                 resource = query.one()
             else:
-                resource = self._get_by_id(context, model, id)
+                resource = model_query.get_by_id(context, model, id)
         except exc.NoResultFound:
             with excutils.save_and_reraise_exception(reraise=False) as ctx:
                 if issubclass(model, (models.LoadBalancer, models.Listener,
@@ -90,14 +88,14 @@ class LoadBalancerPluginDbv2(base_db.CommonDbMixin,
 
     def _resource_exists(self, context, model, id):
         try:
-            self._get_by_id(context, model, id)
+            model_query.get_by_id(context, model, id)
         except exc.NoResultFound:
             return False
         return True
 
     def _get_resources(self, context, model, filters=None, options=None):
-        query = self._get_collection_query(context, model,
-                                           filters=filters)
+        query = model_query.get_collection_query(context, model,
+                                                 filters=filters)
         if options:
             query = query.options(options)
         return [model_instance for model_instance in query]
