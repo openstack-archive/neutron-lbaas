@@ -671,8 +671,8 @@ class LoadBalancerPluginDbv2(agent_scheduler.LbaasAgentSchedulerDbMixin):
                 pool_db.session_persistence = s_p
 
             context.session.add(pool_db)
-            context.session.flush()
-        return data_models.Pool.from_sqlalchemy_model(pool_db)
+        context.session.refresh(pool_db.loadbalancer)
+        return self.get_pool(context, pool_db.id)
 
     def update_pool(self, context, id, pool):
         with context.session.begin(subtransactions=True):
