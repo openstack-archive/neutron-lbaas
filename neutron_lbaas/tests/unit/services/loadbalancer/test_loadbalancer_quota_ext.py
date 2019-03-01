@@ -28,7 +28,7 @@ class LBaaSQuotaExtensionDbTestCase(base.QuotaExtensionTestCase):
     def setUp(self):
         cfg.CONF.set_override(
             'quota_driver',
-            'neutron.db.quota_db.DbQuotaDriver',
+            'neutron.db.quota.driver.DbQuotaDriver',
             group='QUOTAS')
         super(LBaaSQuotaExtensionDbTestCase, self).setUp()
 
