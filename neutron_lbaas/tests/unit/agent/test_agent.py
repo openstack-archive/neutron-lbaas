@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import sys
+
 import mock
 from oslo_config import cfg
 
@@ -39,7 +41,7 @@ class TestLbaasService(base.BaseTestCase):
         with mock.patch(logging_str), \
                 mock.patch(privsep_str), \
                 mock.patch.object(agent.service, 'launch') as mock_launch, \
-                mock.patch('sys.argv'), \
+                mock.patch.object(sys, 'argv', ['neutron-lbaasv2-agent']), \
                 mock.patch.object(agent.manager, 'LbaasAgentManager'), \
                 mock.patch.object(cfg.CONF, 'register_opts'):
             agent.main()

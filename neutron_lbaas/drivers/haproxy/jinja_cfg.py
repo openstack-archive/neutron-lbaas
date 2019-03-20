@@ -409,4 +409,4 @@ def _expand_expected_codes(codes):
                 str(i) for i in six.moves.range(int(low), int(hi) + 1))
         else:
             retval.add(code)
-    return retval
+    return sorted(retval)

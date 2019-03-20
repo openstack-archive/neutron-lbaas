@@ -21,7 +21,7 @@ RET_PERSISTENCE = {
     'type': 'HTTP_COOKIE',
     'cookie_name': 'HTTP_COOKIE'}
 
-HASHSEED_ORDERED_CODES = list({'404', '405', '500'})
+HASHSEED_ORDERED_CODES = ['404', '405', '500']
 PIPED_CODES = '|'.join(HASHSEED_ORDERED_CODES)
 
 RET_MONITOR = {
@@ -269,7 +269,7 @@ def sample_health_monitor_tuple(proto='HTTP', admin_state=True):
 
     return monitor(id='sample_monitor_id_1', type=proto, delay=30,
                    timeout=31, max_retries=3, http_method='GET',
-                   url_path='/index.html', expected_codes='500, 405, 404',
+                   url_path='/index.html', expected_codes='404, 405, 500',
                    admin_state_up=admin_state)
 
 
