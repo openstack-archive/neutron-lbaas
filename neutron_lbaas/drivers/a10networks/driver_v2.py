@@ -31,6 +31,8 @@ class ThunderDriver(driver_base.LoadBalancerBaseDriver):
         self.pool = PoolManager(self)
         self.member = MemberManager(self)
         self.health_monitor = HealthMonitorManager(self)
+        self.l7policy = L7PolicyManager(self)
+        self.l7rule = L7RuleManager(self)
 
         LOG.debug("A10Driver: v2 initializing, version=%s, lbaas_manager=%s",
                   VERSION, a10_neutron_lbaas.VERSION)
