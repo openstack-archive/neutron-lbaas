@@ -156,8 +156,13 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                                              pids_path=pid_path,
                                              pid_file=pid_data)
         pm.disable()
-        # unplug the ports
-        if loadbalancer_id in self.deployed_loadbalancers:
+        # Before unplugging the port check if the LBaas
+        # is being active and see if it is a resync
+        # or failover is configured
+        resync = kwargs.get('resync', False)
+        failover_state = cfg.CONF.allow_automatic_lbaas_agent_failover
+        if (loadbalancer_id in self.deployed_loadbalancers and
+            not (resync and failover_state)):
             self._unplug(namespace,
                          self.deployed_loadbalancers[loadbalancer_id].vip_port)
 
@@ -181,7 +186,7 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
         if loadbalancer_id in self.deployed_loadbalancers:
             del self.deployed_loadbalancers[loadbalancer_id]
 
-    def remove_orphans(self, known_loadbalancer_ids):
+    def remove_orphans(self, known_loadbalancer_ids, resync=False):
         if not os.path.exists(self.state_path):
             return
 
@@ -189,7 +194,8 @@ class HaproxyNSDriver(agent_device_driver.AgentDeviceDriver):
                    if lb_id not in known_loadbalancer_ids)
         for lb_id in orphans:
             if self.exists(lb_id):
-                self.undeploy_instance(lb_id, cleanup_namespace=True)
+                self.undeploy_instance(lb_id, cleanup_namespace=True,
+                                       resync=resync)
 
     def get_stats(self, loadbalancer_id):
         socket_path = self._get_state_file_path(loadbalancer_id,

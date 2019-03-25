@@ -142,7 +142,7 @@ class TestHaproxyNSDriver(base.BaseTestCase):
         list_dir.assert_called_once_with(self.driver.state_path)
         self.driver.exists.assert_called_once_with('lb2')
         self.driver.undeploy_instance.assert_called_once_with(
-            'lb2', cleanup_namespace=True)
+            'lb2', cleanup_namespace=True, resync=False)
 
     def test_get_stats(self):
         # Shamelessly stolen from v1 namespace driver tests.
