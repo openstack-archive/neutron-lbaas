@@ -134,6 +134,7 @@ class LbaasLoadBalancerTests(TestLbaasProxyPluginDbTestCase):
             'provisioning_status': n_constants.ACTIVE,
             'operating_status': lb_const.ONLINE,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'listeners': [],
             'pools': [],
             'provider': 'lbaas'
@@ -249,6 +250,25 @@ class LbaasLoadBalancerTests(TestLbaasProxyPluginDbTestCase):
                              body['loadbalancer'][k])
 
     @requests_mock.mock()
+    def test_show_loadbalancer_deleted(self, m):
+        name = 'lb_show'
+        description = 'lb_show description'
+        lb_id = "testid"
+        expected_values = {'name': name,
+                           'description': description,
+                           'vip_address': '10.0.0.10',
+                           'admin_state_up': True,
+                           'provisioning_status': 'DELETED',
+                           'operating_status': lb_const.ONLINE,
+                           'listeners': [],
+                           'provider': 'lbaas',
+                           'id': lb_id}
+        m.get("{}/{}".format(self.url, lb_id),
+              json={'loadbalancer': expected_values})
+        resp, body = self._get_loadbalancer_api(lb_id)
+        self.assertEqual(404, resp.status_int)
+
+    @requests_mock.mock()
     def test_update_loadbalancer(self, m):
         loadbalancer_id = "test_uuid"
         name = 'new_loadbalancer'
@@ -349,6 +369,7 @@ class LbaasListenerTests(ListenerTestBase):
             'protocol_port': 80,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'default_pool_id': None,
             'loadbalancers': [{'id': self.lb_id}],
             'id': '123'
@@ -407,7 +428,6 @@ class LbaasListenerTests(ListenerTestBase):
                            'protocol': 'HTTP',
                            'connection_limit': 100,
                            'admin_state_up': False,
-                           'tenant_id': self._tenant_id,
                            'loadbalancers': [{'id': self.lb_id}]}
 
         listener_id = uuidutils.generate_uuid()
@@ -449,13 +469,14 @@ class LbaasListenerTests(ListenerTestBase):
                            'connection_limit': -1,
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
+                           'project_id': self._tenant_id,
                            'default_pool_id': None,
                            'loadbalancers': [{'id': self.lb_id}]}
         listener_id = uuidutils.generate_uuid()
         m.get("{}/{}".format(self.url, listener_id),
               json={'listener': expected_values})
         resp, body = self._get_listener_api(listener_id)
-        for k in expected_values:
+        for k in body['listener']:
             self.assertEqual(expected_values[k], body['listener'][k])
 
     @requests_mock.mock()
@@ -467,6 +488,7 @@ class LbaasListenerTests(ListenerTestBase):
                            'connection_limit': -1,
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
+                           'project_id': self._tenant_id,
                            'loadbalancers': [{'id': self.lb_id}]}
 
         listener_id = uuidutils.generate_uuid()
@@ -499,6 +521,7 @@ class LbaasL7Tests(ListenerTestBase):
             'redirect_pool_id': None,
             'redirect_url': None,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
         }
         expected.update(extras)
         listener_id = uuidutils.generate_uuid()
@@ -519,6 +542,7 @@ class LbaasL7Tests(ListenerTestBase):
             'redirect_pool_id': None,
             'redirect_url': None,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
         }
         expected.update(extras)
         listener_id = uuidutils.generate_uuid()
@@ -546,6 +570,7 @@ class LbaasL7Tests(ListenerTestBase):
             'redirect_pool_id': None,
             'redirect_url': 'redirect_url',
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'position': 1,
         }
         expected.update(extras)
@@ -589,6 +614,7 @@ class LbaasL7Tests(ListenerTestBase):
             'redirect_pool_id': None,
             'redirect_url': None,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'listener_id': listener_id,
             'id': l7policy_id,
         }
@@ -644,7 +670,9 @@ class LbaasL7Tests(ListenerTestBase):
             'type': lb_const.L7_RULE_TYPE_HOST_NAME,
             'compare_type': lb_const.L7_RULE_COMPARE_TYPE_EQUAL_TO,
             'key': None,
-            'value': 'value1'
+            'value': 'value1',
+            'project_id': self._tenant_id,
+            'tenant_id': self._tenant_id,
         }
 
         m.post(self._rules(l7_policy_id), json={'rule': expected})
@@ -773,6 +801,7 @@ class LbaasPoolTests(PoolTestBase):
             'lb_algorithm': 'ROUND_ROBIN',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'healthmonitor_id': None,
             'members': [],
             'id': uuidutils.generate_uuid()
@@ -808,6 +837,7 @@ class LbaasPoolTests(PoolTestBase):
             'lb_algorithm': 'ROUND_ROBIN',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'listeners': [{'id': self.listener_id}],
             'healthmonitor_id': None,
             'members': []
@@ -834,6 +864,7 @@ class LbaasPoolTests(PoolTestBase):
             'lb_algorithm': 'LEAST_CONNECTIONS',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'listeners': [{'id': self.listener_id}],
             'healthmonitor_id': None,
             'members': []
@@ -883,7 +914,8 @@ class LbaasPoolTests(PoolTestBase):
             'protocol': 'BLANK',
             'lb_algorithm': 'LEAST_CONNECTIONS',
             'admin_state_up': True,
-            'tenant_id': self._tenant_id
+            'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
         }}
         m.get(self.url, json={'pools': [data]})
         m.post(self.url, status_code=webob.exc.HTTPBadRequest.code)
@@ -899,6 +931,7 @@ class LbaasPoolTests(PoolTestBase):
                            'lb_algorithm': 'ROUND_ROBIN',
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
+                           'project_id': self._tenant_id,
                            'session_persistence': {'cookie_name': None,
                                                    'type': 'HTTP_COOKIE'},
                            'loadbalancers': [{'id': self.lb_id}],
@@ -972,6 +1005,7 @@ class LbaasMemberTests(MemberTestBase):
             'weight': 1,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'subnet_id': '',
             'name': 'member1',
             'id': uuidutils.generate_uuid()
@@ -1001,6 +1035,7 @@ class LbaasMemberTests(MemberTestBase):
             'weight': 1,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'subnet_id': '',
             'name': 'member1',
             'id': uuidutils.generate_uuid()
@@ -1037,6 +1072,7 @@ class LbaasMemberTests(MemberTestBase):
             'weight': 1,
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'subnet_id': '',
             'name': 'member1',
             'id': uuidutils.generate_uuid()
@@ -1074,6 +1110,7 @@ class LbaasMemberTests(MemberTestBase):
                            'weight': 1,
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
+                           'project_id': self._tenant_id,
                            'subnet_id': self.test_subnet_id}}
         m.post(self._members(pool_id='WRONG_POOL_ID'), status_code=404)
         resp, body = self._create_member_api('WRONG_POOL_ID', data)
@@ -1087,6 +1124,7 @@ class LbaasMemberTests(MemberTestBase):
                            'weight': 1,
                            'admin_state_up': True,
                            'tenant_id': self._tenant_id,
+                           'project_id': self._tenant_id,
                            'subnet_id': self.test_subnet_id,
                            'name': 123}}
         resp, body = self._create_member_api('POOL_ID', data)
@@ -1149,6 +1187,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': 'monitor1',
             'id': self.hm_id
@@ -1182,6 +1221,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': 'monitor1'
         }
@@ -1210,6 +1250,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200,404',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': 'monitor2'
         }
@@ -1249,6 +1290,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
                                   'max_retries': 2,
                                   'admin_state_up': True,
                                   'tenant_id': self._tenant_id,
+                                  'project_id': self._tenant_id,
                                   'pool_id': self.pool_id}}
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(webob.exc.HTTPBadRequest.code, resp.status_int)
@@ -1261,6 +1303,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
                                   'timeout': 1,
                                   'max_retries': 1,
                                   'tenant_id': self._tenant_id,
+                                  'project_id': self._tenant_id,
                                   'pool_id': uuidutils.generate_uuid()}}
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(webob.exc.HTTPNotFound.code, resp.status_int)
@@ -1273,6 +1316,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
                                   'timeout': 1,
                                   'max_retries': 1,
                                   'tenant_id': self._tenant_id,
+                                  'project_id': self._tenant_id,
                                   'pool_id': self.pool_id}}
         resp, body = self._create_healthmonitor_api(data)
         self.assertEqual(webob.exc.HTTPConflict.code, resp.status_int)
@@ -1289,6 +1333,7 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
             'expected_codes': '200',
             'admin_state_up': True,
             'tenant_id': self._tenant_id,
+            'project_id': self._tenant_id,
             'pools': [{'id': self.pool_id}],
             'name': '',
             'max_retries_down': 3,
