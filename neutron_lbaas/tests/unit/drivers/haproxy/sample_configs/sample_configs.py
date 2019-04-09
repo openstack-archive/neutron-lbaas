@@ -15,6 +15,8 @@
 
 import collections
 
+from neutron_lbaas.services.loadbalancer import constants
+
 RET_PERSISTENCE = {
     'type': 'HTTP_COOKIE',
     'cookie_name': 'HTTP_COOKIE'}
@@ -76,7 +78,7 @@ RET_LISTENER = {
 RET_LISTENER_TLS = {
     'id': 'sample_listener_id_1',
     'protocol_port': '443',
-    'protocol_mode': 'HTTP',
+    'protocol_mode': 'http',
     'protocol': 'TERMINATED_HTTPS',
     'default_pool': RET_POOL,
     'connection_limit': 98,
@@ -272,15 +274,43 @@ def sample_health_monitor_tuple(proto='HTTP', admin_state=True):
                    admin_state_up=admin_state)
 
 
-def sample_base_expected_config(backend, frontend=None):
+def sample_base_expected_config(backend, frontend=None,
+                                fe_proto=constants.PROTOCOL_HTTP):
     if frontend is None:
-        frontend = ("frontend sample_listener_id_1\n"
-                    "    option tcplog\n"
-                    "    maxconn 98\n"
-                    "    option forwardfor\n"
-                    "    bind 10.0.0.2:80\n"
-                    "    mode http\n"
-                    "    default_backend sample_pool_id_1\n\n")
+        tcp_frontend = ("frontend sample_listener_id_1\n"
+                        "    option tcplog\n"
+                        "    maxconn 98\n"
+                        "    bind 10.0.0.2:80\n"
+                        "    mode tcp\n"
+                        "    default_backend sample_pool_id_1\n\n")
+        http_frontend = ("frontend sample_listener_id_1\n"
+                         "    option httplog\n"
+                         "    maxconn 98\n"
+                         "    option forwardfor\n"
+                         "    bind 10.0.0.2:80\n"
+                         "    mode http\n"
+                         "    default_backend sample_pool_id_1\n\n")
+        https_frontend = ("frontend sample_listener_id_1\n"
+                          "    option tcplog\n"
+                          "    maxconn 98\n"
+                          "    bind 10.0.0.2:443\n"
+                          "    mode tcp\n"
+                          "    default_backend sample_pool_id_1\n\n")
+        https_tls_frontend = ("frontend sample_listener_id_1\n"
+                              "    option httplog\n"
+                              "    redirect scheme https if !{ ssl_fc }\n"
+                              "    maxconn 98\n"
+                              "    option forwardfor\n"
+                              "    bind 10.0.0.2:443\n"
+                              "    mode http\n"
+                              "    default_backend sample_pool_id_1\n\n")
+        fe_mapper = {
+            constants.PROTOCOL_TCP: tcp_frontend,
+            constants.PROTOCOL_HTTP: http_frontend,
+            constants.PROTOCOL_HTTPS: https_frontend,
+            constants.PROTOCOL_TERMINATED_HTTPS: https_tls_frontend
+        }
+        frontend = fe_mapper[fe_proto]
     return ("# Configuration for test-lb\n"
             "global\n"
             "    daemon\n"

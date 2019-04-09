@@ -20,6 +20,7 @@ from neutron.tests import base
 from neutron_lbaas.common.cert_manager import cert_manager
 from neutron_lbaas.common.tls_utils import cert_parser
 from neutron_lbaas.drivers.haproxy import jinja_cfg
+from neutron_lbaas.services.loadbalancer import constants
 from neutron_lbaas.services.loadbalancer import data_models
 from neutron_lbaas.tests.unit.drivers.haproxy.\
     sample_configs import sample_configs
@@ -48,10 +49,10 @@ class TestHaproxyCfg(base.BaseTestCase):
 
     def test_render_template_tls_termination(self):
         lb = sample_configs.sample_loadbalancer_tuple(
-            proto='TERMINATED_HTTPS', tls=True, sni=True)
+            proto=constants.PROTOCOL_TERMINATED_HTTPS, tls=True, sni=True)
 
         fe = ("frontend sample_listener_id_1\n"
-              "    option tcplog\n"
+              "    option httplog\n"
               "    redirect scheme https if !{ ssl_fc }\n"
               "    maxconn 98\n"
               "    option forwardfor\n"
@@ -94,10 +95,10 @@ class TestHaproxyCfg(base.BaseTestCase):
 
     def test_render_template_tls_termination_no_sni(self):
         lb = sample_configs.sample_loadbalancer_tuple(
-            proto='TERMINATED_HTTPS', tls=True)
+            proto=constants.PROTOCOL_TERMINATED_HTTPS, tls=True)
 
         fe = ("frontend sample_listener_id_1\n"
-              "    option tcplog\n"
+              "    option httplog\n"
               "    redirect scheme https if !{ ssl_fc }\n"
               "    maxconn 98\n"
               "    option forwardfor\n"
@@ -193,7 +194,7 @@ class TestHaproxyCfg(base.BaseTestCase):
               "cookie sample_member_id_2\n\n")
         rendered_obj = jinja_cfg.render_loadbalancer_obj(
             sample_configs.sample_loadbalancer_tuple(
-                proto='HTTP', monitor=False),
+                proto=constants.PROTOCOL_HTTP, monitor=False),
             'nogroup', '/sock_path', '/v2')
         self.assertEqual(sample_configs.sample_base_expected_config(
             backend=be), rendered_obj)
@@ -247,7 +248,8 @@ class TestHaproxyCfg(base.BaseTestCase):
               "    server sample_member_id_2 10.0.0.98:82 weight 13\n\n")
         rendered_obj = jinja_cfg.render_loadbalancer_obj(
             sample_configs.sample_loadbalancer_tuple(
-                proto='HTTP', monitor=False, persistence=False),
+                proto=constants.PROTOCOL_HTTP, monitor=False,
+                persistence=False),
             'nogroup', '/sock_path', '/v2')
         self.assertEqual(sample_configs.sample_base_expected_config(
             backend=be), rendered_obj)
@@ -503,3 +505,22 @@ class TestHaproxyCfg(base.BaseTestCase):
         exp_codes = '201-200, 205'
         self.assertEqual(set(['205']),
                          jinja_cfg._expand_expected_codes(exp_codes))
+
+    def test_render_template_about_option_log(self):
+        for proto in constants.LISTENER_SUPPORTED_PROTOCOLS:
+            proto_mode = jinja_cfg.PROTOCOL_MAP[proto]
+            _rendered_obj = jinja_cfg.render_loadbalancer_obj(
+                sample_configs.sample_loadbalancer_tuple(
+                    proto=proto, monitor=False),
+                'nogroup', '/sock_path', '/v2')
+            expected_be = \
+                ("backend sample_pool_id_1\n"
+                 "    mode %s\n"
+                 "    balance roundrobin\n"
+                 "    cookie SRV insert indirect nocache\n"
+                 "    server sample_member_id_1 10.0.0.99:82 weight 13 "
+                 "cookie sample_member_id_1\n"
+                 "    server sample_member_id_2 10.0.0.98:82 weight 13 "
+                 "cookie sample_member_id_2\n\n") % proto_mode
+            self.assertEqual(sample_configs.sample_base_expected_config(
+                backend=expected_be, fe_proto=proto), _rendered_obj)
