@@ -48,7 +48,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.ifconfig',
               'sphinx.ext.graphviz',
               'sphinx.ext.todo',
-              'oslosphinx']
+              'openstackdocstheme']
 
 todo_include_todos = True
 
