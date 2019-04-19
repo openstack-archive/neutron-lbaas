@@ -5,7 +5,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -20,7 +20,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -35,7 +35,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-api-namespace/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -50,7 +50,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-api-namespace/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -65,7 +65,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -80,7 +80,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -95,7 +95,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-scenario-namespace/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
@@ -110,7 +110,7 @@
     post-run: playbooks/legacy/neutron-lbaasv2-dsvm-py3x-scenario-namespace/post.yaml
     timeout: 7800
     required-projects:
-      - openstack-infra/devstack-gate
+      - openstack/devstack-gate
       - openstack/barbican
       - openstack/diskimage-builder
       - openstack/neutron
