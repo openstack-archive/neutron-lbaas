@@ -1,5 +1,0 @@
-- hosts: all
-  roles:
-    - run-devstack
-    - role: bindep
-      bindep_profile: default
