@@ -3523,6 +3523,18 @@ class TestLbaasHealthMonitorTests(HealthMonitorTestBase):
         self.assertEqual(201, resp.status_int)
         self._delete('healthmonitors', body['healthmonitor']['id'])
 
+    def test_create_health_monitor_with_url_path_with_params(self):
+        data = {'healthmonitor': {'type': 'HTTP',
+                                  'url_path': '/a/b_c-d?x=y',
+                                  'delay': 2,
+                                  'timeout': 1,
+                                  'max_retries': 2,
+                                  'tenant_id': self._tenant_id,
+                                  'pool_id': self.pool_id}}
+        resp, body = self._create_healthmonitor_api(data)
+        self.assertEqual(201, resp.status_int)
+        self._delete('healthmonitors', body['healthmonitor']['id'])
+
     def test_create_health_monitor_with_url_path_invalid(self):
         data = {'healthmonitor': {'type': 'HTTP',
                                   'url_path': 1,

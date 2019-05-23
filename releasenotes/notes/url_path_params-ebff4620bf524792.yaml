@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Support URL path params in the health monitor url_path.
