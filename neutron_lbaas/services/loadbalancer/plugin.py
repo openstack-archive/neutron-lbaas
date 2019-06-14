@@ -1041,7 +1041,7 @@ class LoadBalancerPluginv2(loadbalancerv2.LoadBalancerPluginBaseV2,
             self._call_driver_operation(context, driver.l7rule.delete,
                                         rule_db)
         else:
-            self.db.delete_l7policy_rule(context, id, l7policy_id)
+            self.db.delete_l7policy_rule(context, id)
 
     def get_l7policy_rules(self, context, l7policy_id,
                            filters=None, fields=None):

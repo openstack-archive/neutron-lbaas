@@ -23,6 +23,7 @@ from oslo_utils import uuidutils
 from webob import exc
 
 from neutron_lbaas.extensions import healthmonitor_max_retries_down as hm_down
+from neutron_lbaas.extensions import l7
 from neutron_lbaas.extensions import lb_network_vip
 from neutron_lbaas.extensions import loadbalancerv2
 from neutron_lbaas.extensions import sharedpools
@@ -31,6 +32,27 @@ from neutron_lbaas.tests import base
 
 _uuid = uuidutils.generate_uuid
 _get_path = test_base._get_path
+
+
+class TestL7ExtensionTestCase(base.ExtensionTestCase):
+    fmt = 'json'
+
+    def setUp(self):
+        super(TestL7ExtensionTestCase, self).setUp()
+        self.setup_extension(
+            'neutron_lbaas.extensions.loadbalancerv2.LoadBalancerPluginBaseV2',
+            constants.LOADBALANCERV2, l7.L7, 'lbaas')
+
+    def test_delete_l7policy_rule(self):
+        entity_id = _uuid()
+        res = self.api.delete(
+            test_base._get_path('lbaas/l7policies/l7pid1/rules',
+                                id=entity_id, fmt=self.fmt))
+        delete_entity = getattr(self.plugin.return_value,
+                                "delete_l7policy_rule")
+        delete_entity.assert_called_with(mock.ANY, entity_id,
+                                         l7policy_id='l7pid1')
+        self.assertEqual(res.status_int, exc.HTTPNoContent.code)
 
 
 class TestLoadBalancerExtensionV2TestCase(base.ExtensionTestCase):
