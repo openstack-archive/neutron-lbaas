@@ -101,21 +101,21 @@ RET_LISTENER_TLS_SNI = {
     'sni_containers': [RET_SNI_CONT_1, RET_SNI_CONT_2]}
 
 RET_LB = {
-    'name': 'test-lb',
+    'id': 'sample_loadbalancer_id_1',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER],
     'connection_limit': RET_LISTENER['connection_limit'],
     'pools': [RET_POOL]}
 
 RET_LB_TLS = {
-    'name': 'test-lb',
+    'id': 'sample_loadbalancer_id_1',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER_TLS],
     'connection_limit': RET_LISTENER_TLS['connection_limit'],
     'pools': [RET_POOL]}
 
 RET_LB_TLS_SNI = {
-    'name': 'test-lb',
+    'id': 'sample_loadbalancer_id_1',
     'vip_address': '10.0.0.2',
     'listeners': [RET_LISTENER_TLS_SNI],
     'connection_limit': RET_LISTENER_TLS_SNI['connection_limit'],
@@ -126,11 +126,10 @@ def sample_loadbalancer_tuple(proto=None, monitor=True, persistence=True,
                               persistence_type=None, tls=False, sni=False):
     proto = 'HTTP' if proto is None else proto
     in_lb = collections.namedtuple(
-        'loadbalancer', 'id, name, vip_address, protocol, vip_port, '
+        'loadbalancer', 'id, vip_address, protocol, vip_port, '
                         'listeners, pools')
     return in_lb(
         id='sample_loadbalancer_id_1',
-        name='test-lb',
         vip_address='10.0.0.2',
         protocol=proto,
         vip_port=sample_vip_port_tuple(),
@@ -311,7 +310,7 @@ def sample_base_expected_config(backend, frontend=None,
             constants.PROTOCOL_TERMINATED_HTTPS: https_tls_frontend
         }
         frontend = fe_mapper[fe_proto]
-    return ("# Configuration for test-lb\n"
+    return ("# Configuration for sample_loadbalancer_id_1\n"
             "global\n"
             "    daemon\n"
             "    user nobody\n"
