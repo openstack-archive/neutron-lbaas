@@ -1,0 +1,7 @@
+---
+fixes:
+  - |
+    Fixed a bug in the validation of load balancer statistics, which led to
+    an exception occuring when running under python3 and negative values
+    erroneously being accepted under python2, see
+    `https://storyboard.openstack.org/#!/task/37085`_ for more information.

@@ -62,8 +62,8 @@ class LoadBalancerStatistics(model_base.BASEV2):
     @orm.validates('bytes_in', 'bytes_out',
                    'active_connections', 'total_connections')
     def validate_non_negative_int(self, key, value):
-        if value < 0:
-            data = {'key': key, 'value': value}
+        if int(value) < 0:
+            data = {'key': key, 'value': int(value)}
             raise ValueError(_('The %(key)s field can not have '
                                'negative value. '
                                'Current value is %(value)d.') % data)
