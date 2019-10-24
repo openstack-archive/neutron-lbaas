@@ -1,0 +1,4 @@
+---
+fixes:
+  - |
+    Correct the parameter passing error when using lbaas to delete l7 rule.
