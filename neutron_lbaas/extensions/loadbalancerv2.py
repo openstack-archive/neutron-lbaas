@@ -166,6 +166,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'default': '',
+                 'is_sort_key': True,
                  'is_visible': True},
         'tenant_id': {'allow_post': True, 'allow_put': False,
                       'validate': {'type:not_empty_string':
@@ -216,6 +217,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': db_const.NAME_FIELD_SIZE},
                  'default': '',
+                 'is_sort_key': True,
                  'is_visible': True},
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {
@@ -251,6 +253,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'protocol_port': {'allow_post': True, 'allow_put': False,
                           'validate': {'type:range': [1, 65535]},
                           'convert_to': converters.convert_to_int,
+                          'is_sort_key': True,
                           'is_visible': True},
         'admin_state_up': {'allow_post': True, 'allow_put': True,
                            'default': True,
@@ -269,6 +272,7 @@ RESOURCE_ATTRIBUTE_MAP = {
                       'is_visible': True},
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': db_const.NAME_FIELD_SIZE},
+                 'is_sort_key': True,
                  'is_visible': True, 'default': ''},
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {
@@ -285,6 +289,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'protocol': {'allow_post': True, 'allow_put': False,
                      'validate': {'type:values':
                                   lb_const.POOL_SUPPORTED_PROTOCOLS},
+                     'is_sort_key': True,
                      'is_visible': True},
         'lb_algorithm': {'allow_post': True, 'allow_put': True,
                          'validate': {
@@ -393,6 +398,7 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
             'protocol_port': {'allow_post': True, 'allow_put': False,
                               'validate': {'type:range': [1, 65535]},
                               'convert_to': converters.convert_to_int,
+                              'is_sort_key': True,
                               'is_visible': True},
             'weight': {'allow_post': True, 'allow_put': True,
                        'default': 1,

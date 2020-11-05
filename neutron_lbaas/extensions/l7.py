@@ -87,6 +87,7 @@ RESOURCE_ATTRIBUTE_MAP = {
         'name': {'allow_post': True, 'allow_put': True,
                  'validate': {'type:string': None},
                  'default': '',
+                 'is_sort_key': True,
                  'is_visible': True},
         'description': {'allow_post': True, 'allow_put': True,
                         'validate': {
@@ -157,6 +158,7 @@ SUB_RESOURCE_ATTRIBUTE_MAP = {
                     'is_visible': True},
             'value': {'allow_post': True, 'allow_put': True,
                       'validate': {'type:string': None},
+                      'is_sort_key': True,
                       'is_visible': True},
             'admin_state_up': {'allow_post': True, 'allow_put': True,
                                'default': True,
