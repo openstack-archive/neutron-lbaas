@@ -12,4 +12,4 @@ https://governance.openstack.org/tc/reference/projects/octavia.html
 
 For any further questions, please email
 openstack-discuss@lists.openstack.org or join #openstack-dev on
-Freenode.
+OFTC.
